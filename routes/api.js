@@ -672,6 +672,8 @@ router.get('/generate-programme/:id', async function(req, res) {
   if (cidx >= 0 && payload.dateStart) {
     candidates2[cidx].oralData.dateStart = payload.dateStart;
     candidates2[cidx].oralData.dateEnd = payload.dateEnd || payload.dateStart;
+    if (payload.targetLevel) candidates2[cidx].oralData.targetLevel = payload.targetLevel;
+    if (payload.totalHours) candidates2[cidx].oralData.totalHours = payload.totalHours;
     saveCandidates(candidates2);
   }
   require('fs').writeFileSync(tmpJson, JSON.stringify(payload));
