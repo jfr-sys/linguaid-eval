@@ -763,142 +763,6 @@ router.get('/download-convention/:id', (req, res) => {
   res.sendFile(pdfPath);
 });
 
-// POST /api/save-convention/:id — save form data (existing endpoint kept)
-
-
-router.post('/save-convention/:id', function(req, res) {
-  var candidates = getCandidates();
-  var idx = candidates.findIndex(function(x){ return x.id === req.params.id; });
-  if (idx === -1) return res.status(404).json({ error: 'Not found' });
-  var existing = candidates[idx].conventionData || {};
-  candidates[idx].conventionData = Object.assign(existing, req.body);
-  saveCandidates(candidates);
-  res.json({ success: true });
-});
-
-router.post('/generate-convention/:id', function(req, res) {
-  var candidates = getCandidates();
-  var idx = candidates.findIndex(function(x){ return x.id === req.params.id; });
-  if (idx === -1) return res.status(404).json({ error: 'Not found' });
-  var c = candidates[idx];
-  var cd = c.conventionData || {};
-  var od = c.oralData || {};
-  var sendEmail = req.body && req.body.sendEmail !== false;
-  var path = require('path');
-  var execFile = require('child_process').execFile;
-  var crypto = require('crypto');
-  var signingToken = cd.signingToken || crypto.randomBytes(20).toString('hex');
-  var isCPF = cd.isCPF || false;
-  var tt = od.legalTrainingType || (isCPF ? 'CPF' : 'NON_CPF');
-  var tplKey = tt === 'CAJA' ? 'CAJA' : tt === 'E360' ? 'E360' : 'NON_CPF';
-  var data = {
-    candidateName: c.name || '',
-    civility: cd.civility || 'Madame',
-    companyName: c.company || '',
-    companySiret: cd.siret || '',
-    totalHours: String(od.totalHours || ''),
-    coachingHours: String(od.coachingHours || ''),
-    homeworkHours: String(od.homeworkHours || ''),
-    prereqLevel: (c.reportSummary || {}).overallLevel || '',
-    targetLevel: od.targetLevel || '',
-    location: 'A distance',
-    dateStart: cd.dateStart || '',
-    dateEnd: cd.dateEnd || '',
-    price: String(cd.price || ''),
-    signatory: cd.signatory || '',
-    signingToken: signingToken,
-    trainingType: tplKey,
-    trainingTitle: isCPF ? 'Communiquer en anglais professionnel - English 360 - Niveau B2' : 'Formation en Anglais Professionnel'
-  };
-  execFile('python3', ['/home/debian/fill_convention2.py', JSON.stringify(data)], { timeout: 90000 }, function(err, stdout, stderr) {
-    if (err) { console.error('fill_convention2 error:', stderr, stdout); return res.status(500).json({ error: 'Convention generation failed: ' + stderr }); }
-    var result;
-    try { result = JSON.parse(stdout.trim()); } catch(e) { return res.status(500).json({ error: 'Invalid fill_convention2 output' }); }
-    candidates[idx].conventionData = Object.assign(cd, { pdfPath: result.pdfPath, signingToken: signingToken, generatedAt: new Date().toISOString() });
-    saveCandidates(candidates);
-    var signingUrl = 'https://eval.linguaid.net/sign/' + signingToken;
-    var nodemailer = require('nodemailer');
-    var transporter = nodemailer.createTransport({ host: 'localhost', port: 25, secure: false, tls: { rejectUnauthorized: false } });
-    transporter.sendMail({
-      from: 'formation@linguaid.net',
-      to: c.email,
-      subject: 'Votre convention de formation - Linguaid',
-      html: '<p>Bonjour ' + (cd.civility||'Madame') + ' ' + c.name + ',</p><p>Veuillez signer votre convention en cliquant sur ce lien : <a href= + signingUrl + >' + signingUrl + '</a></p><p>Bien cordialement,<br>L equipe Linguaid France</p>'
-    }, function(mailErr) {
-      if (mailErr) console.error('Mail error:', mailErr);
-      res.json({ success: true, signingUrl: signingUrl, pdfPath: result.pdfPath });
-    });
-  });
-});
-
-
-router.post('/save-convention/:id', function(req, res) {
-  var candidates = getCandidates();
-  var idx = candidates.findIndex(function(x){ return x.id === req.params.id; });
-  if (idx === -1) return res.status(404).json({ error: 'Not found' });
-  var existing = candidates[idx].conventionData || {};
-  candidates[idx].conventionData = Object.assign(existing, req.body);
-  saveCandidates(candidates);
-  res.json({ success: true });
-});
-
-router.post('/generate-convention/:id', function(req, res) {
-  var candidates = getCandidates();
-  var idx = candidates.findIndex(function(x){ return x.id === req.params.id; });
-  if (idx === -1) return res.status(404).json({ error: 'Not found' });
-  var c = candidates[idx];
-  var cd = c.conventionData || {};
-  var od = c.oralData || {};
-  var sendEmail = req.body && req.body.sendEmail !== false;
-  var execFile = require('child_process').execFile;
-  var crypto = require('crypto');
-  var signingToken = cd.signingToken || crypto.randomBytes(20).toString('hex');
-  var isCPF = cd.isCPF || false;
-  var tt = od.legalTrainingType || (isCPF ? 'CPF' : 'NON_CPF');
-  var tplKey = tt === 'CAJA' ? 'CAJA' : tt === 'E360' ? 'E360' : 'NON_CPF';
-  var data = {
-    candidateName: c.name || '',
-    civility: cd.civility || 'Madame',
-    companyName: c.company || '',
-    companySiret: cd.siret || '',
-    totalHours: String(od.totalHours || ''),
-    coachingHours: String(od.coachingHours || ''),
-    homeworkHours: String(od.homeworkHours || ''),
-    prereqLevel: (c.reportSummary || {}).overallLevel || '',
-    targetLevel: od.targetLevel || '',
-    location: 'A distance',
-    dateStart: cd.dateStart || '',
-    dateEnd: cd.dateEnd || '',
-    price: String(cd.price || ''),
-    signatory: cd.signatory || '',
-    signingToken: signingToken,
-    trainingType: tplKey,
-    trainingTitle: isCPF ? 'Communiquer en anglais professionnel - English 360 - Niveau B2' : 'Formation en Anglais Professionnel'
-  };
-  execFile('python3', ['/home/debian/fill_convention2.py', JSON.stringify(data)], { timeout: 90000 }, function(err, stdout, stderr) {
-    if (err) { console.error('fill_convention2 error:', stderr, stdout); return res.status(500).json({ error: 'Convention generation failed: ' + stderr }); }
-    var result;
-    try { result = JSON.parse(stdout.trim()); } catch(e) { return res.status(500).json({ error: 'Invalid fill_convention2 output' }); }
-    if (result.success === false) return res.status(500).json({ error: result.error });
-    candidates[idx].conventionData = Object.assign(cd, { pdfPath: result.pdfPath, signingToken: signingToken, generatedAt: new Date().toISOString() });
-    saveCandidates(candidates);
-    if (sendEmail === false) return res.json({ success: true, pdfPath: result.pdfPath });
-    var signingUrl = 'https://eval.linguaid.net/sign/' + signingToken;
-    var nodemailer = require('nodemailer');
-    var transporter = nodemailer.createTransport({ host: 'localhost', port: 25, secure: false, tls: { rejectUnauthorized: false } });
-    transporter.sendMail({
-      from: 'formation@linguaid.net',
-      to: c.email,
-      subject: 'Votre convention de formation - Linguaid',
-      html: '<p>Bonjour ' + (cd.civility||'Madame') + ' ' + c.name + ',</p><p>Veuillez signer votre convention en cliquant sur ce lien : <a href="' + signingUrl + '">' + signingUrl + '</a></p><p>Bien cordialement,<br>L\'equipe Linguaid France</p>'
-    }, function(mailErr) {
-      if (mailErr) console.error('Mail error:', mailErr);
-      res.json({ success: true, signingUrl: signingUrl, pdfPath: result.pdfPath });
-    });
-  });
-});
-
-module.exports = router;
 // POST /api/save-convention/:id
 router.post('/save-convention/:id', function(req, res) {
   var candidates = getCandidates();
@@ -925,6 +789,19 @@ router.post('/generate-convention/:id', function(req, res) {
   var isCPF = cd.isCPF || false;
   var tt = od.legalTrainingType || (isCPF ? 'CPF' : 'NON_CPF');
   var tplKey = tt === 'CAJA' ? 'CAJA' : tt === 'E360' ? 'E360' : 'NON_CPF';
+  // Format dates as French string
+  var MONTHS_FR = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+  function fmtDateFr(iso) {
+    if (!iso) return '';
+    var d = new Date(iso);
+    return d.getUTCDate() + ' ' + MONTHS_FR[d.getUTCMonth()] + ' ' + d.getUTCFullYear();
+  }
+  var dateStr = '';
+  if (cd.dateStart && cd.dateEnd) {
+    dateStr = 'du ' + fmtDateFr(cd.dateStart) + ' au ' + fmtDateFr(cd.dateEnd);
+  } else if (cd.dateStart) {
+    dateStr = 'à partir du ' + fmtDateFr(cd.dateStart);
+  }
   var data = {
     candidateName: c.name || '',
     civility: cd.civility || 'Madame',
@@ -938,6 +815,7 @@ router.post('/generate-convention/:id', function(req, res) {
     location: 'A distance',
     dateStart: cd.dateStart || '',
     dateEnd: cd.dateEnd || '',
+    dateStr: dateStr,
     price: String(cd.price || ''),
     signatory: cd.signatory || '',
     signingToken: signingToken,
