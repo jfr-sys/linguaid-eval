@@ -1,0 +1,400 @@
+const express = require('express');
+const router = express.Router();
+const fs = require('fs');
+const path = require('path');
+const Anthropic = require('@anthropic-ai/sdk');
+const { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, BorderStyle, WidthType, ShadingType, Table, TableRow, TableCell, VerticalAlign, LevelFormat } = require('docx');
+
+const dataDir = path.join(__dirname, '../data');
+const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+function getCandidates() {
+  const file = path.join(dataDir, 'candidates.json');
+  if (!fs.existsSync(file)) return [];
+  return JSON.parse(fs.readFileSync(file, 'utf8'));
+}
+
+function saveCandidates(candidates) {
+  fs.writeFileSync(path.join(dataDir, 'candidates.json'), JSON.stringify(candidates, null, 2));
+}
+
+function markdownToDocx(text) {
+  const children = [];
+  const lines = text.split('\n');
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    
+    if (line.startsWith('## ')) {
+      children.push(new Paragraph({
+        heading: HeadingLevel.HEADING_2,
+        spacing: { before: 240, after: 120 },
+        children: [new TextRun({ text: line.replace('## ', ''), bold: true, size: 26, color: '1F4E79', font: 'Arial' })]
+      }));
+    } else if (line.startsWith('### ')) {
+      children.push(new Paragraph({
+        heading: HeadingLevel.HEADING_3,
+        spacing: { before: 160, after: 80 },
+        children: [new TextRun({ text: line.replace('### ', ''), bold: true, size: 22, color: '2E75B6', font: 'Arial' })]
+      }));
+    } else if (line.startsWith('# ')) {
+      children.push(new Paragraph({
+        heading: HeadingLevel.HEADING_1,
+        spacing: { before: 320, after: 160 },
+        children: [new TextRun({ text: line.replace('# ', ''), bold: true, size: 32, color: '1F4E79', font: 'Arial' })]
+      }));
+    } else if (line.startsWith('- ') || line.startsWith('* ')) {
+      const content = line.replace(/^[-*] /, '');
+      const runs = parseInline(content);
+      children.push(new Paragraph({
+        numbering: { reference: 'bullets', level: 0 },
+        spacing: { before: 40, after: 40 },
+        children: runs
+      }));
+    } else if (line.match(/^\d+\. /)) {
+      const content = line.replace(/^\d+\. /, '');
+      const runs = parseInline(content);
+      children.push(new Paragraph({
+        numbering: { reference: 'numbers', level: 0 },
+        spacing: { before: 40, after: 40 },
+        children: runs
+      }));
+    } else if (line.startsWith('---') || line.startsWith('***')) {
+      children.push(new Paragraph({
+        border: { bottom: { style: BorderStyle.SINGLE, size: 4, color: 'CCCCCC' } },
+        spacing: { before: 160, after: 160 },
+        children: [new TextRun('')]
+      }));
+    } else if (line.trim() === '') {
+      children.push(new Paragraph({ spacing: { before: 60, after: 60 }, children: [new TextRun('')] }));
+    } else {
+      const runs = parseInline(line);
+      children.push(new Paragraph({
+        spacing: { before: 60, after: 60 },
+        children: runs
+      }));
+    }
+  }
+  return children;
+}
+
+function parseInline(text) {
+  const runs = [];
+  const parts = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/);
+  for (const part of parts) {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      runs.push(new TextRun({ text: part.slice(2, -2), bold: true, font: 'Arial', size: 20 }));
+    } else if (part.startsWith('*') && part.endsWith('*')) {
+      runs.push(new TextRun({ text: part.slice(1, -1), italics: true, font: 'Arial', size: 20 }));
+    } else if (part.startsWith('`') && part.endsWith('`')) {
+      runs.push(new TextRun({ text: part.slice(1, -1), font: 'Courier New', size: 18, color: '334155' }));
+    } else if (part) {
+      runs.push(new TextRun({ text: part, font: 'Arial', size: 20 }));
+    }
+  }
+  return runs.length ? runs : [new TextRun({ text: '', font: 'Arial', size: 20 })];
+}
+
+function buildDocx(candidateName, reportText, language) {
+  const isEN = language === 'en';
+  const border = { style: BorderStyle.SINGLE, size: 4, color: 'AEC6CF' };
+  const borders = { top: border, bottom: border, left: border, right: border };
+
+  const headerRow = new Table({
+    width: { size: 9360, type: WidthType.DXA },
+    columnWidths: [6000, 3360],
+    rows: [new TableRow({
+      children: [
+        new TableCell({
+          borders: { top: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE } },
+          width: { size: 6000, type: WidthType.DXA },
+          children: [
+            new Paragraph({ children: [new TextRun({ text: 'LINGUAID FRANCE', bold: true, size: 28, color: '1F4E79', font: 'Arial' })] }),
+            new Paragraph({ children: [new TextRun({ text: isEN ? 'Professional English Language Assessment' : 'Évaluation Professionnelle en Langue Anglaise', size: 18, color: '666666', font: 'Arial' })] }),
+          ]
+        }),
+        new TableCell({
+          borders: { top: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE } },
+          width: { size: 3360, type: WidthType.DXA },
+          children: [
+            new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: isEN ? 'CONFIDENTIAL' : 'CONFIDENTIEL', size: 18, bold: true, color: 'C00000', font: 'Arial' })] }),
+            new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: new Date().toLocaleDateString(isEN ? 'en-GB' : 'fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }), size: 18, color: '666666', font: 'Arial' })] }),
+          ]
+        })
+      ]
+    })]
+  });
+
+  const titlePara = new Paragraph({
+    alignment: AlignmentType.CENTER,
+    spacing: { before: 400, after: 200 },
+    border: { bottom: { style: BorderStyle.SINGLE, size: 8, color: '1F4E79', space: 4 } },
+    children: [new TextRun({ text: isEN ? 'INITIAL ENGLISH LANGUAGE EVALUATION REPORT' : 'RAPPORT D\'ÉVALUATION INITIALE EN LANGUE ANGLAISE', bold: true, size: 36, color: '1F4E79', font: 'Arial' })]
+  });
+
+  const subtitlePara = new Paragraph({
+    alignment: AlignmentType.CENTER,
+    spacing: { before: 120, after: 400 },
+    children: [new TextRun({ text: candidateName, bold: true, size: 26, color: '2E75B6', font: 'Arial' })]
+  });
+
+  const legalNote = isEN ? '' : `\n\n---\n\n### Références réglementaires\n\nCe rapport a été établi conformément aux exigences du Cadre Commun Européen de Référence pour les Langues (CECRL) et aux dispositions relatives à la formation professionnelle continue prévues aux articles L.6313-1 et suivants du Code du travail. L'évaluation des besoins constitue un acte pédagogique préalable à toute action de formation linguistique professionnelle.\n\n**Organisme de formation :** Linguaid France SAS\n**Numéro de déclaration d'activité :** 91 66 01 620 66\n**Enregistrement :** Cet enregistrement ne vaut pas agrément de l'État.\n\n*Ce document est confidentiel et destiné exclusivement à l'entreprise commanditaire et au stagiaire concerné.*`;
+
+  const bodyContent = markdownToDocx(reportText + legalNote);
+
+  return new Document({
+    numbering: {
+      config: [
+        { reference: 'bullets', levels: [{ level: 0, format: LevelFormat.BULLET, text: '•', alignment: AlignmentType.LEFT, style: { paragraph: { indent: { left: 720, hanging: 360 } } } }] },
+        { reference: 'numbers', levels: [{ level: 0, format: LevelFormat.DECIMAL, text: '%1.', alignment: AlignmentType.LEFT, style: { paragraph: { indent: { left: 720, hanging: 360 } } } }] },
+      ]
+    },
+    styles: {
+      default: { document: { run: { font: 'Arial', size: 20, color: '1A1A1A' } } }
+    },
+    sections: [{
+      properties: {
+        page: {
+          size: { width: 11906, height: 16838 },
+          margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 }
+        }
+      },
+      children: [headerRow, titlePara, subtitlePara, ...bodyContent]
+    }]
+  });
+}
+
+router.post('/generate-written/:id', async (req, res) => {
+  const candidates = getCandidates();
+  const idx = candidates.findIndex(c => c.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: 'Not found' });
+  const c = candidates[idx];
+
+  const prompt = `You are an expert English language evaluator for Linguaid France. Generate a detailed Initial English Language Evaluation Report based on the following written placement test data.
+
+CANDIDATE:
+Name: ${c.name}
+Email: ${c.email}
+Department: ${c.dept}
+Job Title: ${c.jobtitle}
+Test Date: ${c.testdate}
+
+TEST SCORES:
+Total MCQ Score: ${c.scores.total}/${c.scores.max} (${Math.round(100 * c.scores.total / c.scores.max)}%)
+
+FREE WRITING RESPONSES:
+Q39 (Current life/work): ${c.freewriting.q39}
+Q40 (Hometown): ${c.freewriting.q40}
+Q41 (Future plans): ${c.freewriting.q41}
+
+SELF-REPORTED GOALS: ${c.goals.join('; ')}
+OTHER NEEDS: ${c.otherNeeds}
+AVAILABILITY: ${Object.entries(c.avail).map(([d,v]) => v ? d+': '+v : '').filter(Boolean).join(', ')}
+
+Write a comprehensive report in English covering:
+1. Overall CEFR level (based on MCQ score: 87%+=B2, 73%+=B1+, 60%+=B1, 47%+=A2+, 33%+=A2, below=A1)
+2. Skill Assessment Overview (Grammar MCQ, Writing, Reading/Vocabulary, Overall)
+3. Detailed Grammar analysis — what they got right, specific gaps with examples from their answers
+4. Reading/Vocabulary assessment based on free writing quality
+5. Writing assessment — analyse each free writing response in detail
+6. Strengths
+7. Areas for Improvement
+8. Recommendations including target level, hours, and 3 Bloom's taxonomy learning objectives
+
+Format with markdown: ## for section headers, ### for subsections, **bold** for key terms, - for bullet points.
+
+After the report, add a clearly delimited JSON block:
+---SUMMARY_JSON---
+{
+  "grammarLevel": "B1",
+  "writingLevel": "B1+",
+  "readingLevel": "B1+",
+  "overallLevel": "B1",
+  "keyGaps": [
+    "Passive voice (are produced, was decided)",
+    "Conditional forms — 2nd and 3rd conditional",
+    "Future perfect (will have + past participle)",
+    "Discourse connectors — cause vs contrast (so/but)",
+    "Advanced phrasal verbs (get on, get away with, look up)"
+  ]
+}
+---END_SUMMARY_JSON---`;
+
+  try {
+    const message = await client.messages.create({
+      model: 'claude-opus-4-5',
+      max_tokens: 4000,
+      messages: [{ role: 'user', content: prompt }]
+    });
+
+    const fullText = message.content[0].text;
+    let reportSummary = null;
+    const jsonMatch = fullText.match(/---SUMMARY_JSON---\s*([\s\S]*?)\s*---END_SUMMARY_JSON---/);
+    if (jsonMatch) {
+      try { reportSummary = JSON.parse(jsonMatch[1]); } catch(e) { console.error('JSON parse error:', e); }
+    }
+    const cleanReport = fullText.replace(/---SUMMARY_JSON---[\s\S]*?---END_SUMMARY_JSON---/, '').trim();
+
+    candidates[idx].writtenReport = cleanReport;
+    candidates[idx].reportSummary = reportSummary;
+    candidates[idx].status = 'written_report_done';
+    saveCandidates(candidates);
+
+    res.json({ success: true, report: cleanReport, summary: reportSummary });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/generate-final/:id', async (req, res) => {
+  const candidates = getCandidates();
+  const idx = candidates.findIndex(c => c.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: 'Not found' });
+  const c = candidates[idx];
+
+  if (!c.writtenReport || !c.oralData) {
+    return res.status(400).json({ error: 'Missing written report or oral assessment data' });
+  }
+
+  const oral = c.oralData;
+  const summary = c.reportSummary || {};
+  const validatedGoals = (oral.validatedGoals || []).map(g => `${g.goal} [${g.status}]`).join('\n');
+  const validatedAvail = (oral.validatedAvail || []).map(a => `${a.day} ${a.time} [${a.status}]`).join(', ');
+
+  const prompt = `You are an expert English language evaluator for Linguaid France. Generate a complete Final English Language Evaluation Report combining written test results and oral assessment.
+
+CANDIDATE:
+Name: ${c.name}
+Email: ${c.email}
+Department: ${c.dept}
+Job Title: ${c.jobtitle}
+Written Test Date: ${c.testdate}
+Oral Session Date: ${oral.sessionDate || ''}
+Evaluator: ${oral.evaluator || ''}
+
+WRITTEN TEST SUMMARY:
+Grammar Level: ${summary.grammarLevel || ''}
+Writing Level: ${summary.writingLevel || ''}
+Reading Level: ${summary.readingLevel || ''}
+Overall Written Level: ${summary.overallLevel || ''}
+Key Grammar Gaps: ${(summary.keyGaps || []).join('; ')}
+
+FULL WRITTEN REPORT:
+${c.writtenReport}
+
+ORAL ASSESSMENT:
+Listening Level: ${oral.listeningLevel || ''}
+Speaking Level: ${oral.speakingLevel || ''}
+Speaking Criteria:
+${Object.entries(oral.criteria || {}).map(([k,v]) => `  ${k}: ${v}`).join('\n')}
+Listening Observations: ${oral.listeningObs || ''}
+Speaking Observations: ${oral.speakingObs || ''}
+
+VALIDATED GOALS:
+${validatedGoals}
+Goals Notes: ${oral.goalsNotes || ''}
+
+VALIDATED AVAILABILITY: ${validatedAvail}
+Confirmed Format: ${oral.confirmedFormat || ''}
+Scheduling Notes: ${oral.schedNotes || ''}
+
+EVALUATOR NOTES:
+Professional Context: ${oral.contextObs || ''}
+Learning Priorities: ${oral.prioritiesObs || ''}
+Strengths: ${oral.strengths || ''}
+Key Gaps: ${oral.gaps || ''}
+Learner Profile: ${oral.profile || ''}
+
+TRAINING PLAN:
+Target Level: ${oral.targetLevel || ''}
+Total Hours: ${oral.totalHours || ''}
+Coaching Hours: ${oral.coachingHours || ''}
+Homework Hours: ${oral.homeworkHours || ''}
+Additional Notes: ${oral.additionalNotes || ''}
+
+Generate a complete professional Final Evaluation Report with markdown formatting (## headers, ### subheaders, **bold**, - bullets) covering:
+1. Executive summary with overall CEFR level across all 5 skills
+2. Skill-by-skill assessment (Reading, Writing, Grammar, Listening, Speaking) with strengths and development areas
+3. Exactly 3 operational learning objectives using Bloom's taxonomy action verbs
+4. Training plan with hours breakdown, priority content areas, and confirmed scheduling
+5. Professional evaluator narrative summary
+6. Sign-off block with evaluator name, dates, and Linguaid France details`;
+
+  try {
+    const message = await client.messages.create({
+      model: 'claude-opus-4-5',
+      max_tokens: 5000,
+      messages: [{ role: 'user', content: prompt }]
+    });
+
+    const report = message.content[0].text;
+    candidates[idx].finalReport = report;
+    candidates[idx].status = 'final_report_done';
+    saveCandidates(candidates);
+
+    res.json({ success: true, report });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/download/:id/:lang', async (req, res) => {
+  const candidates = getCandidates();
+  const c = candidates.find(cand => cand.id === req.params.id);
+  if (!c) return res.status(404).json({ error: 'Not found' });
+
+  const lang = req.params.lang;
+  const isEN = lang === 'en';
+
+  let reportText = c.finalReport;
+  if (!reportText) return res.status(400).json({ error: 'No final report generated yet' });
+
+  if (!isEN) {
+    try {
+      const message = await client.messages.create({
+        model: 'claude-opus-4-5',
+        max_tokens: 6000,
+        messages: [{
+          role: 'user',
+          content: `Translate and adapt the following English language evaluation report into French for a French professional and regulatory context.
+
+Rules:
+- Translate fully into professional French
+- Replace "CEFR" with "CECRL" throughout
+- Replace "Bloom's taxonomy" with "taxonomie de Bloom de Bloom"
+- Use French educational terminology: "compétences", "objectifs pédagogiques", "stagiaire", "formateur", "action de formation"
+- Replace "coaching hours" with "heures d'accompagnement individuel"
+- Replace "homework" with "travail personnel / autoformation"
+- Keep all proper nouns (names, company names, Linguaid) unchanged
+- Keep all CEFR/CECRL level codes (A1, B1, B2 etc.) unchanged
+- Maintain the same markdown formatting (##, ###, **, -, numbers)
+- Adapt any cultural references to French professional context
+- The tone should be formal and suitable for a French audit or OPCO submission
+
+Report to translate:
+${reportText}`
+        }]
+      });
+      reportText = message.content[0].text;
+    } catch (err) {
+      console.error('Translation error:', err);
+      return res.status(500).json({ error: 'Translation failed: ' + err.message });
+    }
+  }
+
+  try {
+    const doc = buildDocx(c.name, reportText, lang);
+    const buffer = await Packer.toBuffer(doc);
+    const filename = `Linguaid_Evaluation_${c.name.replace(/\s+/g, '_')}_${isEN ? 'EN' : 'FR'}.docx`;
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(buffer);
+  } catch (err) {
+    console.error('DOCX error:', err);
+    res.status(500).json({ error: 'Document generation failed: ' + err.message });
+  }
+});
+
+module.exports = router;

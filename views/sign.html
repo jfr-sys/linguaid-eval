@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Signer votre convention de formation — Linguaid</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f5f6fa;
+      color: #222;
+      min-height: 100vh;
+    }
+    .header {
+      background: #001691;
+      color: white;
+      padding: 18px 32px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .header h1 { font-size: 1.1rem; font-weight: 600; }
+    .header p  { font-size: 0.85rem; opacity: 0.8; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 32px 20px 60px; }
+
+    .card {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      padding: 28px 32px;
+      margin-bottom: 24px;
+    }
+    .card h2 { font-size: 1rem; font-weight: 600; margin-bottom: 16px; color: #001691; }
+
+    /* PDF viewer */
+    #pdf-frame {
+      width: 100%;
+      height: 900px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+    }
+    .pdf-note {
+      font-size: 0.8rem;
+      color: #666;
+      margin-top: 8px;
+    }
+
+    /* Typed name */
+    label { display: block; font-size: 0.9rem; font-weight: 500; margin-bottom: 6px; }
+    input[type=text] {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1.5px solid #ddd;
+      border-radius: 6px;
+      font-size: 1rem;
+      transition: border-color 0.2s;
+    }
+    input[type=text]:focus { outline: none; border-color: #001691; }
+
+    /* Signature pad */
+    .sig-container {
+      border: 1.5px solid #ddd;
+      border-radius: 6px;
+      background: #fafafa;
+      position: relative;
+      margin-top: 8px;
+    }
+    #sig-canvas {
+      display: block;
+      width: 100%;
+      height: 160px;
+      cursor: crosshair;
+      touch-action: none;
+    }
+    .sig-placeholder {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #bbb;
+      font-size: 0.9rem;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    .sig-actions {
+      display: flex;
+      justify-content: flex-end;
+      padding: 8px 10px 6px;
+      border-top: 1px solid #eee;
+    }
+    .btn-clear {
+      background: none;
+      border: 1px solid #ccc;
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      color: #555;
+    }
+    .btn-clear:hover { border-color: #999; color: #222; }
+
+    /* Checkbox */
+    .checkbox-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 0.9rem;
+      line-height: 1.4;
+    }
+    .checkbox-row input { margin-top: 3px; flex-shrink: 0; width: 16px; height: 16px; cursor: pointer; }
+
+    /* Submit button */
+    #btn-submit {
+      width: 100%;
+      padding: 14px;
+      background: #001691;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, opacity 0.2s;
+    }
+    #btn-submit:hover  { background: #0020c4; }
+    #btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Status */
+    #status {
+      text-align: center;
+      padding: 12px;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      display: none;
+    }
+    #status.error   { background: #fff0f0; color: #c00; display: block; }
+    #status.loading { background: #f0f4ff; color: #001691; display: block; }
+    #status.success { background: #f0fff4; color: #1a7a3a; display: block; font-size: 1rem; font-weight: 600; }
+
+    /* Success screen */
+    #success-screen {
+      display: none;
+      text-align: center;
+      padding: 40px 20px;
+    }
+    #success-screen .tick { font-size: 3rem; margin-bottom: 16px; }
+    #success-screen h2 { color: #1a7a3a; margin-bottom: 10px; }
+    #success-screen p  { color: #555; font-size: 0.95rem; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>Linguaid — Convention de formation</h1>
+    <p>Signature électronique</p>
+  </div>
+</div>
+
+<div class="container">
+
+  <div id="main-form">
+
+    <!-- Step 1: PDF preview -->
+    <div class="card">
+      <h2>📄 Votre convention de formation</h2>
+      <embed id="pdf-frame" src="" type="application/pdf" />
+      <p class="pdf-note">Veuillez lire attentivement votre convention avant de signer.</p>
+    </div>
+
+    <!-- Step 2: Typed name -->
+    <div class="card">
+      <h2>✍️ Votre signature</h2>
+      <div style="margin-bottom:20px">
+        <label for="typed-name">Votre nom et prénom (tel qu'il apparaît sur la convention)</label>
+        <input type="text" id="typed-name" placeholder="ex. Anne-Laure Serre" autocomplete="name">
+      </div>
+
+      <label>Votre signature manuscrite</label>
+      <div class="sig-container">
+        <canvas id="sig-canvas"></canvas>
+        <span class="sig-placeholder" id="sig-placeholder">Signez ici avec votre souris ou votre doigt</span>
+        <div class="sig-actions">
+          <button class="btn-clear" id="btn-clear">Effacer</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 3: Consent + submit -->
+    <div class="card">
+      <div class="checkbox-row" style="margin-bottom:20px">
+        <input type="checkbox" id="consent">
+        <label for="consent" style="font-weight:400">
+          Je reconnais avoir lu et accepté les termes de la convention de formation ci-dessus,
+          et je confirme que ma signature électronique a la même valeur juridique qu'une signature manuscrite
+          conformément au règlement eIDAS.
+        </label>
+      </div>
+      <button id="btn-submit" disabled>Signer la convention</button>
+      <div id="status"></div>
+    </div>
+
+  </div>
+
+  <!-- Success screen -->
+  <div class="card" id="success-screen">
+    <div class="tick">✅</div>
+    <h2>Convention signée avec succès</h2>
+    <p>Votre signature a bien été enregistrée. Linguaid France SAS vous enverra une copie du document signé.</p>
+    <p style="margin-top:12px; color:#aaa; font-size:0.8rem" id="sign-timestamp"></p>
+  </div>
+
+</div>
+
+<script>
+  const token = window.location.pathname.split('/sign/')[1]?.replace(/\/$/, '');
+
+  // Load candidate info and set PDF src
+  fetch(`/sign/${token}/info`)
+    .then(r => r.json())
+    .then(info => {
+      if (info.alreadySigned) {
+        document.getElementById('main-form').innerHTML =
+          '<div class="card" style="text-align:center;padding:40px"><div style="font-size:2rem">✅</div><h2 style="color:#1a7a3a;margin:12px 0">Déjà signé</h2><p>Cette convention a déjà été signée. Vous pouvez fermer cette fenêtre.</p></div>';
+        return;
+      }
+      const frame = document.getElementById('pdf-frame');
+      frame.src = `/sign/${token}/pdf`;
+      // Force Chrome to show single-page view
+      frame.src = `/sign/${token}/pdf#toolbar=1&navpanes=0&scrollbar=1&view=FitH`;
+    })
+    .catch(() => {
+      document.getElementById('main-form').innerHTML =
+        '<div class="card"><p style="color:#c00">Lien invalide ou expiré.</p></div>';
+    });
+
+  // ── Signature pad ──
+  const canvas  = document.getElementById('sig-canvas');
+  const ctx     = canvas.getContext('2d');
+  const placeholder = document.getElementById('sig-placeholder');
+  let drawing = false, hasSig = false;
+
+  function resizeCanvas() {
+    const rect = canvas.getBoundingClientRect();
+    const dpr  = window.devicePixelRatio || 1;
+    canvas.width  = rect.width  * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.scale(dpr, dpr);
+    ctx.strokeStyle = '#1a1a2e';
+    ctx.lineWidth   = 2;
+    ctx.lineCap     = 'round';
+    ctx.lineJoin    = 'round';
+  }
+  resizeCanvas();
+  window.addEventListener('resize', () => { resizeCanvas(); hasSig = false; });
+
+  function getPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    const src  = e.touches ? e.touches[0] : e;
+    return { x: src.clientX - rect.left, y: src.clientY - rect.top };
+  }
+
+  canvas.addEventListener('mousedown',  e => { drawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); });
+  canvas.addEventListener('mousemove',  e => { if (!drawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); hasSig = true; placeholder.style.opacity = '0'; });
+  canvas.addEventListener('mouseup',    () => { drawing = false; updateSubmit(); });
+  canvas.addEventListener('mouseleave', () => { drawing = false; });
+
+  canvas.addEventListener('touchstart', e => { e.preventDefault(); drawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); }, { passive: false });
+  canvas.addEventListener('touchmove',  e => { e.preventDefault(); if (!drawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); hasSig = true; placeholder.style.opacity = '0'; }, { passive: false });
+  canvas.addEventListener('touchend',   () => { drawing = false; updateSubmit(); });
+
+  document.getElementById('btn-clear').addEventListener('click', () => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    hasSig = false;
+    placeholder.style.opacity = '1';
+    updateSubmit();
+  });
+
+  // ── Form validation ──
+  const typedInput = document.getElementById('typed-name');
+  const consent    = document.getElementById('consent');
+  const btnSubmit  = document.getElementById('btn-submit');
+
+  function updateSubmit() {
+    const ready = typedInput.value.trim().length > 2 && hasSig && consent.checked;
+    btnSubmit.disabled = !ready;
+  }
+  typedInput.addEventListener('input', updateSubmit);
+  consent.addEventListener('change', updateSubmit);
+
+  // ── Submit ──
+  btnSubmit.addEventListener('click', async () => {
+    const typedName    = typedInput.value.trim();
+    const signatureImg = canvas.toDataURL('image/png');
+    const status       = document.getElementById('status');
+
+    btnSubmit.disabled = true;
+    status.className   = 'loading';
+    status.textContent = 'Enregistrement de votre signature…';
+
+    try {
+      const resp = await fetch(`/sign/${token}/submit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ typedName, signatureImg }),
+      });
+      const data = await resp.json();
+
+      if (!resp.ok || !data.success) {
+        throw new Error(data.error || 'Erreur serveur');
+      }
+
+      // Show success
+      status.style.display = 'none';
+      document.getElementById('main-form').style.display    = 'none';
+      document.getElementById('success-screen').style.display = 'block';
+      document.getElementById('sign-timestamp').textContent =
+        `Signé le ${new Date().toLocaleString('fr-FR')} — ${typedName}`;
+
+    } catch (err) {
+      status.className   = 'error';
+      status.textContent = `Erreur : ${err.message}. Veuillez réessayer ou contacter Linguaid.`;
+      btnSubmit.disabled = false;
+    }
+  });
+</script>
+</body>
+</html>

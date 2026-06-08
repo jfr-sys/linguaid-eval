@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Linguaid — Programme de formation</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f0f4f8; min-height: 100vh; }
+  .nav { background: #1F4E79; color: white; padding: 0 2rem; height: 56px; display: flex; align-items: center; justify-content: space-between; }
+  .nav-logo { font-size: 18px; font-weight: 700; }
+  .nav-right a { color: rgba(255,255,255,0.8); text-decoration: none; font-size: 13px; }
+  .container { max-width: 800px; margin: 0 auto; padding: 2rem; }
+  .back { font-size: 13px; color: #666; text-decoration: none; display: inline-block; margin-bottom: 1rem; }
+  .card { background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 1rem; }
+  h2 { font-size: 20px; font-weight: 700; color: #1F4E79; margin-bottom: 0.5rem; }
+  .section-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: #94a3b8; margin-bottom: 0.75rem; }
+  label { font-size: 13px; color: #475569; display: block; margin-bottom: 4px; margin-top: 14px; font-weight: 500; }
+  input, select, textarea { width: 100%; padding: 9px 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; outline: none; font-family: inherit; color: #1a1a1a; }
+  input:focus, select:focus, textarea:focus { border-color: #2E75B6; }
+  textarea { resize: vertical; min-height: 80px; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .toggle-row { display: flex; align-items: center; gap: 12px; padding: 1rem; background: #eff6ff; border-radius: 10px; border: 1px solid #bfdbfe; margin-bottom: 1rem; }
+  .toggle-label { font-size: 14px; font-weight: 600; color: #1e40af; flex: 1; }
+  .toggle-sub { font-size: 12px; color: #3b82f6; margin-top: 2px; }
+  .toggle { position: relative; width: 48px; height: 26px; }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #cbd5e1; border-radius: 26px; transition: 0.3s; }
+  .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: 0.3s; }
+  input:checked + .slider { background: #1F4E79; }
+  input:checked + .slider:before { transform: translateX(22px); }
+  .topics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+  .topic-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid #e2e8f0; border-radius: 8px; cursor: pointer; transition: all 0.12s; }
+  .topic-item:hover { border-color: #2E75B6; background: #eff6ff; }
+  .topic-item.selected { border-color: #1F4E79; background: #dbeafe; }
+  .topic-item input[type=checkbox] { width: auto; margin: 0; cursor: pointer; }
+  .topic-item label { font-size: 13px; color: #334155; cursor: pointer; margin: 0; font-weight: normal; }
+  .cpf-only { display: none; }
+  .cpf-only.show { display: block; }
+  .cpf-badge { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; border-radius: 6px; padding: 3px 10px; font-size: 12px; font-weight: 600; display: inline-block; margin-left: 8px; }
+  .info-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
+  .info-row:last-child { border-bottom: none; }
+  .info-label { color: #64748b; font-weight: 500; }
+  .info-value { color: #1a1a1a; font-weight: 600; }
+  .btn { padding: 10px 22px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; border: none; font-family: inherit; transition: opacity 0.15s; }
+  .btn-primary { background: #1F4E79; color: white; }
+  .btn-primary:hover { opacity: 0.88; }
+  .btn-success { background: #10b981; color: white; }
+  .btn-row { display: flex; justify-content: space-between; margin-top: 1.5rem; }
+  .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.4); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .warning { background: #fef3c7; border: 1px solid #fcd34d; border-radius: 8px; padding: 0.75rem 1rem; font-size: 13px; color: #92400e; margin-top: 8px; }
+</style>
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-logo">linguaid eval</div>
+  <div class="nav-right"><a href="/logout">Sign out</a></div>
+</nav>
+<div class="container">
+  <a href="#" class="back" id="backLink">← Retour au dossier</a>
+
+  <div class="card">
+    <div class="section-label">Informations candidat</div>
+    <div id="candidateInfo"></div>
+  </div>
+
+  <div class="toggle-row">
+    <div>
+      <div class="toggle-label">Formation CPF <span class="cpf-badge">RS6341</span></div>
+      <div class="toggle-sub">English 360 — certification incluse</div>
+    </div>
+    <label class="toggle">
+      <input type="checkbox" id="cpfToggle" onchange="toggleCPF()">
+      <span class="slider"></span>
+    </label>
+  </div>
+
+  <div class="card">
+    <div class="section-label">Titre et cadre de la formation</div>
+    <div class="info-row">
+      <span class="info-label">Intitulé</span>
+      <span class="info-value" id="trainingTitle">Formation en Anglais Professionnel</span>
+    </div>
+    <div class="info-row">
+      <span class="info-label">Niveau prérequis</span>
+      <span class="info-value" id="prereqLevel">—</span>
+    </div>
+    <div class="info-row">
+      <span class="info-label">Objectif de niveau</span>
+      <span class="info-value" id="targetLevel">—</span>
+    </div>
+    <div class="info-row">
+      <span class="info-label">Durée totale</span>
+      <span class="info-value" id="totalHours">—</span>
+    </div>
+    <div class="info-row">
+      <span class="info-label">Modalité</span>
+      <span class="info-value" id="deliveryMode">—</span>
+    </div>
+    <div id="cpfWarning" class="warning" style="display:none">
+      ⚠ Attention : La certification English 360 (RS6341) requiert un niveau minimum A2+. Vérifiez l'éligibilité du candidat.
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-label">Dates et lieu</div>
+    <div class="two-col">
+      <div>
+        <label>Date de début</label>
+        <input type="date" id="dateStart">
+      </div>
+      <div>
+        <label>Date de fin</label>
+        <input type="date" id="dateEnd">
+      </div>
+    </div>
+    <label>Lieu</label>
+    <select id="location">
+      <option value="A distance">À distance</option>
+      <option value="En présentiel">En présentiel</option>
+      <option value="Hybride (présentiel et distanciel)">Hybride</option>
+    </select>
+  </div>
+
+  <div class="card">
+    <div class="section-label">Contenu de la formation</div>
+    <p style="font-size:13px;color:#64748b;margin-bottom:1rem">Sélectionnez les thèmes à inclure dans le programme :</p>
+
+    <div class="topics-grid" id="topicsGrid"></div>
+
+    <div class="cpf-only" id="cpfTopics">
+      <div style="margin-top:1rem;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:#92400e;margin-bottom:8px">Préparation certification English 360 <span class="cpf-badge">CPF</span></div>
+      <div class="topics-grid" id="cpfTopicsGrid"></div>
+    </div>
+
+    <label style="margin-top:1rem">Thèmes supplémentaires (optionnel)</label>
+    <textarea id="customTopics" placeholder="Ajoutez des thèmes spécifiques au secteur ou au poste du candidat..." style="min-height:60px"></textarea>
+  </div>
+
+  <div class="card">
+    <div class="section-label">Objectifs pédagogiques</div>
+    <p style="font-size:13px;color:#64748b;margin-bottom:1rem">Pré-remplis depuis le rapport final. Vous pouvez les modifier.</p>
+    <div id="objectivesContainer"></div>
+    <button onclick="addObjective()" style="margin-top:8px;font-size:12px;padding:6px 14px;border-radius:6px;border:1px solid #cbd5e1;background:white;cursor:pointer;font-family:inherit">+ Ajouter un objectif</button>
+  </div>
+
+  <div class="card">
+    <div class="section-label">Notes complémentaires</div>
+    <textarea id="additionalNotes" placeholder="Informations complémentaires, précisions sur le contexte professionnel..." style="min-height:80px"></textarea>
+  </div>
+
+  <div class="btn-row">
+    <a href="#" class="btn btn-primary" id="backBtn">← Retour</a>
+    <button class="btn btn-success" id="generateBtn" onclick="generateProgramme()">Générer le programme ⬇</button>
+  </div>
+</div>
+
+<script>
+var STANDARD_TOPICS = [
+  "Se présenter", "Small talk", "Téléphoner", "Emails professionnels",
+  "Réunions et visioconférences", "Présentations orales", "Négociation",
+  "Anglais juridique", "Anglais RH", "Gestion de projet",
+  "Rapports et comptes rendus", "Service client"
+];
+var CPF_TOPICS = [
+  "Compréhension orale (listening)", "Expression orale (speaking)",
+  "Compréhension écrite (reading)", "Expression écrite (writing)",
+  "Grammaire et vocabulaire ciblés", "Entraînement aux exercices de certification",
+  "Simulation d'examen blanc"
+];
+
+var candData = null;
+var objectives = [];
+var id = window.location.pathname.split("/")[2];
+
+document.getElementById("backLink").href = "/candidates/" + id;
+document.getElementById("backBtn").href = "/candidates/" + id;
+
+fetch("/candidates/api/" + id)
+  .then(r => r.json())
+  .then(function(c) {
+    candData = c;
+    var rs = c.finalReportSummary || c.reportSummary || {};
+    var oral = c.oralData || {};
+
+    document.getElementById("candidateInfo").innerHTML =
+      '<div class="info-row"><span class="info-label">Candidat</span><span class="info-value">' + c.name + '</span></div>' +
+      '<div class="info-row"><span class="info-label">Poste</span><span class="info-value">' + (c.jobtitle||"—") + '</span></div>' +
+      '<div class="info-row"><span class="info-label">Entreprise</span><span class="info-value">' + (c.dept||"—") + '</span></div>';
+
+    document.getElementById("prereqLevel").textContent = rs.overallLevel || "—";
+    document.getElementById("targetLevel").textContent = oral.targetLevel || "—";
+
+    var coaching = oral.coachingHours || "—";
+    var homework = oral.homeworkHours || "—";
+    var total = oral.totalHours || "—";
+    document.getElementById("totalHours").textContent = total + " heures (" + coaching + "h coaching + " + homework + "h travail autonome)";
+    document.getElementById("deliveryMode").textContent = oral.confirmedFormat || "À distance";
+
+    // Extract objectives from final report
+    var report = c.finalReport || "";
+    var objSection = report.match(/##\s*Learning Objectives[\s\S]*?(?=##|$)/i);
+    if (objSection) {
+      var matches = objSection[0].match(/^\d+\.\s+.+|^-\s+.+/gm);
+      if (matches) {
+        objectives = matches.map(function(m) { return m.replace(/^[\d\.\-\s]+/, "").trim(); }).filter(Boolean).slice(0,5);
+      }
+    }
+    if (!objectives.length) {
+      objectives = [
+        "Développer ses compétences en anglais sur les quatre dimensions du CECRL : compréhension écrite et orale, expression écrite et orale",
+        "Comprendre des échanges professionnels en anglais et interagir avec des interlocuteurs internationaux",
+        "S'exprimer avec plus de fluidité et de précision à l'oral dans des situations professionnelles courantes"
+      ];
+    }
+    renderObjectives();
+    renderTopics();
+
+    // Check CPF warning
+    var level = rs.overallLevel || "";
+    if (["A1-","A1","A2"].includes(level)) {
+      document.getElementById("cpfWarning").style.display = "block";
+    }
+  });
+
+function renderObjectives() {
+  var c = document.getElementById("objectivesContainer");
+  c.innerHTML = objectives.map(function(o, i) {
+    return '<div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:8px">' +
+      '<span style="background:#dbeafe;color:#1e40af;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0;margin-top:2px">' + (i+1) + '</span>' +
+      '<textarea onchange="objectives[' + i + ']=this.value" style="min-height:60px;font-size:13px">' + o + '</textarea>' +
+      '<button onclick="objectives.splice(' + i + ',1);renderObjectives()" style="padding:4px 8px;border-radius:6px;border:1px solid #fca5a5;background:#fee2e2;color:#991b1b;cursor:pointer;font-family:inherit;flex-shrink:0">✕</button>' +
+      '</div>';
+  }).join("");
+}
+
+function addObjective() {
+  objectives.push("");
+  renderObjectives();
+}
+
+function renderTopics() {
+  var g = document.getElementById("topicsGrid");
+  g.innerHTML = STANDARD_TOPICS.map(function(t) {
+    return '<div class="topic-item" onclick="toggleTopic(this)">' +
+      '<input type="checkbox" onchange="this.parentElement.classList.toggle('selected',this.checked)">' +
+      '<label>' + t + '</label></div>';
+  }).join("");
+  var cg = document.getElementById("cpfTopicsGrid");
+  cg.innerHTML = CPF_TOPICS.map(function(t) {
+    return '<div class="topic-item selected" onclick="toggleTopic(this)">' +
+      '<input type="checkbox" checked onchange="this.parentElement.classList.toggle('selected',this.checked)">' +
+      '<label>' + t + '</label></div>';
+  }).join("");
+}
+
+function toggleTopic(el) {
+  var cb = el.querySelector("input");
+  cb.checked = !cb.checked;
+  el.classList.toggle("selected", cb.checked);
+}
+
+function toggleCPF() {
+  var isCPF = document.getElementById("cpfToggle").checked;
+  var title = isCPF
+    ? "Communiquer en anglais professionnel – English 360 – Niveau " + (document.getElementById("targetLevel").textContent || "B2")
+    : "Formation en Anglais Professionnel";
+  document.getElementById("trainingTitle").textContent = title;
+  var cpfEl = document.getElementById("cpfTopics");
+  cpfEl.classList.toggle("show", isCPF);
+}
+
+function getSelectedTopics() {
+  var topics = [];
+  document.querySelectorAll(".topic-item.selected label").forEach(function(l) { topics.push(l.textContent); });
+  return topics;
+}
+
+function generateProgramme() {
+  var btn = document.getElementById("generateBtn");
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Génération en cours…';
+
+  var isCPF = document.getElementById("cpfToggle").checked;
+  var rs = (candData.finalReportSummary || candData.reportSummary || {});
+  var oral = candData.oralData || {};
+
+  var payload = {
+    isCPF: isCPF,
+    trainingTitle: document.getElementById("trainingTitle").textContent,
+    prereqLevel: rs.overallLevel || "—",
+    targetLevel: oral.targetLevel || "—",
+    totalHours: oral.totalHours || "—",
+    coachingHours: oral.coachingHours || "—",
+    homeworkHours: oral.homeworkHours || "—",
+    location: document.getElementById("location").value,
+    dateStart: document.getElementById("dateStart").value,
+    dateEnd: document.getElementById("dateEnd").value,
+    objectives: objectives,
+    topics: getSelectedTopics(),
+    customTopics: document.getElementById("customTopics").value,
+    additionalNotes: document.getElementById("additionalNotes").value,
+    candidateName: candData.name,
+    jobtitle: candData.jobtitle,
+    dept: candData.dept,
+    confirmedFormat: oral.confirmedFormat || "À distance"
+  };
+
+  window.location.href = "/api/generate-programme/" + id + "?" + new URLSearchParams({data: JSON.stringify(payload)});
+  setTimeout(function() {
+    btn.disabled = false;
+    btn.innerHTML = "Générer le programme ⬇";
+  }, 8000);
+}
+</script>
+</body>
+</html>

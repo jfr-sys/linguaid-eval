@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Linguaid Eval — Candidates</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f4f8; min-height: 100vh; }
+  .nav { background: #1F4E79; color: white; padding: 0 2rem; height: 56px; display: flex; align-items: center; justify-content: space-between; }
+  .nav-logo { font-size: 18px; font-weight: 700; }
+  .nav-right { display: flex; align-items: center; gap: 1rem; font-size: 13px; }
+  .nav-right a { color: rgba(255,255,255,0.8); text-decoration: none; }
+  .container { max-width: 960px; margin: 0 auto; padding: 2rem; }
+  .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+  h1 { font-size: 22px; font-weight: 600; color: #1F4E79; }
+  .btn { background: #1F4E79; color: white; border: none; border-radius: 8px; padding: 9px 18px; font-size: 13px; font-weight: 500; cursor: pointer; text-decoration: none; display: inline-block; transition: opacity 0.15s; }
+  .btn:hover { opacity: 0.88; }
+  .card { background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; padding: 12px 16px; font-size: 12px; font-weight: 600; color: #666; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #f0f0f0; background: #fafafa; }
+  td { padding: 14px 16px; font-size: 14px; border-bottom: 1px solid #f5f5f5; vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #fafafa; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; }
+  .badge-csv { background: #e0e7ff; color: #3730a3; }
+  .badge-written { background: #d1fae5; color: #065f46; }
+  .badge-oral { background: #fef3c7; color: #92400e; }
+  .badge-final { background: #dbeafe; color: #1e40af; }
+  .name-link { color: #1F4E79; text-decoration: none; font-weight: 500; }
+  .name-link:hover { text-decoration: underline; }
+  .empty { text-align: center; padding: 3rem; color: #999; font-size: 14px; }
+</style>
+</head>
+<body>
+<nav class="nav">
+  <a href="/candidates" class="nav-logo" style="display:flex;align-items:center;gap:16px;text-decoration:none;color:white"><div style="background:white;border-radius:6px;padding:4px 10px;display:flex;align-items:center"><img src="/linguaid_logo.png" style="height:32px;display:block" alt="Linguaid"></div><span style="font-size:15px;font-weight:600;letter-spacing:0.01em;color:white">English Evaluation System</span></a>
+  <div class="nav-right">
+    <span id="userName"></span>
+    <a href="/logout">Sign out</a>
+  </div>
+</nav>
+<div class="container">
+  <div class="header">
+    <h1>Candidates</h1>
+    <div style="display:flex;gap:0.75rem;align-items:center">
+      <input type="text" id="searchBox" placeholder="Search candidates..." oninput="render()" style="font-size:13px;padding:8px 14px;border:1px solid #e2e8f0;border-radius:8px;width:220px;color:#334155;outline:none">
+      <a href="/candidates/new" class="btn" style="background:#475569">+ Business English</a>
+      <a href="/candidates/new-legal" class="btn" style="background:#C00000">+ Legal English</a>
+    </div>
+  </div>
+  <div class="card">
+    <table>
+      <thead>
+        <tr>
+          <th onclick="sortBy('name')" style="cursor:pointer;user-select:none">Name <span id="sort-name">↕</span></th>
+          <th onclick="sortBy('jobtitle')" style="cursor:pointer;user-select:none">Job Title <span id="sort-jobtitle">↕</span></th>
+          <th onclick="sortBy('testdate')" style="cursor:pointer;user-select:none">Test Date <span id="sort-testdate">↕</span></th>
+          <th onclick="sortBy('status')" style="cursor:pointer;user-select:none">Status <span id="sort-status">↕</span></th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="candidateList">
+        <tr><td colspan="5" class="empty">Loading...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+<script>
+  var all=[], sk='name', sd=1;
+  var SL={csv_uploaded:['CSV uploaded','badge-csv'],written_report_done:['Written done','badge-written'],oral_done:['Oral done','badge-oral'],final_report_done:['Final done','badge-final'],programme_done:['Programme done','badge-final']};
+  function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
+  function render(){
+    var tb=document.getElementById('candidateList');
+    var q=((document.getElementById('searchBox')||{}).value||'').toLowerCase();
+    var rows=all.filter(function(x){return ((x.name||'')+(x.jobtitle||'')+(x.company||'')+(x.status||'')).toLowerCase().indexOf(q)>-1;});
+    rows.sort(function(a,b){var x=(a[sk]||'').toLowerCase(),y=(b[sk]||'').toLowerCase();return x<y?-sd:x>y?sd:0;});
+    if(!rows.length){tb.innerHTML='<tr><td colspan="5" class="empty">'+(q?'No results.':'No candidates yet.')+'</td></tr>';return;}
+    tb.innerHTML=rows.map(function(x){
+      var sl = (x.conventionData && x.conventionData.price) ? ['Convention done','badge-written'] : (SL[x.status]||['Unknown','badge-csv']); var convDone = '';
+      return '<tr><td><a href="/candidates/'+x.id+'" class="name-link">'+esc(x.name)+(x.courseType==='legal'?' <span style="font-size:10px;background:#fee2e2;color:#991b1b;padding:2px 7px;border-radius:10px;font-weight:600">⚖️ Juridique</span>':'')+'</a></td><td>'+esc(x.jobtitle||'')+'</td><td>'+(x.testdate||'')+'</td><td><span class="badge '+sl[1]+'">'+sl[0]+'</span>'+convDone+'</td><td style="display:flex;gap:8px"><a href="/candidates/'+x.id+'" class="name-link">View</a>&nbsp;<button data-id="'+x.id+'" data-name="'+esc(x.name)+'" onclick="doDel(this)" style="background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer">Delete</button></td></tr>';
+    }).join('');
+    ['name','jobtitle','testdate','status'].forEach(function(k){var e=document.getElementById('sort-'+k);if(e)e.textContent=k===sk?(sd===1?' ↑':' ↓'):' ⇕';});
+  }
+  function sortBy(k){sk===k?sd=-sd:(sk=k,sd=1);render();}
+  function doDel(btn){
+    var id=btn.getAttribute('data-id'),name=btn.getAttribute('data-name');
+    if(!confirm('Delete '+name+'?'))return;
+    fetch('/candidates/api/'+id,{method:'DELETE'}).then(function(r){return r.json();}).then(function(d){if(d.success){all=all.filter(function(x){return x.id!==id;});render();}else alert(d.error);});
+  }
+  fetch('/candidates/api/list').then(function(r){return r.json();}).then(function(d){all=d;render();}).catch(function(e){document.getElementById('candidateList').innerHTML='<tr><td colspan="5" class="empty">Error: '+e+'</td></tr>';});
+</script>
+</body>
+</html>

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Linguaid Eval — Login</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f4f8; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+  .card { background: white; border-radius: 12px; padding: 2.5rem; width: 100%; max-width: 380px; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
+  .logo { font-size: 22px; font-weight: 700; color: #1F4E79; margin-bottom: 0.25rem; }
+  .sub { font-size: 13px; color: #666; margin-bottom: 2rem; }
+  label { font-size: 13px; color: #444; display: block; margin-bottom: 4px; margin-top: 16px; }
+  input { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; outline: none; transition: border-color 0.15s; }
+  input:focus { border-color: #2E75B6; }
+  button { width: 100%; background: #1F4E79; color: white; border: none; border-radius: 8px; padding: 11px; font-size: 14px; font-weight: 500; cursor: pointer; margin-top: 1.5rem; transition: opacity 0.15s; }
+  button:hover { opacity: 0.88; }
+  .error { background: #fef2f2; color: #991b1b; font-size: 13px; padding: 10px 12px; border-radius: 8px; margin-bottom: 1rem; display: none; }
+  .error.show { display: block; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">linguaid</div>
+  <div class="sub">Evaluation Platform</div>
+  <div class="error show" id="err" style="display:none">Invalid username or password.</div>
+  <form method="POST" action="/login">
+    <label>Username</label>
+    <input type="text" name="username" required autofocus>
+    <label>Password</label>
+    <input type="password" name="password" required>
+    <button type="submit">Sign in</button>
+  </form>
+</div>
+<script>
+  if (window.location.search.includes('error=1')) document.getElementById('err').style.display = 'block';
+</script>
+</body>
+</html>

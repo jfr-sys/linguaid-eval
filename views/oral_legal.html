@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Linguaid — Legal English Assessment</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f4f8; min-height: 100vh; }
+  .nav { background: #1F4E79; color: white; padding: 0 2rem; height: 56px; display: flex; align-items: center; gap: 1rem; }
+  .nav-logo { font-size: 18px; font-weight: 700; }
+  .nav-sub { font-size: 13px; opacity: 0.65; }
+  .nav-badge { background: #C00000; color: white; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; letter-spacing: 0.05em; }
+  .container { max-width: 800px; margin: 0 auto; padding: 2rem 1rem; }
+  .candidate-bar { background: white; border-radius: 12px; padding: 1.25rem 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 1.5rem; }
+  .candidate-name { font-size: 20px; font-weight: 700; color: #1F4E79; }
+  .candidate-meta { font-size: 13px; color: #666; margin-top: 3px; }
+  .level-chips { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  .chip { display: inline-flex; align-items: center; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+  .chip-legal { background: #fee2e2; color: #991b1b; }
+  .chip-domain { background: #ede9fe; color: #5b21b6; }
+  .chip-financing { background: #d1fae5; color: #065f46; }
+
+  .step-progress { background: white; border-radius: 12px; padding: 1.25rem 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 1.5rem; }
+  .step-labels { display: flex; justify-content: space-between; margin-bottom: 10px; }
+  .step-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #94a3b8; text-align: center; flex: 1; transition: color 0.2s; }
+  .step-label.done { color: #10b981; }
+  .step-label.active { color: #1F4E79; }
+  .progress-track { display: flex; gap: 4px; }
+  .prog-step { flex: 1; height: 6px; border-radius: 3px; background: #e5e7eb; transition: background 0.2s; }
+  .prog-step.done { background: #10b981; }
+  .prog-step.active { background: #2E75B6; }
+
+  .section { display: none; }
+  .section.active { display: block; }
+  .card { background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 1rem; }
+  .section-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: #94a3b8; margin-bottom: 0.5rem; }
+  h2 { font-size: 20px; font-weight: 700; color: #1F4E79; margin-bottom: 0.5rem; }
+  .hint { font-size: 13px; color: #64748b; margin-bottom: 1.25rem; line-height: 1.6; }
+  .ref-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+  .ref-block { background: #f8fafc; border-radius: 10px; padding: 1rem; }
+  .ref-block h4 { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #94a3b8; margin-bottom: 0.5rem; }
+  .ref-item { font-size: 13px; color: #334155; padding: 4px 0; border-bottom: 0.5px solid #e5e7eb; }
+  .ref-item:last-child { border-bottom: none; }
+  .ref-item strong { color: #1F4E79; }
+
+  /* Goals */
+  .goal-item { padding: 10px 0; border-bottom: 0.5px solid #f1f5f9; }
+  .goal-item:last-child { border-bottom: none; }
+  .goal-row { display: flex; align-items: flex-start; gap: 12px; }
+  .goal-text { font-size: 13px; color: #334155; flex: 1; line-height: 1.5; padding-top: 6px; }
+  .goal-actions { display: flex; gap: 6px; flex-shrink: 0; }
+  .goal-btn { padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; border: 1.5px solid; transition: all 0.12s; background: white; font-family: inherit; }
+  .goal-btn.adjust { border-color: #f59e0b; color: #92400e; }
+  .goal-btn.adjust.active { background: #fef3c7; }
+  .goal-btn.remove { border-color: #ef4444; color: #991b1b; }
+  .goal-btn.remove:hover { background: #fee2e2; }
+  .goal-edit-row { margin-top: 8px; display: none; gap: 8px; }
+  .goal-edit-row.show { display: flex; }
+  .goal-edit-row input { flex: 1; font-size: 13px; padding: 7px 10px; border: 1.5px solid #f59e0b; border-radius: 6px; outline: none; font-family: inherit; }
+  .goal-edit-row button { padding: 7px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; border: none; font-family: inherit; }
+  .btn-save-goal { background: #1F4E79; color: white; }
+  .btn-cancel-goal { background: #f1f5f9; color: #334155; }
+  .goal-added { background: #f0fdf4; border-radius: 8px; padding: 8px 12px; margin-top: 4px; display: flex; align-items: center; justify-content: space-between; }
+  .goal-added-text { font-size: 13px; color: #065f46; }
+  .goal-added-remove { padding: 3px 8px; border-radius: 5px; font-size: 11px; font-weight: 600; cursor: pointer; border: 1.5px solid #ef4444; color: #991b1b; background: white; font-family: inherit; }
+
+  .add-goal-row { display: flex; gap: 8px; margin-top: 12px; }
+  label { font-size: 13px; color: #475569; display: block; margin-bottom: 4px; margin-top: 14px; font-weight: 500; }
+  input, select, textarea { width: 100%; padding: 9px 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; outline: none; transition: border-color 0.15s; font-family: inherit; color: #1a1a1a; }
+  input:focus, select:focus, textarea:focus { border-color: #2E75B6; }
+  textarea { resize: vertical; min-height: 85px; }
+  .cefr-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-top: 6px; }
+  .cefr-btn { border: 1.5px solid #e2e8f0; border-radius: 8px; padding: 10px 4px; font-size: 13px; font-weight: 600; cursor: pointer; text-align: center; background: white; color: #64748b; transition: all 0.12s; font-family: inherit; }
+  .cefr-btn:hover { border-color: #2E75B6; color: #1F4E79; }
+  .cefr-btn.selected { background: #1F4E79; color: white; border-color: #1F4E79; }
+
+  /* CAJA criteria */
+  .criteria-row { display: grid; grid-template-columns: 220px 1fr; gap: 12px; align-items: center; margin-bottom: 10px; }
+  .criteria-name { font-size: 13px; color: #334155; font-weight: 500; }
+  .criteria-code { font-size: 11px; color: #94a3b8; font-weight: 600; }
+  .rating-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .rating-btn { border: 1px solid #e2e8f0; border-radius: 6px; padding: 7px 4px; font-size: 12px; cursor: pointer; text-align: center; background: white; color: #64748b; transition: all 0.12s; font-family: inherit; }
+  .rating-btn.sel-Strong { background: #d1fae5; color: #065f46; border-color: #10b981; }
+  .rating-btn.sel-Good { background: #dbeafe; color: #1e40af; border-color: #3b82f6; }
+  .rating-btn.sel-Developing { background: #fef3c7; color: #92400e; border-color: #f59e0b; }
+  .rating-btn.sel-Weak { background: #fee2e2; color: #991b1b; border-color: #ef4444; }
+
+  .prompt-box { background: #f8fafc; border-radius: 10px; padding: 1rem; margin-bottom: 1rem; }
+  .prompt-box h4 { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #94a3b8; margin-bottom: 0.75rem; }
+  .prompt-item { font-size: 13px; color: #334155; padding: 5px 0; border-bottom: 0.5px solid #e5e7eb; line-height: 1.5; }
+  .prompt-item:last-child { border-bottom: none; }
+  .prompt-level { font-weight: 600; color: #C00000; margin-right: 6px; }
+
+  /* Training type selector */
+  .training-type-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 8px; }
+  .type-btn { border: 2px solid #e2e8f0; border-radius: 10px; padding: 14px 10px; font-size: 13px; font-weight: 600; cursor: pointer; text-align: center; background: white; color: #64748b; transition: all 0.15s; font-family: inherit; line-height: 1.5; }
+  .type-btn:hover { border-color: #2E75B6; color: #1F4E79; }
+  .type-btn.selected { background: #eff6ff; color: #1F4E79; border-color: #2E75B6; }
+  .type-btn .type-badge { display: block; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 4px; }
+  .type-btn.caja-btn.selected { background: #fff1f2; color: #991b1b; border-color: #C00000; }
+  .type-btn.caja-btn .type-badge { color: #C00000; }
+  .type-btn.e360-btn.selected { background: #f0fdf4; color: #065f46; border-color: #10b981; }
+  .type-btn.e360-btn .type-badge { color: #10b981; }
+  .type-btn.noncpf-btn.selected { background: #eff6ff; color: #1e40af; border-color: #3b82f6; }
+  .type-btn.noncpf-btn .type-badge { color: #3b82f6; }
+
+  /* Prereq dropdowns */
+  .prereq-section { background: #f8fafc; border-radius: 10px; padding: 1rem; margin-top: 14px; }
+  .prereq-section h4 { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #94a3b8; margin-bottom: 4px; }
+  .prereq-preview { font-size: 13px; color: #334155; font-style: italic; margin-top: 10px; padding: 8px 12px; background: white; border-radius: 6px; border: 1px solid #e2e8f0; min-height: 38px; line-height: 1.6; }
+
+  .btn-row { display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; gap: 12px; }
+  .btn { padding: 10px 22px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; border: none; transition: opacity 0.15s; font-family: inherit; }
+  .btn-primary { background: #1F4E79; color: white; }
+  .btn-primary:hover { opacity: 0.88; }
+  .btn-secondary { background: #f1f5f9; color: #334155; }
+  .btn-secondary:hover { background: #e2e8f0; }
+  .btn-success { background: #10b981; color: white; font-size: 15px; padding: 13px 28px; width: 100%; margin-top: 1rem; }
+  .tag { display: inline-block; font-size: 11px; padding: 3px 10px; border-radius: 20px; background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; margin: 2px; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .divider { height: 0.5px; background: #e5e7eb; margin: 1rem 0; }
+  .read-instruction { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 10px; padding: 0.9rem 1.1rem; margin-bottom: 1.25rem; font-size: 13px; color: #9a3412; line-height: 1.6; }
+  .success-screen { text-align: center; padding: 4rem 2rem; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); display: none; }
+  .success-icon { font-size: 56px; margin-bottom: 1rem; }
+  .success-title { font-size: 22px; font-weight: 700; color: #065f46; margin-bottom: 0.5rem; }
+  .success-sub { font-size: 14px; color: #666; line-height: 1.6; }
+</style>
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-logo">linguaid eval</div>
+  <span class="nav-sub">Legal English — Entretien individuel</span>
+  <span class="nav-badge">JURIDIQUE</span>
+</nav>
+<div class="container">
+  <div class="candidate-bar">
+    <div class="candidate-name" id="candName">Loading...</div>
+    <div class="candidate-meta" id="candMeta"></div>
+    <div class="level-chips" id="levelChips"></div>
+  </div>
+
+  <div class="step-progress">
+    <div class="step-labels">
+      <div class="step-label active" id="sl0">Profil</div>
+      <div class="step-label" id="sl1">Écoute</div>
+      <div class="step-label" id="sl2">Expression</div>
+      <div class="step-label" id="sl3">Objectifs</div>
+      <div class="step-label" id="sl4">Notes</div>
+      <div class="step-label" id="sl5">Plan</div>
+    </div>
+    <div class="progress-track">
+      <div class="prog-step active" id="ps0"></div>
+      <div class="prog-step" id="ps1"></div>
+      <div class="prog-step" id="ps2"></div>
+      <div class="prog-step" id="ps3"></div>
+      <div class="prog-step" id="ps4"></div>
+      <div class="prog-step" id="ps5"></div>
+    </div>
+  </div>
+
+  <!-- STEP 0: PROFILE -->
+  <div class="section active" id="sec0">
+    <div class="card">
+      <div class="section-label">Avant l'entretien — lire attentivement</div>
+      <h2>Profil du candidat</h2>
+      <div class="read-instruction">
+        <strong>Lisez ce profil avant de commencer l'appel.</strong> Ces informations proviennent du questionnaire prospect rempli par le candidat. Utilisez-les comme base pour l'entretien.
+      </div>
+      <div class="ref-grid">
+        <div class="ref-block">
+          <h4>Contexte professionnel</h4>
+          <div id="refContext"></div>
+        </div>
+        <div class="ref-block">
+          <h4>Domaines juridiques</h4>
+          <div id="refDomains"></div>
+        </div>
+      </div>
+      <div class="ref-grid">
+        <div class="ref-block">
+          <h4>Documents rédigés</h4>
+          <div id="refDocs"></div>
+        </div>
+        <div class="ref-block">
+          <h4>Financement envisagé</h4>
+          <div id="refFinancing"></div>
+        </div>
+      </div>
+      <div class="ref-block" style="margin-bottom:1rem">
+        <h4>Objectifs déclarés</h4>
+        <div id="refGoals"></div>
+      </div>
+      <div class="ref-block" style="margin-bottom:1rem">
+        <h4>Niveau auto-évalué &amp; contexte d'usage</h4>
+        <div id="refSelfLevel"></div>
+      </div>
+      <div class="ref-block">
+        <h4>Échéance / événement imminent</h4>
+        <div id="refDeadline"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="section-label">Paramètres de la session</div>
+      <label>Votre nom (évaluateur)</label>
+      <input type="text" id="evaluator" placeholder="Prénom Nom">
+      <label>Date de la session</label>
+      <input type="date" id="sessionDate">
+      <label>Format</label>
+      <select id="format">
+        <option>Visioconférence</option>
+        <option>Téléphone</option>
+        <option>En présentiel</option>
+      </select>
+    </div>
+    <div class="btn-row"><span></span><button class="btn btn-primary" onclick="goSec(1)">Commencer l'entretien →</button></div>
+  </div>
+
+  <!-- STEP 1: LISTENING -->
+  <div class="section" id="sec1">
+    <div class="card">
+      <div class="section-label">Étape 1 / 5 — Compréhension orale</div>
+      <h2>Évaluation de la compréhension orale</h2>
+      <p class="hint">Évaluez la capacité du candidat à comprendre sans reformulation ni simplification dans un contexte juridique anglophone.</p>
+      <div class="prompt-box">
+        <h4>Suggestions de prompts — contexte juridique</h4>
+        <div class="prompt-item"><span class="prompt-level">A2–B1</span>Describe a simple client situation in English and ask them to summarise what the problem is.</div>
+        <div class="prompt-item"><span class="prompt-level">B1–B2</span>Read a short clause or contractual provision; ask them to explain what it means and what the implications are.</div>
+        <div class="prompt-item"><span class="prompt-level">B2</span>Describe a negotiation scenario (e.g. disputed termination clause) and ask what questions they would ask the other party.</div>
+        <div class="prompt-item"><span class="prompt-level">B2–C1</span>Read a short legal opinion extract; ask them to agree or push back and explain their reasoning.</div>
+      </div>
+      <label>Niveau CECR — Compréhension orale</label>
+      <div class="cefr-grid" id="cefrListening"></div>
+      <label>Observations</label>
+      <textarea id="listeningObs" placeholder="ex. Comprend les questions simples sans difficulté ; besoin de répétition sur vocabulaire juridique technique…"></textarea>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goSec(0)">← Retour</button>
+      <button class="btn btn-primary" onclick="goSec(2)">Continuer →</button>
+    </div>
+  </div>
+
+  <!-- STEP 2: SPEAKING -->
+  <div class="section" id="sec2">
+    <div class="card">
+      <div class="section-label">Étape 2 / 5 — Expression orale</div>
+      <h2>Évaluation de l'expression orale</h2>
+      <p class="hint">Évaluez l'expression orale du candidat selon les 6 compétences du référentiel CAJA et les critères généraux ci-dessous.</p>
+      <div class="prompt-box">
+        <h4>Suggestions de prompts — anglais juridique</h4>
+        <div class="prompt-item"><span class="prompt-level">C1</span>"Introduce yourself professionally as if meeting a foreign client for the first time."</div>
+        <div class="prompt-item"><span class="prompt-level">C2</span>"A client calls: they've just been served with a breach of contract claim. Conduct the initial intake interview."</div>
+        <div class="prompt-item"><span class="prompt-level">C3</span>"You've reviewed the case. Advise the client on their options and the pros and cons of each."</div>
+        <div class="prompt-item"><span class="prompt-level">C6</span>"Role-play: negotiate a key clause — e.g. limitation of liability — with the opposing party."</div>
+      </div>
+      <label>Niveau CECR — Expression orale</label>
+      <div class="cefr-grid" id="cefrSpeaking"></div>
+      <div style="margin-top:1.25rem">
+        <div class="section-label">Compétences CAJA (C1–C6)</div>
+        <p class="hint" style="margin-bottom:0.75rem">Évaluez uniquement les compétences que vous avez pu observer durant l'entretien.</p>
+        <div id="criteriaGrid"></div>
+      </div>
+      <label>Observations &amp; exemples</label>
+      <textarea id="speakingObs" placeholder="ex. Bonne aisance sur les sujets familiers ; erreurs récurrentes sur les modaux de contrat ; vocabulaire procédural limité…"></textarea>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goSec(1)">← Retour</button>
+      <button class="btn btn-primary" onclick="goSec(3)">Continuer →</button>
+    </div>
+  </div>
+
+  <!-- STEP 3: GOALS -->
+  <div class="section" id="sec3">
+    <div class="card">
+      <div class="section-label">Étape 3 / 5 — Validation en direct avec le candidat</div>
+      <h2>Validation des objectifs</h2>
+      <p class="hint">Parcourez chaque objectif avec le candidat. Ajustez la formulation si nécessaire, supprimez ce qui n'est pas pertinent, ajoutez ce qui est ressorti de l'entretien.</p>
+      <div id="goalsValidation"></div>
+      <div class="add-goal-row">
+        <input type="text" id="newGoalInput" placeholder="Ajouter un objectif identifié durant l'entretien…">
+        <button class="btn btn-secondary" onclick="addGoal()" style="white-space:nowrap;padding:9px 16px">+ Ajouter</button>
+      </div>
+      <label style="margin-top:1rem">Notes sur les objectifs</label>
+      <textarea id="goalsNotes" placeholder="Ce que le candidat a dit sur ses objectifs…" style="min-height:60px"></textarea>
+    </div>
+    <div class="card">
+      <div class="section-label">Disponibilités</div>
+      <h2>Disponibilités confirmées</h2>
+      <p class="hint">Confirmez les créneaux avec le candidat.</p>
+      <label>Disponibilités (jours / créneaux)</label>
+      <textarea id="availability" placeholder="ex. Mardi et jeudi après 18h, mercredi matin…" style="min-height:60px"></textarea>
+      <label>Format de session confirmé</label>
+      <select id="confirmedFormat">
+        <option>Visioconférence</option>
+        <option>Téléphone</option>
+        <option>En présentiel</option>
+      </select>
+      <label>Notes planning</label>
+      <textarea id="schedNotes" placeholder="ex. Préfère les fins de journée ; déplacements fréquents…" style="min-height:50px"></textarea>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goSec(2)">← Retour</button>
+      <button class="btn btn-primary" onclick="goSec(4)">Continuer →</button>
+    </div>
+  </div>
+
+  <!-- STEP 4: NOTES -->
+  <div class="section" id="sec4">
+    <div class="card">
+      <div class="section-label">Étape 4 / 5 — Notes de l'évaluateur</div>
+      <h2>Contexte professionnel &amp; observations</h2>
+      <p class="hint">Notez ce que vous avez appris sur le contexte et votre évaluation globale.</p>
+      <label>Utilisation actuelle de l'anglais au travail</label>
+      <textarea id="contextObs" placeholder="ex. Lit des contrats en anglais mais ne négocie pas encore à l'oral ; échanges écrits occasionnels avec contreparties étrangères…"></textarea>
+      <label>Domaine juridique principal travaillé en cours</label>
+      <textarea id="legalFocus" placeholder="ex. Droit de l'énergie — PPA, contrats de financement de projets, négociations avec contreparties anglophones…" style="min-height:60px"></textarea>
+      <label>Types de documents prioritaires</label>
+      <textarea id="docFocus" placeholder="ex. Rédaction de clauses, révision de contrats, emails juridiques, notes d'avocat…" style="min-height:60px"></textarea>
+      <label>Points forts observés</label>
+      <textarea id="strengths" style="min-height:65px" placeholder="ex. Bonne compréhension écrite, prononciation claire, vocabulaire général solide…"></textarea>
+      <label>Points à améliorer</label>
+      <textarea id="gaps" style="min-height:65px" placeholder="ex. Vocabulaire contractuel limité, hésitations à l'oral, gestion du temps de parole…"></textarea>
+      <label>Profil apprenant (motivation, style, contexte)</label>
+      <textarea id="profile" style="min-height:65px" placeholder="ex. Très motivé, appréhension à l'oral, apprenant analytique, profil junior/senior…"></textarea>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goSec(3)">← Retour</button>
+      <button class="btn btn-primary" onclick="goSec(5)">Continuer →</button>
+    </div>
+  </div>
+
+  <!-- STEP 5: TRAINING PLAN -->
+  <div class="section" id="sec5">
+    <div class="card">
+      <div class="section-label">Étape 5 / 5 — Plan de formation</div>
+      <h2>Recommandations de formation</h2>
+      <p class="hint">Sur la base de l'entretien complet, définissez le plan de formation recommandé.</p>
+
+      <label>Type de formation</label>
+      <div class="training-type-grid">
+        <button class="type-btn caja-btn" id="type-CAJA" onclick="selectType('CAJA')">
+          <span class="type-badge">CPF</span>
+          Anglais Juridique<br>Certification CAJA
+        </button>
+        <button class="type-btn e360-btn" id="type-E360" onclick="selectType('E360')">
+          <span class="type-badge">CPF</span>
+          Anglais Pro en contexte juridique<br>Certification E360
+        </button>
+        <button class="type-btn noncpf-btn" id="type-NON_CPF" onclick="selectType('NON_CPF')">
+          <span class="type-badge">Financement direct</span>
+          Anglais Juridique<br>Sans certification
+        </button>
+      </div>
+
+      <label>Mode de financement</label>
+      <select id="financingMode">
+        <option value="">— Sélectionner —</option>
+        <option value="CPF">CPF (Compte Personnel de Formation)</option>
+        <option value="OPCO">OPCO</option>
+        <option value="Employeur">Plan de formation employeur</option>
+        <option value="Personnel">Financement personnel</option>
+        <option value="Mixte">Mixte (CPF + abondement)</option>
+      </select>
+
+      <div class="prereq-section">
+        <h4>Prérequis &amp; niveau visé — convention de formation</h4>
+        <div class="two-col" style="margin-top:8px">
+          <div>
+            <label style="margin-top:0">Prérequis (points forts à l'entrée)</label>
+            <select id="prereqStrengths" onchange="updatePrereqPreview()">
+              <option value="">— Sélectionner —</option>
+              <option>Bonne compréhension écrite des documents juridiques</option>
+              <option>Bases solides à l'écrit, rédaction fonctionnelle</option>
+              <option>Aisance à l'oral en anglais général</option>
+              <option>Bonne prononciation et clarté de discours</option>
+              <option>Niveau intermédiaire général, pratique occasionnelle</option>
+            </select>
+            <label style="margin-top:8px">Prérequis (points à travailler)</label>
+            <select id="prereqWeaknesses" onchange="updatePrereqPreview()">
+              <option value="">— Sélectionner —</option>
+              <option>Expression orale hésitante en contexte professionnel</option>
+              <option>Vocabulaire juridique limité</option>
+              <option>Compréhension orale difficile (accents, rythme)</option>
+              <option>Rédaction juridique peu maîtrisée</option>
+              <option>Manque de confiance à l'oral</option>
+            </select>
+          </div>
+          <div>
+            <label style="margin-top:0">Niveau visé</label>
+            <select id="targetDescription" onchange="updatePrereqPreview()">
+              <option value="">— Sélectionner —</option>
+              <option>Aisance à l'oral en entretien client et négociation</option>
+              <option>Maîtrise de la rédaction de clauses et contrats</option>
+              <option>Autonomie en communication juridique écrite et orale</option>
+              <option>Préparation à la certification CAJA (RS6810)</option>
+              <option>Communication fluide en contexte international</option>
+            </select>
+          </div>
+        </div>
+        <div style="margin-top:10px">
+          <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:#94a3b8;margin-bottom:4px">Aperçu — texte convention</div>
+          <div class="prereq-preview" id="prereqPreview">Sélectionnez les options ci-dessus…</div>
+        </div>
+      </div>
+
+      <div class="three-col" style="margin-top:14px">
+        <div>
+          <label>Heures totales</label>
+          <input type="number" id="totalHours" placeholder="ex. 30" min="5" max="200">
+        </div>
+        <div>
+          <label>Heures de coaching</label>
+          <input type="number" id="coachingHours" placeholder="ex. 20">
+        </div>
+        <div>
+          <label>Travail autonome</label>
+          <input type="number" id="homeworkHours" placeholder="ex. 10">
+        </div>
+      </div>
+      <div class="two-col">
+        <div>
+          <label>Prix (€ HT)</label>
+          <input type="number" id="price" placeholder="ex. 2850">
+        </div>
+        <div>
+          <label>Période de formation</label>
+          <input type="text" id="dateStr" placeholder="ex. du 1er septembre au 31 décembre 2026">
+        </div>
+      </div>
+      <label>Lieu</label>
+      <select id="location">
+        <option>A distance</option>
+        <option>En présentiel</option>
+        <option>Mixte (présentiel + distanciel)</option>
+      </select>
+      <label>Notes complémentaires pour le rapport</label>
+      <textarea id="additionalNotes" style="min-height:70px" placeholder="Tout autre contexte ou recommandation…"></textarea>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goSec(4)">← Retour</button>
+      <span></span>
+    </div>
+    <button class="btn btn-success" onclick="submitAssessment()">Soumettre l'entretien ✓</button>
+  </div>
+
+  <div class="success-screen" id="successScreen">
+    <div class="success-icon">✅</div>
+    <div class="success-title">Entretien soumis avec succès</div>
+    <div class="success-sub">Les données ont été enregistrées.<br>Le rapport final peut maintenant être généré.</div>
+  </div>
+</div>
+
+<script>
+  const token = window.location.pathname.split('/').pop();
+  const LEVELS = ["A1-","A1","A2","A2+","B1","B1+","B2","B2+","C1","C2"];
+
+  // CAJA competencies C1-C6
+  const CAJA_CRITERIA = [
+    { code: 'C1', label: 'Se présenter professionnellement' },
+    { code: 'C2', label: 'Conduire un entretien client initial' },
+    { code: 'C3', label: 'Fournir des conseils juridiques à l\'oral' },
+    { code: 'C4', label: 'Produire des écrits professionnels juridiques' },
+    { code: 'C5', label: 'Rédiger / réviser des clauses contractuelles' },
+    { code: 'C6', label: 'Conduire une négociation en anglais' },
+  ];
+  const RATINGS = ["Strong","Good","Developing","Weak"];
+
+  let sel = { listening: null, speaking: null, criteria: {} };
+  let candData = null;
+  let goals = [];
+  let extraGoals = [];
+  let selectedType = null;
+
+  fetch('/oral/data/' + token)
+    .then(r => r.json())
+    .then(c => {
+      candData = c;
+      goals = (c.goals || []).map(g => ({ text: g, deleted: false }));
+      renderCandidateBar(c);
+      renderProfilePanel(c);
+      makeCefrGrid('cefrListening', 'listening');
+      makeCefrGrid('cefrSpeaking', 'speaking');
+      makeCriteriaGrid();
+      renderGoalsValidation();
+      if (c.legalDomains) document.getElementById("legalFocus").value = c.legalDomains;
+      if (c.legalDocs) document.getElementById("docFocus").value = c.legalDocs;
+      if (c.currentUsage) document.getElementById("contextObs").value = c.currentUsage;
+      // Pre-fill financing if available from prospect questionnaire
+      if (c.financingMode) {
+        const fm = document.getElementById('financingMode');
+        for (let i = 0; i < fm.options.length; i++) {
+          if (fm.options[i].value === c.financingMode) { fm.selectedIndex = i; break; }
+        }
+      }
+    })
+    .catch(() => { document.getElementById('candName').textContent = 'Entretien introuvable'; });
+
+  function renderCandidateBar(c) {
+    document.getElementById('candName').textContent = c.name;
+    const meta = [c.jobtitle, c.company || c.dept].filter(Boolean).join(' — ');
+    document.getElementById('candMeta').textContent = meta;
+    document.getElementById('levelChips').innerHTML = `
+      ${c.jobtitle ? `<span class="chip chip-legal">⚖️ ${c.jobtitle}</span>` : ''}
+      ${c.legalDomains ? `<span class="chip chip-domain">${c.legalDomains.split(',').slice(0,2).join(', ')}</span>` : ''}
+      ${c.financingMode ? `<span class="chip chip-financing">💶 ${c.financingMode}</span>` : ''}
+    `;
+  }
+
+  function renderProfilePanel(c) {
+    document.getElementById('refContext').innerHTML = [
+      c.jobtitle && `<div class="ref-item"><strong>Poste :</strong> ${c.jobtitle}</div>`,
+      c.company && `<div class="ref-item"><strong>Employeur :</strong> ${c.company}</div>`,
+      c.experience && `<div class="ref-item"><strong>Expérience :</strong> ${c.experience} ans</div>`,
+      c.lawyerType && `<div class="ref-item"><strong>Profil :</strong> ${c.lawyerType}</div>`,
+    ].filter(Boolean).join('') || '<div class="ref-item" style="color:#94a3b8">Non renseigné</div>';
+
+    document.getElementById('refDomains').innerHTML = c.legalDomains
+      ? c.legalDomains.split(',').map(d => `<div class="ref-item">${d.trim()}</div>`).join('')
+      : '<div class="ref-item" style="color:#94a3b8">Non renseigné</div>';
+
+    document.getElementById('refDocs').innerHTML = c.legalDocs
+      ? c.legalDocs.split(',').map(d => `<div class="ref-item">${d.trim()}</div>`).join('')
+      : '<div class="ref-item" style="color:#94a3b8">Non renseigné</div>';
+
+    document.getElementById('refFinancing').innerHTML = [
+      c.financingMode && `<div class="ref-item"><strong>Mode :</strong> ${c.financingMode}</div>`,
+      c.cpfCreated !== undefined && `<div class="ref-item"><strong>Compte CPF créé :</strong> ${c.cpfCreated ? 'Oui' : 'Non'}</div>`,
+    ].filter(Boolean).join('') || '<div class="ref-item" style="color:#94a3b8">Non renseigné</div>';
+
+    document.getElementById('refGoals').innerHTML = (c.goals && c.goals.length)
+      ? c.goals.map(g => `<span class="tag">${g}</span>`).join('')
+      : '<span style="font-size:13px;color:#94a3b8">Aucun objectif enregistré</span>';
+
+    document.getElementById('refSelfLevel').innerHTML = [
+      c.selfLevelWriting && `<div class="ref-item"><strong>Écrit :</strong> ${c.selfLevelWriting}</div>`,
+      c.selfLevelOral && `<div class="ref-item"><strong>Oral :</strong> ${c.selfLevelOral}</div>`,
+      c.currentUsage && `<div class="ref-item"><strong>Usage actuel :</strong> ${c.currentUsage}</div>`,
+      c.otherNeeds && `<div class="ref-item"><strong>Besoins autres :</strong> ${c.otherNeeds}</div>`,
+    ].filter(Boolean).join('') || '<div class="ref-item" style="color:#94a3b8">Non renseigné</div>';
+
+    document.getElementById('refDeadline').innerHTML = c.upcomingEvent
+      ? `<div class="ref-item">${c.upcomingEvent}</div>`
+      : '<div class="ref-item" style="color:#94a3b8">Aucune échéance signalée</div>';
+  }
+
+  function makeCefrGrid(id, key) {
+    const c = document.getElementById(id);
+    c.innerHTML = '';
+    LEVELS.forEach(l => {
+      const btn = document.createElement('button');
+      btn.className = 'cefr-btn' + (sel[key] === l ? ' selected' : '');
+      btn.textContent = l;
+      btn.onclick = () => { sel[key] = l; makeCefrGrid(id, key); };
+      c.appendChild(btn);
+    });
+  }
+
+  function makeCriteriaGrid() {
+    const grid = document.getElementById('criteriaGrid');
+    grid.innerHTML = '';
+    CAJA_CRITERIA.forEach(crit => {
+      const row = document.createElement('div');
+      row.className = 'criteria-row';
+      const nameDiv = document.createElement('div');
+      nameDiv.className = 'criteria-name';
+      nameDiv.innerHTML = `<span class="criteria-code">${crit.code}</span> ${crit.label}`;
+      const ratingDiv = document.createElement('div');
+      ratingDiv.className = 'rating-row';
+      RATINGS.forEach(r => {
+        const btn = document.createElement('button');
+        const key = crit.code;
+        btn.className = 'rating-btn' + (sel.criteria[key] === r ? ' sel-' + r : '');
+        btn.textContent = r;
+        btn.onclick = () => {
+          sel.criteria[key] = r;
+          ratingDiv.querySelectorAll('.rating-btn').forEach(b => {
+            b.className = 'rating-btn' + (b.textContent === r ? ' sel-' + r : '');
+          });
+        };
+        ratingDiv.appendChild(btn);
+      });
+      row.appendChild(nameDiv);
+      row.appendChild(ratingDiv);
+      grid.appendChild(row);
+    });
+  }
+
+  function renderGoalsValidation() {
+    const container = document.getElementById('goalsValidation');
+    container.innerHTML = goals.filter(g => !g.deleted).map((g, i) => `
+      <div class="goal-item" id="goal-item-${i}">
+        <div class="goal-row">
+          <div class="goal-text" id="goal-text-${i}">${g.text}</div>
+          <div class="goal-actions">
+            <button class="goal-btn adjust ${g.editing ? 'active' : ''}" onclick="toggleEdit(${i})">✎ Ajuster</button>
+            <button class="goal-btn remove" onclick="deleteGoal(${i})">✕ Supprimer</button>
+          </div>
+        </div>
+        <div class="goal-edit-row ${g.editing ? 'show' : ''}" id="goal-edit-${i}">
+          <input type="text" id="goal-input-${i}" value="${g.text}" onkeydown="if(event.key==='Enter')saveGoal(${i})">
+          <button class="btn-save-goal" onclick="saveGoal(${i})">Sauver</button>
+          <button class="btn-cancel-goal" onclick="cancelEdit(${i})">Annuler</button>
+        </div>
+      </div>
+    `).join('') + extraGoals.map((g, i) => `
+      <div class="goal-added">
+        <div class="goal-added-text">+ ${g}</div>
+        <button class="goal-added-remove" onclick="removeExtra(${i})">✕</button>
+      </div>
+    `).join('');
+  }
+
+  window.toggleEdit = i => { goals[i].editing = !goals[i].editing; renderGoalsValidation();
+      if (c.legalDomains) document.getElementById("legalFocus").value = c.legalDomains;
+      if (c.legalDocs) document.getElementById("docFocus").value = c.legalDocs;
+      if (c.currentUsage) document.getElementById("contextObs").value = c.currentUsage; if (goals[i].editing) setTimeout(() => { const inp = document.getElementById('goal-input-' + i); if (inp) { inp.focus(); inp.select(); } }, 50); };
+  window.saveGoal = i => { const val = document.getElementById('goal-input-' + i).value.trim(); if (val) { goals[i].text = val; goals[i].editing = false; renderGoalsValidation();
+      if (c.legalDomains) document.getElementById("legalFocus").value = c.legalDomains;
+      if (c.legalDocs) document.getElementById("docFocus").value = c.legalDocs;
+      if (c.currentUsage) document.getElementById("contextObs").value = c.currentUsage; } };
+  window.cancelEdit = i => { goals[i].editing = false; renderGoalsValidation();
+      if (c.legalDomains) document.getElementById("legalFocus").value = c.legalDomains;
+      if (c.legalDocs) document.getElementById("docFocus").value = c.legalDocs;
+      if (c.currentUsage) document.getElementById("contextObs").value = c.currentUsage; };
+  window.deleteGoal = i => { goals[i].deleted = true; renderGoalsValidation();
+      if (c.legalDomains) document.getElementById("legalFocus").value = c.legalDomains;
+      if (c.legalDocs) document.getElementById("docFocus").value = c.legalDocs;
+      if (c.currentUsage) document.getElementById("contextObs").value = c.currentUsage; };
+  window.removeExtra = i => { extraGoals.splice(i, 1); renderGoalsValidation();
+      if (c.legalDomains) document.getElementById("legalFocus").value = c.legalDomains;
+      if (c.legalDocs) document.getElementById("docFocus").value = c.legalDocs;
+      if (c.currentUsage) document.getElementById("contextObs").value = c.currentUsage; };
+  window.addGoal = () => { const input = document.getElementById('newGoalInput'); if (input.value.trim()) { extraGoals.push(input.value.trim()); input.value = ''; renderGoalsValidation();
+      if (c.legalDomains) document.getElementById("legalFocus").value = c.legalDomains;
+      if (c.legalDocs) document.getElementById("docFocus").value = c.legalDocs;
+      if (c.currentUsage) document.getElementById("contextObs").value = c.currentUsage; } };
+
+  window.selectType = type => {
+    selectedType = type;
+    ['CAJA', 'E360', 'NON_CPF'].forEach(t => {
+      document.getElementById('type-' + t).classList.toggle('selected', t === type);
+    });
+    // Auto-set financing
+    const fm = document.getElementById('financingMode');
+    if (type === 'CAJA' || type === 'E360') {
+      for (let i = 0; i < fm.options.length; i++) { if (fm.options[i].value === 'CPF') { fm.selectedIndex = i; break; } }
+    }
+    // Auto-suggest target for CAJA
+    if (type === 'CAJA') {
+      const td = document.getElementById('targetDescription');
+      for (let i = 0; i < td.options.length; i++) {
+        if (td.options[i].value.includes('CAJA')) { td.selectedIndex = i; break; }
+      }
+      updatePrereqPreview();
+    }
+  };
+
+  window.updatePrereqPreview = () => {
+    const s = document.getElementById('prereqStrengths').value;
+    const w = document.getElementById('prereqWeaknesses').value;
+    const t = document.getElementById('targetDescription').value;
+    const prereqParts = [s, w].filter(Boolean);
+    const prereqText = prereqParts.length ? prereqParts.join(', ').toLowerCase() : '…';
+    const targetText = t || '…';
+    document.getElementById('prereqPreview').innerHTML =
+      `<strong>Prérequis :</strong> ${prereqText.charAt(0).toUpperCase() + prereqText.slice(1)}.<br>` +
+      `<strong>Niveau visé :</strong> ${targetText}.`;
+  };
+
+  function goSec(n) {
+    document.querySelectorAll('.section').forEach((s, i) => s.classList.toggle('active', i === n));
+    document.querySelectorAll('.prog-step').forEach((p, i) => { p.classList.remove('done', 'active'); if (i < n) p.classList.add('done'); if (i === n) p.classList.add('active'); });
+    document.querySelectorAll('.step-label').forEach((l, i) => { l.classList.remove('done', 'active'); if (i < n) l.classList.add('done'); if (i === n) l.classList.add('active'); });
+    window.scrollTo(0, 0);
+  }
+
+  function submitAssessment() {
+    const validatedGoals = goals.filter(g => !g.deleted).map(g => ({ goal: g.text, status: 'confirmed' }));
+    extraGoals.forEach(g => validatedGoals.push({ goal: g, status: 'added_by_evaluator' }));
+
+    const prereqStrengths = document.getElementById('prereqStrengths').value;
+    const prereqWeaknesses = document.getElementById('prereqWeaknesses').value;
+    const prereqParts = [prereqStrengths, prereqWeaknesses].filter(Boolean);
+    const prereqDescription = prereqParts.length
+      ? (prereqParts.join(', ').charAt(0).toUpperCase() + prereqParts.join(', ').slice(1))
+      : '';
+
+    const payload = {
+      evaluator:          document.getElementById('evaluator').value,
+      sessionDate:        document.getElementById('sessionDate').value,
+      format:             document.getElementById('format').value,
+      listeningLevel:     sel.listening,
+      speakingLevel:      sel.speaking,
+      criteria:           sel.criteria,
+      listeningObs:       document.getElementById('listeningObs').value,
+      speakingObs:        document.getElementById('speakingObs').value,
+      validatedGoals,
+      goalsNotes:         document.getElementById('goalsNotes').value,
+      availability:       document.getElementById('availability').value,
+      confirmedFormat:    document.getElementById('confirmedFormat').value,
+      schedNotes:         document.getElementById('schedNotes').value,
+      contextObs:         document.getElementById('contextObs').value,
+      legalFocus:         document.getElementById('legalFocus').value,
+      docFocus:           document.getElementById('docFocus').value,
+      strengths:          document.getElementById('strengths').value,
+      gaps:               document.getElementById('gaps').value,
+      profile:            document.getElementById('profile').value,
+      legalTrainingType:  selectedType,
+      financingMode:      document.getElementById('financingMode').value,
+      prereqDescription,
+      targetDescription:  document.getElementById('targetDescription').value,
+      totalHours:         document.getElementById('totalHours').value,
+      coachingHours:      document.getElementById('coachingHours').value,
+      homeworkHours:      document.getElementById('homeworkHours').value,
+      price:              document.getElementById('price').value,
+      dateStr:            document.getElementById('dateStr').value,
+      location:           document.getElementById('location').value,
+      additionalNotes:    document.getElementById('additionalNotes').value,
+    };
+
+    fetch('/oral/submit/' + token, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) {
+          document.querySelectorAll('.section').forEach(s => s.style.display = 'none');
+          document.getElementById('successScreen').style.display = 'block';
+          document.querySelector('.step-progress').style.display = 'none';
+          document.querySelector('.candidate-bar').style.display = 'none';
+        } else { alert('Erreur : ' + data.error); }
+      })
+      .catch(err => alert('Échec de la soumission : ' + err.message));
+  }
+</script>
+</body>
+</html>

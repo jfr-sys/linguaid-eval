@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Linguaid — Oral Assessment</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f4f8; min-height: 100vh; }
+  .nav { background: #1F4E79; color: white; padding: 0 2rem; height: 56px; display: flex; align-items: center; gap: 1rem; }
+  .nav-logo { font-size: 18px; font-weight: 700; }
+  .nav-sub { font-size: 13px; opacity: 0.65; }
+  .container { max-width: 800px; margin: 0 auto; padding: 2rem 1rem; }
+  .candidate-bar { background: white; border-radius: 12px; padding: 1.25rem 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 1.5rem; }
+  .candidate-name { font-size: 20px; font-weight: 700; color: #1F4E79; }
+  .candidate-meta { font-size: 13px; color: #666; margin-top: 3px; }
+  .level-chips { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  .chip { display: inline-flex; align-items: center; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+  .chip-grammar { background: #dbeafe; color: #1e40af; }
+  .chip-writing { background: #d1fae5; color: #065f46; }
+  .chip-reading { background: #fef3c7; color: #92400e; }
+  .chip-score { background: #f3f4f6; color: #374151; }
+
+  /* Step progress bar */
+  .step-progress { background: white; border-radius: 12px; padding: 1.25rem 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 1.5rem; }
+  .step-labels { display: flex; justify-content: space-between; margin-bottom: 10px; }
+  .step-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #94a3b8; text-align: center; flex: 1; transition: color 0.2s; }
+  .step-label.done { color: #10b981; }
+  .step-label.active { color: #1F4E79; }
+  .progress-track { display: flex; gap: 4px; }
+  .prog-step { flex: 1; height: 6px; border-radius: 3px; background: #e5e7eb; transition: background 0.2s; }
+  .prog-step.done { background: #10b981; }
+  .prog-step.active { background: #2E75B6; }
+
+  .section { display: none; }
+  .section.active { display: block; }
+  .card { background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 1rem; }
+  .section-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: #94a3b8; margin-bottom: 0.5rem; }
+  h2 { font-size: 20px; font-weight: 700; color: #1F4E79; margin-bottom: 0.5rem; }
+  .hint { font-size: 13px; color: #64748b; margin-bottom: 1.25rem; line-height: 1.6; }
+  .ref-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+  .ref-block { background: #f8fafc; border-radius: 10px; padding: 1rem; }
+  .ref-block h4 { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #94a3b8; margin-bottom: 0.5rem; }
+  .writing-sample { background: #f0f9ff; border-left: 3px solid #2E75B6; padding: 0.6rem 0.9rem; border-radius: 0 8px 8px 0; font-size: 13px; color: #334155; font-style: italic; line-height: 1.6; margin-bottom: 0.5rem; }
+  .writing-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; margin-bottom: 4px; margin-top: 8px; }
+  .gap-item { font-size: 13px; color: #334155; padding: 4px 0; border-bottom: 0.5px solid #e5e7eb; display: flex; align-items: flex-start; gap: 6px; }
+  .gap-item:last-child { border-bottom: none; }
+  .gap-dot { width: 6px; height: 6px; border-radius: 50%; background: #ef4444; margin-top: 5px; flex-shrink: 0; }
+
+  /* Goals */
+  .goal-item { padding: 10px 0; border-bottom: 0.5px solid #f1f5f9; }
+  .goal-item:last-child { border-bottom: none; }
+  .goal-row { display: flex; align-items: flex-start; gap: 12px; }
+  .goal-text { font-size: 13px; color: #334155; flex: 1; line-height: 1.5; padding-top: 6px; }
+  .goal-actions { display: flex; gap: 6px; flex-shrink: 0; }
+  .goal-btn { padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; border: 1.5px solid; transition: all 0.12s; background: white; font-family: inherit; }
+  .goal-btn.adjust { border-color: #f59e0b; color: #92400e; }
+  .goal-btn.adjust.active { background: #fef3c7; }
+  .goal-btn.remove { border-color: #ef4444; color: #991b1b; }
+  .goal-btn.remove:hover { background: #fee2e2; }
+  .goal-edit-row { margin-top: 8px; display: none; gap: 8px; }
+  .goal-edit-row.show { display: flex; }
+  .goal-edit-row input { flex: 1; font-size: 13px; padding: 7px 10px; border: 1.5px solid #f59e0b; border-radius: 6px; outline: none; font-family: inherit; }
+  .goal-edit-row button { padding: 7px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; border: none; font-family: inherit; }
+  .btn-save-goal { background: #1F4E79; color: white; }
+  .btn-cancel-goal { background: #f1f5f9; color: #334155; }
+  .goal-added { background: #f0fdf4; border-radius: 8px; padding: 8px 12px; margin-top: 4px; display: flex; align-items: center; justify-content: space-between; }
+  .goal-added-text { font-size: 13px; color: #065f46; }
+  .goal-added-remove { padding: 3px 8px; border-radius: 5px; font-size: 11px; font-weight: 600; cursor: pointer; border: 1.5px solid #ef4444; color: #991b1b; background: white; font-family: inherit; }
+
+  .avail-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 0.5px solid #f1f5f9; flex-wrap: wrap; gap: 8px; }
+  .avail-item:last-child { border-bottom: none; }
+  .avail-day { font-size: 13px; font-weight: 500; color: #334155; min-width: 100px; }
+  .avail-time { font-size: 13px; color: #64748b; flex: 1; }
+  .avail-confirmed { display: flex; gap: 6px; }
+  .avail-btn { padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; border: 1.5px solid; transition: all 0.12s; background: white; font-family: inherit; }
+  .avail-btn.yes { border-color: #10b981; color: #065f46; }
+  .avail-btn.yes.active { background: #d1fae5; }
+  .avail-btn.no { border-color: #ef4444; color: #991b1b; }
+  .avail-btn.no.active { background: #fee2e2; }
+  .add-goal-row { display: flex; gap: 8px; margin-top: 12px; }
+  .add-goal-row input { flex: 1; }
+  label { font-size: 13px; color: #475569; display: block; margin-bottom: 4px; margin-top: 14px; font-weight: 500; }
+  input, select, textarea { width: 100%; padding: 9px 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; outline: none; transition: border-color 0.15s; font-family: inherit; color: #1a1a1a; }
+  input:focus, select:focus, textarea:focus { border-color: #2E75B6; }
+  textarea { resize: vertical; min-height: 85px; }
+  .cefr-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-top: 6px; }
+  .cefr-btn { border: 1.5px solid #e2e8f0; border-radius: 8px; padding: 10px 4px; font-size: 13px; font-weight: 600; cursor: pointer; text-align: center; background: white; color: #64748b; transition: all 0.12s; font-family: inherit; }
+  .cefr-btn:hover { border-color: #2E75B6; color: #1F4E79; }
+  .cefr-btn.selected { background: #1F4E79; color: white; border-color: #1F4E79; }
+  .criteria-row { display: grid; grid-template-columns: 190px 1fr; gap: 12px; align-items: center; margin-bottom: 10px; }
+  .criteria-name { font-size: 13px; color: #334155; font-weight: 500; }
+  .rating-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .rating-btn { border: 1px solid #e2e8f0; border-radius: 6px; padding: 7px 4px; font-size: 12px; cursor: pointer; text-align: center; background: white; color: #64748b; transition: all 0.12s; font-family: inherit; }
+  .rating-btn.sel-Strong { background: #d1fae5; color: #065f46; border-color: #10b981; }
+  .rating-btn.sel-Good { background: #dbeafe; color: #1e40af; border-color: #3b82f6; }
+  .rating-btn.sel-Developing { background: #fef3c7; color: #92400e; border-color: #f59e0b; }
+  .rating-btn.sel-Weak { background: #fee2e2; color: #991b1b; border-color: #ef4444; }
+  .prompt-box { background: #f8fafc; border-radius: 10px; padding: 1rem; margin-bottom: 1rem; }
+  .prompt-box h4 { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #94a3b8; margin-bottom: 0.75rem; }
+  .prompt-item { font-size: 13px; color: #334155; padding: 5px 0; border-bottom: 0.5px solid #e5e7eb; line-height: 1.5; }
+  .prompt-item:last-child { border-bottom: none; }
+  .prompt-level { font-weight: 600; color: #1F4E79; margin-right: 6px; }
+  .btn-row { display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; gap: 12px; }
+  .btn { padding: 10px 22px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; border: none; transition: opacity 0.15s; font-family: inherit; }
+  .btn-primary { background: #1F4E79; color: white; }
+  .btn-primary:hover { opacity: 0.88; }
+  .btn-secondary { background: #f1f5f9; color: #334155; }
+  .btn-secondary:hover { background: #e2e8f0; }
+  .btn-success { background: #10b981; color: white; font-size: 15px; padding: 13px 28px; width: 100%; margin-top: 1rem; }
+  .tag { display: inline-block; font-size: 11px; padding: 3px 10px; border-radius: 20px; background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; margin: 2px; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .divider { height: 0.5px; background: #e5e7eb; margin: 1rem 0; }
+  .read-instruction { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; padding: 0.9rem 1.1rem; margin-bottom: 1.25rem; font-size: 13px; color: #1e40af; line-height: 1.6; }
+  .success-screen { text-align: center; padding: 4rem 2rem; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); display: none; }
+  .success-icon { font-size: 56px; margin-bottom: 1rem; }
+  .success-title { font-size: 22px; font-weight: 700; color: #065f46; margin-bottom: 0.5rem; }
+  .success-sub { font-size: 14px; color: #666; line-height: 1.6; }
+</style>
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-logo">linguaid eval</div>
+  <span class="nav-sub">Oral Assessment Grid</span>
+</nav>
+<div class="container">
+  <div class="candidate-bar">
+    <div class="candidate-name" id="candName">Loading...</div>
+    <div class="candidate-meta" id="candMeta"></div>
+    <div class="level-chips" id="levelChips"></div>
+  </div>
+
+  <div class="step-progress">
+    <div class="step-labels">
+      <div class="step-label active" id="sl0">Profile</div>
+      <div class="step-label" id="sl1">Listening</div>
+      <div class="step-label" id="sl2">Speaking</div>
+      <div class="step-label" id="sl3">Goals</div>
+      <div class="step-label" id="sl4">Notes</div>
+      <div class="step-label" id="sl5">Plan</div>
+    </div>
+    <div class="progress-track">
+      <div class="prog-step active" id="ps0"></div>
+      <div class="prog-step" id="ps1"></div>
+      <div class="prog-step" id="ps2"></div>
+      <div class="prog-step" id="ps3"></div>
+      <div class="prog-step" id="ps4"></div>
+      <div class="prog-step" id="ps5"></div>
+    </div>
+  </div>
+
+  <!-- STEP 0: PROFILE -->
+  <div class="section active" id="sec0">
+    <div class="card">
+      <div class="section-label">Before the session — read carefully</div>
+      <h2>Candidate profile</h2>
+      <div class="read-instruction"><strong>Read this before starting the call.</strong> Review the candidate's written test results, free writing samples, goals, and availability. You will confirm goals and availability live with the candidate during the session.</div>
+      <div class="ref-grid">
+        <div class="ref-block">
+          <h4>Written skill levels</h4>
+          <div id="refLevels"></div>
+        </div>
+        <div class="ref-block">
+          <h4>MCQ score</h4>
+          <div id="refScore"></div>
+        </div>
+      </div>
+      <div class="ref-block" style="margin-bottom:1rem">
+        <h4>Key grammar gaps</h4>
+        <div id="refGaps"></div>
+      </div>
+      <h4 style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:#94a3b8;margin-bottom:0.75rem">Free writing samples</h4>
+      <div id="refWriting"></div>
+      <div class="divider"></div>
+      <h4 style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:#94a3b8;margin-bottom:0.75rem">Self-reported goals</h4>
+      <div id="refGoals"></div>
+      <div class="divider"></div>
+      <h4 style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:#94a3b8;margin-bottom:0.75rem">Self-reported availability</h4>
+      <div id="refAvail"></div>
+      <div class="divider"></div>
+      <h4 style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:#94a3b8;margin-bottom:0.5rem">Other needs</h4>
+      <div id="refOtherNeeds" style="font-size:13px;color:#334155;font-style:italic;padding-bottom:0.5rem"></div>
+    </div>
+    <div class="card">
+      <div class="section-label">Session setup</div>
+      <label>Your name (evaluator)</label>
+      <input type="text" id="evaluator" placeholder="First Last">
+      <label>Session date</label>
+      <input type="date" id="sessionDate">
+      <label>Format</label>
+      <select id="format">
+        <option>Video call (visio)</option>
+        <option>Phone</option>
+        <option>In person</option>
+      </select>
+    </div>
+    <div class="btn-row"><span></span><button class="btn btn-primary" onclick="goSec(1)">Start assessment →</button></div>
+  </div>
+
+  <!-- STEP 1: LISTENING -->
+  <div class="section" id="sec1">
+    <div class="card">
+      <div class="section-label">Step 1 of 5 — Listening</div>
+      <h2>Listening assessment</h2>
+      <p class="hint">Use the prompts below. Assess how well the candidate understands without needing repetition or simplification.</p>
+      <div class="prompt-box">
+        <h4>Suggested prompts by level</h4>
+        <div class="prompt-item"><span class="prompt-level">A1–A2</span>Ask simple questions: name, job, daily routine.</div>
+        <div class="prompt-item"><span class="prompt-level">A2–B1</span>Describe a situation and ask them to summarise or react.</div>
+        <div class="prompt-item"><span class="prompt-level">B1–B2</span>Give a professional scenario; ask them to respond and ask follow-up questions.</div>
+        <div class="prompt-item"><span class="prompt-level">B2–C1</span>Read a short opinion statement; ask them to engage, agree, or challenge it.</div>
+      </div>
+      <label>CEFR Level — Listening</label>
+      <div class="cefr-grid" id="cefrListening"></div>
+      <label>Observations</label>
+      <textarea id="listeningObs" placeholder="e.g. Follows simple questions without difficulty; needs repetition for longer input…"></textarea>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goSec(0)">← Back</button>
+      <button class="btn btn-primary" onclick="goSec(2)">Continue →</button>
+    </div>
+  </div>
+
+  <!-- STEP 2: SPEAKING -->
+  <div class="section" id="sec2">
+    <div class="card">
+      <div class="section-label">Step 2 of 5 — Speaking</div>
+      <h2>Speaking assessment</h2>
+      <p class="hint">Use the prompts below and rate the candidate across each criterion.</p>
+      <div class="prompt-box">
+        <h4>Suggested prompts</h4>
+        <div class="prompt-item"><span class="prompt-level">A1–A2</span>"Tell me your name, your job, and what you do on a typical day."</div>
+        <div class="prompt-item"><span class="prompt-level">A2–B1</span>"Tell me about a project at work that was challenging. What happened?"</div>
+        <div class="prompt-item"><span class="prompt-level">B1–B2</span>"How has your sector changed recently? What are the main challenges?"</div>
+        <div class="prompt-item"><span class="prompt-level">B1–B2</span>"Role-play: explain to a foreign colleague why a deadline has changed and propose a solution."</div>
+        <div class="prompt-item"><span class="prompt-level">B2–C1</span>"What are the most important skills for someone in your role?"</div>
+      </div>
+      <label>CEFR Level — Speaking</label>
+      <div class="cefr-grid" id="cefrSpeaking"></div>
+      <div style="margin-top:1.25rem">
+        <div class="section-label">Criteria ratings</div>
+        <div id="criteriaGrid"></div>
+      </div>
+      <label>Observations &amp; examples</label>
+      <textarea id="speakingObs" placeholder="e.g. Good fluency on familiar topics; frequent errors with tense; strong vocabulary range…"></textarea>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goSec(1)">← Back</button>
+      <button class="btn btn-primary" onclick="goSec(3)">Continue →</button>
+    </div>
+  </div>
+
+  <!-- STEP 3: GOALS & AVAILABILITY -->
+  <div class="section" id="sec3">
+    <div class="card">
+      <div class="section-label">Step 3 of 5 — Live validation with candidate</div>
+      <h2>Goals validation</h2>
+      <p class="hint">Go through each goal with the candidate. Adjust the wording if needed, or delete goals that are not relevant. Add new goals that came up in conversation.</p>
+      <div id="goalsValidation"></div>
+      <div class="add-goal-row">
+        <input type="text" id="newGoalInput" placeholder="Add a new goal identified during the session…">
+        <button class="btn btn-secondary" onclick="addGoal()" style="white-space:nowrap;padding:9px 16px">+ Add</button>
+      </div>
+      <label style="margin-top:1rem">Notes on goals</label>
+      <textarea id="goalsNotes" placeholder="Any notes on what the candidate said about their goals…" style="min-height:60px"></textarea>
+    </div>
+    <div class="card">
+      <div class="section-label">Availability validation</div>
+      <h2>Confirm availability</h2>
+      <p class="hint">Confirm each slot with the candidate live.</p>
+      <div id="availValidation"></div>
+      <label style="margin-top:1rem">Confirmed session format</label>
+      <select id="confirmedFormat">
+        <option>Video call (visio)</option>
+        <option>Phone</option>
+        <option>In person</option>
+      </select>
+      <label>Scheduling notes</label>
+      <textarea id="schedNotes" placeholder="e.g. Prefers end-of-day; recurring meeting Wednesday mornings…" style="min-height:60px"></textarea>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goSec(2)">← Back</button>
+      <button class="btn btn-primary" onclick="goSec(4)">Continue →</button>
+    </div>
+  </div>
+
+  <!-- STEP 4: NOTES -->
+  <div class="section" id="sec4">
+    <div class="card">
+      <div class="section-label">Step 4 of 5 — Evaluator notes</div>
+      <h2>Professional context &amp; observations</h2>
+      <p class="hint">Note what you learned about the candidate's professional context and your overall assessment.</p>
+      <label>How does the candidate currently use English at work?</label>
+      <textarea id="contextObs" placeholder="e.g. Attends meetings but doesn't speak; writes occasional emails; no regular use…"></textarea>
+      <label>Key learning priorities (your professional assessment)</label>
+      <textarea id="prioritiesObs" placeholder="e.g. Most anxious about speaking in board meetings; needs fluency and confidence above all…"></textarea>
+      <label>Strengths observed</label>
+      <textarea id="strengths" style="min-height:65px" placeholder="Key strengths…"></textarea>
+      <label>Key gaps / areas for development</label>
+      <textarea id="gaps" style="min-height:65px" placeholder="Main weaknesses…"></textarea>
+      <label>Learner profile (attitude, motivation, learning style)</label>
+      <textarea id="profile" style="min-height:65px" placeholder="e.g. Highly motivated; anxious but engaged; practical learner…"></textarea>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goSec(3)">← Back</button>
+      <button class="btn btn-primary" onclick="goSec(5)">Continue →</button>
+    </div>
+  </div>
+
+  <!-- STEP 5: TRAINING PLAN -->
+  <div class="section" id="sec5">
+    <div class="card">
+      <div class="section-label">Step 5 of 5 — Training plan</div>
+      <h2>Training recommendations</h2>
+      <p class="hint">Based on the full assessment, recommend the training plan.</p>
+      <div class="two-col">
+        <div>
+          <label>Target CEFR level</label>
+          <select id="targetLevel">
+            <option>A1</option><option>A2</option><option>A2+</option>
+            <option>B1</option><option selected>B1+</option><option>B2</option>
+            <option>B2+</option><option>C1</option><option>C2</option>
+          </select>
+        </div>
+        <div>
+          <label>Total recommended hours</label>
+          <input type="number" id="totalHours" placeholder="e.g. 40" min="5" max="200">
+        </div>
+        <div>
+          <label>Coaching hours</label>
+          <input type="number" id="coachingHours" placeholder="e.g. 30">
+        </div>
+        <div>
+          <label>Homework / self-study hours</label>
+          <input type="number" id="homeworkHours" placeholder="e.g. 10">
+        </div>
+      </div>
+      <label>Additional notes for the report</label>
+      <textarea id="additionalNotes" style="min-height:70px" placeholder="Any other context or recommendations…"></textarea>
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="goSec(4)">← Back</button>
+        <span></span>
+      </div>
+      <button class="btn btn-success" onclick="submitAssessment()">Submit assessment ✓</button>
+    </div>
+  </div>
+
+  <div class="success-screen" id="successScreen">
+    <div class="success-icon">✅</div>
+    <div class="success-title">Assessment submitted successfully</div>
+    <div class="success-sub">Thank you. The evaluation data has been saved.<br>The final report will be generated by the Linguaid team.</div>
+  </div>
+</div>
+<script>
+  const token = window.location.pathname.split('/').pop();
+  const LEVELS = ["A1-","A1","A2","A2+","B1","B1+","B2","B2+","C1","C2"];
+  const CRITERIA = ["Fluency","Accuracy (grammar)","Vocabulary range","Pronunciation","Coherence","Communicative effectiveness","Confidence"];
+  const RATINGS = ["Strong","Good","Developing","Weak"];
+  const DAYS_EN = { lundi:'Monday', mardi:'Tuesday', mercredi:'Wednesday', jeudi:'Thursday', vendredi:'Friday' };
+  const STEP_LABELS = ['Profile','Listening','Speaking','Goals','Notes','Plan'];
+
+  let sel = { listening: null, speaking: null, criteria: {} };
+  let candData = null;
+  let goals = [];
+  let availStates = {};
+  let extraGoals = [];
+
+  fetch('/oral/data/' + token)
+    .then(r => r.json())
+    .then(c => {
+      candData = c;
+      goals = (c.goals || []).map(g => ({ text: g, deleted: false }));
+      renderCandidateBar(c);
+      renderReferencePanel(c);
+      makeCefrGrid('cefrListening', 'listening');
+      makeCefrGrid('cefrSpeaking', 'speaking');
+      makeCriteriaGrid();
+      renderGoalsValidation();
+      renderAvailValidation(c);
+    })
+    .catch(() => { document.getElementById('candName').textContent = 'Assessment not found'; });
+
+  function renderCandidateBar(c) {
+    document.getElementById('candName').textContent = c.name;
+    document.getElementById('candMeta').textContent = [c.jobtitle, c.dept].filter(Boolean).join(' — ');
+    const p = Math.round(100 * c.scores.total / (c.scores.max || 30));
+    const s = c.reportSummary || {};
+    document.getElementById('levelChips').innerHTML = `
+      <span class="chip chip-score">MCQ: ${c.scores.total}/${c.scores.max} (${p}%)</span>
+      ${s.grammarLevel ? `<span class="chip chip-grammar">Grammar: ${cefrLabel(s.grammarLevel)}</span>` : ''}
+      ${s.writingLevel ? `<span class="chip chip-writing">Writing: ${cefrLabel(s.writingLevel)}</span>` : ''}
+      ${s.readingLevel ? `<span class="chip chip-reading">Reading: ${cefrLabel(s.readingLevel)}</span>` : ''}
+    `;
+  }
+
+  function renderReferencePanel(c) {
+    const p = Math.round(100 * c.scores.total / (c.scores.max || 30));
+    const s = c.reportSummary || {};
+    const lvl = p>=87?'B2':p>=73?'B1+':p>=60?'B1':p>=47?'A2+':p>=33?'A2':'A1';
+    document.getElementById('refScore').innerHTML = `
+      <div style="font-size:28px;font-weight:700;color:#1F4E79;margin:4px 0">${c.scores.total}/${c.scores.max}</div>
+      <div style="font-size:13px;color:#64748b">${p}% — ${lvl} indicator</div>
+    `;
+    document.getElementById('refLevels').innerHTML = [
+      ['Grammar', cefrLabel(s.grammarLevel)||'—', '#dbeafe', '#1e40af'],
+      ['Writing', cefrLabel(s.writingLevel)||'—', '#d1fae5', '#065f46'],
+      ['Reading', cefrLabel(s.readingLevel)||'—', '#fef3c7', '#92400e'],
+    ].map(([l,v,bg,col]) => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:0.5px solid #e5e7eb">
+        <span style="font-size:13px;color:#475569">${l}</span>
+        <span style="background:${bg};color:${col};padding:2px 10px;border-radius:12px;font-size:12px;font-weight:600">${v}</span>
+      </div>
+    `).join('');
+    const gapsEl = document.getElementById('refGaps');
+    if (s.keyGaps && s.keyGaps.length) {
+      gapsEl.innerHTML = s.keyGaps.map(g => `<div class="gap-item"><div class="gap-dot"></div><span>${g}</span></div>`).join('');
+    } else {
+      gapsEl.innerHTML = '<div style="font-size:13px;color:#94a3b8;font-style:italic">Generate written report first to see grammar gaps</div>';
+    }
+    const fw = c.freewriting || {};
+    document.getElementById('refWriting').innerHTML = ['q39','q40','q41'].map((q,i) => fw[q] ? `
+      <div class="writing-label">${['Current life / work','Hometown','Future plans'][i]}</div>
+      <div class="writing-sample">${fw[q]}</div>
+    ` : '').join('');
+    document.getElementById('refGoals').innerHTML = (c.goals||[]).map(g => `<span class="tag">${g}</span>`).join('') || '<span style="font-size:13px;color:#94a3b8">None recorded</span>';
+    const avail = c.avail || {};
+    document.getElementById('refAvail').innerHTML = Object.entries(avail).filter(([,v])=>v).map(([d,v]) => `<span class="tag">${DAYS_EN[d]||d}: ${v}</span>`).join('') || '<span style="font-size:13px;color:#94a3b8">None recorded</span>';
+    document.getElementById('refOtherNeeds').textContent = c.otherNeeds || '—';
+  }
+
+  function renderGoalsValidation() {
+    const container = document.getElementById('goalsValidation');
+    container.innerHTML = goals.filter(g => !g.deleted).map((g, i) => `
+      <div class="goal-item" id="goal-item-${i}">
+        <div class="goal-row">
+          <div class="goal-text" id="goal-text-${i}">${g.text}</div>
+          <div class="goal-actions">
+            <button class="goal-btn adjust ${g.editing?'active':''}" onclick="toggleEdit(${i})">✎ Adjust</button>
+            <button class="goal-btn remove" onclick="deleteGoal(${i})">✕ Delete</button>
+          </div>
+        </div>
+        <div class="goal-edit-row ${g.editing?'show':''}" id="goal-edit-${i}">
+          <input type="text" id="goal-input-${i}" value="${g.text}" onkeydown="if(event.key==='Enter')saveGoal(${i})">
+          <button class="btn-save-goal" onclick="saveGoal(${i})">Save</button>
+          <button class="btn-cancel-goal" onclick="cancelEdit(${i})">Cancel</button>
+        </div>
+      </div>
+    `).join('') + extraGoals.map((g, i) => `
+      <div class="goal-added">
+        <div class="goal-added-text">+ ${g}</div>
+        <button class="goal-added-remove" onclick="removeExtra(${i})">✕</button>
+      </div>
+    `).join('');
+  }
+
+  window.toggleEdit = (i) => {
+    goals[i].editing = !goals[i].editing;
+    renderGoalsValidation();
+    if (goals[i].editing) { setTimeout(() => { const inp = document.getElementById('goal-input-'+i); if(inp){inp.focus();inp.select();} }, 50); }
+  };
+  window.saveGoal = (i) => {
+    const val = document.getElementById('goal-input-'+i).value.trim();
+    if (val) { goals[i].text = val; goals[i].editing = false; renderGoalsValidation(); }
+  };
+  window.cancelEdit = (i) => { goals[i].editing = false; renderGoalsValidation(); };
+  window.deleteGoal = (i) => { goals[i].deleted = true; renderGoalsValidation(); };
+  window.removeExtra = (i) => { extraGoals.splice(i,1); renderGoalsValidation(); };
+  window.addGoal = () => {
+    const input = document.getElementById('newGoalInput');
+    if (input.value.trim()) { extraGoals.push(input.value.trim()); input.value = ''; renderGoalsValidation(); }
+  };
+
+  function renderAvailValidation(c) {
+    const container = document.getElementById('availValidation');
+    const avail = c.avail || {};
+    const entries = Object.entries(avail).filter(([,v]) => v);
+    entries.forEach(([d]) => { if (!availStates[d]) availStates[d] = 'confirmed'; });
+    function render() {
+      container.innerHTML = entries.length ? entries.map(([d, v]) => `
+        <div class="avail-item">
+          <div class="avail-day">${DAYS_EN[d]||d}</div>
+          <div class="avail-time">${v}</div>
+          <div class="avail-confirmed">
+            <button class="avail-btn yes ${availStates[d]==='confirmed'?'active':''}" onclick="setAvail('${d}','confirmed')">✓ Confirmed</button>
+            <button class="avail-btn no ${availStates[d]==='not_available'?'active':''}" onclick="setAvail('${d}','not_available')">✕ Not available</button>
+          </div>
+        </div>
+      `).join('') : '<div style="font-size:13px;color:#94a3b8;font-style:italic;padding:8px 0">No availability recorded in test</div>';
+    }
+    render();
+    window.setAvail = (d, s) => { availStates[d] = s; render(); };
+  }
+
+  function makeCefrGrid(id, key) {
+    const c = document.getElementById(id);
+    c.innerHTML = '';
+    LEVELS.forEach(l => {
+      const btn = document.createElement('button');
+      btn.className = 'cefr-btn' + (sel[key]===l?' selected':'');
+      btn.textContent = l;
+      btn.onclick = () => { sel[key]=l; makeCefrGrid(id,key); };
+      c.appendChild(btn);
+    });
+  }
+
+  function makeCriteriaGrid() {
+    const grid = document.getElementById('criteriaGrid');
+    grid.innerHTML = '';
+    CRITERIA.forEach(crit => {
+      const row = document.createElement('div');
+      row.className = 'criteria-row';
+      const nameDiv = document.createElement('div');
+      nameDiv.className = 'criteria-name';
+      nameDiv.textContent = crit;
+      const ratingDiv = document.createElement('div');
+      ratingDiv.className = 'rating-row';
+      RATINGS.forEach(r => {
+        const btn = document.createElement('button');
+        btn.className = 'rating-btn' + (sel.criteria[crit]===r?' sel-'+r:'');
+        btn.textContent = r;
+        btn.onclick = () => { sel.criteria[crit]=r; ratingDiv.querySelectorAll('.rating-btn').forEach(b => { b.className='rating-btn'+(b.textContent===r?' sel-'+r:''); }); };
+        ratingDiv.appendChild(btn);
+      });
+      row.appendChild(nameDiv);
+      row.appendChild(ratingDiv);
+      grid.appendChild(row);
+    });
+  }
+
+  function goSec(n) {
+    document.querySelectorAll('.section').forEach((s,i) => s.classList.toggle('active', i===n));
+    document.querySelectorAll('.prog-step').forEach((p,i) => { p.classList.remove('done','active'); if(i<n)p.classList.add('done'); if(i===n)p.classList.add('active'); });
+    document.querySelectorAll('.step-label').forEach((l,i) => { l.classList.remove('done','active'); if(i<n)l.classList.add('done'); if(i===n)l.classList.add('active'); });
+    window.scrollTo(0,0);
+  }
+
+  function submitAssessment() {
+    const validatedGoals = goals.filter(g => !g.deleted).map(g => ({ goal: g.text, status: 'confirmed' }));
+    extraGoals.forEach(g => validatedGoals.push({ goal: g, status: 'added_by_evaluator' }));
+    const avail = candData.avail || {};
+    const validatedAvail = Object.entries(avail).filter(([,v])=>v).map(([d,v]) => ({ day: DAYS_EN[d]||d, time: v, status: availStates[d]||'confirmed' }));
+    const payload = {
+      evaluator: document.getElementById('evaluator').value,
+      sessionDate: document.getElementById('sessionDate').value,
+      format: document.getElementById('format').value,
+      listeningLevel: sel.listening,
+      speakingLevel: sel.speaking,
+      criteria: sel.criteria,
+      listeningObs: document.getElementById('listeningObs').value,
+      speakingObs: document.getElementById('speakingObs').value,
+      validatedGoals,
+      goalsNotes: document.getElementById('goalsNotes').value,
+      validatedAvail,
+      confirmedFormat: document.getElementById('confirmedFormat').value,
+      schedNotes: document.getElementById('schedNotes').value,
+      contextObs: document.getElementById('contextObs').value,
+      prioritiesObs: document.getElementById('prioritiesObs').value,
+      strengths: document.getElementById('strengths').value,
+      gaps: document.getElementById('gaps').value,
+      profile: document.getElementById('profile').value,
+      targetLevel: document.getElementById('targetLevel').value,
+      totalHours: document.getElementById('totalHours').value,
+      coachingHours: document.getElementById('coachingHours').value,
+      homeworkHours: document.getElementById('homeworkHours').value,
+      additionalNotes: document.getElementById('additionalNotes').value
+    };
+    fetch('/oral/submit/'+token, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) })
+      .then(r=>r.json())
+      .then(data => {
+        if (data.success) {
+          document.querySelectorAll('.section').forEach(s=>s.style.display='none');
+          document.getElementById('successScreen').style.display='block';
+          document.querySelector('.step-progress').style.display='none';
+          document.querySelector('.candidate-bar').style.display='none';
+        } else { alert('Error: '+data.error); }
+      })
+      .catch(err => alert('Submission failed: '+err.message));
+  }
+
+  function cefrLabel(level) {
+    if (!level) return '';
+    var map = {
+      'A1':'A1 (0)','A1+':'A1+ (0.5)',
+      'A2':'A2 (1)','A2+':'A2+ (1.5)',
+      'B1':'B1 (2)','B1+':'B1+ (2.5)',
+      'B2':'B2 (3)','B2+':'B2+ (3.5)',
+      'C1':'C1 (4)','C1+':'C1+ (4.5)',
+      'C2':'C2 (5)'
+    };
+    if (/\(\d/.test(level)) return level;
+    return map[level.trim()] || level;
+  }
+
+</script>
+</body>
+</html>

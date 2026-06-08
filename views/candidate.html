@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Linguaid Eval — Candidate</title>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js">
+  function sendForSignature() {
+    var btn = document.getElementById('btnSendSign');
+    var status = document.getElementById('signStatus');
+    btn.disabled = true;
+    btn.textContent = 'Envoi en cours...';
+    fetch('/api/generate-convention/' + id, { method: 'POST' })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (d.success) {
+          status.innerHTML = '✅ Email envoyé à ' + (candidate.email || '') +
+            '<br><small><a href="' + d.signingUrl + '" target="_blank">Lien de signature</a></small>';
+          btn.textContent = 'Renvoyer';
+          btn.disabled = false;
+        } else {
+          status.textContent = 'Erreur: ' + d.error;
+          btn.textContent = 'Envoyer pour signature';
+          btn.disabled = false;
+        }
+      })
+      .catch(function(e) {
+        status.textContent = 'Erreur: ' + e.message;
+        btn.textContent = 'Envoyer pour signature';
+        btn.disabled = false;
+      });
+  }
+
+  function downloadConvention() {
+    var data = {
+      siret: document.getElementById("convSiret").value,
+      civility: document.getElementById("convCivility").value,
+      signatory: document.getElementById("convSignatory").value,
+      price: document.getElementById("convPrice").value,
+      dateStart: document.getElementById("convDateStart").value,
+      dateEnd: document.getElementById("convDateEnd").value,
+      isCPF: document.getElementById("convIsCPF") ? document.getElementById("convIsCPF").checked : false
+    };
+    fetch("/api/save-convention/" + id, {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(data)})
+      .then(function(r){return r.json();})
+      .then(function(d){
+        if (d.success) {
+          fetch("/api/generate-convention/" + id, {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({sendEmail:false})})
+            .then(function(r2){return r2.json();})
+            .then(function(d2){
+              if (d2.success || d2.pdfPath) { window.location.href = "/api/download-convention/" + id; }
+              else alert("Erreur génération: " + d2.error);
+            });
+        } else alert("Erreur: " + d.error);
+      });
+  }
+
+</script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f4f8; min-height: 100vh; }
+  .nav { background: #1F4E79; color: white; padding: 0 2rem; height: 56px; display: flex; align-items: center; justify-content: space-between; }
+  .nav-logo { font-size: 18px; font-weight: 700; }
+  .nav-right a { color: rgba(255,255,255,0.8); text-decoration: none; font-size: 13px; }
+  .container { max-width: 960px; margin: 0 auto; padding: 2rem; }
+  .back { font-size: 13px; color: #666; text-decoration: none; display: inline-block; margin-bottom: 1rem; }
+  .back:hover { color: #1F4E79; }
+  .profile { background: white; border-radius: 12px; padding: 1.5rem 2rem; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; }
+  .profile-name { font-size: 22px; font-weight: 700; color: #1F4E79; }
+  .profile-sub { font-size: 14px; color: #666; margin-top: 4px; }
+  .profile-meta { font-size: 13px; color: #888; margin-top: 8px; }
+  .badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+  .progress-card { background: white; border-radius: 12px; padding: 1.5rem 2rem; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 1.5rem; }
+  .progress-card-title { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: #94a3b8; margin-bottom: 1rem; }
+  .progress-steps { display: flex; align-items: center; }
+  .progress-step { display: flex; flex-direction: column; align-items: center; flex: 1; position: relative; }
+  .progress-step:not(:last-child)::after { content: ''; position: absolute; top: 20px; left: 50%; width: 100%; height: 3px; background: #e5e7eb; z-index: 0; transition: background 0.3s; }
+  .progress-step.done:not(:last-child)::after { background: #10b981; }
+  .progress-step.active:not(:last-child)::after { background: #bfdbfe; }
+  .step-circle { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; z-index: 1; border: 3px solid #e5e7eb; background: white; color: #94a3b8; transition: all 0.3s; }
+  .progress-step.done .step-circle { background: #10b981; border-color: #10b981; color: white; }
+  .progress-step.active .step-circle { background: #1F4E79; border-color: #1F4E79; color: white; }
+  .step-label { font-size: 12px; font-weight: 500; margin-top: 8px; color: #94a3b8; text-align: center; }
+  .progress-step.done .step-label { color: #10b981; }
+  .progress-step.active .step-label { color: #1F4E79; font-weight: 600; }
+  .step-sublabel { font-size: 11px; color: #94a3b8; margin-top: 2px; text-align: center; }
+  .progress-step.done .step-sublabel { color: #10b981; }
+  .pipeline { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+  .stage { background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border-top: 4px solid #e5e7eb; }
+  .stage.done { border-top-color: #10b981; }
+  .stage.active { border-top-color: #2E75B6; }
+  .stage-num { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #999; margin-bottom: 0.5rem; }
+  .stage-title { font-size: 15px; font-weight: 600; color: #1a1a1a; margin-bottom: 0.75rem; }
+  .stage-status { font-size: 12px; color: #666; margin-bottom: 1rem; }
+  .btn { display: inline-block; padding: 9px 18px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; border: none; transition: all 0.15s; text-decoration: none; font-family: inherit; }
+  .btn-primary { background: #1F4E79; color: white; }
+  .btn-primary:hover { opacity: 0.88; }
+  .btn-secondary { background: #f1f5f9; color: #334155; }
+  .btn-secondary:hover { background: #e2e8f0; }
+  .btn-en { background: #1F4E79; color: white; }
+  .btn-en:hover { opacity: 0.88; }
+  .btn-fr { background: #C00000; color: white; }
+  .btn-fr:hover { opacity: 0.88; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .download-btns { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 0.75rem; }
+  .report-box { background: white; border-radius: 12px; padding: 1.5rem 2rem; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 1.5rem; }
+  .report-box-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem; }
+  .report-box h3 { font-size: 16px; font-weight: 600; color: #1F4E79; margin: 0; }
+  .report-rendered { font-size: 14px; line-height: 1.7; color: #1a1a1a; max-height: 500px; overflow-y: auto; background: #fafafa; border-radius: 8px; padding: 1.5rem; border: 1px solid #e5e7eb; }
+  .report-rendered h1 { font-size: 22px; font-weight: 700; color: #1F4E79; margin: 1.5rem 0 0.75rem; }
+  .report-rendered h2 { font-size: 18px; font-weight: 600; color: #1F4E79; margin: 1.25rem 0 0.5rem; border-bottom: 1px solid #e5e7eb; padding-bottom: 6px; }
+  .report-rendered h3 { font-size: 15px; font-weight: 600; color: #2E75B6; margin: 1rem 0 0.4rem; }
+  .report-rendered p { margin: 0.5rem 0; }
+  .report-rendered ul, .report-rendered ol { padding-left: 1.5rem; margin: 0.5rem 0; }
+  .report-rendered li { margin: 0.3rem 0; }
+  .report-rendered strong { font-weight: 600; color: #1a1a1a; }
+  .report-rendered em { color: #475569; }
+  .report-rendered hr { border: none; border-top: 1px solid #e5e7eb; margin: 1rem 0; }
+  .report-rendered code { background: #f1f5f9; padding: 1px 6px; border-radius: 4px; font-size: 13px; }
+  .report-rendered table { width: 100%; border-collapse: collapse; margin: 0.75rem 0; font-size: 13px; }
+  .report-rendered th { background: #dbeafe; color: #1e40af; padding: 8px 12px; text-align: left; font-weight: 600; }
+  .report-rendered td { padding: 7px 12px; border-bottom: 1px solid #f1f5f9; }
+  .oral-link-box { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; padding: 1rem 1.25rem; margin-top: 0.75rem; }
+  .oral-link-box label { font-size: 12px; color: #1e40af; font-weight: 500; display: block; margin-bottom: 6px; }
+  .oral-link-box input { width: 100%; font-size: 13px; padding: 8px 10px; border: 1px solid #bfdbfe; border-radius: 6px; background: white; color: #1e3a8a; }
+  .copy-btn { margin-top: 8px; font-size: 12px; padding: 6px 14px; }
+  .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.4); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .writing-sample { background: #f8fafc; border-left: 3px solid #2E75B6; padding: 0.75rem 1rem; border-radius: 0 8px 8px 0; margin-bottom: 0.75rem; font-size: 13px; color: #334155; font-style: italic; line-height: 1.6; }
+  .writing-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; margin-bottom: 4px; }
+  .score-bar-wrap { flex: 1; background: #e5e7eb; border-radius: 4px; height: 8px; overflow: hidden; margin: 0 10px; }
+  .score-bar { height: 100%; background: #2E75B6; border-radius: 4px; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .tag { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 12px; background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; margin: 2px; }
+  .download-loading { font-size: 12px; color: #64748b; font-style: italic; margin-top: 6px; display: none; }
+</style>
+</head>
+<body>
+<nav class="nav">
+  <a href="/candidates" class="nav-logo" style="display:flex;align-items:center;gap:16px;text-decoration:none;color:white"><div style="background:white;border-radius:6px;padding:4px 10px;display:flex;align-items:center"><img src="/linguaid_logo.png" style="height:32px;display:block" alt="Linguaid"></div><span style="font-size:15px;font-weight:600;letter-spacing:0.01em;color:white">English Evaluation System</span></a>
+  <div class="nav-right"><a href="/logout">Sign out</a></div>
+</nav>
+<div class="container">
+  <a href="/candidates" class="back">← All candidates</a>
+  <div class="profile" id="profileBlock">
+    <div>
+      <div class="profile-name" id="profileName">Loading...</div>
+      <div class="profile-sub" id="profileSub"></div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:6px"><span style="font-size:12px;color:#94a3b8;min-width:70px">Entreprise</span><input id="profileCompany" type="text" placeholder="Ajouter l'entreprise..." onblur="saveCompany(this)" style="font-size:13px;padding:4px 8px;border:1px solid #e2e8f0;border-radius:6px;width:240px;color:#334155"></div>
+      <div class="profile-meta" id="profileMeta"></div>
+    </div>
+    <div id="profileBadge"></div>
+  </div>
+
+  <div class="progress-card">
+    <div class="progress-card-title">Evaluation progress</div>
+    <div class="progress-steps">
+      <div class="progress-step" id="pstep0">
+        <div class="step-circle" id="pc0">1</div>
+        <div class="step-label">CSV uploaded</div>
+        <div class="step-sublabel">Test data imported</div>
+      </div>
+      <div class="progress-step" id="pstep1">
+        <div class="step-circle" id="pc1">2</div>
+        <div class="step-label">Written report</div>
+        <div class="step-sublabel">Grammar & writing</div>
+      </div>
+      <div class="progress-step" id="pstep2">
+        <div class="step-circle" id="pc2">3</div>
+        <div class="step-label">Oral assessment</div>
+        <div class="step-sublabel">Speaking & listening</div>
+      </div>
+      <div class="progress-step" id="pstep3">
+        <div class="step-circle" id="pc3">4</div>
+        <div class="step-label">Final report</div>
+        <div class="step-sublabel">Complete evaluation</div>
+      </div>
+      <div class="progress-step" id="pstep4">
+        <div class="step-circle" id="pc4">5</div>
+        <div class="step-label">Programme</div>
+        <div class="step-sublabel">Formation document</div>
+      </div>
+      <div class="progress-step" id="pstep5">
+        <div class="step-circle" id="pc5">6</div>
+        <div class="step-label">Convention</div>
+        <div class="step-sublabel">Document legal</div>
+      </div>
+      <div class="progress-step" id="pstep6">
+        <div class="step-circle" id="pc6">7</div>
+        <div class="step-label">Signé</div>
+        <div class="step-sublabel">Convention signée</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pipeline" style="grid-template-columns:repeat(4,1fr)">
+    <div class="stage" id="stage1">
+      <div class="stage-num">Step 1</div>
+      <div class="stage-title">Written Report</div>
+      <div class="stage-status" id="stage1status">Generate the written evaluation from test data</div>
+      <button class="btn btn-primary" id="btnWritten" onclick="generateWritten()">Generate</button>
+      <div id="stage1downloads" style="display:none;margin-top:0.75rem">
+        <div class="download-btns">
+          <button class="btn btn-en" onclick="downloadWritten('en')" title="Download EN">🇬🇧 EN</button>
+          <button class="btn btn-fr" onclick="downloadWritten('fr')" title="Télécharger FR">🇫🇷 FR</button>
+        </div>
+        <div class="download-loading" id="writtenDownloadLoading">Generating…</div>
+      </div>
+    </div>
+    <div class="stage" id="stage2">
+      <div class="stage-num">Step 2</div>
+      <div class="stage-title">Oral Assessment</div>
+      <div class="stage-status" id="stage2status">Send oral assessment link to evaluator</div>
+      <div id="oralLinkArea"></div>
+    </div>
+    <div class="stage" id="stage3">
+      <div class="stage-num">Step 3</div>
+      <div class="stage-title">Final Report</div>
+      <div class="stage-status" id="stage3status">Generate once oral assessment is complete</div>
+      <button class="btn btn-primary" id="btnFinal" onclick="generateFinal()" disabled>Generate</button>
+      <div id="stage3downloads" style="display:none;margin-top:0.75rem">
+        <div class="download-btns">
+          <button class="btn btn-en" onclick="downloadReport('en')" title="Download EN">🇬🇧 EN</button>
+          <button class="btn btn-fr" onclick="downloadReport('fr')" title="Télécharger FR">🇫🇷 FR</button>
+        </div>
+        <div class="download-loading" id="downloadLoading">Generating…</div>
+      </div>
+    </div>
+    <div class="stage" id="stage4">
+      <div class="stage-num">Step 4</div>
+      <div class="stage-title">Programme</div>
+      <div class="stage-status" id="stage4status">Create once final report is done</div>
+      <a id="btnProgramme" href="#" class="btn btn-primary" style="display:none">Create →</a>
+      <div id="stage4downloads" style="display:none;margin-top:0.75rem">
+        <div class="download-btns">
+          <button class="btn btn-en" onclick="downloadProgramme('en')" title="Download EN">🇬🇧 EN</button>
+          <button class="btn btn-fr" onclick="downloadProgramme('fr')" title="Télécharger FR">🇫🇷 FR</button>
+        </div>
+        <div class="download-loading" id="programmeDownloadLoading">Generating…</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stage" id="stage5" style="background:white;border-radius:12px;padding:1.5rem;box-shadow:0 2px 8px rgba(0,0,0,0.06);border-top:4px solid #e5e7eb;margin-bottom:1.5rem">
+    <div class="stage-num">Step 5</div>
+    <div class="stage-title">Convention de formation</div>
+    <div class="stage-status" id="stage5status">Complete once programme is done</div>
+    <div id="conventionForm" style="display:none;margin-top:1rem">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem">
+        <div style="grid-column:1/-1;display:flex;align-items:center;gap:10px;padding:8px 0"><label style="font-size:13px;font-weight:500;color:#1F4E79">Formation CPF (RS6341)</label><input type="checkbox" id="convIsCPF" onchange="toggleConvCPF()" style="width:16px;height:16px;cursor:pointer"><span style="font-size:11px;color:#666">Cochez si financement CPF</span></div><div id="convSiretRow"><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">SIRET entreprise</label><input id="convSiret" type="text" placeholder="123 456 789 00012" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
+        <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Civilite</label><select id="convCivility" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"><option>Madame</option><option>Monsieur</option></select></div>
+        <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Signataire entreprise</label><input id="convSignatory" type="text" placeholder="Prenom NOM" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
+        <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Prix (euros HT)</label><input id="convPrice" type="text" placeholder="3800" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
+        <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Date debut</label><input id="convDateStart" type="date" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
+        <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Date fin</label><input id="convDateEnd" type="date" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
+      </div>
+      <button class="btn btn-primary" onclick="downloadConvention()">Telecharger la convention</button>
+      <button class="btn btn-secondary" id="btnSendSign" onclick="sendForSignature()" style="margin-left:8px">Envoyer pour signature</button>
+      <div id="signStatus" style="margin-top:8px;font-size:12px;color:#666"></div>
+      <div id="signedPdfBlock" style="display:none;margin-top:12px;padding:10px 14px;background:#d1fae5;border-radius:8px;border:1px solid #6ee7b7">
+        <span style="font-size:13px;color:#065f46;font-weight:500">✅ Convention signée</span>
+        <a id="signedPdfLink" href="#" target="_blank" class="btn btn-primary" style="margin-left:12px;font-size:12px;padding:6px 14px;background:#065f46">Télécharger PDF signé</a>
+      </div>
+    </div>
+  </div>
+  <div class="two-col">
+    <div class="report-box">
+      <h3>Test Data</h3>
+      <div id="testDataBlock"></div>
+    </div>
+    <div class="report-box">
+      <h3>Goals &amp; Needs</h3>
+      <div id="goalsBlock"></div>
+    </div>
+  </div>
+
+  <div class="report-box" id="writtenReportBox" style="display:none">
+    <div class="report-box-header">
+      <h3>Written Evaluation Report</h3>
+    </div>
+    <div class="report-rendered" id="writtenReportContent"></div>
+  </div>
+
+
+
+  <div class="report-box" id="finalReportBox" style="display:none">
+    <div class="report-box-header">
+      <h3>Final Evaluation Report</h3>
+
+    </div>
+    <div id="reportSections"></div>
+  </div>
+</div>
+
+<script>
+  const id = window.location.pathname.split('/').pop();
+  let candidate = null;
+  const STATUS_ORDER = ['csv_uploaded', 'written_report_done', 'oral_done', 'final_report_done', 'programme_done'];
+
+  marked.setOptions({ breaks: true, gfm: true });
+
+  function updateProgressBar(status, hasConvention, hasSigned) {
+    const stepIndex = STATUS_ORDER.indexOf(status);
+    for (let i = 0; i < 5; i++) {
+      const step = document.getElementById('pstep' + i);
+      const circle = document.getElementById('pc' + i);
+      step.classList.remove('done', 'active', 'pending');
+      if (i < stepIndex + 1) {
+        step.classList.add('done');
+        circle.innerHTML = '✓';
+      } else if (i === stepIndex + 1) {
+        step.classList.add('active');
+        circle.innerHTML = (i + 1).toString();
+      } else {
+        step.classList.add('pending');
+        circle.innerHTML = (i + 1).toString();
+      }
+    }
+    var s5 = document.getElementById('pstep5');
+    var c5 = document.getElementById('pc5');
+    if (s5 && hasConvention) { s5.classList.remove('pending','active'); s5.classList.add('done'); c5.innerHTML = '✓'; }
+    var s6 = document.getElementById('pstep6');
+    var c6 = document.getElementById('pc6');
+    if (s6 && hasSigned) { s6.classList.remove('pending','active'); s6.classList.add('done'); c6.innerHTML = '✓'; }
+    else if (s6 && hasConvention) { s6.classList.remove('pending','done'); s6.classList.add('active'); }
+  }
+
+  function statusBadge(status) {
+    const map = {
+      csv_uploaded: ['CSV uploaded', '#e0e7ff', '#3730a3'],
+      written_report_done: ['Written done', '#d1fae5', '#065f46'],
+      oral_done: ['Oral done', '#fef3c7', '#92400e'],
+      final_report_done: ['Final done', '#dbeafe', '#1e40af']
+    };
+    const [label, bg, color] = map[status] || ['Unknown', '#f3f4f6', '#374151'];
+    return `<span class="badge" style="background:${bg};color:${color}">${label}</span>`;
+  }
+
+  function render(c) {
+    candidate = c;
+    document.getElementById('profileName').textContent = c.name;
+    document.getElementById('profileSub').textContent = [c.jobtitle, c.dept].filter(Boolean).join(' — ');
+    var companyEl = document.getElementById('profileCompany');
+    companyEl.value = c.company || '';
+    companyEl.dataset.id = c.id;
+    document.getElementById('profileMeta').textContent = c.email + (c.testdate ? ' · Test: ' + c.testdate : '');
+    document.getElementById('profileBadge').innerHTML = statusBadge(c.status);
+    updateProgressBar(c.status, !!(c.conventionData && c.conventionData.price), !!(c.conventionData && c.conventionData.signedAt));
+
+    const p = Math.round(100 * c.scores.total / (c.scores.max || 30));
+    document.getElementById('testDataBlock').innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:1rem">
+        <span style="font-size:13px;color:#666;min-width:80px">MCQ Score</span>
+        <div class="score-bar-wrap"><div class="score-bar" style="width:${p}%"></div></div>
+        <span style="font-size:13px;font-weight:600">${c.scores.total}/${c.scores.max} (${p}%)</span>
+      </div>
+      ${['q39','q40','q41'].map((q,i) => c.freewriting[q] ? `
+        <div class="writing-label">${['Current life','Hometown','Future plans'][i]}</div>
+        <div class="writing-sample">${c.freewriting[q]}</div>
+      ` : '').join('')}
+    `;
+
+    document.getElementById('goalsBlock').innerHTML = `
+      <ul style="padding-left:1.25rem;font-size:13px;color:#444">
+        ${(c.goals||[]).map(g => `<li style="padding:3px 0">${g}</li>`).join('') || '<li style="color:#999">No goals recorded</li>'}
+      </ul>
+      ${c.otherNeeds ? `<div style="margin-top:1rem;font-size:13px;color:#555;font-style:italic">${c.otherNeeds}</div>` : ''}
+      <div style="margin-top:1rem;font-size:13px;color:#666">
+        <strong>Availability:</strong><br>
+        ${Object.entries(c.avail||{}).map(([d,v]) => v ? `<span class="tag">${d}: ${v}</span>` : '').filter(Boolean).join('') || 'Not specified'}
+      </div>
+    `;
+
+    const oralUrl = window.location.origin + '/oral/' + c.oralToken;
+    document.getElementById('oralLinkArea').innerHTML = `
+      <div class="oral-link-box">
+        <label>Share this link with the evaluator</label>
+        <input type="text" id="oralLinkInput" value="${oralUrl}" readonly>
+        <button class="btn btn-secondary copy-btn" onclick="copyLink()">Copy link</button>
+      </div>
+    `;
+
+    if (c.writtenReport) {
+      document.getElementById('writtenReportBox').style.display = 'block';
+      document.getElementById('writtenReportContent').innerHTML = marked.parse(c.writtenReport);
+      document.getElementById('btnWritten').textContent = 'Regenerate';
+      document.getElementById('stage1').classList.add('done');
+      document.getElementById('stage1status').textContent = 'Written report generated ✓';
+      document.getElementById('stage1downloads').style.display = 'block';
+    }
+
+    if (c.oralData) {
+      document.getElementById('stage2').classList.add('done');
+      document.getElementById('stage2status').textContent = 'Oral assessment submitted ✓';
+      document.getElementById('btnFinal').disabled = false;
+      document.getElementById('stage3').classList.add('active');
+      // Show global average level next to name
+      var oral = c.oralData;
+      var summary = c.reportSummary || {};
+      var cefrMap = {'A1':0,'A1+':0.5,'A2':1,'A2+':1.5,'B1':2,'B1+':2.5,'B2':3,'B2+':3.5,'C1':4,'C1+':4.5,'C2':5};
+      var cefrRevMap = {0:'A1',0.5:'A1+',1:'A2',1.5:'A2+',2:'B1',2.5:'B1+',3:'B2',3.5:'B2+',4:'C1',4.5:'C1+',5:'C2'};
+      var levels = [summary.grammarLevel, summary.writingLevel, summary.readingLevel, oral.listeningLevel, oral.speakingLevel]
+        .map(function(l){ return cefrMap[l]; }).filter(function(n){ return n !== undefined; });
+      if (levels.length) {
+        var avg = levels.reduce(function(a,b){return a+b;},0) / levels.length;
+        var rounded = Math.round(avg * 2) / 2;
+        var label = cefrRevMap[rounded] || '';
+        if (label) {
+          var el = document.getElementById('profileName');
+          el.innerHTML = c.name + ' <span style="font-size:14px;font-weight:500;background:#dbeafe;color:#1e40af;padding:3px 10px;border-radius:12px;vertical-align:middle">' + label + ' (' + rounded + ')</span>';
+        }
+      }
+    } else if (c.writtenReport) {
+      document.getElementById('stage2').classList.add('active');
+    }
+
+    if (c.finalReport) {
+      document.getElementById('finalReportBox').style.display = 'block';
+      renderReportSections(c.finalReport);
+      document.getElementById('stage3').classList.add('done');
+      document.getElementById('stage3status').textContent = 'Final report generated ✓';
+      document.getElementById('btnFinal').textContent = 'Regenerate';
+      document.getElementById('btnFinal').disabled = false;
+      document.getElementById('stage3downloads').style.display = 'block';
+      // Show programme brick
+      document.getElementById('stage4').classList.add('active');
+      document.getElementById('btnProgramme').style.display = 'inline-block';
+      document.getElementById('btnProgramme').href = (c.courseType === 'legal') ? '/api/generate-programme-legal/' + id : '/candidates/' + id + '/programme';
+    }
+
+    if (c.status === 'programme_done') {
+      document.getElementById('stage4').classList.add('done');
+      document.getElementById('stage4status').textContent = 'Programme created ✓';
+      document.getElementById('btnProgramme').textContent = 'Recreate →';
+      document.getElementById('stage4downloads').style.display = 'block';
+    }
+  }
+
+
+
+  function splitIntoSections(text) {
+    var lines = text.split('\n');
+    var sections = [];
+    var current = null;
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i];
+      if (line.startsWith('## ') || line.startsWith('# ')) {
+        if (current) sections.push(current);
+        current = { title: line.replace(/^#+\s/, ''), content: line };
+      } else if (current) {
+        current.content += '\n' + line;
+      } else {
+        if (!current) current = { title: 'Introduction', content: line };
+        else current.content += '\n' + line;
+      }
+    }
+    if (current) sections.push(current);
+    return sections;
+  }
+
+  function renderReportSections(reportText) {
+    var container = document.getElementById('reportSections');
+    var sections = splitIntoSections(reportText);
+    container.innerHTML = sections.map(function(s, i) {
+      return '<div class="report-section" id="rsec-' + i + '" style="margin-bottom:1rem;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden">'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;padding:0.75rem 1rem;background:#f8fafc;border-bottom:1px solid #e5e7eb">'
+        + '<span style="font-size:14px;font-weight:600;color:#1F4E79">' + s.title + '</span>'
+        + '<button onclick="editSection(' + i + ')" id="redit-' + i + '" style="font-size:12px;padding:4px 12px;border-radius:6px;border:1px solid #cbd5e1;background:white;cursor:pointer;font-family:inherit">✎ Edit</button>'
+        + '</div>'
+        + '<div class="report-rendered" id="rcontent-' + i + '" style="padding:1rem">' + marked.parse(s.content) + '</div>'
+        + '<textarea id="reditor-' + i + '" style="display:none;width:100%;min-height:200px;font-family:monospace;font-size:13px;padding:1rem;border:none;border-top:1px solid #e5e7eb;line-height:1.6;resize:vertical" spellcheck="true">' + s.content.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</textarea>'
+        + '<div id="rsave-' + i + '" style="display:none;padding:0.75rem 1rem;background:#f8fafc;border-top:1px solid #e5e7eb;display:none;gap:8px">'
+        + '<button onclick="saveSection(' + i + ')" style="font-size:13px;padding:6px 16px;border-radius:6px;border:none;background:#10b981;color:white;cursor:pointer;font-family:inherit">✓ Save</button>'
+        + '<button onclick="cancelSection(' + i + ')" style="font-size:13px;padding:6px 16px;border-radius:6px;border:1px solid #cbd5e1;background:white;cursor:pointer;font-family:inherit">Cancel</button>'
+        + '</div>'
+        + '</div>';
+    }).join('');
+    window._reportSections = sections;
+  }
+
+  function editSection(i) {
+    var content = document.getElementById('rcontent-' + i);
+    var editor = document.getElementById('reditor-' + i);
+    var saveBar = document.getElementById('rsave-' + i);
+    var editBtn = document.getElementById('redit-' + i);
+    content.style.display = 'none';
+    editor.style.display = 'block';
+    saveBar.style.display = 'flex';
+    editBtn.style.display = 'none';
+  }
+
+  function cancelSection(i) {
+    var content = document.getElementById('rcontent-' + i);
+    var editor = document.getElementById('reditor-' + i);
+    var saveBar = document.getElementById('rsave-' + i);
+    var editBtn = document.getElementById('redit-' + i);
+    content.style.display = 'block';
+    editor.style.display = 'none';
+    saveBar.style.display = 'none';
+    editBtn.style.display = 'inline-block';
+  }
+
+  function saveSection(i) {
+    var editor = document.getElementById('reditor-' + i);
+    var newContent = editor.value;
+    window._reportSections[i].content = newContent;
+    var fullReport = window._reportSections.map(function(s) { return s.content; }).join('\n\n');
+    fetch('/candidates/api/' + id + '/report', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ finalReport: fullReport })
+    })
+    .then(r => r.json())
+    .then(d => {
+      if (d.success) {
+        candidate.finalReport = fullReport;
+        document.getElementById('rcontent-' + i).innerHTML = marked.parse(newContent);
+        cancelSection(i);
+      } else { alert('Save failed: ' + d.error); }
+    })
+    .catch(err => alert(err.message));
+  }
+
+  function toggleEdit() {
+    var rendered = document.getElementById('finalReportContent');
+    var editor = document.getElementById('finalReportEditor');
+    var btnEdit = document.getElementById('btnEditReport');
+    var btnSave = document.getElementById('btnSaveReport');
+    if (editor.style.display === 'none') {
+      editor.value = candidate.finalReport || '';
+      editor.style.display = 'block';
+      rendered.style.display = 'none';
+      btnEdit.textContent = '✕ Cancel';
+      btnSave.style.display = 'inline-block';
+    } else {
+      editor.style.display = 'none';
+      rendered.style.display = 'block';
+      btnEdit.textContent = '✎ Edit report';
+      btnSave.style.display = 'none';
+    }
+  }
+
+  function saveReport() {
+    var editor = document.getElementById('finalReportEditor');
+    var newText = editor.value;
+    fetch('/candidates/api/' + id + '/report', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ finalReport: newText })
+    })
+    .then(r => r.json())
+    .then(d => {
+      if (d.success) {
+        candidate.finalReport = newText;
+        document.getElementById('finalReportContent').innerHTML = marked.parse(newText);
+        toggleEdit();
+      } else { alert('Save failed: ' + d.error); }
+    })
+    .catch(err => alert(err.message));
+  }
+
+  function saveCompany(input) {
+    var company = input.value.trim();
+    fetch('/candidates/api/' + id + '/company', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ company: company })
+    }).then(r => r.json()).then(d => {
+      if (d.success) { candidate.company = company; input.style.borderColor = '#10b981'; setTimeout(() => input.style.borderColor = '#e2e8f0', 1500); }
+    });
+  }
+
+  function generateWritten() {
+    const btn = document.getElementById('btnWritten');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>Generating...';
+    fetch('/api/generate-written/' + id, { method: 'POST' })
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) location.reload();
+        else { alert('Error: ' + data.error); btn.disabled = false; btn.textContent = 'Generate written report'; }
+      })
+      .catch(err => { alert(err.message); btn.disabled = false; btn.textContent = 'Generate written report'; });
+  }
+
+  function generateFinal() {
+    const btn = document.getElementById('btnFinal');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>Generating...';
+    fetch('/api/generate-final/' + id, { method: 'POST' })
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) location.reload();
+        else if (data.error) { alert('Error: ' + data.error); btn.disabled = false; btn.textContent = 'Generate final report'; }
+      })
+      .catch(err => { alert(err.message); btn.disabled = false; btn.textContent = 'Generate final report'; });
+  }
+
+  function downloadReport(lang) {
+    const loading = document.getElementById('downloadLoading');
+    loading.style.display = 'block';
+    loading.textContent = lang === 'fr' ? 'Traduction en cours…' : 'Generating…';
+    window.location.href = '/api/download/' + id + '/' + lang;
+    setTimeout(() => { loading.style.display = 'none'; }, lang === 'fr' ? 15000 : 5000);
+  }
+
+  function downloadWritten(lang) {
+    const loading = document.getElementById('writtenDownloadLoading');
+    loading.style.display = 'block';
+    loading.textContent = lang === 'fr' ? 'Traduction en cours…' : 'Generating…';
+    window.location.href = '/api/download-written/' + id + '/' + lang;
+    setTimeout(() => { loading.style.display = 'none'; }, lang === 'fr' ? 15000 : 5000);
+  }
+
+  function downloadProgramme(lang) {
+    const loading = document.getElementById('programmeDownloadLoading');
+    loading.style.display = 'block';
+    loading.textContent = lang === 'fr' ? 'Traduction en cours…' : 'Generating…';
+    window.location.href = '/api/generate-programme/' + id + '?lang=' + lang;
+    setTimeout(() => { loading.style.display = 'none'; }, 10000);
+  }
+
+  function copyLink() {
+    const input = document.getElementById('oralLinkInput');
+    input.select();
+    document.execCommand('copy');
+    event.target.textContent = 'Copied!';
+    setTimeout(() => event.target.textContent = 'Copy link', 2000);
+  }
+
+  function showConvention(c) {
+    var el = document.getElementById("conventionForm");
+    if (!el) return;
+    el.style.display = "block";
+    document.getElementById("stage5status").textContent = "Remplissez les details pour generer la convention";
+    document.getElementById("stage5").style.borderTopColor = "#2E75B6";
+    var cd = c.conventionData || {};
+    var od = c.oralData || {};
+    // Pre-fill from saved conventionData or fall back to oralData
+    if (cd.siret) document.getElementById("convSiret").value = cd.siret;
+    if (cd.civility) document.getElementById("convCivility").value = cd.civility;
+    if (cd.signatory) document.getElementById("convSignatory").value = cd.signatory; else if (c.name) document.getElementById("convSignatory").value = c.name;
+    var price = cd.price || od.price || '';
+    if (price) document.getElementById("convPrice").value = price;
+    if (cd.dateStart) document.getElementById("convDateStart").value = cd.dateStart; else if (od.dateStart) document.getElementById("convDateStart").value = od.dateStart;
+    if (cd.dateEnd) document.getElementById("convDateEnd").value = cd.dateEnd; else if (od.dateEnd) document.getElementById("convDateEnd").value = od.dateEnd;
+    // CPF: from saved or oralData financing
+    var isCPF = cd.isCPF || (od.financingMode === 'CPF') || false;
+    if (isCPF) { document.getElementById("convIsCPF").checked = true; }
+    // Hide SIRET for CPF
+    var siretRow = document.getElementById("convSiretRow");
+    if (siretRow) siretRow.style.display = isCPF ? 'none' : 'block';
+    // Show signed PDF button if convention has been signed
+    if (c.conventionData && c.conventionData.signedAt) {
+      var block = document.getElementById('signedPdfBlock');
+      var link = document.getElementById('signedPdfLink');
+      if (block) block.style.display = 'block';
+      if (link) link.href = '/api/download-convention-signed/' + c.id;
+      document.getElementById('stage5').style.borderTopColor = '#10b981';
+      document.getElementById('stage5status').textContent = 'Convention signée ✓';
+    }
+    // Update CPF label to reflect training type
+    var cpfLabel = document.querySelector('#conventionForm label');
+    var trainingType = od.legalTrainingType || '';
+    if (cpfLabel) {
+      if (trainingType === 'CAJA') cpfLabel.textContent = 'Formation CPF - Certification CAJA (RS6810)';
+      else if (trainingType === 'E360') cpfLabel.textContent = 'Formation CPF - Certification English 360 (RS6341)';
+      else cpfLabel.textContent = 'Formation CPF (RS6341)';
+    }
+  }
+  function toggleConvCPF() {
+    var isCPF = document.getElementById("convIsCPF").checked;
+    var siretRow = document.getElementById("convSiretRow");
+    if (siretRow) siretRow.style.display = isCPF ? 'none' : 'block';
+  }
+  fetch('/candidates/api/' + id)
+    .then(r => r.json())
+    .then(function(data){render(data);showConvention(data);})
+    .catch(err => document.getElementById('profileName').textContent = 'Error loading candidate');
+
+  function cefrLabel(level) {
+    if (!level) return '';
+    var map = {
+      'A1':'A1 (0)','A1+':'A1+ (0.5)',
+      'A2':'A2 (1)','A2+':'A2+ (1.5)',
+      'B1':'B1 (2)','B1+':'B1+ (2.5)',
+      'B2':'B2 (3)','B2+':'B2+ (3.5)',
+      'C1':'C1 (4)','C1+':'C1+ (4.5)',
+      'C2':'C2 (5)'
+    };
+    if (/\(\d/.test(level)) return level;
+    return map[level.trim()] || level;
+  }
+
+
+  function sendForSignature() {
+    var btn = document.getElementById('btnSendSign');
+    var status = document.getElementById('signStatus');
+    btn.disabled = true;
+    btn.textContent = 'Envoi en cours...';
+    fetch('/api/generate-convention/' + id, { method: 'POST' })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (d.success) {
+          status.innerHTML = '✅ Email envoyé à ' + (candidate.email || '') +
+            '<br><small><a href="' + d.signingUrl + '" target="_blank">Lien de signature</a></small>';
+          btn.textContent = 'Renvoyer';
+          btn.disabled = false;
+        } else {
+          status.textContent = 'Erreur: ' + d.error;
+          btn.textContent = 'Envoyer pour signature';
+          btn.disabled = false;
+        }
+      })
+      .catch(function(e) {
+        status.textContent = 'Erreur: ' + e.message;
+        btn.textContent = 'Envoyer pour signature';
+        btn.disabled = false;
+      });
+  }
+
+  function downloadConvention() {
+    var data = {
+      siret: document.getElementById("convSiret").value,
+      civility: document.getElementById("convCivility").value,
+      signatory: document.getElementById("convSignatory").value,
+      price: document.getElementById("convPrice").value,
+      dateStart: document.getElementById("convDateStart").value,
+      dateEnd: document.getElementById("convDateEnd").value,
+      isCPF: document.getElementById("convIsCPF") ? document.getElementById("convIsCPF").checked : false
+    };
+    fetch("/api/save-convention/" + id, {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(data)})
+      .then(function(r){return r.json();})
+      .then(function(d){
+        if (d.success) {
+          fetch("/api/generate-convention/" + id, {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({sendEmail:false})})
+            .then(function(r2){return r2.json();})
+            .then(function(d2){
+              if (d2.success || d2.pdfPath) { window.location.href = "/api/download-convention/" + id; }
+              else alert("Erreur génération: " + d2.error);
+            });
+        } else alert("Erreur: " + d.error);
+      });
+  }
+
+</script>
+</body>
+</html>
