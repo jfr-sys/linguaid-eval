@@ -789,18 +789,20 @@ router.post('/generate-convention/:id', function(req, res) {
   var isCPF = cd.isCPF || false;
   var tt = od.legalTrainingType || (isCPF ? 'CPF' : 'NON_CPF');
   var tplKey = tt === 'CAJA' ? 'CAJA' : tt === 'E360' ? 'E360' : 'NON_CPF';
-  // Format dates as French string
+  // Format dates as French string - prefer oralData (updated when programme regenerated)
   var MONTHS_FR = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
   function fmtDateFr(iso) {
     if (!iso) return '';
     var d = new Date(iso);
     return d.getUTCDate() + ' ' + MONTHS_FR[d.getUTCMonth()] + ' ' + d.getUTCFullYear();
   }
+  var dateStart = od.dateStart || cd.dateStart || '';
+  var dateEnd = od.dateEnd || cd.dateEnd || '';
   var dateStr = '';
-  if (cd.dateStart && cd.dateEnd) {
-    dateStr = 'du ' + fmtDateFr(cd.dateStart) + ' au ' + fmtDateFr(cd.dateEnd);
-  } else if (cd.dateStart) {
-    dateStr = 'à partir du ' + fmtDateFr(cd.dateStart);
+  if (dateStart && dateEnd) {
+    dateStr = 'du ' + fmtDateFr(dateStart) + ' au ' + fmtDateFr(dateEnd);
+  } else if (dateStart) {
+    dateStr = 'a partir du ' + fmtDateFr(dateStart);
   }
   var data = {
     candidateName: c.name || '',
@@ -813,8 +815,8 @@ router.post('/generate-convention/:id', function(req, res) {
     prereqLevel: (c.reportSummary || {}).overallLevel || '',
     targetLevel: od.targetLevel || '',
     location: 'A distance',
-    dateStart: cd.dateStart || '',
-    dateEnd: cd.dateEnd || '',
+    dateStart: dateStart,
+    dateEnd: dateEnd,
     dateStr: dateStr,
     price: String(cd.price || ''),
     signatory: cd.signatory || '',
