@@ -311,10 +311,9 @@ ${c.writtenReport}
 ORAL ASSESSMENT:
 Listening Level: ${cefrLabel(oral.listeningLevel) || ''}
 Speaking Level: ${cefrLabel(oral.speakingLevel) || ''}
-Speaking Criteria:
+Oral Criteria:
 ${Object.entries(oral.criteria || {}).map(([k,v]) => `  ${k}: ${v}`).join('\n')}
-Listening Observations: ${oral.listeningObs || ''}
-Speaking Observations: ${oral.speakingObs || ''}
+Oral Observations: ${oral.oralObs || oral.speakingObs || oral.listeningObs || ''}
 
 VALIDATED GOALS:
 ${validatedGoals}
@@ -1230,7 +1229,9 @@ router.post('/send-calendly-link/:id', function(req, res) {
     'Louise': 'https://calendly.com/coursdanglais24/english-oral-test',
     'Joss':   'https://calendly.com/coursdanglais24/english-oral-test'
   };
+  var evaluatorEmails = { Louise: 'lga@linguaid.net', Hannah: 'coursdanglais24@gmail.com', Anna: 'ajmalzy@gmail.com', Joss: 'jfr@linguaid.net' };
   var calendlyUrl = calendlyMap[evaluator] || 'https://calendly.com/coursdanglais24/english-oral-test';
+  var evaluatorEmail = evaluatorEmails[evaluator] || null;
 
   var firstName = candidate.name.split(' ')[0];
   var htmlBody = '<div style="font-family:Arial,sans-serif;font-size:14px;color:#222;line-height:1.6">'
@@ -1248,6 +1249,7 @@ router.post('/send-calendly-link/:id', function(req, res) {
   transporter.sendMail({
     from: 'eval@linguaid.net',
     to: candidate.email,
+    cc: evaluatorEmail || undefined,
     subject: "Votre evaluation anglais - reservez votre entretien oral",
     html: htmlBody
   }, function(err) {
