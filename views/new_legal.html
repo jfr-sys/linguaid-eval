@@ -307,9 +307,9 @@
       const data = await resp.json();
       if (!resp.ok || data.error) throw new Error(data.error || 'Erreur serveur');
 
-      parsedData = data;
-      fillFields(data);
-      showPreview(data);
+      parsedData = data.data || data;
+      fillFields(data.data || data);
+      showPreview(data.data || data);
 
       status.className = 'parse-status success';
       status.textContent = '✓ Informations extraites — vérifiez et complétez si nécessaire.';

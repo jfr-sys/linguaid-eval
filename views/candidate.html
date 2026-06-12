@@ -372,11 +372,25 @@
     `;
 
     const oralUrl = window.location.origin + '/oral/' + c.oralToken;
+    const sentTo = c.oralEmailSentTo ? `<div style="font-size:12px;color:#166534;margin-top:8px;">\u2713 Link sent to ${c.oralEmailSentTo}</div>` : '';
     document.getElementById('oralLinkArea').innerHTML = `
       <div class="oral-link-box">
-        <label>Share this link with the evaluator</label>
-        <input type="text" id="oralLinkInput" value="${oralUrl}" readonly>
-        <button class="btn btn-secondary copy-btn" onclick="copyLink()">Copy link</button>
+        <label>Send oral assessment link to evaluator</label>
+        <select id="evaluatorSelect" style="width:100%;padding:8px 10px;border:1px solid #bfdbfe;border-radius:6px;font-size:13px;margin-bottom:8px;background:white;color:#1e3a8a;">
+          <option value="">— Choose evaluator —</option>
+          <option value="Louise">Louise</option>
+          <option value="Hannah">Hannah</option>
+          <option value="Anna">Anna</option>
+          <option value="Joss">Joss</option>
+        </select>
+        <div style="display:flex;gap:8px;">
+          <input type="text" id="oralLinkInput" value="${oralUrl}" readonly style="flex:1;font-size:12px;padding:8px 10px;border:1px solid #bfdbfe;border-radius:6px;background:white;color:#1e3a8a;">
+          <button class="btn btn-secondary copy-btn" onclick="copyLink()" style="white-space:nowrap;">Copy</button>
+        </div>
+        <button class="btn btn-primary" style="width:100%;margin-top:8px;" onclick="sendOralLink('${c.id}')">Send link by email</button>
+        <button class="btn" style="width:100%;margin-top:8px;background:#7c3aed;color:white;" onclick="sendCalendlyLink('${c.id}')">📅 Send Calendly link to candidate</button>
+        <div id="calendlyStatus_${c.id}" style="font-size:12px;color:#166534;margin-top:6px;display:none"></div>
+        ${sentTo}
       </div>
     `;
 
@@ -620,6 +634,51 @@
     setTimeout(() => { loading.style.display = 'none'; }, 10000);
   }
 
+  async function sendCalendlyLink(candidateId) {
+    const evaluator = document.getElementById('evaluatorSelect') ? document.getElementById('evaluatorSelect').value : '';
+    const resp = await fetch('/api/send-calendly-link/' + candidateId, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ evaluator: evaluator })
+    });
+    const data = await resp.json();
+    const el = document.getElementById('calendlyStatus_' + candidateId);
+    if (el) {
+      el.style.display = 'block';
+      if (data.ok) { el.style.color = '#166534'; el.textContent = '✓ Calendly link sent to candidate'; }
+      else { el.style.color = '#dc2626'; el.textContent = 'Error: ' + (data.error || 'unknown'); }
+    }
+  }
+
+  async function sendOralLink(candidateId) {
+    const evaluator = document.getElementById('evaluatorSelect').value;
+    if (!evaluator) { alert('Please choose an evaluator first.'); return; }
+    const btn = event.target;
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+    try {
+      const res = await fetch(`/api/send-oral-link/${candidateId}`, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ evaluator })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        btn.textContent = '✓ Sent!';
+        btn.style.background = '#166534';
+        setTimeout(() => location.reload(), 1500);
+      } else {
+        btn.disabled = false;
+        btn.textContent = 'Send link by email';
+        alert('Error: ' + (data.error || 'Unknown error'));
+      }
+    } catch(e) {
+      btn.disabled = false;
+      btn.textContent = 'Send link by email';
+      alert('Network error');
+    }
+  }
+
   function copyLink() {
     const input = document.getElementById('oralLinkInput');
     input.select();
@@ -642,8 +701,8 @@
     if (cd.signatory) document.getElementById("convSignatory").value = cd.signatory; else if (c.name) document.getElementById("convSignatory").value = c.name;
     var price = cd.price || od.price || '';
     if (price) document.getElementById("convPrice").value = price;
-    if (cd.dateStart) document.getElementById("convDateStart").value = cd.dateStart; else if (od.dateStart) document.getElementById("convDateStart").value = od.dateStart;
-    if (cd.dateEnd) document.getElementById("convDateEnd").value = cd.dateEnd; else if (od.dateEnd) document.getElementById("convDateEnd").value = od.dateEnd;
+    document.getElementById("convDateStart").value = od.dateStart || cd.dateStart || "";
+    document.getElementById("convDateEnd").value = od.dateEnd || cd.dateEnd || "";
     // CPF: from saved or oralData financing
     var isCPF = cd.isCPF || (od.financingMode === 'CPF') || false;
     if (isCPF) { document.getElementById("convIsCPF").checked = true; }

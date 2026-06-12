@@ -188,16 +188,18 @@ fetch("/candidates/api/" + id)
     document.getElementById("candidateInfo").innerHTML =
       '<div class="info-row"><span class="info-label">Candidat</span><span class="info-value">' + c.name + '</span></div>' +
       '<div class="info-row"><span class="info-label">Poste</span><span class="info-value">' + (c.jobtitle||"—") + '</span></div>' +
-      '<div class="info-row"><span class="info-label">Entreprise</span><span class="info-value">' + (c.dept||"—") + '</span></div>';
+      '<div class="info-row"><span class="info-label">Entreprise</span><span class="info-value">' + (c.dept||c.company||"—") + '</span></div>';
 
     document.getElementById("prereqLevel").value = cefrLabel(rs.overallLevel) || "";
     document.getElementById("targetLevel").value = cefrLabel(oral.targetLevel) || "";
 
     var coaching = oral.coachingHours || "—";
-    var homework = oral.homeworkHours || "—";
+    var homework = oral.homeworkHours || 0;
     var total = oral.totalHours || "—";
     document.getElementById("totalHours").value = total + " heures (" + coaching + "h formation + " + homework + "h travail autonome)";
     var hw = parseInt(oral.homeworkHours) || 0;
+    if (oral.dateStart) document.getElementById("dateStart").value = oral.dateStart;
+    if (oral.dateEnd) document.getElementById("dateEnd").value = oral.dateEnd;
     document.getElementById("deliveryMode").value = hw > 0 ? "Visio blended individuel" : "Visio individuel";
 
     // Extract objectives from final report
@@ -210,11 +212,19 @@ fetch("/candidates/api/" + id)
       }
     }
     if (!objectives.length) {
-      objectives = [
-        "Développer ses compétences en anglais sur les quatre dimensions du CECRL : compréhension écrite et orale, expression écrite et orale",
-        "Comprendre des échanges professionnels en anglais et interagir avec des interlocuteurs internationaux",
-        "S'exprimer avec plus de fluidité et de précision à l'oral dans des situations professionnelles courantes"
-      ];
+      if (c.courseType === 'legal') {
+        objectives = [
+          "Lire et analyser des documents juridiques en anglais (contrats, clauses, jurisprudence)",
+          "Rédiger des écrits juridiques professionnels en anglais (emails, mémos, notes)",
+          "Communiquer à l'oral en anglais dans des contextes juridiques professionnels"
+        ];
+      } else {
+        objectives = [
+          "Développer ses compétences en anglais sur les quatre dimensions du CECRL : compréhension écrite et orale, expression écrite et orale",
+          "Comprendre des échanges professionnels en anglais et interagir avec des interlocuteurs internationaux",
+          "S'exprimer avec plus de fluidité et de précision à l'oral dans des situations professionnelles courantes"
+        ];
+      }
     }
     renderObjectives();
     renderTopics();
@@ -243,16 +253,21 @@ function addObjective() {
 }
 
 function renderTopics() {
+  var savedTopics = (candData && candData.oralData && candData.oralData.topics) ? candData.oralData.topics : [];
   var g = document.getElementById("topicsGrid");
   g.innerHTML = STANDARD_TOPICS.map(function(t) {
-    return '<div class="topic-item" onclick="toggleTopic(this)">' +
-      '<input type="checkbox" onchange="this.parentElement.classList.toggle("selected",this.checked)">' +
+    var sel = savedTopics.indexOf(t) !== -1 ? ' selected' : '';
+    var chk = sel ? ' checked' : '';
+    return '<div class="topic-item' + sel + '" onclick="toggleTopic(this)">' +
+      '<input type="checkbox"' + chk + ' onchange="this.parentElement.classList.toggle(\'selected\',this.checked)">' +
       '<label>' + t + '</label></div>';
   }).join("");
   var cg = document.getElementById("cpfTopicsGrid");
   cg.innerHTML = CPF_TOPICS.map(function(t) {
-    return '<div class="topic-item" onclick="toggleTopic(this)">' +
-      '<input type="checkbox" onchange="this.parentElement.classList.toggle("selected",this.checked)">' +
+    var sel = savedTopics.indexOf(t) !== -1 ? ' selected' : '';
+    var chk = sel ? ' checked' : '';
+    return '<div class="topic-item' + sel + '" onclick="toggleTopic(this)">' +
+      '<input type="checkbox"' + chk + ' onchange="this.parentElement.classList.toggle(\'selected\',this.checked)">' +
       '<label>' + t + '</label></div>';
   }).join("");
 }
@@ -293,7 +308,7 @@ function generateProgramme() {
     trainingTitle: document.getElementById("trainingTitle").value,
     prereqLevel: document.getElementById("prereqLevel").value || rs.overallLevel || "",
     targetLevel: document.getElementById("targetLevel").value || oral.targetLevel || "",
-    totalHours: document.getElementById("totalHours").value || String(oral.totalHours || 0),
+    totalHours: String(oral.totalHours || 0),
     coachingHours: oral.coachingHours || 0,
     homeworkHours: oral.homeworkHours || 0,
     location: document.getElementById("location").value,

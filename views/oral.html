@@ -126,6 +126,7 @@
 <div class="container">
   <div class="candidate-bar">
     <div class="candidate-name" id="candName">Loading...</div>
+    <div id="candInfo" style="font-size:13px;color:#666;margin-top:2px"></div>
     <div class="candidate-meta" id="candMeta"></div>
     <div class="level-chips" id="levelChips"></div>
   </div>
@@ -383,6 +384,8 @@
   function renderCandidateBar(c) {
     document.getElementById('candName').textContent = c.name;
     document.getElementById('candMeta').textContent = [c.jobtitle, c.dept].filter(Boolean).join(' — ');
+    var infoEl = document.getElementById('candInfo');
+    if (infoEl) { var parts = [c.company, c.email].filter(Boolean); infoEl.textContent = parts.join(' · '); }
     const p = Math.round(100 * c.scores.total / (c.scores.max || 30));
     const s = c.reportSummary || {};
     document.getElementById('levelChips').innerHTML = `

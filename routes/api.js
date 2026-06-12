@@ -673,7 +673,8 @@ router.get('/generate-programme/:id', async function(req, res) {
     candidates2[cidx].oralData.dateStart = payload.dateStart;
     candidates2[cidx].oralData.dateEnd = payload.dateEnd || payload.dateStart;
     if (payload.targetLevel) candidates2[cidx].oralData.targetLevel = payload.targetLevel;
-    if (payload.totalHours) candidates2[cidx].oralData.totalHours = payload.totalHours;
+    if (payload.totalHours) candidates2[cidx].oralData.totalHours = parseInt(payload.totalHours, 10) || payload.totalHours;
+    if (payload.topics && payload.topics.length) candidates2[cidx].oralData.topics = payload.topics;
     saveCandidates(candidates2);
   }
   require('fs').writeFileSync(tmpJson, JSON.stringify(payload));
@@ -846,6 +847,412 @@ router.post('/generate-convention/:id', function(req, res) {
       if (mailErr) console.error('Mail error:', mailErr);
       res.json({ success: true, signingUrl: signingUrl, pdfPath: result.pdfPath });
     });
+  });
+});
+router.post('/send-oral-link/:id', function(req, res) {
+  var candidates = JSON.parse(fs.readFileSync(path.join(dataDir, 'candidates.json'), 'utf8'));
+  var c = candidates.find(function(x) { return x.id === req.params.id; });
+  if (!c) return res.status(404).json({ error: 'Candidate not found' });
+  var emails = { Louise: 'lga@linguaid.net', Hannah: 'coursdanglais24@gmail.com', Anna: 'ajmalzy@gmail.com', Joss: 'jfr@linguaid.net' };
+  var evaluator = req.body.evaluator;
+  var toEmail = emails[evaluator];
+  if (!toEmail) return res.status(400).json({ error: 'Unknown evaluator' });
+  var oralUrl = 'https://eval.linguaid.net/oral/' + c.oralToken;
+  var nodemailer = require('nodemailer');
+  var transporter = nodemailer.createTransport({ host: 'localhost', port: 25, secure: false, tls: { rejectUnauthorized: false } });
+  var body = ['Bonjour ' + evaluator + ',', '', 'Please find the oral assessment link for ' + c.name + ':', '', oralUrl, '', 'Best regards,', 'Linguaid Eval'].join('\n');
+  transporter.sendMail({ from: 'eval@linguaid.net', to: toEmail, subject: 'Oral assessment - ' + c.name, text: body }, function(err) {
+    if (err) { console.error('sendMail error:', err); return res.status(500).json({ error: err.message }); }
+    var idx = candidates.findIndex(function(x) { return x.id === req.params.id; });
+    candidates[idx].oralEmailSentTo = evaluator;
+    saveCandidates(candidates);
+    res.json({ ok: true });
+  });
+});
+
+router.post('/parse-legal-questionnaire', async function(req, res) {
+  var text = (req.body.text || '').trim();
+  if (!text) return res.status(400).json({ error: 'No text provided' });
+  try {
+    var Anthropic = require('@anthropic-ai/sdk');
+    var client = new Anthropic.default({ apiKey: process.env.ANTHROPIC_API_KEY });
+    var prompt = [
+      'Extract all available information from this French legal English prospect questionnaire text.',
+      'Return ONLY a valid JSON object with these exact keys (use null if not found, do not omit keys):',
+      'name, email, phone, region, lawyerType (avocat/juriste/other), jobtitle, company, experience (years as number),',
+      'legalDomains (string), legalDocs (string), selfLevelOral (string), selfLevelWriting (string),',
+      'currentUsage (string describing current English usage at work),',
+      'mediaVO (string: oui/non/parfois or similar),',
+      'goalType (oral/ecrit/les deux),',
+      'mainGoal (string, their main objective in their own words),',
+      'upcomingEvent (string or null),',
+      'otherNeeds (string),',
+      'financingMode (string: CPF/employeur/personnel/je ne sais pas or similar),',
+      'cpfCreated (string: oui/non or null),',
+      'source (how they heard about the trainer),',
+      'dept (null), goals (array of strings summarising their objectives)',
+      '',
+      'Questionnaire text:',
+      text
+    ].join('\n');
+    var msg = await client.messages.create({ model: 'claude-sonnet-4-6', max_tokens: 1000, messages: [{ role: 'user', content: prompt }] });
+    var raw = msg.content[0].text.replace(/```json|```/g, '').trim();
+    res.json({ ok: true, data: JSON.parse(raw) });
+  } catch(e) {
+    console.error('parse-legal-questionnaire error:', e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+router.get('/generate-programme-legal/:id', function(req, res) {
+  res.redirect('/candidates/' + req.params.id + '/programme');
+});
+
+// Typeform webhook - fired when candidate completes the test
+router.post('/typeform-webhook', function(req, res) {
+  var payload = req.body;
+  var form_response = payload.form_response || payload;
+  var answers = form_response.answers || [];
+  var score = (form_response.calculated || {}).score || 0;
+  var max = 26;
+
+  function getAnswer(fieldId) {
+    var a = answers.find(function(x) { return x.field && x.field.id === fieldId; });
+    if (!a) return null;
+    if (a.type === 'text' || a.type === 'email') return a[a.type] || null;
+    if (a.type === 'choice') return (a.choice || {}).label || null;
+    if (a.type === 'choices') return a.choices || null;
+    if (a.type === 'boolean') return a.boolean;
+    return null;
+  }
+
+  var name = getAnswer('9oDCQhgIKUCa') || 'Unknown';
+  var email = getAnswer('ewBvfryvLC6C') || '';
+  var company = getAnswer('nHNnnVsELnI1') || '';
+  var dept = getAnswer('REMkImqUgjz6') || '';
+  var jobtitle = getAnswer('71SDBs9cYd2p') || '';
+  var otherNeeds = getAnswer('tBwFQiTenYCQ') || '';
+  var q39 = getAnswer('9xeyds9qFwxc') || '';
+  var q40 = getAnswer('tBc5ipiPSw9t') || '';
+  var q41 = getAnswer('hTuJurZ183Mn') || '';
+
+  // Goals from choices field
+  var goalsRaw = getAnswer('injrb1qptVqY');
+  var goals = [];
+  if (goalsRaw && goalsRaw.labels) goals = goalsRaw.labels;
+  else if (goalsRaw && Array.isArray(goalsRaw)) goals = goalsRaw;
+
+  // Availability from multiple choice fields
+  var availFields = ['iN5olqp16VhV','C35mLlYqvYE0','LC0qGNmYkYWf','4XE5Bjvzwa3o','iOiGSfDqDu5Y'];
+  var avail = {};
+  var days = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi'];
+  availFields.forEach(function(fid, i) {
+    var v = getAnswer(fid);
+    if (v && v.labels) avail[days[i]] = v.labels.join(', ');
+    else if (v && Array.isArray(v)) avail[days[i]] = v.join(', ');
+  });
+
+  var candidates = JSON.parse(fs.readFileSync(path.join(dataDir, 'candidates.json'), 'utf8'));
+
+  // Check if already exists (by email)
+  var existing = candidates.find(function(x) { return x.email && x.email.toLowerCase() === email.toLowerCase(); });
+  if (existing && existing.status !== 'invited') {
+    console.log('Typeform webhook: candidate already exists:', email);
+    return res.json({ ok: true, message: 'already exists' });
+  }
+
+  var now = new Date().toISOString();
+  var testdate = now.slice(0,10);
+
+  if (existing && existing.status === 'invited') {
+    // Update the invited candidate with test results
+    var idx = candidates.findIndex(function(x) { return x.id === existing.id; });
+    candidates[idx].status = 'csv_uploaded';
+    candidates[idx].scores = { total: score, max: max };
+    candidates[idx].freewriting = { q39: q39, q40: q40, q41: q41 };
+    candidates[idx].goals = goals;
+    candidates[idx].avail = avail;
+    candidates[idx].otherNeeds = otherNeeds;
+    candidates[idx].company = candidates[idx].company || company;
+    candidates[idx].dept = candidates[idx].dept || dept;
+    candidates[idx].jobtitle = candidates[idx].jobtitle || jobtitle;
+    candidates[idx].testdate = testdate;
+  } else {
+    // Create new candidate from webhook
+    var newId = require('crypto').randomBytes(6).toString('hex');
+    candidates.push({
+      id: newId,
+      name: name,
+      email: email,
+      company: company,
+      dept: dept,
+      jobtitle: jobtitle,
+      testdate: testdate,
+      scores: { total: score, max: max },
+      freewriting: { q39: q39, q40: q40, q41: q41 },
+      goals: goals,
+      avail: avail,
+      otherNeeds: otherNeeds,
+      status: 'csv_uploaded',
+      oralToken: require('crypto').randomBytes(8).toString('hex'),
+      createdAt: now
+    });
+  }
+
+  saveCandidates(candidates);
+
+  // Alert Joss
+  var nodemailer = require('nodemailer');
+  var transporter = nodemailer.createTransport({ host: 'localhost', port: 25, secure: false, tls: { rejectUnauthorized: false } });
+  transporter.sendMail({
+    from: 'eval@linguaid.net',
+    to: 'jfr@linguaid.net',
+    subject: 'Test completed - ' + name,
+    text: name + ' (' + email + ') has completed the English test.\n\nScore: ' + score + '/' + max + '\n\nhttps://eval.linguaid.net/candidates'
+  }, function(err) { if (err) console.error('alert mail error:', err); });
+
+  res.json({ ok: true });
+});
+
+// Invite a candidate - send them the Typeform link
+router.post('/invite-candidate', function(req, res) {
+  var name = (req.body.name || '').trim();
+  var email = (req.body.email || '').trim();
+  var company = (req.body.company || '').trim();
+  var jobtitle = (req.body.jobtitle || '').trim();
+  if (!name || !email) return res.status(400).json({ error: 'Name and email required' });
+
+  var candidates = JSON.parse(fs.readFileSync(path.join(dataDir, 'candidates.json'), 'utf8'));
+  // Allow re-inviting - only block if currently in active pipeline (not yet finished)
+
+  var now = new Date().toISOString();
+  var newId = require('crypto').randomBytes(6).toString('hex');
+  var candidate = {
+    id: newId,
+    name: name,
+    email: email,
+    company: company,
+    jobtitle: jobtitle,
+    dept: '',
+    testdate: '',
+    scores: { total: 0, max: 26 },
+    freewriting: { q39: '', q40: '', q41: '' },
+    goals: [],
+    avail: {},
+    otherNeeds: '',
+    status: 'invited',
+    oralToken: require('crypto').randomBytes(8).toString('hex'),
+    createdAt: now,
+    invitedAt: now,
+    lastReminderAt: now
+  };
+  candidates.push(candidate);
+  saveCandidates(candidates);
+
+  var typeformUrl = 'https://form.typeform.com/to/XBcM6I1W';
+  var nodemailer = require('nodemailer');
+  var transporter = nodemailer.createTransport({ host: 'localhost', port: 25, secure: false, tls: { rejectUnauthorized: false } });
+  var body = '<div style="font-family:Arial,sans-serif;font-size:14px;color:#222;line-height:1.6">'
+    + '<p>Bonjour ' + name + ',</p>'
+    + '<p>Vous allez normalement suivre une formation en anglais avec nous. Avant la formation, nous avons besoin d\'évaluer votre niveau et vos besoins afin d\'établir le devis de formation et le programme personnalisé.</p>'
+    + '<p>Pour démarrer, veuillez trouver le lien vers un test d\'anglais écrit. Ceci nous permettra d\'avoir une première appréciation de votre niveau. Par la suite, un membre de notre équipe vous contactera par téléphone pour la partie orale.</p>'
+    + '<p>Comptez 20 minutes MAXIMUM au calme pour réaliser ce test. Pour toutes questions ou informations supplémentaires avant ou après, n\'hésitez pas à nous joindre directement.</p>'
+    + '<p>Accès direct au test (le contenu est général, mais cela nous permet de mieux apprécier le niveau) :<br>'
+    + '<a href="' + typeformUrl + '">' + typeformUrl + '</a></p>'
+    + '<p>Etapes à suivre :</p>'
+    + '<ul><li>Cliquez sur le lien ci-dessus</li><li>Remplissez les champs pour vous identifier</li><li>Répondez aux questions</li><li>Soumettez le test à la fin.</li></ul>'
+    + '<p>Bon test !</p>'
+    + '<p>Bien cordialement,</p>'
+    + '<img src="https://eval.linguaid.net/signature_joss.png" alt="Joss Frimond - Linguaid" style="max-width:400px;display:block;margin-top:8px">'
+    + '</div>';
+  transporter.sendMail({
+    from: 'eval@linguaid.net',
+    to: email,
+    subject: 'Votre test d\'anglais - Linguaid',
+    html: body
+  }, function(err) {
+    if (err) { console.error('invite mail error:', err); return res.status(500).json({ error: err.message }); }
+    res.json({ ok: true, id: newId });
+  });
+});
+
+// Parse end-of-course report PDF text to extract renewal data
+router.post('/parse-eocr', async function(req, res) {
+  var text = (req.body.text || '').trim();
+  if (!text) return res.status(400).json({ error: 'No text provided' });
+  try {
+    var Anthropic = require('@anthropic-ai/sdk');
+    var client = new Anthropic.default({ apiKey: process.env.ANTHROPIC_API_KEY });
+    var prompt = [
+      'Extract information from this end-of-course report (rapport de fin de cours) from a language school.',
+      'Return ONLY valid JSON with these exact keys (null if not found):',
+      '{',
+      '  "name": "candidate full name (LASTNAME Firstname format)",',
+      '  "company": "client/employer name",',
+      '  "jobtitle": "position if present",',
+      '  "prereqLevel": "current/final CEFR level as letter code only e.g. C1+ or B2 (NOT numeric like 4-5)",',
+      '  "totalHours": number of hours as integer,',
+      '  "courseType": "type of course e.g. Cours individuels par videoconference",',
+      '  "objectives": ["array of specific learning objectives listed in the report"],',
+      '  "strengths": "key strengths noted",',
+      '  "improvements": "areas for improvement noted",',
+      '  "globalComment": "overall comment/summary"',
+      '}',
+      '',
+      'Report text:',
+      text
+    ].join('\n');
+    var msg = await client.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 1000,
+      messages: [{ role: 'user', content: prompt }]
+    });
+    var raw = msg.content[0].text.replace(/```json|```/g, '').trim();
+    res.json({ ok: true, data: JSON.parse(raw) });
+  } catch(e) {
+    console.error('parse-eocr error:', e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Create a renewal candidate - pre-populated, goes straight to programme
+router.post('/new-renewal', function(req, res) {
+  var d = req.body;
+  if (!d.name || !d.email) return res.status(400).json({ error: 'Name and email required' });
+
+  var candidates = JSON.parse(fs.readFileSync(path.join(dataDir, 'candidates.json'), 'utf8'));
+  var now = new Date().toISOString();
+  var newId = require('crypto').randomBytes(6).toString('hex');
+
+  // Build synthetic oralData so programme page has what it needs
+  var oralData = {
+    evaluator: 'Renewal',
+    sessionDate: now.slice(0,10),
+    listeningLevel: d.prereqLevel || '',
+    speakingLevel: d.prereqLevel || '',
+    targetLevel: d.targetLevel || '',
+    totalHours: d.totalHours || '',
+    coachingHours: d.coachingHours || '',
+    homeworkHours: d.homeworkHours || '',
+    dateStart: d.dateStart || '',
+    dateEnd: d.dateEnd || '',
+    validatedGoals: [],
+    validatedAvail: [],
+    criteria: {},
+    strengths: d.strengths || '',
+    gaps: d.improvements || '',
+    profile: d.globalComment || '',
+    additionalNotes: 'Renewal candidate - previous course data used'
+  };
+
+  // Build synthetic reportSummary
+  var reportSummary = {
+    overallLevel: d.prereqLevel || '',
+    grammarLevel: d.prereqLevel || '',
+    writingLevel: d.prereqLevel || '',
+    readingLevel: d.prereqLevel || '',
+    listeningLevel: d.prereqLevel || '',
+    speakingLevel: d.prereqLevel || '',
+    keyGaps: d.improvements || ''
+  };
+
+  // Build synthetic final report
+  var finalReport = [
+    '## Renewal — Previous Course Summary',
+    '',
+    '### Candidate Profile',
+    d.globalComment || '',
+    '',
+    '### Strengths',
+    d.strengths || '',
+    '',
+    '### Areas for Improvement',
+    d.improvements || '',
+    '',
+    '## Learning Objectives',
+    (d.objectives || []).map(function(o, i) { return (i+1) + '. ' + o; }).join('\n'),
+    '',
+    '## Training Recommendation',
+    'Renewal course based on previous training. Starting level: ' + (d.prereqLevel || '') + '. Target level: ' + (d.targetLevel || '') + '.'
+  ].join('\n');
+
+  var candidate = {
+    id: newId,
+    name: d.name,
+    email: d.email || '',
+    company: d.company || '',
+    dept: d.dept || '',
+    jobtitle: d.jobtitle || '',
+    testdate: now.slice(0,10),
+    scores: { total: 0, max: 0 },
+    freewriting: { q39: '', q40: '', q41: '' },
+    goals: d.objectives || [],
+    avail: {},
+    otherNeeds: '',
+    status: 'final_report_done',
+    isRenewal: true,
+    oralToken: require('crypto').randomBytes(8).toString('hex'),
+    oralData: oralData,
+    reportSummary: reportSummary,
+    finalReport: finalReport,
+    createdAt: now
+  };
+
+  candidates.push(candidate);
+  saveCandidates(candidates);
+  res.json({ ok: true, id: newId });
+});
+
+
+// Extract text from uploaded PDF (base64) using pdftotext
+router.post('/extract-pdf-text', function(req, res) {
+  var base64 = req.body.pdf;
+  if (!base64) return res.status(400).json({ error: 'No PDF data' });
+  var tmp = require('os').tmpdir() + '/eocr_' + Date.now() + '.pdf';
+  fs.writeFileSync(tmp, Buffer.from(base64, 'base64'));
+  var exec = require('child_process').exec;
+  exec('pdftotext -layout "' + tmp + '" -', function(err, stdout, stderr) {
+    fs.unlinkSync(tmp);
+    if (err) return res.status(500).json({ error: 'pdftotext failed: ' + stderr });
+    res.json({ ok: true, text: stdout });
+  });
+});
+// Send Calendly booking link to candidate
+router.post('/send-calendly-link/:id', function(req, res) {
+  var candidates = JSON.parse(require('fs').readFileSync(require('path').join(dataDir, 'candidates.json'), 'utf8'));
+  var candidate = candidates.find(function(c) { return c.id === req.params.id; });
+  if (!candidate) return res.status(404).json({ error: 'Not found' });
+
+  var evaluator = (req.body.evaluator || '').trim();
+  var calendlyMap = {
+    'Hannah': 'https://calendly.com/coursdanglais24/english-oral-test',
+    'Anna':   'https://calendly.com/ajmalzy/30min',
+    'Louise': 'https://calendly.com/coursdanglais24/english-oral-test',
+    'Joss':   'https://calendly.com/coursdanglais24/english-oral-test'
+  };
+  var calendlyUrl = calendlyMap[evaluator] || 'https://calendly.com/coursdanglais24/english-oral-test';
+
+  var firstName = candidate.name.split(' ')[0];
+  var htmlBody = '<div style="font-family:Arial,sans-serif;font-size:14px;color:#222;line-height:1.6">'
+    + '<p>Bonjour ' + firstName + ',</p>'
+    + '<p>Merci d&#39;avoir compl&eacute;t&eacute; votre test d&#39;anglais &eacute;crit.</p>'
+    + '<p>Pour finaliser votre &eacute;valuation, nous vous invitons &agrave; r&eacute;server un cr&eacute;neau de 30 minutes pour la partie orale :</p>'
+    + '<p><a href="' + calendlyUrl + '" style="background:#1F4E79;color:white;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:600">R&eacute;server mon cr&eacute;neau oral</a></p>'
+    + '<p>Il s&#39;agit d&#39;un entretien informel en anglais d&#39;environ 30 minutes, qui nous permettra de mieux cerner votre niveau &agrave; l&#39;oral et vos besoins.</p>'
+    + '<p>Bien cordialement,</p>'
+    + '<img src="https://eval.linguaid.net/signature_joss.png" alt="Joss Frimond - Linguaid" style="max-width:400px;display:block;margin-top:8px">'
+    + '</div>';
+
+  var nodemailer = require('nodemailer');
+  var transporter = nodemailer.createTransport({ host: 'localhost', port: 25, secure: false, tls: { rejectUnauthorized: false } });
+  transporter.sendMail({
+    from: 'eval@linguaid.net',
+    to: candidate.email,
+    subject: "Votre evaluation anglais - reservez votre entretien oral",
+    html: htmlBody
+  }, function(err) {
+    if (err) { console.error('calendly mail error:', err); return res.status(500).json({ error: err.message }); }
+    res.json({ ok: true });
   });
 });
 

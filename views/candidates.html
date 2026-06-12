@@ -47,6 +47,8 @@
       <input type="text" id="searchBox" placeholder="Search candidates..." oninput="render()" style="font-size:13px;padding:8px 14px;border:1px solid #e2e8f0;border-radius:8px;width:220px;color:#334155;outline:none">
       <a href="/candidates/new" class="btn" style="background:#475569">+ Business English</a>
       <a href="/candidates/new-legal" class="btn" style="background:#C00000">+ Legal English</a>
+      <button class="btn" style="background:#166534;color:white;" onclick="showInviteModal()">✉ Invite candidate</button>
+      <a href="/candidates/new-renewal" class="btn" style="background:#7c3aed;color:white;">↩ Renewal</a>
     </div>
   </div>
   <div class="card">
@@ -89,6 +91,50 @@
     fetch('/candidates/api/'+id,{method:'DELETE'}).then(function(r){return r.json();}).then(function(d){if(d.success){all=all.filter(function(x){return x.id!==id;});render();}else alert(d.error);});
   }
   fetch('/candidates/api/list').then(function(r){return r.json();}).then(function(d){all=d;render();}).catch(function(e){document.getElementById('candidateList').innerHTML='<tr><td colspan="5" class="empty">Error: '+e+'</td></tr>';});
+</script>
+
+<div id='inviteModal' style='display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center'>
+  <div style='background:white;border-radius:12px;padding:2rem;width:420px;max-width:90vw;box-shadow:0 8px 32px rgba(0,0,0,0.2)'>
+    <h3 style='font-size:16px;font-weight:600;color:#1F4E79;margin-bottom:1rem'>Invite a candidate</h3>
+    <div style='display:flex;flex-direction:column;gap:0.75rem;margin-bottom:1rem'>
+      <input id='inv_name' type='text' placeholder='Full name *' style='padding:8px 12px;border:1px solid #e2e8f0;border-radius:6px;font-size:13px;font-family:inherit'>
+      <input id='inv_email' type='email' placeholder='Email *' style='padding:8px 12px;border:1px solid #e2e8f0;border-radius:6px;font-size:13px;font-family:inherit'>
+      <p style='font-size:11px;color:#94a3b8;margin-top:4px'>Company and job title will be filled in by the candidate on the test form.</p>
+    </div>
+    <div id='inviteStatus' style='font-size:12px;color:#dc2626;margin-bottom:0.75rem;display:none'></div>
+    <div style='display:flex;gap:8px;justify-content:flex-end'>
+      <button onclick='hideInviteModal()' style='padding:8px 16px;border-radius:6px;border:1px solid #e2e8f0;background:white;cursor:pointer;font-family:inherit;font-size:13px'>Cancel</button>
+      <button id='inviteSendBtn' onclick='sendInvite()' style='padding:8px 16px;border-radius:6px;border:none;background:#1F4E79;color:white;cursor:pointer;font-family:inherit;font-size:13px'>Send invite</button>
+    </div>
+  </div>
+</div>
+<script>
+function showInviteModal() {
+  var m = document.getElementById('inviteModal');
+  m.style.display = 'flex';
+  document.getElementById('inv_name').focus();
+}
+function hideInviteModal() {
+  document.getElementById('inviteModal').style.display = 'none';
+  ['inv_name','inv_email'].forEach(function(id){ document.getElementById(id).value=''; });
+  document.getElementById('inviteStatus').style.display = 'none';
+}
+async function sendInvite() {
+  var name = document.getElementById('inv_name').value.trim();
+  var email = document.getElementById('inv_email').value.trim();
+  var company = '';
+  var jobtitle = '';
+  var status = document.getElementById('inviteStatus');
+  if (!name || !email) { status.textContent = 'Name and email are required.'; status.style.display='block'; return; }
+  var btn = document.getElementById('inviteSendBtn');
+  btn.disabled = true; btn.textContent = 'Sending…';
+  try {
+    var res = await fetch('/api/invite-candidate', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({name,email,company,jobtitle}) });
+    var data = await res.json();
+    if (data.ok) { hideInviteModal(); location.reload(); }
+    else { status.textContent = data.error || 'Error'; status.style.display='block'; btn.disabled=false; btn.textContent='Send invite'; }
+  } catch(e) { status.textContent = 'Network error'; status.style.display='block'; btn.disabled=false; btn.textContent='Send invite'; }
+}
 </script>
 </body>
 </html>

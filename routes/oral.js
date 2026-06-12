@@ -39,6 +39,7 @@ router.get('/data/:token', (req, res) => {
   if (!candidate) return res.status(404).json({ error: 'Not found' });
   res.json({
     name: candidate.name,
+    email: candidate.email || null,
     jobtitle: candidate.jobtitle,
     dept: candidate.dept,
     company: candidate.company,

@@ -34,6 +34,10 @@ router.get('/new-legal', (req, res) => {
   res.sendFile(path.join(__dirname, '../views/new_legal.html'));
 });
 
+router.get('/new-renewal', (req, res) => {
+  res.sendFile(path.join(__dirname, '../views/new_renewal.html'));
+});
+
 router.get('/:id', (req, res) => {
   res.sendFile(path.join(__dirname, '../views/candidate.html'));
 });
@@ -151,6 +155,8 @@ router.post('/api/:id/company', (req, res) => {
 router.get('/new-legal', (req, res) => {
   res.sendFile(path.join(__dirname, '../views/new_legal.html'));
 });
+
+
 
 router.post('/api/new-legal', (req, res) => {
   try {

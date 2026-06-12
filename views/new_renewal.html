@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Linguaid — Nouveau renouvellement</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f0f4f8; min-height: 100vh; }
+  .nav { background: #1F4E79; color: white; padding: 0 2rem; height: 56px; display: flex; align-items: center; justify-content: space-between; }
+  .nav a { color: white; text-decoration: none; font-size: 15px; font-weight: 600; }
+  .nav-right a { color: rgba(255,255,255,0.8); font-size: 13px; }
+  .container { max-width: 700px; margin: 0 auto; padding: 2rem; }
+  .back { font-size: 13px; color: #666; text-decoration: none; display: inline-block; margin-bottom: 1.5rem; }
+  .card { background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 1.5rem; }
+  h1 { font-size: 22px; font-weight: 700; color: #1F4E79; margin-bottom: 0.5rem; }
+  .subtitle { font-size: 14px; color: #666; margin-bottom: 1.5rem; }
+  .section-title { font-size: 13px; font-weight: 600; color: #1F4E79; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.05em; }
+  label { font-size: 12px; color: #666; display: block; margin-bottom: 4px; margin-top: 12px; }
+  input, select, textarea { width: 100%; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px; font-family: inherit; }
+  textarea { min-height: 80px; resize: vertical; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .btn { display: inline-block; padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; border: none; font-family: inherit; text-decoration: none; }
+  .btn-primary { background: #7c3aed; color: white; }
+  .btn-primary:hover { opacity: 0.88; }
+  .btn-secondary { background: #f1f5f9; color: #334155; }
+  .parse-area { border: 2px dashed #e2e8f0; border-radius: 10px; padding: 1.5rem; margin-bottom: 1rem; }
+  .parse-status { font-size: 13px; margin-top: 0.75rem; padding: 8px 12px; border-radius: 6px; display: none; }
+  .parse-status.loading { background: #eff6ff; color: #1e40af; display: block; }
+  .parse-status.success { background: #d1fae5; color: #065f46; display: block; }
+  .parse-status.error { background: #fee2e2; color: #991b1b; display: block; }
+  .fields-section { display: none; }
+  .hint { font-size: 11px; color: #94a3b8; margin-top: 4px; }
+  .objective-row { display: flex; gap: 8px; margin-bottom: 8px; }
+  .objective-row input { flex: 1; }
+  .objective-row button { padding: 6px 10px; border-radius: 6px; border: 1px solid #fca5a5; background: #fee2e2; color: #991b1b; cursor: pointer; font-size: 12px; flex-shrink: 0; }
+</style>
+</head>
+<body>
+<nav class="nav">
+  <a href="/candidates">English Evaluation System</a>
+  <div class="nav-right"><a href="/logout">Sign out</a></div>
+</nav>
+<div class="container">
+  <a href="/candidates" class="back">← Retour aux candidats</a>
+
+  <div class="card">
+    <h1>Renouvellement de formation</h1>
+    <p class="subtitle">Collez le texte du rapport de fin de cours pour pré-remplir automatiquement, ou saisissez manuellement.</p>
+
+    <div class="parse-area">
+      <div class="section-title">📄 Rapport de fin de cours</div>
+      <div style="display:flex;gap:0;margin-bottom:1rem;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden">
+        <button id="tabUpload" onclick="setTab('upload')" style="flex:1;padding:8px;border:none;background:#1F4E79;color:white;cursor:pointer;font-family:inherit;font-size:13px;font-weight:500">📎 Upload PDF</button>
+        <button id="tabPaste" onclick="setTab('paste')" style="flex:1;padding:8px;border:none;background:#f1f5f9;color:#334155;cursor:pointer;font-family:inherit;font-size:13px">📋 Coller le texte</button>
+      </div>
+      <div id="uploadArea">
+        <label for="pdfInput" style="display:block;border:2px dashed #c4b5fd;border-radius:8px;padding:2rem;text-align:center;cursor:pointer;color:#7c3aed;font-size:14px;background:#faf5ff">
+          <div style="font-size:32px;margin-bottom:8px">📄</div>
+          <div id="uploadLabel">Cliquez pour choisir un PDF</div>
+          <div style="font-size:11px;color:#94a3b8;margin-top:4px">ou glissez-déposez ici</div>
+        </label>
+        <input type="file" id="pdfInput" accept=".pdf" style="display:none" onchange="handlePdfUpload(this)">
+      </div>
+      <div id="pasteArea" style="display:none">
+        <textarea id="eocrText" placeholder="Collez ici le texte du rapport de fin de cours..." style="min-height:120px"></textarea>
+      </div>
+      <button class="btn btn-primary" id="parseBtn" onclick="parseEOCR()" style="margin-top:0.75rem;display:none">Analyser le rapport →</button>
+      <div class="parse-status" id="parseStatus"></div>
+    </div>
+
+    <div class="fields-section" id="fieldsSection">
+      <div class="section-title">Informations candidat</div>
+      <div class="two-col">
+        <div>
+          <label>Nom complet *</label>
+          <input id="f_name" type="text" placeholder="Prénom NOM">
+        </div>
+        <div>
+          <label>Email *</label>
+          <input id="f_email" type="email" placeholder="email@exemple.fr">
+        </div>
+      </div>
+      <div class="two-col">
+        <div>
+          <label>Entreprise</label>
+          <input id="f_company" type="text">
+        </div>
+        <div>
+          <label>Poste</label>
+          <input id="f_jobtitle" type="text">
+        </div>
+      </div>
+
+      <div class="section-title" style="margin-top:1.5rem">Niveaux & heures</div>
+      <div class="two-col">
+        <div>
+          <label>Niveau de départ (issu du rapport)</label>
+          <input id="f_prereqLevel" type="text" placeholder="ex. C1+">
+        </div>
+        <div>
+          <label>Niveau cible (nouveau cours)</label>
+          <select id="f_targetLevel">
+            <option value="">-- Choisir --</option>
+            <option value="A1 (0)">A1 (0)</option>
+            <option value="A1+ (0.5)">A1+ (0.5)</option>
+            <option value="A2 (1)">A2 (1)</option>
+            <option value="A2+ (1.5)">A2+ (1.5)</option>
+            <option value="B1 (2)">B1 (2)</option>
+            <option value="B1+ (2.5)">B1+ (2.5)</option>
+            <option value="B2 (3)">B2 (3)</option>
+            <option value="B2+ (3.5)">B2+ (3.5)</option>
+            <option value="C1 (4)">C1 (4)</option>
+            <option value="C1+ (4.5)">C1+ (4.5)</option>
+            <option value="C2 (5)">C2 (5)</option>
+          </select>
+        </div>
+      </div>
+      <div class="two-col">
+        <div>
+          <label>Heures de formation (coaching)</label>
+          <input id="f_coachingHours" type="text" placeholder="ex. 30">
+        </div>
+        <div>
+          <label>Heures travail autonome</label>
+          <input id="f_homeworkHours" type="text" placeholder="ex. 10">
+        </div>
+      </div>
+      <div class="two-col">
+        <div>
+          <label>Date début</label>
+          <input id="f_dateStart" type="date">
+        </div>
+        <div>
+          <label>Date fin</label>
+          <input id="f_dateEnd" type="date">
+        </div>
+      </div>
+
+      <div class="section-title" style="margin-top:1.5rem">Objectifs pédagogiques</div>
+      <div id="objectivesContainer"></div>
+      <button onclick="addObjective()" style="font-size:12px;padding:6px 14px;border-radius:6px;border:1px solid #e2e8f0;background:white;cursor:pointer;font-family:inherit;margin-top:4px">+ Ajouter un objectif</button>
+
+      <div class="section-title" style="margin-top:1.5rem">Bilan</div>
+      <label>Points forts</label>
+      <textarea id="f_strengths"></textarea>
+      <label>Axes d'amélioration</label>
+      <textarea id="f_improvements"></textarea>
+      <label>Commentaire global</label>
+      <textarea id="f_globalComment"></textarea>
+
+      <div style="margin-top:1.5rem;display:flex;gap:1rem">
+        <button class="btn btn-primary" id="saveBtn" onclick="saveRenewal()">Créer le candidat →</button>
+        <a href="/candidates" class="btn btn-secondary">Annuler</a>
+      </div>
+      <div id="saveStatus" style="margin-top:0.75rem;font-size:13px;color:#dc2626;display:none"></div>
+    </div>
+
+    <!-- Manual entry fallback -->
+    <div id="manualToggle" style="margin-top:1rem;text-align:center">
+      <button onclick="showManual()" style="font-size:12px;color:#94a3b8;background:none;border:none;cursor:pointer;font-family:inherit">Saisie manuelle sans rapport →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var objectives = [];
+
+function setTab(tab) {
+  var uploadArea = document.getElementById('uploadArea');
+  var pasteArea = document.getElementById('pasteArea');
+  var tabUpload = document.getElementById('tabUpload');
+  var tabPaste = document.getElementById('tabPaste');
+  if (tab === 'upload') {
+    uploadArea.style.display = 'block';
+    pasteArea.style.display = 'none';
+    tabUpload.style.background = '#1F4E79'; tabUpload.style.color = 'white';
+    tabPaste.style.background = '#f1f5f9'; tabPaste.style.color = '#334155';
+  } else {
+    uploadArea.style.display = 'none';
+    pasteArea.style.display = 'block';
+    tabUpload.style.background = '#f1f5f9'; tabUpload.style.color = '#334155';
+    tabPaste.style.background = '#1F4E79'; tabPaste.style.color = 'white';
+    document.getElementById('parseBtn').style.display = 'inline-block';
+  }
+}
+
+async function handlePdfUpload(input) {
+  var file = input.files[0];
+  if (!file) return;
+  document.getElementById('uploadLabel').textContent = file.name;
+  var status = document.getElementById('parseStatus');
+  var btn = document.getElementById('parseBtn');
+  status.className = 'parse-status loading';
+  status.textContent = 'Lecture du PDF…';
+
+  // Read PDF as base64 and send to server for text extraction
+  var reader = new FileReader();
+  reader.onload = async function(e) {
+    var base64 = e.target.result.split(',')[1];
+    try {
+      var resp = await fetch('/api/extract-pdf-text', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pdf: base64 })
+      });
+      var data = await resp.json();
+      if (!resp.ok || data.error) throw new Error(data.error || 'Erreur extraction');
+      document.getElementById('eocrText').value = data.text;
+      btn.style.display = 'inline-block';
+      status.className = 'parse-status success';
+      status.textContent = '✓ PDF lu — cliquez sur Analyser pour extraire les informations.';
+    } catch(e) {
+      status.className = 'parse-status error';
+      status.textContent = 'Erreur lecture PDF : ' + e.message;
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+async function parseEOCR() {
+  var text = document.getElementById('eocrText').value.trim();
+  if (!text) { alert('Veuillez coller le texte du rapport.'); return; }
+  var btn = document.getElementById('parseBtn');
+  var status = document.getElementById('parseStatus');
+  btn.disabled = true;
+  status.className = 'parse-status loading';
+  status.textContent = 'Analyse en cours…';
+  try {
+    var resp = await fetch('/api/parse-eocr', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: text })
+    });
+    var data = await resp.json();
+    if (!resp.ok || data.error) throw new Error(data.error || 'Erreur serveur');
+    fillFields(data.data || data);
+    status.className = 'parse-status success';
+    status.textContent = '✓ Informations extraites — vérifiez et complétez.';
+    document.getElementById('fieldsSection').style.display = 'block';
+    document.getElementById('manualToggle').style.display = 'none';
+    document.getElementById('fieldsSection').scrollIntoView({ behavior: 'smooth' });
+  } catch(e) {
+    status.className = 'parse-status error';
+    status.textContent = 'Erreur : ' + e.message;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function fillFields(d) {
+  var set = function(id, val) { var el = document.getElementById(id); if (el && val) el.value = val; };
+  set('f_name', d.name);
+  set('f_company', d.company);
+  set('f_jobtitle', d.jobtitle);
+  (function() {
+    var cefrMap = {'A1':'A1 (0)','A1+':'A1+ (0.5)','A2':'A2 (1)','A2+':'A2+ (1.5)',
+      'B1':'B1 (2)','B1+':'B1+ (2.5)','B2':'B2 (3)','B2+':'B2+ (3.5)',
+      'C1':'C1 (4)','C1+':'C1+ (4.5)','C2':'C2 (5)'};
+    var lv = d.prereqLevel ? d.prereqLevel.trim() : '';
+    var mapped = cefrMap[lv] || lv;
+    var el = document.getElementById('f_prereqLevel');
+    if (el && mapped) el.value = mapped;
+  })();
+  set('f_strengths', d.strengths);
+  set('f_improvements', d.improvements);
+  set('f_globalComment', d.globalComment);
+  if (d.totalHours) set('f_coachingHours', d.totalHours);
+  objectives = d.objectives || [];
+  renderObjectives();
+}
+
+function renderObjectives() {
+  var c = document.getElementById('objectivesContainer');
+  c.innerHTML = objectives.map(function(o, i) {
+    return '<div class="objective-row">'
+      + '<input type="text" value="' + o.replace(/"/g, '&quot;') + '" onchange="objectives[' + i + ']=this.value">'
+      + '<button onclick="objectives.splice(' + i + ',1);renderObjectives()">✕</button>'
+      + '</div>';
+  }).join('');
+}
+
+function addObjective() {
+  objectives.push('');
+  renderObjectives();
+  var inputs = document.querySelectorAll('#objectivesContainer input');
+  if (inputs.length) inputs[inputs.length-1].focus();
+}
+
+function showManual() {
+  document.getElementById('fieldsSection').style.display = 'block';
+  document.getElementById('manualToggle').style.display = 'none';
+  renderObjectives();
+}
+
+async function saveRenewal() {
+  var name = document.getElementById('f_name').value.trim();
+  var email = document.getElementById('f_email').value.trim();
+  if (!name || !email) { document.getElementById('saveStatus').textContent = 'Nom et email obligatoires.'; document.getElementById('saveStatus').style.display='block'; return; }
+  var btn = document.getElementById('saveBtn');
+  btn.disabled = true; btn.textContent = 'Création…';
+  var coachH = parseFloat(document.getElementById('f_coachingHours').value) || 0;
+  var hwH = parseFloat(document.getElementById('f_homeworkHours').value) || 0;
+  var payload = {
+    name: name,
+    email: email,
+    company: document.getElementById('f_company').value.trim(),
+    jobtitle: document.getElementById('f_jobtitle').value.trim(),
+    prereqLevel: document.getElementById('f_prereqLevel').value.trim(),
+    targetLevel: document.getElementById('f_targetLevel').value.trim(),
+    coachingHours: coachH,
+    homeworkHours: hwH,
+    totalHours: coachH + hwH,
+    dateStart: document.getElementById('f_dateStart').value,
+    dateEnd: document.getElementById('f_dateEnd').value,
+    objectives: objectives.filter(function(o){ return o.trim(); }),
+    strengths: document.getElementById('f_strengths').value.trim(),
+    improvements: document.getElementById('f_improvements').value.trim(),
+    globalComment: document.getElementById('f_globalComment').value.trim()
+  };
+  try {
+    var resp = await fetch('/api/new-renewal', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    var data = await resp.json();
+    if (data.ok) { window.location.href = '/candidates/' + data.id + '/programme'; }
+    else { document.getElementById('saveStatus').textContent = data.error || 'Erreur'; document.getElementById('saveStatus').style.display='block'; btn.disabled=false; btn.textContent='Créer le candidat →'; }
+  } catch(e) { document.getElementById('saveStatus').textContent = 'Erreur réseau'; document.getElementById('saveStatus').style.display='block'; btn.disabled=false; btn.textContent='Créer le candidat →'; }
+}
+</script>
+</body>
+</html>
