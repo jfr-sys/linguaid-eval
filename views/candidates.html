@@ -24,7 +24,10 @@
   tr:hover td { background: #fafafa; }
   .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; }
   .badge-csv { background: #e0e7ff; color: #3730a3; }
+  .badge-invited { background: #ffedd5; color: #c2410c; }
+  .badge-convention { background: #ede9fe; color: #6d28d9; }
   .badge-written { background: #d1fae5; color: #065f46; }
+  .badge-order { background: #f0fdf4; color: #166534; border: 1px solid #86efac; font-weight: 700; }
   .badge-oral { background: #fef3c7; color: #92400e; }
   .badge-final { background: #dbeafe; color: #1e40af; }
   .name-link { color: #1F4E79; text-decoration: none; font-weight: 500; }
@@ -56,8 +59,9 @@
       <thead>
         <tr>
           <th onclick="sortBy('name')" style="cursor:pointer;user-select:none">Name <span id="sort-name">↕</span></th>
-          <th onclick="sortBy('jobtitle')" style="cursor:pointer;user-select:none">Job Title <span id="sort-jobtitle">↕</span></th>
-          <th onclick="sortBy('testdate')" style="cursor:pointer;user-select:none">Test Date <span id="sort-testdate">↕</span></th>
+          <th onclick="sortBy('courseType')" style="cursor:pointer;user-select:none">Type <span id="sort-courseType">↕</span></th>
+          <th onclick="sortBy('company')" style="cursor:pointer;user-select:none">Company <span id="sort-company">↕</span></th>
+          <th onclick="sortBy('createdAt')" style="cursor:pointer;user-select:none">Created <span id="sort-createdAt">↕</span></th>
           <th onclick="sortBy('status')" style="cursor:pointer;user-select:none">Status <span id="sort-status">↕</span></th>
           <th>Actions</th>
         </tr>
@@ -69,7 +73,7 @@
   </div>
 </div>
 <script>
-  var all=[], sk='name', sd=1;
+  var all=[], sk='createdAt', sd=-1;
   var SL={csv_uploaded:['CSV uploaded','badge-csv'],written_report_done:['Written done','badge-written'],oral_done:['Oral done','badge-oral'],final_report_done:['Final done','badge-final'],programme_done:['Programme done','badge-final']};
   function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
   function render(){
@@ -79,10 +83,10 @@
     rows.sort(function(a,b){var x=(a[sk]||'').toLowerCase(),y=(b[sk]||'').toLowerCase();return x<y?-sd:x>y?sd:0;});
     if(!rows.length){tb.innerHTML='<tr><td colspan="5" class="empty">'+(q?'No results.':'No candidates yet.')+'</td></tr>';return;}
     tb.innerHTML=rows.map(function(x){
-      var sl = (x.conventionData && x.conventionData.price) ? ['Convention done','badge-written'] : (SL[x.status]||['Unknown','badge-csv']); var convDone = '';
-      return '<tr><td><a href="/candidates/'+x.id+'" class="name-link">'+esc(x.name)+(x.courseType==='legal'?' <span style="font-size:10px;background:#fee2e2;color:#991b1b;padding:2px 7px;border-radius:10px;font-weight:600">⚖️ Juridique</span>':'')+'</a></td><td>'+esc(x.jobtitle||'')+'</td><td>'+(x.testdate||'')+'</td><td><span class="badge '+sl[1]+'">'+sl[0]+'</span>'+convDone+'</td><td style="display:flex;gap:8px"><a href="/candidates/'+x.id+'" class="name-link">View</a>&nbsp;<button data-id="'+x.id+'" data-name="'+esc(x.name)+'" onclick="doDel(this)" style="background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer">Delete</button></td></tr>';
+      var sl = (x.conventionData && x.conventionData.sentToCatherineAt) ? ['Order sent','badge-order'] : (x.conventionData && x.conventionData.price) ? ['Convention done','badge-convention'] : (SL[x.status]||['Invited','badge-invited']); var convDone = '';
+      return '<tr><td><a href="/candidates/'+x.id+'" class="name-link">'+esc(x.name)+'</a></td><td>'+(x.courseType==='legal'?'<span style="font-size:11px;background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:10px;font-weight:600">Juridique</span>':'<span style="font-size:11px;background:#dbeafe;color:#1e40af;padding:2px 8px;border-radius:10px;font-weight:600">Business</span>')+'</td><td>'+esc(x.company||'')+'</td><td>'+(x.createdAt?x.createdAt.slice(0,10):'')+'</td><td><span class="badge '+sl[1]+'">'+sl[0]+'</span>'+convDone+'</td><td style="display:flex;gap:8px"><a href="/candidates/'+x.id+'" class="name-link">View</a>&nbsp;<button data-id="'+x.id+'" data-name="'+esc(x.name)+'" onclick="doDel(this)" style="background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer">Delete</button></td></tr>';
     }).join('');
-    ['name','jobtitle','testdate','status'].forEach(function(k){var e=document.getElementById('sort-'+k);if(e)e.textContent=k===sk?(sd===1?' ↑':' ↓'):' ⇕';});
+    ['name','courseType','company','createdAt','status'].forEach(function(k){var e=document.getElementById('sort-'+k);if(e)e.textContent=k===sk?(sd===1?' ↑':' ↓'):' ⇕';});
   }
   function sortBy(k){sk===k?sd=-sd:(sk=k,sd=1);render();}
   function doDel(btn){

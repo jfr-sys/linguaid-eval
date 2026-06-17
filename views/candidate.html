@@ -4,17 +4,38 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Linguaid Eval — Candidate</title>
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js">
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
   function sendForSignature() {
     var btn = document.getElementById('btnSendSign');
     var status = document.getElementById('signStatus');
     btn.disabled = true;
     btn.textContent = 'Envoi en cours...';
-    fetch('/api/generate-convention/' + id, { method: 'POST' })
+    // Save form data first including signatoryEmail
+    var saveData = {
+      siret: document.getElementById("convSiret").value,
+      civility: document.getElementById("convCivility").value,
+      signatory: document.getElementById("convSignatory").value,
+      signatoryEmail: document.getElementById("convSignatoryEmail") ? document.getElementById("convSignatoryEmail").value : '',
+      price: document.getElementById("convPrice").value,
+      dateStart: document.getElementById("convDateStart").value,
+      dateEnd: document.getElementById("convDateEnd").value,
+      isCPF: document.getElementById("convIsCPF") ? document.getElementById("convIsCPF").checked : false,
+      notes: document.getElementById("convNotes") ? document.getElementById("convNotes").value : '',
+      learnerTel: document.getElementById("convLearnerTel") ? document.getElementById("convLearnerTel").value : '',
+      orderNumber: document.getElementById("convOrderNumber") ? document.getElementById("convOrderNumber").value : '',
+      companyAddress: document.getElementById("convCompanyAddress") ? document.getElementById("convCompanyAddress").value : ''
+    };
+    fetch("/api/save-convention/" + id, {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(saveData)})
+      .then(function(r){ return r.json(); })
+      .then(function() {
+        return fetch('/api/generate-convention/' + id, { method: 'POST' });
+      })
       .then(function(r) { return r.json(); })
       .then(function(d) {
         if (d.success) {
-          status.innerHTML = '✅ Email envoyé à ' + (candidate.email || '') +
+          var recipient = saveData.signatoryEmail || candidate.email || '';
+          status.innerHTML = '✅ Email envoyé à ' + recipient +
             '<br><small><a href="' + d.signingUrl + '" target="_blank">Lien de signature</a></small>';
           btn.textContent = 'Renvoyer';
           btn.disabled = false;
@@ -39,7 +60,12 @@
       price: document.getElementById("convPrice").value,
       dateStart: document.getElementById("convDateStart").value,
       dateEnd: document.getElementById("convDateEnd").value,
-      isCPF: document.getElementById("convIsCPF") ? document.getElementById("convIsCPF").checked : false
+      isCPF: document.getElementById("convIsCPF") ? document.getElementById("convIsCPF").checked : false,
+      signatoryEmail: document.getElementById("convSignatoryEmail") ? document.getElementById("convSignatoryEmail").value : '',
+      notes: document.getElementById("convNotes") ? document.getElementById("convNotes").value : '',
+      learnerTel: document.getElementById("convLearnerTel") ? document.getElementById("convLearnerTel").value : '',
+      orderNumber: document.getElementById("convOrderNumber") ? document.getElementById("convOrderNumber").value : '',
+      companyAddress: document.getElementById("convCompanyAddress") ? document.getElementById("convCompanyAddress").value : ''
     };
     fetch("/api/save-convention/" + id, {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(data)})
       .then(function(r){return r.json();})
@@ -190,6 +216,11 @@
         <div class="step-label">Signé</div>
         <div class="step-sublabel">Convention signée</div>
       </div>
+      <div class="progress-step" id="pstep7">
+        <div class="step-circle" id="pc7">8</div>
+        <div class="step-label">ManageAll</div>
+        <div class="step-sublabel">Envoyé à Catherine</div>
+      </div>
     </div>
   </div>
 
@@ -235,6 +266,7 @@
         <div class="download-btns">
           <button class="btn btn-en" onclick="downloadProgramme('en')" title="Download EN">🇬🇧 EN</button>
           <button class="btn btn-fr" onclick="downloadProgramme('fr')" title="Télécharger FR">🇫🇷 FR</button>
+          <button class="btn" id="btnEditProgramme" onclick="window.location.href=window.location.pathname.split('/').slice(0,3).join('/')+'/programme'" title="Modifier le programme" style="background:#7c3aed;color:white;margin-left:4px">✏️ Modifier</button>
         </div>
         <div class="download-loading" id="programmeDownloadLoading">Generating…</div>
       </div>
@@ -250,12 +282,21 @@
         <div style="grid-column:1/-1;display:flex;align-items:center;gap:10px;padding:8px 0"><label style="font-size:13px;font-weight:500;color:#1F4E79">Formation CPF (RS6341)</label><input type="checkbox" id="convIsCPF" onchange="toggleConvCPF()" style="width:16px;height:16px;cursor:pointer"><span style="font-size:11px;color:#666">Cochez si financement CPF</span></div><div id="convSiretRow"><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">SIRET entreprise</label><input id="convSiret" type="text" placeholder="123 456 789 00012" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
         <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Civilite</label><select id="convCivility" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"><option>Madame</option><option>Monsieur</option></select></div>
         <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Signataire entreprise</label><input id="convSignatory" type="text" placeholder="Prenom NOM" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
+        <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Email signataire</label><input id="convSignatoryEmail" type="email" placeholder="signataire@entreprise.com" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
         <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Prix (euros HT)</label><input id="convPrice" type="text" placeholder="3800" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
         <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Date debut</label><input id="convDateStart" type="date" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
         <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Date fin</label><input id="convDateEnd" type="date" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
+        <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Tél apprenant</label><input id="convLearnerTel" type="text" placeholder="06 xx xx xx xx" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
+        <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">N° de commande</label><input id="convOrderNumber" type="text" placeholder="CMD-2026-XXX" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
+        <div style="grid-column:1/-1"><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Adresse entreprise</label><input id="convCompanyAddress" type="text" placeholder="1 rue de la Paix, 75001 Paris" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
+      </div>
+      <div style="margin-bottom:0.75rem">
+        <label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Notes pour Catherine (ManageAll)</label>
+        <textarea id="convNotes" placeholder="Ex: CPF, OPCO, modalités particulières..." style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px;min-height:60px;resize:vertical"></textarea>
       </div>
       <button class="btn btn-primary" onclick="downloadConvention()">Telecharger la convention</button>
       <button class="btn btn-secondary" id="btnSendSign" onclick="sendForSignature()" style="margin-left:8px">Envoyer pour signature</button>
+      <button class="btn btn-secondary" id="btnSendCatherine" onclick="sendToCatherine()" style="margin-left:8px;background:#7c3aed;color:white">📧 Envoyer à Catherine</button>
       <div id="signStatus" style="margin-top:8px;font-size:12px;color:#666"></div>
       <div id="signedPdfBlock" style="display:none;margin-top:12px;padding:10px 14px;background:#d1fae5;border-radius:8px;border:1px solid #6ee7b7">
         <span style="font-size:13px;color:#065f46;font-weight:500">✅ Convention signée</span>
@@ -299,7 +340,7 @@
 
   marked.setOptions({ breaks: true, gfm: true });
 
-  function updateProgressBar(status, hasConvention, hasSigned) {
+  function updateProgressBar(status, hasConvention, hasSigned, hasSentCatherine) {
     const stepIndex = STATUS_ORDER.indexOf(status);
     for (let i = 0; i < 5; i++) {
       const step = document.getElementById('pstep' + i);
@@ -323,6 +364,10 @@
     var c6 = document.getElementById('pc6');
     if (s6 && hasSigned) { s6.classList.remove('pending','active'); s6.classList.add('done'); c6.innerHTML = '✓'; }
     else if (s6 && hasConvention) { s6.classList.remove('pending','done'); s6.classList.add('active'); }
+    var s7 = document.getElementById('pstep7');
+    var c7 = document.getElementById('pc7');
+    if (s7 && hasSentCatherine) { s7.classList.remove('pending','active'); s7.classList.add('done'); c7.innerHTML = '✓'; }
+    else if (s7 && hasSigned) { s7.classList.remove('pending','done'); s7.classList.add('active'); }
   }
 
   function statusBadge(status) {
@@ -332,7 +377,7 @@
       oral_done: ['Oral done', '#fef3c7', '#92400e'],
       final_report_done: ['Final done', '#dbeafe', '#1e40af']
     };
-    const [label, bg, color] = map[status] || ['Unknown', '#f3f4f6', '#374151'];
+    const [label, bg, color] = map[status] || ['Invited', '#f3f4f6', '#374151'];
     return `<span class="badge" style="background:${bg};color:${color}">${label}</span>`;
   }
 
@@ -344,8 +389,8 @@
     companyEl.value = c.company || '';
     companyEl.dataset.id = c.id;
     document.getElementById('profileMeta').textContent = c.email + (c.testdate ? ' · Test: ' + c.testdate : '');
-    document.getElementById('profileBadge').innerHTML = statusBadge(c.status);
-    updateProgressBar(c.status, !!(c.conventionData && c.conventionData.price), !!(c.conventionData && c.conventionData.signedAt));
+    document.getElementById('profileBadge').innerHTML = c.isRenewal ? '<span class="badge" style="background:#ede9fe;color:#5b21b6">Renouvellement</span>' : statusBadge(c.status);
+    updateProgressBar(c.status, !!(c.conventionData && c.conventionData.price), !!(c.conventionData && c.conventionData.signedAt), !!(c.conventionData && c.conventionData.sentToCatherineAt));
 
     const p = Math.round(100 * c.scores.total / (c.scores.max || 30));
     document.getElementById('testDataBlock').innerHTML = `
@@ -687,6 +732,31 @@
     setTimeout(() => event.target.textContent = 'Copy link', 2000);
   }
 
+  function sendToCatherine() {
+    var btn = document.getElementById('btnSendCatherine');
+    btn.disabled = true;
+    btn.textContent = 'Envoi en cours…';
+    var notes = document.getElementById('convNotes') ? document.getElementById('convNotes').value : '';
+    fetch('/api/send-to-catherine/' + id, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ notes: notes })
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if (d.success) {
+        btn.textContent = '✅ Envoyé à Catherine';
+        btn.style.background = '#059669';
+        setTimeout(function(){ btn.textContent = '📧 Envoyer à Catherine'; btn.style.background = '#7c3aed'; btn.disabled = false; }, 3000);
+      } else {
+        alert('Erreur: ' + d.error);
+        btn.disabled = false;
+        btn.textContent = '📧 Envoyer à Catherine';
+      }
+    })
+    .catch(function(e){ alert('Erreur réseau'); btn.disabled = false; btn.textContent = '📧 Envoyer à Catherine'; });
+  }
+
   function showConvention(c) {
     var el = document.getElementById("conventionForm");
     if (!el) return;
@@ -752,55 +822,6 @@
   }
 
 
-  function sendForSignature() {
-    var btn = document.getElementById('btnSendSign');
-    var status = document.getElementById('signStatus');
-    btn.disabled = true;
-    btn.textContent = 'Envoi en cours...';
-    fetch('/api/generate-convention/' + id, { method: 'POST' })
-      .then(function(r) { return r.json(); })
-      .then(function(d) {
-        if (d.success) {
-          status.innerHTML = '✅ Email envoyé à ' + (candidate.email || '') +
-            '<br><small><a href="' + d.signingUrl + '" target="_blank">Lien de signature</a></small>';
-          btn.textContent = 'Renvoyer';
-          btn.disabled = false;
-        } else {
-          status.textContent = 'Erreur: ' + d.error;
-          btn.textContent = 'Envoyer pour signature';
-          btn.disabled = false;
-        }
-      })
-      .catch(function(e) {
-        status.textContent = 'Erreur: ' + e.message;
-        btn.textContent = 'Envoyer pour signature';
-        btn.disabled = false;
-      });
-  }
-
-  function downloadConvention() {
-    var data = {
-      siret: document.getElementById("convSiret").value,
-      civility: document.getElementById("convCivility").value,
-      signatory: document.getElementById("convSignatory").value,
-      price: document.getElementById("convPrice").value,
-      dateStart: document.getElementById("convDateStart").value,
-      dateEnd: document.getElementById("convDateEnd").value,
-      isCPF: document.getElementById("convIsCPF") ? document.getElementById("convIsCPF").checked : false
-    };
-    fetch("/api/save-convention/" + id, {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(data)})
-      .then(function(r){return r.json();})
-      .then(function(d){
-        if (d.success) {
-          fetch("/api/generate-convention/" + id, {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({sendEmail:false})})
-            .then(function(r2){return r2.json();})
-            .then(function(d2){
-              if (d2.success || d2.pdfPath) { window.location.href = "/api/download-convention/" + id; }
-              else alert("Erreur génération: " + d2.error);
-            });
-        } else alert("Erreur: " + d.error);
-      });
-  }
 
 </script>
 </body>

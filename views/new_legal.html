@@ -19,15 +19,46 @@
   h1 { font-size: 22px; font-weight: 700; color: #1F4E79; margin-bottom: 4px; }
   .subtitle { font-size: 14px; color: #64748b; margin-bottom: 1.5rem; }
 
-  /* Mode tabs */
   .mode-tabs { display: flex; gap: 0; background: white; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 1.5rem; overflow: hidden; }
-  .mode-tab { flex: 1; padding: 14px 20px; font-size: 14px; font-weight: 500; cursor: pointer; border: none; background: white; color: #64748b; transition: all 0.15s; font-family: inherit; border-bottom: 3px solid transparent; }
+  .mode-tab { flex: 1; padding: 12px 8px; font-size: 13px; font-weight: 500; cursor: pointer; border: none; background: white; color: #64748b; transition: all 0.15s; font-family: inherit; border-bottom: 3px solid transparent; text-align: center; }
   .mode-tab.active { color: #1F4E79; border-bottom-color: #1F4E79; background: #f8fafc; }
   .mode-tab:hover:not(.active) { background: #f8fafc; color: #334155; }
+
+  /* Renewal badge */
+  .renewal-badge { display: inline-block; background: #7c3aed; color: white; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; margin-left: 8px; vertical-align: middle; }
 
   .card { background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 1rem; }
   .card h2 { font-size: 16px; font-weight: 600; color: #1F4E79; margin-bottom: 6px; }
   .card .hint { font-size: 13px; color: #64748b; margin-bottom: 1rem; line-height: 1.6; }
+
+  /* PDF upload zone */
+  .upload-zone { border: 2px dashed #cbd5e1; border-radius: 10px; padding: 2rem; text-align: center; cursor: pointer; transition: all 0.15s; background: #f8fafc; position: relative; }
+  .upload-zone:hover, .upload-zone.dragover { border-color: #2E75B6; background: #eff6ff; }
+  .upload-zone.has-file { border-color: #059669; background: #f0fdf4; }
+  .upload-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .upload-icon { font-size: 32px; margin-bottom: 8px; }
+  .upload-label { font-size: 14px; font-weight: 500; color: #475569; }
+  .upload-sub { font-size: 12px; color: #94a3b8; margin-top: 4px; }
+  .upload-filename { font-size: 13px; color: #059669; font-weight: 600; margin-top: 6px; }
+
+  .parse-btn { background: #1F4E79; color: white; border: none; border-radius: 8px; padding: 10px 22px; font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit; transition: opacity 0.15s; margin-top: 12px; }
+  .parse-btn:hover { opacity: 0.88; }
+  .parse-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .parse-status { font-size: 13px; margin-top: 8px; min-height: 20px; }
+  .parse-status.loading { color: #64748b; }
+  .parse-status.error { color: #dc2626; }
+  .parse-status.success { color: #059669; }
+
+  /* Extracted data preview */
+  #pdfPreview, #progPreview { display: none; margin-top: 1rem; }
+  .preview-grid { display: grid; grid-template-columns: 160px 1fr; gap: 4px 12px; font-size: 13px; }
+  .preview-key { color: #94a3b8; font-weight: 500; padding: 3px 0; }
+  .preview-val { color: #1a1a1a; padding: 3px 0; border-bottom: 0.5px solid #f1f5f9; }
+
+  /* Paste mode */
+  #pasteArea { min-height: 180px; font-family: 'SF Mono', Menlo, monospace; font-size: 12px; line-height: 1.6; background: #f8fafc; border-color: #e2e8f0; }
+  #pasteArea:focus { border-color: #2E75B6; background: white; }
+  #parsedPreview { display: none; margin-top: 1rem; }
 
   label { font-size: 13px; color: #475569; display: block; margin-bottom: 4px; margin-top: 14px; font-weight: 500; }
   label:first-child { margin-top: 0; }
@@ -37,39 +68,31 @@
   .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .section-divider { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: #94a3b8; margin: 20px 0 4px; padding-top: 16px; border-top: 1px solid #f1f5f9; }
 
-  /* Parse mode */
-  #pasteArea { min-height: 180px; font-family: 'SF Mono', Menlo, monospace; font-size: 12px; line-height: 1.6; background: #f8fafc; border-color: #e2e8f0; }
-  #pasteArea:focus { border-color: #2E75B6; background: white; }
-  .parse-btn { background: #1F4E79; color: white; border: none; border-radius: 8px; padding: 10px 22px; font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit; transition: opacity 0.15s; margin-top: 12px; }
-  .parse-btn:hover { opacity: 0.88; }
-  .parse-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-  .parse-status { font-size: 13px; margin-top: 8px; min-height: 20px; }
-  .parse-status.loading { color: #64748b; }
-  .parse-status.error { color: #dc2626; }
-  .parse-status.success { color: #059669; }
+  /* oralData pre-fill panel (renewal only) */
+  .oral-prefill { background: #f5f3ff; border: 1px solid #ddd6fe; border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 1rem; display: none; }
+  .oral-prefill h3 { font-size: 13px; font-weight: 700; color: #7c3aed; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .oral-prefill .prefill-grid { display: grid; grid-template-columns: 160px 1fr; gap: 4px 12px; font-size: 13px; }
+  .oral-prefill .pk { color: #8b5cf6; font-weight: 500; padding: 2px 0; }
+  .oral-prefill .pv { color: #1a1a1a; padding: 2px 0; }
+  .oral-prefill .hint { font-size: 12px; color: #7c3aed; margin-top: 8px; }
 
-  /* Parsed preview */
-  #parsedPreview { display: none; margin-top: 1rem; }
-  .preview-grid { display: grid; grid-template-columns: 140px 1fr; gap: 4px 12px; font-size: 13px; }
-  .preview-key { color: #94a3b8; font-weight: 500; padding: 3px 0; }
-  .preview-val { color: #1a1a1a; padding: 3px 0; border-bottom: 0.5px solid #f1f5f9; }
-  .preview-val:last-child { border-bottom: none; }
-
-  /* Buttons */
   .btn-row { display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; gap: 12px; }
   .btn-save { background: #059669; color: white; border: none; border-radius: 8px; padding: 12px 28px; font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit; transition: opacity 0.15s; }
   .btn-save:hover { opacity: 0.88; }
   .btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-save.renewal { background: #7c3aed; }
   .btn-secondary { background: #f1f5f9; color: #334155; border: none; border-radius: 8px; padding: 10px 20px; font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit; }
   .btn-secondary:hover { background: #e2e8f0; }
 
   .success-screen { display: none; text-align: center; padding: 3rem 2rem; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
   .success-icon { font-size: 48px; margin-bottom: 1rem; }
   .success-title { font-size: 20px; font-weight: 700; color: #059669; margin-bottom: 8px; }
+  .success-title.renewal { color: #7c3aed; }
   .success-sub { font-size: 14px; color: #64748b; line-height: 1.7; margin-bottom: 1.5rem; }
-  .oral-link { display: inline-block; background: #1F4E79; color: white; padding: 10px 22px; border-radius: 8px; text-decoration: none; font-size: 14px; font-weight: 500; margin: 4px; }
-  .oral-link:hover { opacity: 0.88; }
-  .back-link { display: inline-block; background: #f1f5f9; color: #334155; padding: 10px 22px; border-radius: 8px; text-decoration: none; font-size: 14px; font-weight: 500; margin: 4px; }
+  .action-link { display: inline-block; color: white; padding: 10px 22px; border-radius: 8px; text-decoration: none; font-size: 14px; font-weight: 500; margin: 4px; }
+  .action-link.primary { background: #7c3aed; }
+  .action-link.primary:hover { opacity: 0.88; }
+  .action-link.secondary { background: #f1f5f9; color: #334155; }
 </style>
 </head>
 <body>
@@ -86,18 +109,19 @@
 
 <div class="container">
   <h1>Nouveau candidat — Anglais Juridique</h1>
-  <p class="subtitle">Créez un candidat à partir du questionnaire prospect Ken Fagan, ou saisissez les informations manuellement.</p>
+  <p class="subtitle">Créez un candidat à partir du questionnaire prospect, d'un rapport de fin de formation, d'un programme précédent, ou saisissez manuellement.</p>
 
   <div class="mode-tabs">
-    <button class="mode-tab active" onclick="setMode('paste')">📋 Coller le questionnaire</button>
-    <button class="mode-tab" onclick="setMode('manual')">✏️ Saisie manuelle</button>
+    <button class="mode-tab active" onclick="setMode('paste')">📋 Questionnaire</button>
+    <button class="mode-tab" onclick="setMode('report')">📄 Rapport fin de formation</button>
+    <button class="mode-tab" onclick="setMode('programme')">📑 Programme précédent</button>
+    <button class="mode-tab" onclick="setMode('manual')">✏️ Manuel</button>
   </div>
 
-  <!-- MAIN FORM (shown in both modes, hidden initially in paste mode) -->
   <div id="mainForm">
 
     <!-- PASTE MODE -->
-    <div id="pasteSection" class="card">
+    <div id="pasteSection" class="card" style="display:none">
       <h2>Coller le texte du questionnaire</h2>
       <p class="hint">Copiez le contenu de l'email reçu de Ken Fagan (le questionnaire complet) et collez-le ci-dessous. Claude extraira automatiquement les informations.</p>
       <label>Texte du questionnaire</label>
@@ -112,8 +136,58 @@
       </div>
     </div>
 
-    <!-- CANDIDATE FIELDS (shown after parse or in manual mode) -->
+    <!-- REPORT PDF MODE -->
+    <div id="reportSection" class="card" style="display:none">
+      <h2>Rapport de fin de formation <span class="renewal-badge">RENOUVELLEMENT</span></h2>
+      <p class="hint">Importez le rapport de fin de formation du candidat. Claude extraira le niveau atteint, les objectifs réalisés et les informations personnelles pour préparer un nouveau programme.</p>
+      <div class="upload-zone" id="reportZone" ondragover="handleDrag(event,'reportZone')" ondragleave="handleDragLeave(event,'reportZone')" ondrop="handleDrop(event,'reportFile','reportZone')">
+        <input type="file" id="reportFile" accept=".pdf" onchange="handleFileSelect(this,'reportZone','reportFilename')">
+        <div class="upload-icon">📄</div>
+        <div class="upload-label">Glisser le PDF ici ou cliquer pour choisir</div>
+        <div class="upload-sub">Rapport de fin de formation — format PDF</div>
+        <div class="upload-filename" id="reportFilename"></div>
+      </div>
+      <div>
+        <button class="parse-btn" id="reportParseBtn" onclick="parsePDF('report')" disabled>Analyser le rapport →</button>
+        <div class="parse-status" id="reportParseStatus"></div>
+      </div>
+      <div id="pdfPreview">
+        <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:#94a3b8;margin-bottom:8px">Informations extraites</div>
+        <div class="preview-grid" id="pdfPreviewGrid"></div>
+      </div>
+    </div>
+
+    <!-- PROGRAMME PDF MODE -->
+    <div id="programmeSection" class="card" style="display:none">
+      <h2>Programme de formation précédent <span class="renewal-badge">RENOUVELLEMENT</span></h2>
+      <p class="hint">Importez le programme de formation précédent du candidat. Claude extraira le niveau, les heures, les objectifs et les informations pour créer un nouveau programme.</p>
+      <div class="upload-zone" id="progZone" ondragover="handleDrag(event,'progZone')" ondragleave="handleDragLeave(event,'progZone')" ondrop="handleDrop(event,'progFile','progZone')">
+        <input type="file" id="progFile" accept=".pdf" onchange="handleFileSelect(this,'progZone','progFilename')">
+        <div class="upload-icon">📑</div>
+        <div class="upload-label">Glisser le PDF ici ou cliquer pour choisir</div>
+        <div class="upload-sub">Programme de formation professionnelle — format PDF</div>
+        <div class="upload-filename" id="progFilename"></div>
+      </div>
+      <div>
+        <button class="parse-btn" id="progParseBtn" onclick="parsePDF('programme')" disabled>Analyser le programme →</button>
+        <div class="parse-status" id="progParseStatus"></div>
+      </div>
+      <div id="progPreview">
+        <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:#94a3b8;margin-bottom:8px">Informations extraites</div>
+        <div class="preview-grid" id="progPreviewGrid"></div>
+      </div>
+    </div>
+
+    <!-- CANDIDATE FIELDS (shared across all modes) -->
     <div id="fieldsSection" style="display:none">
+
+      <!-- Renewal oralData summary panel -->
+      <div class="oral-prefill" id="oralPrefillPanel">
+        <h3>Données programme pré-renseignées</h3>
+        <div class="prefill-grid" id="oralPrefillGrid"></div>
+        <div class="hint">Ces données seront utilisées directement pour générer le nouveau programme. Modifiez les champs ci-dessous si nécessaire.</div>
+      </div>
+
       <div class="card">
         <h2>Informations personnelles</h2>
         <div class="two-col">
@@ -262,42 +336,234 @@
     <div class="success-icon">✅</div>
     <div class="success-title" id="successTitle">Candidat créé avec succès</div>
     <div class="success-sub" id="successSub"></div>
-    <div>
-      <a href="#" id="oralLinkBtn" class="oral-link" target="_blank">🔗 Copier le lien entretien</a>
-      <a href="/candidates" class="back-link">← Retour aux candidats</a>
-    </div>
+    <div id="successActions"></div>
   </div>
 </div>
 
 <script>
   let mode = 'paste';
   let parsedData = {};
+  let renewalOralData = null;   // populated when PDF mode extracts oralData
+  let isRenewal = false;
 
   function setMode(m) {
     mode = m;
-    document.querySelectorAll('.mode-tab').forEach((t, i) => t.classList.toggle('active', (i === 0 && m === 'paste') || (i === 1 && m === 'manual')));
-    document.getElementById('pasteSection').style.display = m === 'paste' ? 'block' : 'none';
+    const tabs = document.querySelectorAll('.mode-tab');
+    const modeOrder = ['paste','report','programme','manual'];
+    tabs.forEach((t, i) => t.classList.toggle('active', modeOrder[i] === m));
+
+    document.getElementById('pasteSection').style.display    = m === 'paste'     ? 'block' : 'none';
+    document.getElementById('reportSection').style.display   = m === 'report'    ? 'block' : 'none';
+    document.getElementById('programmeSection').style.display= m === 'programme' ? 'block' : 'none';
+
+    isRenewal = (m === 'report' || m === 'programme');
+
+    // Show fields immediately for manual; hide until parse for others
     if (m === 'manual') {
       document.getElementById('fieldsSection').style.display = 'block';
-      document.getElementById('parsedPreview').style.display = 'none';
-    } else {
-      // In paste mode, only show fields after parsing
-      if (!parsedData.name) {
-        document.getElementById('fieldsSection').style.display = 'none';
-      }
+      document.getElementById('oralPrefillPanel').style.display = 'none';
+      updateSaveButton();
+    } else if (!parsedData.name && !renewalOralData) {
+      document.getElementById('fieldsSection').style.display = 'none';
     }
   }
 
+  function updateSaveButton() {
+    const btn = document.getElementById('saveBtn');
+    if (isRenewal) {
+      btn.textContent = 'Cr\u00e9er et acc\u00e9der au programme \u2192';
+      btn.classList.add('renewal');
+    } else {
+      btn.textContent = 'Cr\u00e9er le candidat \u2192';
+      btn.classList.remove('renewal');
+    }
+  }
+
+  // ── Drag & drop helpers ──────────────────────────────────────────────────
+  function handleDrag(e, zoneId) {
+    e.preventDefault();
+    document.getElementById(zoneId).classList.add('dragover');
+  }
+  function handleDragLeave(e, zoneId) {
+    document.getElementById(zoneId).classList.remove('dragover');
+  }
+  function handleDrop(e, inputId, zoneId) {
+    e.preventDefault();
+    document.getElementById(zoneId).classList.remove('dragover');
+    const file = e.dataTransfer.files[0];
+    if (file && file.type === 'application/pdf') {
+      const input = document.getElementById(inputId);
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      input.files = dt.files;
+      input.dispatchEvent(new Event('change'));
+    }
+  }
+  function handleFileSelect(input, zoneId, filenameId) {
+    const file = input.files[0];
+    if (!file) return;
+    document.getElementById(filenameId).textContent = file.name;
+    document.getElementById(zoneId).classList.add('has-file');
+    const btnId = zoneId === 'reportZone' ? 'reportParseBtn' : 'progParseBtn';
+    document.getElementById(btnId).disabled = false;
+  }
+
+  // ── PDF parsing (report or programme) ───────────────────────────────────
+  async function parsePDF(type) {
+    const inputId  = type === 'report' ? 'reportFile'       : 'progFile';
+    const statusId = type === 'report' ? 'reportParseStatus': 'progParseStatus';
+    const btnId    = type === 'report' ? 'reportParseBtn'   : 'progParseBtn';
+    const previewId= type === 'report' ? 'pdfPreview'       : 'progPreview';
+    const gridId   = type === 'report' ? 'pdfPreviewGrid'   : 'progPreviewGrid';
+
+    const file = document.getElementById(inputId).files[0];
+    if (!file) return;
+
+    const btn    = document.getElementById(btnId);
+    const status = document.getElementById(statusId);
+    btn.disabled = true;
+    status.className = 'parse-status loading';
+    status.textContent = 'Lecture du PDF en cours\u2026';
+
+    try {
+      // Read as base64
+      const base64 = await new Promise((res, rej) => {
+        const r = new FileReader();
+        r.onload = () => res(r.result.split(',')[1]);
+        r.onerror = () => rej(new Error('Lecture fichier impossible'));
+        r.readAsDataURL(file);
+      });
+
+      status.textContent = 'Analyse par Claude en cours\u2026';
+
+      const systemPrompt = type === 'report'
+        ? `Tu es un assistant qui extrait des informations structur\u00e9es d'un rapport de fin de formation en anglais professionnel. 
+Extrais uniquement ce qui est explicitement pr\u00e9sent dans le document.
+R\u00e9ponds UNIQUEMENT en JSON valide, sans markdown ni backticks, avec exactement ces champs:
+{
+  "name": "pr\u00e9nom et nom du candidat",
+  "email": "email si pr\u00e9sent, sinon null",
+  "jobtitle": "poste si pr\u00e9sent, sinon null",
+  "company": "employeur si pr\u00e9sent, sinon null",
+  "prereqLevel": "niveau de d\u00e9part CECRL (ex: B1, B2)",
+  "levelReached": "niveau atteint en fin de formation CECRL",
+  "targetLevel": "niveau cible recommand\u00e9 pour la suite CECRL — si non explicit\u00e9, propose le niveau sup\u00e9rieur au niveau atteint",
+  "totalHours": "nombre d'heures de la formation pr\u00e9c\u00e9dente (entier)",
+  "coachingHours": "heures de coaching (entier, ou \u00e9gal \u00e0 totalHours si non pr\u00e9cis\u00e9)",
+  "homeworkHours": "heures travail autonome (entier, 0 si non pr\u00e9cis\u00e9)",
+  "completedObjectives": ["liste des objectifs r\u00e9alis\u00e9s"],
+  "suggestedObjectives": ["liste de 3 objectifs sugg\u00e9r\u00e9s pour la suite bas\u00e9s sur les lacunes identifi\u00e9es"],
+  "keyGaps": "lacunes principales identifi\u00e9es dans le rapport",
+  "otherNeeds": "autres informations pertinentes pour la suite"
+}`
+        : `Tu es un assistant qui extrait des informations structur\u00e9es d'un programme de formation professionnelle en anglais.
+Extrais uniquement ce qui est explicitement pr\u00e9sent dans le document.
+R\u00e9ponds UNIQUEMENT en JSON valide, sans markdown ni backticks, avec exactement ces champs:
+{
+  "name": "pr\u00e9nom et nom du candidat",
+  "email": null,
+  "jobtitle": "poste si pr\u00e9sent, sinon null",
+  "company": "employeur si pr\u00e9sent, sinon null",
+  "prereqLevel": "niveau pr\u00e9requis indiqu\u00e9 dans le programme CECRL",
+  "targetLevel": "propose le niveau sup\u00e9rieur au pr\u00e9requis (ex: si B2 alors C1)",
+  "totalHours": "nombre total d'heures (entier)",
+  "coachingHours": "heures de coaching (entier, \u00e9gal \u00e0 totalHours si non pr\u00e9cis\u00e9)",
+  "homeworkHours": "heures travail autonome (entier, 0 si non pr\u00e9cis\u00e9)",
+  "previousObjectives": ["liste des objectifs p\u00e9dagogiques du programme pr\u00e9c\u00e9dent"],
+  "suggestedObjectives": ["3 objectifs sugg\u00e9r\u00e9s pour le renouvellement, plus ambitieux que les pr\u00e9c\u00e9dents"],
+  "otherNeeds": "autres informations pertinentes"
+}`;
+
+      const resp = await fetch('/api/parse-renewal-pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pdfBase64: base64, type })
+      });
+
+      const result = await resp.json();
+      if (!resp.ok || !result.success) throw new Error(result.error || 'Erreur serveur');
+
+      const data = result.data;
+
+      // Build oralData from extracted fields
+      const objectives = data.suggestedObjectives || data.previousObjectives || data.completedObjectives || [];
+      renewalOralData = {
+        prereqLevel:   data.prereqLevel   || '',
+        targetLevel:   data.targetLevel   || '',
+        totalHours:    parseInt(data.totalHours,  10) || 10,
+        coachingHours: parseInt(data.coachingHours,10) || parseInt(data.totalHours,10) || 10,
+        homeworkHours: parseInt(data.homeworkHours,10) || 0,
+        validatedGoals: objectives,
+        evaluator:     'jfr@linguaid.net',
+        sessionDate:   new Date().toISOString().split('T')[0],
+        listeningLevel: data.levelReached || data.prereqLevel || '',
+        speakingLevel:  data.levelReached || data.prereqLevel || '',
+      };
+
+      // Show extraction preview
+      const previewFields = [
+        ['Candidat',          data.name],
+        ['Niveau pr\u00e9requis',    data.prereqLevel],
+        ['Niveau atteint',    data.levelReached || '(non pr\u00e9cis\u00e9)'],
+        ['Niveau cible',      data.targetLevel],
+        ['Heures',            data.totalHours ? data.totalHours + 'h' : null],
+        ['Objectifs sugg\u00e9r\u00e9s', objectives.slice(0,2).join(' / ')],
+      ].filter(([,v]) => v);
+
+      document.getElementById(gridId).innerHTML = previewFields.map(([k,v]) =>
+        `<div class="preview-key">${k}</div><div class="preview-val">${v}</div>`
+      ).join('');
+      document.getElementById(previewId).style.display = 'block';
+
+      // Fill candidate fields
+      fillFields({
+        name:    data.name,
+        email:   data.email,
+        jobtitle: data.jobtitle,
+        company: data.company,
+        otherNeeds: data.otherNeeds || (data.keyGaps ? 'Lacunes : ' + data.keyGaps : ''),
+      });
+
+      // Show oralData prefill panel
+      showOralPrefill(renewalOralData, objectives);
+
+      status.className = 'parse-status success';
+      status.textContent = '\u2713 Informations extraites \u2014 v\u00e9rifiez et compl\u00e9tez si n\u00e9cessaire.';
+      document.getElementById('fieldsSection').style.display = 'block';
+      document.getElementById('fieldsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      updateSaveButton();
+
+    } catch (err) {
+      status.className = 'parse-status error';
+      status.textContent = 'Erreur : ' + err.message;
+      btn.disabled = false;
+    }
+  }
+
+  function showOralPrefill(oral, objectives) {
+    const panel = document.getElementById('oralPrefillPanel');
+    const grid  = document.getElementById('oralPrefillGrid');
+    const rows = [
+      ['Niveau pr\u00e9requis',  oral.prereqLevel],
+      ['Niveau cible',      oral.targetLevel],
+      ['Heures formation',  oral.coachingHours + 'h coaching + ' + oral.homeworkHours + 'h autonome = ' + oral.totalHours + 'h total'],
+      ['Objectifs (×' + objectives.length + ')', objectives.join(' \u2022 ')],
+    ].filter(([,v]) => v);
+    grid.innerHTML = rows.map(([k,v]) =>
+      `<div class="pk">${k}</div><div class="pv">${v}</div>`
+    ).join('');
+    panel.style.display = 'block';
+  }
+
+  // ── Questionnaire paste mode ─────────────────────────────────────────────
   async function parseQuestionnaire() {
     const text = document.getElementById('pasteArea').value.trim();
     if (!text) return;
-
     const btn = document.getElementById('parseBtn');
     const status = document.getElementById('parseStatus');
     btn.disabled = true;
     status.className = 'parse-status loading';
-    status.textContent = 'Analyse en cours…';
-
+    status.textContent = 'Analyse en cours\u2026';
     try {
       const resp = await fetch('/api/parse-legal-questionnaire', {
         method: 'POST',
@@ -306,13 +572,11 @@
       });
       const data = await resp.json();
       if (!resp.ok || data.error) throw new Error(data.error || 'Erreur serveur');
-
       parsedData = data.data || data;
-      fillFields(data.data || data);
-      showPreview(data.data || data);
-
+      fillFields(parsedData);
+      showPreview(parsedData);
       status.className = 'parse-status success';
-      status.textContent = '✓ Informations extraites — vérifiez et complétez si nécessaire.';
+      status.textContent = '\u2713 Informations extraites \u2014 v\u00e9rifiez et compl\u00e9tez si n\u00e9cessaire.';
       document.getElementById('fieldsSection').style.display = 'block';
       document.getElementById('parsedPreview').style.display = 'block';
       document.getElementById('fieldsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -351,60 +615,59 @@
 
   function showPreview(d) {
     const fields = [
-      ['Nom',          d.name],
-      ['Email',        d.email],
-      ['Téléphone',    d.phone],
-      ['Profil',       d.lawyerType],
-      ['Employeur',    d.company],
-      ['Domaines',     d.legalDomains],
-      ['Documents',    d.legalDocs],
-      ['Objectif',     d.goalType],
-      ['Financement',  d.financingMode],
-    ].filter(([, v]) => v);
-
-    document.getElementById('previewGrid').innerHTML = fields.map(([k, v]) =>
+      ['Nom',         d.name],
+      ['Email',       d.email],
+      ['T\u00e9l\u00e9phone',  d.phone],
+      ['Profil',      d.lawyerType],
+      ['Employeur',   d.company],
+      ['Domaines',    d.legalDomains],
+      ['Documents',   d.legalDocs],
+      ['Objectif',    d.goalType],
+      ['Financement', d.financingMode],
+    ].filter(([,v]) => v);
+    document.getElementById('previewGrid').innerHTML = fields.map(([k,v]) =>
       `<div class="preview-key">${k}</div><div class="preview-val">${v}</div>`
     ).join('');
   }
 
+  // ── Save ─────────────────────────────────────────────────────────────────
   async function saveCandidate() {
-    const name = document.getElementById('f_name').value.trim();
+    const name  = document.getElementById('f_name').value.trim();
     const email = document.getElementById('f_email').value.trim();
     if (!name || !email) { alert('Le nom et l\'email sont obligatoires.'); return; }
 
     const btn = document.getElementById('saveBtn');
     btn.disabled = true;
-    btn.textContent = 'Création en cours…';
+    btn.textContent = 'Cr\u00e9ation en cours\u2026';
 
     const goals = [];
     const goalType = document.getElementById('f_goalType').value;
     const mainGoal = document.getElementById('f_mainGoal').value.trim();
-    if (goalType) goals.push(goalType === 'les deux' ? 'Améliorer l\'anglais juridique à l\'oral et à l\'écrit' : `Améliorer l'anglais juridique ${goalType}`);
+    if (goalType) goals.push(goalType === 'les deux' ? 'Am\u00e9liorer l\u2019anglais juridique \u00e0 l\u2019oral et \u00e0 l\u2019\u00e9crit' : `Am\u00e9liorer l\u2019anglais juridique ${goalType}`);
     if (mainGoal) goals.push(mainGoal);
 
     const payload = {
-      name,
-      email,
-      phone:           document.getElementById('f_phone').value.trim(),
-      region:          document.getElementById('f_region').value.trim(),
-      lawyerType:      document.getElementById('f_lawyerType').value,
-      jobtitle:        document.getElementById('f_jobtitle').value.trim(),
-      company:         document.getElementById('f_company').value.trim(),
-      experience:      document.getElementById('f_experience').value,
-      legalDomains:    document.getElementById('f_legalDomains').value.trim(),
-      legalDocs:       document.getElementById('f_legalDocs').value.trim(),
-      selfLevelOral:   document.getElementById('f_selfLevelOral').value,
+      name, email,
+      phone:            document.getElementById('f_phone').value.trim(),
+      region:           document.getElementById('f_region').value.trim(),
+      lawyerType:       document.getElementById('f_lawyerType').value,
+      jobtitle:         document.getElementById('f_jobtitle').value.trim(),
+      company:          document.getElementById('f_company').value.trim(),
+      experience:       document.getElementById('f_experience').value,
+      legalDomains:     document.getElementById('f_legalDomains').value.trim(),
+      legalDocs:        document.getElementById('f_legalDocs').value.trim(),
+      selfLevelOral:    document.getElementById('f_selfLevelOral').value,
       selfLevelWriting: document.getElementById('f_selfLevelWriting').value,
-      currentUsage:    document.getElementById('f_currentUsage').value.trim(),
-      mediaVO:         document.getElementById('f_mediaVO').value,
-      goalType,
-      mainGoal,
-      goals,
-      upcomingEvent:   document.getElementById('f_upcomingEvent').value.trim(),
-      otherNeeds:      document.getElementById('f_otherNeeds').value.trim(),
-      financingMode:   document.getElementById('f_financingMode').value,
-      cpfCreated:      document.getElementById('f_cpfCreated').value === 'true',
-      source:          document.getElementById('f_source').value.trim(),
+      currentUsage:     document.getElementById('f_currentUsage').value.trim(),
+      mediaVO:          document.getElementById('f_mediaVO').value,
+      goalType, mainGoal, goals,
+      upcomingEvent:    document.getElementById('f_upcomingEvent').value.trim(),
+      otherNeeds:       document.getElementById('f_otherNeeds').value.trim(),
+      financingMode:    document.getElementById('f_financingMode').value,
+      cpfCreated:       document.getElementById('f_cpfCreated').value === 'true',
+      source:           document.getElementById('f_source').value.trim(),
+      isRenewal,
+      oralData:         isRenewal ? renewalOralData : null,
     };
 
     try {
@@ -416,32 +679,43 @@
       const data = await resp.json();
       if (!resp.ok || !data.success) throw new Error(data.error || 'Erreur serveur');
 
-      // Show success
       document.getElementById('mainForm').style.display = 'none';
-      document.getElementById('successScreen').style.display = 'block';
-      document.getElementById('successTitle').textContent = name + ' — candidat créé';
-      document.getElementById('successSub').innerHTML =
-        `Le candidat a été créé avec le statut <strong>Anglais Juridique</strong>.<br>` +
-        `Partagez le lien d'entretien avec l'évaluateur pour démarrer l'entretien individuel.`;
+      const ss = document.getElementById('successScreen');
+      ss.style.display = 'block';
 
-      const oralUrl = `${window.location.origin}/oral/${data.oralToken}`;
-      const oralBtn = document.getElementById('oralLinkBtn');
-      oralBtn.href = oralUrl;
-      oralBtn.onclick = (e) => {
-        e.preventDefault();
-        navigator.clipboard.writeText(oralUrl).then(() => {
-          oralBtn.textContent = '✓ Lien copié !';
-          setTimeout(() => { oralBtn.textContent = '🔗 Copier le lien entretien'; }, 2000);
-        });
-      };
+      const titleEl = document.getElementById('successTitle');
+      const subEl   = document.getElementById('successSub');
+      const actEl   = document.getElementById('successActions');
+
+      if (isRenewal) {
+        titleEl.textContent = name + ' \u2014 renouvellement cr\u00e9\u00e9';
+        titleEl.classList.add('renewal');
+        subEl.innerHTML = `Le candidat a \u00e9t\u00e9 cr\u00e9\u00e9 avec le statut <strong>Renouvellement</strong>.<br>Le programme peut \u00eatre g\u00e9n\u00e9r\u00e9 imm\u00e9diatement.`;
+        actEl.innerHTML = `
+          <a href="/candidates/${data.candidateId}/programme" class="action-link primary">\ud83d\udccb Aller au programme</a>
+          <a href="/candidates" class="action-link secondary">\u2190 Retour aux candidats</a>`;
+      } else {
+        titleEl.textContent = name + ' \u2014 candidat cr\u00e9\u00e9';
+        subEl.innerHTML = `Le candidat a \u00e9t\u00e9 cr\u00e9\u00e9 avec le statut <strong>Anglais Juridique</strong>.<br>Partagez le lien d\u2019entretien avec l\u2019\u00e9valuateur.`;
+        const oralUrl = `${window.location.origin}/oral/${data.oralToken}`;
+        actEl.innerHTML = `
+          <a href="${oralUrl}" class="action-link primary" id="oralLinkBtn">\ud83d\udd17 Copier le lien entretien</a>
+          <a href="/candidates" class="action-link secondary">\u2190 Retour aux candidats</a>`;
+        document.getElementById('oralLinkBtn').onclick = (e) => {
+          e.preventDefault();
+          navigator.clipboard.writeText(oralUrl).then(() => {
+            document.getElementById('oralLinkBtn').textContent = '\u2713 Lien copi\u00e9 !';
+            setTimeout(() => { document.getElementById('oralLinkBtn').textContent = '\ud83d\udd17 Copier le lien entretien'; }, 2000);
+          });
+        };
+      }
     } catch (err) {
       alert('Erreur : ' + err.message);
       btn.disabled = false;
-      btn.textContent = 'Créer le candidat →';
+      updateSaveButton();
     }
   }
 
-  // Init: paste mode, fields hidden
   setMode('paste');
 </script>
 </body>

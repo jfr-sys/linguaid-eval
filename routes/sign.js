@@ -20,7 +20,7 @@ function saveCandidates(candidates) {
 function findByConventionToken(token) {
   const candidates = loadCandidates();
   return candidates.find(c =>
-    c.conventionData && c.conventionData.token === token
+    c.conventionData && (c.conventionData.token === token || c.conventionData.signingToken === token)
   );
 }
 

@@ -195,10 +195,11 @@ router.post('/api/new-legal', (req, res) => {
       avail:           {},
       freewriting:     { q39: '', q40: '', q41: '' },
       scores:          { total: 0, max: 0 },
-      status:          'csv_uploaded',
+      status:          d.isRenewal ? 'oral_done' : 'csv_uploaded',
+      isRenewal:       d.isRenewal || false,
       writtenReport:   null,
       reportSummary:   null,
-      oralData:        null,
+      oralData:        d.isRenewal && d.oralData ? { ...d.oralData, totalHours: parseInt(d.oralData.totalHours,10)||10, coachingHours: parseInt(d.oralData.coachingHours,10)||10, homeworkHours: parseInt(d.oralData.homeworkHours,10)||0 } : null,
       finalReport:     null,
       conventionData:  null,
       oralToken:       generateId(),
@@ -207,7 +208,7 @@ router.post('/api/new-legal', (req, res) => {
 
     candidates.push(candidate);
     saveCandidates(candidates);
-    res.json({ success: true, id: candidate.id, oralToken: candidate.oralToken });
+    res.json({ success: true, id: candidate.id, candidateId: candidate.id, oralToken: candidate.oralToken });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });

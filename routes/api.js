@@ -645,7 +645,12 @@ router.get('/generate-programme/:id', async function(req, res) {
   var c = candidates.find(function(cand) { return cand.id === req.params.id; });
   if (!c) return res.status(404).json({ error: 'Not found' });
   var payload;
-  try { payload = JSON.parse(req.query.data); } catch(e) { return res.status(400).json({ error: 'Invalid data' }); }
+  if (req.query.data) {
+    try { payload = JSON.parse(req.query.data); } catch(e) { return res.status(400).json({ error: 'Invalid data' }); }
+  } else {
+    var od = c.oralData || {};
+    payload = { candidateName: c.name, jobtitle: c.jobtitle || '', dept: c.dept || '', company: c.company || '', prereqLevel: (c.reportSummary || {}).overallLevel || od.prereqLevel || od.listeningLevel || '', targetLevel: od.targetLevel || '', totalHours: String(od.totalHours || 10), coachingHours: String(od.coachingHours || od.totalHours || 10), homeworkHours: String(od.homeworkHours || 0), isCPF: false, topics: od.topics || [], objectives: od.validatedGoals || [], dateStart: od.dateStart || '', dateEnd: od.dateEnd || '', trainingTitle: od.trainingTitle || '' };
+  }
   
   var { execFile } = require('child_process');
   var path = require('path');
@@ -685,14 +690,31 @@ router.get('/generate-programme/:id', async function(req, res) {
       return res.status(500).json({ error: 'Programme generation failed: ' + stderr });
     }
     try {
-      var buffer = require('fs').readFileSync(tmpOut);
+      var fs2 = require('fs');
+      var buffer = fs2.readFileSync(tmpOut);
       var safeName = (payload.candidateName || 'Candidat').replace(/\s+/g, '_');
       var filename = 'Programme_formation_' + safeName + '.docx';
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
       res.setHeader('Content-Disposition', 'attachment; filename="' + filename + '"');
       res.send(buffer);
-      require('fs').unlinkSync(tmpJson);
-      require('fs').unlinkSync(tmpOut);
+      // Save permanent copy and convert to PDF
+      var progDir = path.join(__dirname, '../data/programmes');
+      if (!fs2.existsSync(progDir)) fs2.mkdirSync(progDir, { recursive: true });
+      var permDocx = path.join(progDir, req.params.id + '.docx');
+      var permPdf  = path.join(progDir, req.params.id + '.pdf');
+      fs2.copyFileSync(tmpOut, permDocx);
+      // Convert to PDF via LibreOffice
+      execFile('soffice', ['--headless', '--convert-to', 'pdf', '--outdir', progDir, permDocx], function(pdfErr) {
+        if (pdfErr) console.error('Programme PDF conversion failed:', pdfErr);
+        else {
+          // Save PDF path to candidate
+          var cands3 = getCandidates();
+          var ci3 = cands3.findIndex(function(x) { return x.id === req.params.id; });
+          if (ci3 > -1) { cands3[ci3].programmePdfPath = permPdf; saveCandidates(cands3); }
+        }
+      });
+      fs2.unlinkSync(tmpJson);
+      fs2.unlinkSync(tmpOut);
       // Mark programme as done
       var cands = getCandidates();
       var cidx = cands.findIndex(function(x) { return x.id === req.params.id; });
@@ -824,7 +846,8 @@ router.post('/generate-convention/:id', function(req, res) {
     signatory: cd.signatory || '',
     signingToken: signingToken,
     trainingType: tplKey,
-    trainingTitle: isCPF ? 'Communiquer en anglais professionnel - English 360 - Niveau B2' : 'Formation en Anglais Professionnel'
+    courseType: c.courseType || '',
+    trainingTitle: od.trainingTitle || (isCPF ? 'Communiquer en anglais professionnel - English 360 - Niveau B2' : (c.courseType === 'legal' ? 'Formation en Anglais Juridique' : 'Formation en Anglais Professionnel'))
   };
   execFile('python3', ['/home/debian/fill_convention2.py', JSON.stringify(data)], { timeout: 90000 }, function(err, stdout, stderr) {
     if (err) { console.error('fill_convention2 error:', stderr, stdout); return res.status(500).json({ error: 'Convention generation failed: ' + stderr }); }
@@ -838,10 +861,10 @@ router.post('/generate-convention/:id', function(req, res) {
     var nodemailer = require('nodemailer');
     var transporter = nodemailer.createTransport({ host: 'localhost', port: 25, secure: false, tls: { rejectUnauthorized: false } });
     transporter.sendMail({
-      from: 'formation@linguaid.net',
-      to: c.email,
-      subject: 'Votre convention de formation - Linguaid',
-      html: '<p>Bonjour ' + (cd.civility || 'Madame') + ' ' + c.name + ',</p><p>Veuillez signer votre convention en cliquant sur ce lien : <a href="' + signingUrl + '">' + signingUrl + '</a></p><p>Bien cordialement,<br>Linguaid France</p>'
+      from: 'jfr@linguaid.net',
+      to: cd.signatoryEmail || c.email,
+      subject: 'Convention de formation - ' + c.name + ' - Linguaid France',
+      html: '<div style="font-family:Arial,sans-serif;font-size:14px;color:#222;line-height:1.6"><p>Bonjour ' + (cd.civility || 'Madame') + ' ' + (cd.signatory || c.name) + ',</p><p>Suite à l’évaluation linguistique de ' + c.name + ', nous avons le plaisir de vous adresser la convention de formation suivante :</p><ul><li><strong>Formation :</strong> ' + ((c.oralData||{}).trainingTitle || 'Formation en Anglais') + '</li><li><strong>Durée :</strong> ' + ((c.oralData||{}).totalHours || '—') + 'h</li><li><strong>Dates :</strong> du ' + (dateStart ? fmtDateFr(dateStart) : '—') + ' au ' + (dateEnd ? fmtDateFr(dateEnd) : '—') + '</li><li><strong>Tarif HT :</strong> ' + (cd.price || '—') + ' €</li></ul><p>Pour valider cette convention, veuillez cliquer sur le lien ci-dessous et signer électroniquement :</p><p><a href="' + signingUrl + '" style="background:#1F4E79;color:white;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:bold">Signer la convention</a></p><p>Ou copiez ce lien dans votre navigateur : <a href="' + signingUrl + '">' + signingUrl + '</a></p><p>N’hésitez pas à nous contacter pour toute question.</p><p>Bien cordialement,</p><img src="https://eval.linguaid.net/signature_joss.png" style="max-width:400px"></div>'
     }, function(mailErr) {
       if (mailErr) console.error('Mail error:', mailErr);
       res.json({ success: true, signingUrl: signingUrl, pdfPath: result.pdfPath });
@@ -1256,6 +1279,137 @@ router.post('/send-calendly-link/:id', function(req, res) {
     if (err) { console.error('calendly mail error:', err); return res.status(500).json({ error: err.message }); }
     res.json({ ok: true });
   });
+});
+
+
+router.post('/parse-renewal-pdf', async (req, res) => {
+  try {
+    const pdfBase64 = req.body.pdfBase64;
+    const type = req.body.type;
+    if (!pdfBase64) return res.status(400).json({ error: 'No PDF data' });
+
+    const Anthropic = require('@anthropic-ai/sdk');
+    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+    const systemPrompt = type === 'report'
+      ? 'Tu es un assistant qui extrait des informations structurees d un rapport de fin de formation en anglais professionnel. Reponds UNIQUEMENT en JSON valide, sans markdown ni backticks, avec ces champs: {"name":"...","email":null,"jobtitle":null,"company":null,"prereqLevel":"...","levelReached":"...","targetLevel":"...","totalHours":10,"coachingHours":10,"homeworkHours":0,"completedObjectives":[],"suggestedObjectives":[],"keyGaps":"...","otherNeeds":"..."}'
+      : 'Tu es un assistant qui extrait des informations structurees d un programme de formation professionnelle en anglais. Reponds UNIQUEMENT en JSON valide, sans markdown ni backticks, avec ces champs: {"name":"...","email":null,"jobtitle":null,"company":null,"prereqLevel":"...","targetLevel":"...","totalHours":10,"coachingHours":10,"homeworkHours":0,"previousObjectives":[],"suggestedObjectives":[],"otherNeeds":"..."}';
+
+    const response = await client.messages.create({
+      model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6',
+      max_tokens: 1000,
+      system: systemPrompt,
+      messages: [{
+        role: 'user',
+        content: [{
+          type: 'document',
+          source: { type: 'base64', media_type: 'application/pdf', data: pdfBase64 }
+        }, {
+          type: 'text',
+          text: 'Extrais les informations de ce document et retourne uniquement le JSON demande.'
+        }]
+      }]
+    });
+
+    const raw = (response.content.find(b => b.type === 'text') || {}).text || '';
+    const clean = raw.replace(/```json|```/g, '').trim();
+    const data = JSON.parse(clean);
+    res.json({ success: true, data });
+  } catch (err) {
+    console.error('parse-renewal-pdf error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+router.post('/send-to-catherine/:id', function(req, res) {
+  try {
+    var candidates = getCandidates();
+    var c = candidates.find(function(x){ return x.id === req.params.id; });
+    if (!c) return res.status(404).json({ error: 'Not found' });
+    var cd = c.conventionData || {};
+    var od = c.oralData || {};
+    var notes = (req.body && req.body.notes) || '';
+
+    // Find programme PDF - check standard locations
+    var fs = require('fs');
+    var path = require('path');
+    var programmePdf = null;
+    var progDocx = '/tmp/prog_' + c.id + '.docx';
+    // Convention PDF - use signed if available, otherwise unsigned
+    var conventionPdf = cd.signedPdfPath || cd.pdfPath || null;
+
+    var nodemailer = require('nodemailer');
+    var transporter = nodemailer.createTransport({ host: 'localhost', port: 25, secure: false, tls: { rejectUnauthorized: false } });
+
+    var MONTHS_FR = ['janvier','fevrier','mars','avril','mai','juin','juillet','aout','septembre','octobre','novembre','decembre'];
+    function fmtDate(iso) {
+      if (!iso) return 'non defini';
+      var d = new Date(iso);
+      return d.getUTCDate() + ' ' + MONTHS_FR[d.getUTCMonth()] + ' ' + d.getUTCFullYear();
+    }
+
+    var subject = 'Nouveau contrat ManageAll — ' + c.name;
+    var signed = cd.signedAt ? ' (SIGNEE le ' + fmtDate(cd.signedAt) + ')' : ' (en attente de signature)';
+
+    var html = '<div style="font-family:sans-serif;max-width:700px">' +
+      '<h2 style="color:#1F4E79">Nouveau contrat a saisir dans ManageAll</h2>' +
+      '<table style="width:100%;border-collapse:collapse;margin-bottom:20px">' +
+      '<tr><td style="padding:6px 12px;background:#f1f5f9;font-weight:600;width:200px">Apprenant</td><td style="padding:6px 12px;border-bottom:1px solid #e2e8f0">' + c.name + '</td></tr>' +
+      '<tr><td style="padding:6px 12px;background:#f1f5f9;font-weight:600">Poste</td><td style="padding:6px 12px;border-bottom:1px solid #e2e8f0">' + (c.jobtitle || '—') + '</td></tr>' +
+      '<tr><td style="padding:6px 12px;background:#f1f5f9;font-weight:600">Entreprise</td><td style="padding:6px 12px;border-bottom:1px solid #e2e8f0">' + (c.company || c.dept || '—') + '</td></tr>' +
+      '<tr><td style="padding:6px 12px;background:#f1f5f9;font-weight:600">SIRET</td><td style="padding:6px 12px;border-bottom:1px solid #e2e8f0">' + (cd.siret || '—') + '</td></tr>' +
+      '<tr><td style="padding:6px 12px;background:#f1f5f9;font-weight:600">Email</td><td style="padding:6px 12px;border-bottom:1px solid #e2e8f0">' + (c.email || '—') + '</td></tr>' +
+      '<tr><td style="padding:6px 12px;background:#f1f5f9;font-weight:600">Formation</td><td style="padding:6px 12px;border-bottom:1px solid #e2e8f0">' + (od.trainingTitle || (c.courseType === 'legal' ? 'Formation en Anglais Juridique' : 'Formation en Anglais Professionnel')) + '</td></tr>' +
+      '<tr><td style="padding:6px 12px;background:#f1f5f9;font-weight:600">Heures</td><td style="padding:6px 12px;border-bottom:1px solid #e2e8f0">' + (od.totalHours || '—') + 'h (' + (od.coachingHours || od.totalHours || '—') + 'h coaching + ' + (od.homeworkHours || 0) + 'h autonome)</td></tr>' +
+      '<tr><td style="padding:6px 12px;background:#f1f5f9;font-weight:600">Dates</td><td style="padding:6px 12px;border-bottom:1px solid #e2e8f0">du ' + fmtDate(od.dateStart || cd.dateStart) + ' au ' + fmtDate(od.dateEnd || cd.dateEnd) + '</td></tr>' +
+      '<tr><td style="padding:6px 12px;background:#f1f5f9;font-weight:600">Prix HT</td><td style="padding:6px 12px;border-bottom:1px solid #e2e8f0">' + (cd.price || '—') + ' €</td></tr>' +
+      '<tr><td style="padding:6px 12px;background:#f1f5f9;font-weight:600">CPF</td><td style="padding:6px 12px;border-bottom:1px solid #e2e8f0">' + (cd.isCPF ? 'Oui' : 'Non') + '</td></tr>' +
+      '<tr><td style="padding:6px 12px;background:#f1f5f9;font-weight:600">Signataire</td><td style="padding:6px 12px;border-bottom:1px solid #e2e8f0">' + (cd.signatory || '—') + '</td></tr>' +
+      '<tr><td style="padding:6px 12px;background:#f1f5f9;font-weight:600">Tél apprenant</td><td style="padding:6px 12px;border-bottom:1px solid #e2e8f0">' + (cd.learnerTel || '—') + '</td></tr>' +
+      '<tr><td style="padding:6px 12px;background:#f1f5f9;font-weight:600">Adresse entreprise</td><td style="padding:6px 12px;border-bottom:1px solid #e2e8f0">' + (cd.companyAddress || '—') + '</td></tr>' +
+      '<tr><td style="padding:6px 12px;background:#f1f5f9;font-weight:600">N° de commande</td><td style="padding:6px 12px;border-bottom:1px solid #e2e8f0">' + (cd.orderNumber || '—') + '</td></tr>' +
+      '<tr><td style="padding:6px 12px;background:#f1f5f9;font-weight:600">Convention</td><td style="padding:6px 12px;border-bottom:1px solid #e2e8f0">' + signed + '</td></tr>' +
+      (notes ? '<tr><td style="padding:6px 12px;background:#fef3c7;font-weight:600">Notes</td><td style="padding:6px 12px;border-bottom:1px solid #e2e8f0;background:#fef3c7">' + notes + '</td></tr>' : '') +
+      '</table>' +
+      '<p style="color:#666;font-size:13px">Email genere automatiquement depuis Linguaid Eval</p>' +
+      '</div>';
+
+    var attachments = [];
+    if (conventionPdf && fs.existsSync(conventionPdf)) {
+      var convLabel = cd.signedAt ? 'convention_signee_' : 'convention_';
+      attachments.push({ filename: convLabel + c.name.replace(/\s+/g,'_') + '.pdf', path: conventionPdf });
+    }
+    // Use permanent programme PDF
+    var progPdfPath = path.join(__dirname, '../data/programmes/' + c.id + '.pdf');
+    if (fs.existsSync(progPdfPath)) {
+      attachments.push({ filename: 'programme_' + c.name.replace(/\s+/g,'_') + '.pdf', path: progPdfPath });
+    } else if (c.programmePdfPath && fs.existsSync(c.programmePdfPath)) {
+      attachments.push({ filename: 'programme_' + c.name.replace(/\s+/g,'_') + '.pdf', path: c.programmePdfPath });
+    }
+
+    // Mark sentToCatherineAt
+    var cands4 = getCandidates();
+    var ci4 = cands4.findIndex(function(x){ return x.id === req.params.id; });
+    if (ci4 > -1) {
+      cands4[ci4].conventionData = Object.assign(cands4[ci4].conventionData || {}, { sentToCatherineAt: new Date().toISOString() });
+      saveCandidates(cands4);
+    }
+    transporter.sendMail({
+      from: 'nouvellecommande@linguaid.net',
+      to: 'cfr@linguaid.net',
+      cc: 'jfr@linguaid.net',
+      subject: subject,
+      html: html,
+      attachments: attachments
+    }, function(err) {
+      if (err) { console.error('send-to-catherine error:', err); return res.status(500).json({ error: err.message }); }
+      res.json({ success: true });
+    });
+  } catch(err) {
+    console.error('send-to-catherine error:', err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 module.exports = router;

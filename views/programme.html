@@ -91,12 +91,19 @@
       <input class="info-value" id="targetLevel" type="text" value="" style="border:1px solid #e2e8f0;border-radius:6px;padding:4px 8px;font-size:14px;font-weight:600;width:130px;text-align:right">
     </div>
     <div class="info-row">
-      <span class="info-label">Durée totale</span>
-      <input class="info-value" id="totalHours" type="text" value="" style="border:1px solid #e2e8f0;border-radius:6px;padding:4px 8px;font-size:14px;font-weight:600;width:380px;text-align:right">
+      <span class="info-label">Heures coaching</span>
+      <input class="info-value" id="coachingHours" type="number" min="0" max="200" value="" style="border:1px solid #e2e8f0;border-radius:6px;padding:4px 8px;font-size:14px;font-weight:600;width:100px;text-align:right">
+    </div>
+    <div class="info-row">
+      <span class="info-label">Heures autonomie</span>
+      <input class="info-value" id="homeworkHours" type="number" min="0" max="200" value="0" style="border:1px solid #e2e8f0;border-radius:6px;padding:4px 8px;font-size:14px;font-weight:600;width:100px;text-align:right">
     </div>
     <div class="info-row">
       <span class="info-label">Modalité</span>
-      <input class="info-value" id="deliveryMode" type="text" value="" style="border:1px solid #e2e8f0;border-radius:6px;padding:4px 8px;font-size:14px;font-weight:600;width:180px;text-align:right">
+      <select class="info-value" id="deliveryMode" style="border:1px solid #e2e8f0;border-radius:6px;padding:4px 8px;font-size:14px;font-weight:600;width:200px;text-align:right">
+        <option value="Visio individuel">Visio individuel</option>
+        <option value="Visio blended individuel">Visio blended individuel</option>
+      </select>
     </div>
     <div id="cpfWarning" class="warning" style="display:none">
       ⚠ Attention : La certification English 360 (RS6341) requiert un niveau minimum A2+. Vérifiez l'éligibilité du candidat.
@@ -191,16 +198,24 @@ fetch("/candidates/api/" + id)
       '<div class="info-row"><span class="info-label">Entreprise</span><span class="info-value">' + (c.dept||c.company||"—") + '</span></div>';
 
     document.getElementById("prereqLevel").value = cefrLabel(rs.overallLevel) || "";
+    if (oral.trainingTitle) document.getElementById("trainingTitle").value = oral.trainingTitle;
     document.getElementById("targetLevel").value = cefrLabel(oral.targetLevel) || "";
 
     var coaching = oral.coachingHours || "—";
     var homework = oral.homeworkHours || 0;
     var total = oral.totalHours || "—";
-    document.getElementById("totalHours").value = total + " heures (" + coaching + "h formation + " + homework + "h travail autonome)";
+    document.getElementById("coachingHours").value = coaching !== "—" ? coaching : "";
+    document.getElementById("homeworkHours").value = homework;
     var hw = parseInt(oral.homeworkHours) || 0;
     if (oral.dateStart) document.getElementById("dateStart").value = oral.dateStart;
     if (oral.dateEnd) document.getElementById("dateEnd").value = oral.dateEnd;
     document.getElementById("deliveryMode").value = hw > 0 ? "Visio blended individuel" : "Visio individuel";
+    // Keep homeworkHours in sync with delivery mode dropdown
+    document.getElementById("deliveryMode").addEventListener("change", function() {
+      if (this.value === "Visio individuel") {
+        document.getElementById("homeworkHours").value = 0;
+      }
+    });
 
     // Extract objectives from final report
     var report = c.finalReport || "";
@@ -280,9 +295,10 @@ function toggleTopic(el) {
 
 function toggleCPF() {
   var isCPF = document.getElementById("cpfToggle").checked;
+  var isLegal = candData && candData.courseType === "legal";
   var title = isCPF
     ? "Communiquer en anglais professionnel – English 360 – Niveau " + (document.getElementById("targetLevel").value || "B2")
-    : "Formation en Anglais Professionnel";
+    : (isLegal ? "Formation en Anglais Juridique" : "Formation en Anglais Professionnel");
   document.getElementById("trainingTitle").value = title;
   var cpfEl = document.getElementById("cpfTopics");
   cpfEl.classList.toggle("show", isCPF);
@@ -308,9 +324,9 @@ function generateProgramme() {
     trainingTitle: document.getElementById("trainingTitle").value,
     prereqLevel: document.getElementById("prereqLevel").value || rs.overallLevel || "",
     targetLevel: document.getElementById("targetLevel").value || oral.targetLevel || "",
-    totalHours: String(oral.totalHours || 0),
-    coachingHours: oral.coachingHours || 0,
-    homeworkHours: oral.homeworkHours || 0,
+    coachingHours: parseInt(document.getElementById("coachingHours").value) || 0,
+    homeworkHours: document.getElementById("deliveryMode").value === "Visio individuel" ? 0 : (parseInt(document.getElementById("homeworkHours").value) || 0),
+    totalHours: String((parseInt(document.getElementById("coachingHours").value) || 0) + (document.getElementById("deliveryMode").value === "Visio individuel" ? 0 : (parseInt(document.getElementById("homeworkHours").value) || 0))),
     location: document.getElementById("location").value,
     dateStart: document.getElementById("dateStart").value,
     dateEnd: document.getElementById("dateEnd").value,
