@@ -1,2 +1,5 @@
-data/candidates.json\ndata/conventions/\n.env\nnode_modules/
+.env
+node_modules/
+data/candidates.json
 data/conventions/
+data/programmes/
