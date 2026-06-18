@@ -229,6 +229,7 @@
       frame.src = `/sign/${token}/pdf`;
       // Force Chrome to show single-page view
       frame.src = `/sign/${token}/pdf#toolbar=1&navpanes=0&scrollbar=1&view=FitH`;
+      if (info.signatoryName) document.getElementById("typed-name").value = info.signatoryName;
     })
     .catch(() => {
       document.getElementById('main-form').innerHTML =

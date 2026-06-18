@@ -70,6 +70,8 @@ router.get('/:token/info', (req, res) => {
   res.json({
     candidateName: candidate.name,
     trainingType: candidate.conventionData.trainingType,
+    signatoryName: candidate.conventionData.signatory || "",
+    signatoryName: candidate.conventionData.signatory || "",
   });
 });
 
@@ -84,7 +86,7 @@ router.post('/:token/submit', express.json({ limit: '5mb' }), (req, res) => {
 
   const candidates = loadCandidates();
   const idx = candidates.findIndex(c =>
-    c.conventionData && c.conventionData.token === token
+    c.conventionData && (c.conventionData.token === token || c.conventionData.signingToken === token)
   );
   if (idx === -1) return res.status(404).json({ error: 'Invalid token' });
   if (candidates[idx].conventionData.signedAt) {

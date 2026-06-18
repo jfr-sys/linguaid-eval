@@ -1412,4 +1412,118 @@ router.post('/send-to-catherine/:id', function(req, res) {
   }
 });
 
+
+router.post('/hec-webhook', function(req, res) {
+  var payload = req.body;
+  var form_response = payload.form_response || payload;
+  var answers = form_response.answers || [];
+  var variables = form_response.variables || [];
+
+  function getVar(key) {
+    var v = variables.find(function(x) { return x.key === key; });
+    return v ? (v.number || 0) : 0;
+  }
+
+  function getAnswer(fieldId) {
+    var a = answers.find(function(x) { return x.field && x.field.id === fieldId; });
+    if (!a) return null;
+    if (a.type === 'text') return a.text || null;
+    if (a.type === 'email') return a.email || null;
+    if (a.type === 'choice') return (a.choice || {}).label || null;
+    if (a.type === 'choices') return a.choices || null;
+    if (a.type === 'boolean') return a.boolean;
+    return null;
+  }
+
+  var name = getAnswer('l87c4bwthARj') || 'Unknown';
+  var email = getAnswer('wUnUJuOsrwu8') || '';
+  var dept = getAnswer('fVSco3dwYncM') || '';
+  var jobtitle = getAnswer('y8OH4vxEti1l') || '';
+  var otherNeeds = getAnswer('LnlpjBLpA6LQ') || '';
+  var q39 = getAnswer('TIlw5XoY07mx') || '';
+  var q40 = getAnswer('Q7yeLsFkTmyJ') || '';
+  var q41 = getAnswer('i0cAcNJJy3ZM') || '';
+
+  var score = getVar('correct_answers');
+  var max = getVar('max_score') || 30;
+
+  // Goals
+  var goalsRaw = getAnswer('D5oVbrWgm7KJ');
+  var goals = [];
+  if (goalsRaw && goalsRaw.labels) goals = goalsRaw.labels;
+  else if (goalsRaw && Array.isArray(goalsRaw)) goals = goalsRaw;
+
+  // Availability
+  var availFieldIds = ['HzRZ2vy45K5c','Bu4VHwKlr7uD','nkZHwfggJUNS','cVg3STXAYxXr','zDpGYBth7olt'];
+  var days = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi'];
+  var avail = {};
+  availFieldIds.forEach(function(fid, i) {
+    var v = getAnswer(fid);
+    if (v && v.labels) avail[days[i]] = v.labels.join(', ');
+    else if (v && Array.isArray(v)) avail[days[i]] = v.join(', ');
+  });
+
+  var candidates = JSON.parse(fs.readFileSync(path.join(dataDir, 'candidates.json'), 'utf8'));
+
+  // Deduplicate by email
+  var existing = candidates.find(function(x) { return x.email && x.email.toLowerCase() === email.toLowerCase(); });
+  if (existing && existing.status !== 'invited') {
+    console.log('HEC webhook: candidate already exists:', email);
+    return res.json({ ok: true, message: 'already exists' });
+  }
+
+  var now = new Date().toISOString();
+  var testdate = (form_response.submitted_at || now).slice(0, 10);
+
+  if (existing && existing.status === 'invited') {
+    var idx = candidates.findIndex(function(x) { return x.id === existing.id; });
+    candidates[idx].status = 'csv_uploaded';
+    candidates[idx].scores = { total: score, max: max };
+    candidates[idx].freewriting = { q39: q39, q40: q40, q41: q41 };
+    candidates[idx].goals = goals;
+    candidates[idx].avail = avail;
+    candidates[idx].otherNeeds = otherNeeds;
+    candidates[idx].company = candidates[idx].company || 'HEC Paris';
+    candidates[idx].dept = candidates[idx].dept || dept;
+    candidates[idx].jobtitle = candidates[idx].jobtitle || jobtitle;
+    candidates[idx].testdate = testdate;
+  } else {
+    var newId = require('crypto').randomBytes(6).toString('hex');
+    candidates.push({
+      id: newId,
+      name: name,
+      email: email,
+      company: 'HEC Paris',
+      dept: dept,
+      jobtitle: jobtitle,
+      testdate: testdate,
+      scores: { total: score, max: max },
+      freewriting: { q39: q39, q40: q40, q41: q41 },
+      goals: goals,
+      avail: avail,
+      otherNeeds: otherNeeds,
+      status: 'csv_uploaded',
+      writtenReport: null,
+      oralData: null,
+      finalReport: null,
+      oralToken: require('crypto').randomBytes(8).toString('hex'),
+      createdAt: now
+    });
+  }
+
+  saveCandidates(candidates);
+
+  // Alert Joss
+  var nodemailer = require('nodemailer');
+  var transporter = nodemailer.createTransport({ host: 'localhost', port: 25, secure: false, tls: { rejectUnauthorized: false } });
+  transporter.sendMail({
+    from: 'eval@linguaid.net',
+    to: 'jfr@linguaid.net',
+    subject: 'HEC test completed - ' + name,
+    text: name + ' (' + email + ') has completed the HEC English test.\n\nDept: ' + dept + '\nJob: ' + jobtitle + '\nScore: ' + score + '/' + max + '\n\nhttps://eval.linguaid.net/candidates'
+  }, function(err) { if (err) console.error('HEC alert mail error:', err); });
+
+  res.json({ ok: true });
+});
+
 module.exports = router;
