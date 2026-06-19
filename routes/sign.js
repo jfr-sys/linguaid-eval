@@ -147,4 +147,20 @@ router.post('/:token/submit', express.json({ limit: '5mb' }), (req, res) => {
   });
 });
 
+// GET /sign/:token/signed-pdf — serve the signed PDF for download
+router.get('/:token/signed-pdf', (req, res) => {
+  const { token } = req.params;
+  const candidate = findByConventionToken(token);
+  if (!candidate) return res.status(404).send('Not found');
+
+  const signedPdfPath = candidate.conventionData.signedPdfPath;
+  if (!signedPdfPath || !fs.existsSync(signedPdfPath)) {
+    return res.status(404).send('Signed PDF not found');
+  }
+  const name = (candidate.name || 'convention').replace(/\s+/g, '_');
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `attachment; filename="convention_signee_${name}.pdf"`);
+  res.sendFile(signedPdfPath);
+});
+
 module.exports = router;

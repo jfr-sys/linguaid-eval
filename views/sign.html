@@ -207,7 +207,12 @@
   <div class="card" id="success-screen">
     <div class="tick">✅</div>
     <h2>Convention signée avec succès</h2>
-    <p>Votre signature a bien été enregistrée. Linguaid France SAS vous enverra une copie du document signé.</p>
+    <p>Votre signature a bien été enregistrée.</p>
+    <p style="margin-top:20px">
+      <a id="download-signed" href="#" style="display:inline-block;background:#1F4E79;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;font-size:0.95rem">
+        ⬇ Télécharger votre convention signée
+      </a>
+    </p>
     <p style="margin-top:12px; color:#aaa; font-size:0.8rem" id="sign-timestamp"></p>
   </div>
 
@@ -318,6 +323,7 @@
       document.getElementById('success-screen').style.display = 'block';
       document.getElementById('sign-timestamp').textContent =
         `Signé le ${new Date().toLocaleString('fr-FR')} — ${typedName}`;
+      document.getElementById('download-signed').href = `/sign/${token}/signed-pdf`;
 
     } catch (err) {
       status.className   = 'error';

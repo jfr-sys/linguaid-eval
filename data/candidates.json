@@ -672,7 +672,7 @@
       "siret": "",
       "civility": "Madame",
       "signatory": "Caz Boolox",
-      "signatoryEmail": "jossfrimond@me.com",
+      "signatoryEmail": "jossfrimond@hotmail.com",
       "price": "10200",
       "dateStart": "2026-06-12",
       "dateEnd": "2026-10-31",
@@ -683,8 +683,8 @@
       "companyAddress": "",
       "pdfPath": "/var/www/vhosts/linguaid.net/eval.linguaid.net/app/data/conventions/convention_9c124c09b4e19442f32e2c8557ee822736897910.pdf",
       "signingToken": "9c124c09b4e19442f32e2c8557ee822736897910",
-      "generatedAt": "2026-06-19T12:42:48.258Z",
-      "signedAt": "2026-06-17T18:17:55.457Z",
+      "generatedAt": "2026-06-19T12:53:20.332Z",
+      "signedAt": "2026-06-19T12:53:47.516Z",
       "signerIp": "88.185.73.211",
       "typedName": "Caz Boolox",
       "signedPdfPath": "/var/www/vhosts/linguaid.net/eval.linguaid.net/app/data/conventions/convention_9c124c09b4e19442f32e2c8557ee822736897910_signed.pdf"
@@ -1828,6 +1828,7 @@
         "Tense backshift in narrative subordinate clauses (past simple after before/when)",
         "Spelling of French-cognate words — professional, environment, occasionally, rhythm"
       ]
-    }
+    },
+    "oralEmailSentTo": "Hannah"
   }
 ]

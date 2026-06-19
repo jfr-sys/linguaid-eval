@@ -1544,4 +1544,91 @@ router.post('/hec-webhook', function(req, res) {
   res.json({ ok: true });
 });
 
+
+// ── Proposal: send proposal email with all 3 PDFs ──────────────────────────
+router.post('/send-proposal/:id', function(req, res) {
+  var candidates2 = JSON.parse(require('fs').readFileSync(path.join(__dirname,'../data/candidates.json'),'utf8'));
+  var cidx = candidates2.findIndex(function(x){ return x.id === req.params.id; });
+  if (cidx === -1) return res.status(404).json({ error: 'Not found' });
+  var c = candidates2[cidx];
+  var od = c.oralData || {};
+  var cd = c.conventionData || {};
+
+  var recipientEmail = req.body.recipientEmail || c.email;
+  var emailBody      = req.body.emailBody || '';
+
+  // Attachment paths
+  var attachments = [];
+  var conventionPdf = cd.pdfPath || path.join(__dirname, '../data/conventions/' + c.id + '.pdf');
+  if (require('fs').existsSync(conventionPdf)) {
+    attachments.push({ filename: 'convention_' + c.name.replace(/\s+/g,'_') + '.pdf', path: conventionPdf });
+  }
+  var progPdfPath = path.join(__dirname, '../data/programmes/' + c.id + '.pdf');
+  if (require('fs').existsSync(progPdfPath)) {
+    attachments.push({ filename: 'programme_' + c.name.replace(/\s+/g,'_') + '.pdf', path: progPdfPath });
+  } else if (c.programmePdfPath && require('fs').existsSync(c.programmePdfPath)) {
+    attachments.push({ filename: 'programme_' + c.name.replace(/\s+/g,'_') + '.pdf', path: c.programmePdfPath });
+  }
+  // Final report PDF — generate on the fly via fill_report.py
+  var tmpReportPath = path.join(__dirname, '../data/tmp_report_' + c.id + '.pdf');
+  function sendProposalEmail() {
+    var nodemailer = require('nodemailer');
+    var transporter = nodemailer.createTransport({ host: 'localhost', port: 25, secure: false, tls: { rejectUnauthorized: false } });
+    // Build HTML body from plain text (preserve line breaks)
+    var htmlBody = '<div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.7;color:#1a1a1a">'
+      + emailBody.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+                 .replace(/\n\n/g,'</p><p>').replace(/\n/g,'<br>')
+      + '</div>';
+    htmlBody = '<p>' + htmlBody + '</p>';
+    transporter.sendMail({
+      from: 'jfr@linguaid.net',
+      to: recipientEmail,
+      cc: 'jfr@linguaid.net',
+      subject: req.body.emailSubject || ('Proposition de formation – ' + c.name),
+      html: htmlBody,
+      attachments: attachments
+    }, function(err) {
+      if (err) { console.error('send-proposal error:', err); return res.status(500).json({ error: err.message }); }
+      // Save state
+      candidates2[cidx].conventionData = candidates2[cidx].conventionData || {};
+      candidates2[cidx].conventionData.proposalSentAt = new Date().toISOString();
+      candidates2[cidx].conventionData.proposalRecipient = recipientEmail;
+      require('fs').writeFileSync(path.join(__dirname,'../data/candidates.json'), JSON.stringify(candidates2,null,2));
+      res.json({ ok: true });
+    });
+  }
+  // Try to generate final report PDF, attach if successful, then send regardless
+  if (c.finalReport) {
+    var reportPayload = {
+      title: 'English Evaluation Report',
+      subtitle: (c.reportSummary && c.reportSummary.overallLevel) ? 'Overall Level: ' + c.reportSummary.overallLevel : '',
+      candidate_name: c.name,
+      content: c.finalReport
+    };
+    var { execFile } = require('child_process');
+    var tmpJson = path.join(__dirname, '../data/tmp_rpt_' + c.id + '.json');
+    require('fs').writeFileSync(tmpJson, JSON.stringify(reportPayload));
+    execFile('python3', ['/home/debian/fill_report.py', tmpJson, tmpReportPath], { timeout: 30000 }, function(err2) {
+      try { require('fs').unlinkSync(tmpJson); } catch(e) {}
+      if (!err2 && require('fs').existsSync(tmpReportPath)) {
+        attachments.unshift({ filename: 'rapport_' + c.name.replace(/\s+/g,'_') + '.pdf', path: tmpReportPath });
+      }
+      sendProposalEmail();
+    });
+  } else {
+    sendProposalEmail();
+  }
+});
+
+// ── Proposal: mark as accepted ───────────────────────────────────────────────
+router.post('/mark-proposal-accepted/:id', function(req, res) {
+  var candidates2 = JSON.parse(require('fs').readFileSync(path.join(__dirname,'../data/candidates.json'),'utf8'));
+  var cidx = candidates2.findIndex(function(x){ return x.id === req.params.id; });
+  if (cidx === -1) return res.status(404).json({ error: 'Not found' });
+  candidates2[cidx].conventionData = candidates2[cidx].conventionData || {};
+  candidates2[cidx].conventionData.proposalAcceptedAt = new Date().toISOString();
+  require('fs').writeFileSync(path.join(__dirname,'../data/candidates.json'), JSON.stringify(candidates2,null,2));
+  res.json({ ok: true });
+});
+
 module.exports = router;
