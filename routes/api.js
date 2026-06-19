@@ -355,6 +355,24 @@ Generate a complete professional Final Evaluation Report with markdown formattin
     const report = message.content[0].text.replace(/```[a-z]*\n/g, '').replace(/```/g, '');
     candidates[idx].finalReport = report;
     candidates[idx].status = 'final_report_done';
+
+    // Extract objectives from the generated report and save to oralData
+    try {
+      const extractMsg = await client.messages.create({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 800,
+        messages: [{ role: 'user', content: 'Extract the 3 learning objectives from this evaluation report. Return ONLY a JSON array of 3 strings in French, each being the full objective text. No preamble, no markdown, no backticks. Report:\n' + report }]
+      });
+      const extractText = extractMsg.content[0].text.trim().replace(/^```[a-z]*\n?/, '').replace(/```$/, '').trim();
+      const extracted = JSON.parse(extractText);
+      if (Array.isArray(extracted) && extracted.length > 0) {
+        if (!candidates[idx].oralData) candidates[idx].oralData = {};
+        candidates[idx].oralData.objectives = extracted;
+      }
+    } catch(extractErr) {
+      console.error('Objective extraction failed (non-fatal):', extractErr.message);
+    }
+
     saveCandidates(candidates);
 
     res.json({ success: true, report });
@@ -649,7 +667,7 @@ router.get('/generate-programme/:id', async function(req, res) {
     try { payload = JSON.parse(req.query.data); } catch(e) { return res.status(400).json({ error: 'Invalid data' }); }
   } else {
     var od = c.oralData || {};
-    payload = { candidateName: c.name, jobtitle: c.jobtitle || '', dept: c.dept || '', company: c.company || '', prereqLevel: (c.reportSummary || {}).overallLevel || od.prereqLevel || od.listeningLevel || '', targetLevel: od.targetLevel || '', totalHours: String(od.totalHours || 10), coachingHours: String(od.coachingHours || od.totalHours || 10), homeworkHours: String(od.homeworkHours || 0), isCPF: false, topics: od.topics || [], objectives: od.validatedGoals || [], dateStart: od.dateStart || '', dateEnd: od.dateEnd || '', trainingTitle: od.trainingTitle || '' };
+    payload = { candidateName: c.name, jobtitle: c.jobtitle || '', dept: c.dept || '', company: c.company || '', prereqLevel: (c.reportSummary || {}).overallLevel || od.prereqLevel || od.listeningLevel || '', targetLevel: od.targetLevel || '', totalHours: String(od.totalHours || 10), coachingHours: String(od.coachingHours || od.totalHours || 10), homeworkHours: String(od.homeworkHours || 0), isCPF: false, topics: od.topics || [], objectives: od.objectives || od.validatedGoals || [], dateStart: od.dateStart || '', dateEnd: od.dateEnd || '', trainingTitle: od.trainingTitle || (c.courseType === 'legal' ? 'Formation en Anglais Juridique' : '') };
   }
   
   var { execFile } = require('child_process');

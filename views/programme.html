@@ -195,7 +195,7 @@ fetch("/candidates/api/" + id)
     document.getElementById("candidateInfo").innerHTML =
       '<div class="info-row"><span class="info-label">Candidat</span><span class="info-value">' + c.name + '</span></div>' +
       '<div class="info-row"><span class="info-label">Poste</span><span class="info-value">' + (c.jobtitle||"—") + '</span></div>' +
-      '<div class="info-row"><span class="info-label">Entreprise</span><span class="info-value">' + (c.dept||c.company||"—") + '</span></div>';
+      '<div class="info-row"><span class="info-label">Entreprise</span><span class="info-value">' + (c.company||c.dept||"—") + '</span></div>';
 
     document.getElementById("prereqLevel").value = cefrLabel(rs.overallLevel) || "";
     if (oral.trainingTitle) document.getElementById("trainingTitle").value = oral.trainingTitle;
@@ -217,13 +217,18 @@ fetch("/candidates/api/" + id)
       }
     });
 
-    // Extract objectives from final report
-    var report = c.finalReport || "";
-    var objSection = report.match(/##\s*Learning Objectives[\s\S]*?(?=##|$)/i);
-    if (objSection) {
-      var matches = objSection[0].match(/^\d+\.\s+.+|^-\s+.+/gm);
-      if (matches) {
-        objectives = matches.map(function(m) { return m.replace(/^[\d\.\-\s]+/, "").trim(); }).filter(Boolean).slice(0,5);
+    // Extract objectives: oralData.objectives first, then finalReport regex, then fallback
+    var oral_obj = (c.oralData || {}).objectives;
+    if (Array.isArray(oral_obj) && oral_obj.length > 0) {
+      objectives = oral_obj;
+    } else {
+      var report = c.finalReport || "";
+      var objSection = report.match(/##\s*Learning Objectives[\s\S]*?(?=##|$)/i);
+      if (objSection) {
+        var matches = objSection[0].match(/^\d+\.\s+.+|^-\s+.+/gm);
+        if (matches) {
+          objectives = matches.map(function(m) { return m.replace(/^[\d\.\-\s]+/, "").trim(); }).filter(Boolean).slice(0,5);
+        }
       }
     }
     if (!objectives.length) {
