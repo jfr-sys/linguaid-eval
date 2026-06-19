@@ -361,7 +361,7 @@ Generate a complete professional Final Evaluation Report with markdown formattin
       const extractMsg = await client.messages.create({
         model: 'claude-sonnet-4-6',
         max_tokens: 800,
-        messages: [{ role: 'user', content: 'Extract the 3 learning objectives from this evaluation report. Return ONLY a JSON array of 3 strings in French, each being the full objective text. No preamble, no markdown, no backticks. Report:\n' + report }]
+        messages: [{ role: 'user', content: 'Tu es expert en formation linguistique. Extrais les 3 objectifs pédagogiques de ce rapport d\'évaluation. Traduis-les en français si le rapport est en anglais. Réponds UNIQUEMENT avec un tableau JSON de 3 chaînes en français. Pas de préambule, pas de markdown, pas de backticks. Juste le tableau JSON. Rapport:\n' + report }]
       });
       const extractText = extractMsg.content[0].text.trim().replace(/^```[a-z]*\n?/, '').replace(/```$/, '').trim();
       const extracted = JSON.parse(extractText);
