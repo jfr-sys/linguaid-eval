@@ -1116,6 +1116,44 @@ router.post('/invite-candidate', function(req, res) {
   });
 });
 
+router.post('/resend-invite/:id', function(req, res) {
+  var candidates = getCandidates();
+  var c = candidates.find(function(x) { return x.id === req.params.id; });
+  if (!c) return res.status(404).json({ error: 'Not found' });
+  if (c.status !== 'invited') return res.status(400).json({ error: 'Candidate is not in invited status' });
+
+  var typeformUrl = 'https://form.typeform.com/to/XBcM6I1W';
+  var nodemailer = require('nodemailer');
+  var transporter = nodemailer.createTransport({ host: 'localhost', port: 25, secure: false, tls: { rejectUnauthorized: false } });
+  var name = c.name;
+  var body = '<div style="font-family:Arial,sans-serif;font-size:14px;color:#222;line-height:1.6">'
+    + '<p>Bonjour ' + name + ',</p>'
+    + '<p>Nous vous contactons pour vous rappeler que votre test d’anglais est toujours disponible. Ceci nous permettra d’évaluer votre niveau avant la formation.</p>'
+    + '<p>Comptez 20 minutes MAXIMUM au calme pour réaliser ce test.</p>'
+    + '<p>Accès direct au test :<br><a href="' + typeformUrl + '">' + typeformUrl + '</a></p>'
+    + '<p>Étapes à suivre :</p>'
+    + '<ul><li>Cliquez sur le lien ci-dessus</li><li>Remplissez les champs pour vous identifier</li><li>Répondez aux questions</li><li>Soumettez le test à la fin.</li></ul>'
+    + '<p>Bon test !</p>'
+    + '<p>Bien cordialement,</p>'
+    + '<img src="https://eval.linguaid.net/signature_joss.png" alt="Joss Frimond - Linguaid" style="max-width:400px;display:block;margin-top:8px">'
+    + '</div>';
+
+  // Update lastReminderAt
+  var idx = candidates.findIndex(function(x) { return x.id === req.params.id; });
+  candidates[idx].lastReminderAt = new Date().toISOString();
+  saveCandidates(candidates);
+
+  transporter.sendMail({
+    from: 'eval@linguaid.net',
+    to: c.email,
+    subject: 'Rappel : votre test d’anglais - Linguaid',
+    html: body
+  }, function(err) {
+    if (err) { console.error('resend invite error:', err); return res.status(500).json({ error: err.message }); }
+    res.json({ ok: true });
+  });
+});
+
 // Parse end-of-course report PDF text to extract renewal data
 router.post('/parse-eocr', async function(req, res) {
   var text = (req.body.text || '').trim();

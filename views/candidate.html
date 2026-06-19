@@ -229,6 +229,10 @@
       <div class="stage-num">Step 1</div>
       <div class="stage-title">Written Report</div>
       <div class="stage-status" id="stage1status">Generate the written evaluation from test data</div>
+      <div id="resendInviteArea" style="display:none;margin-bottom:0.75rem">
+        <button class="btn" id="btnResendInvite" onclick="resendInvite()" style="background:#f59e0b;color:white;border:none">📧 Renvoyer l’invitation au test</button>
+        <span id="resendStatus" style="font-size:12px;color:#666;margin-left:8px"></span>
+      </div>
       <button class="btn btn-primary" id="btnWritten" onclick="generateWritten()">Generate</button>
       <div id="stage1downloads" style="display:none;margin-top:0.75rem">
         <div class="download-btns">
@@ -391,6 +395,7 @@
     document.getElementById('profileMeta').textContent = c.email + (c.testdate ? ' · Test: ' + c.testdate : '');
     document.getElementById('profileBadge').innerHTML = c.isRenewal ? '<span class="badge" style="background:#ede9fe;color:#5b21b6">Renouvellement</span>' : statusBadge(c.status);
     updateProgressBar(c.status, !!(c.conventionData && c.conventionData.price), !!(c.conventionData && c.conventionData.signedAt), !!(c.conventionData && c.conventionData.sentToCatherineAt));
+    if (c.status === 'invited') { var ra = document.getElementById('resendInviteArea'); if (ra) ra.style.display = 'block'; }
 
     const p = Math.round(100 * c.scores.total / (c.scores.max || 30));
     document.getElementById('testDataBlock').innerHTML = `
@@ -627,6 +632,26 @@
     }).then(r => r.json()).then(d => {
       if (d.success) { candidate.company = company; input.style.borderColor = '#10b981'; setTimeout(() => input.style.borderColor = '#e2e8f0', 1500); }
     });
+  }
+
+  function resendInvite() {
+    var btn = document.getElementById('btnResendInvite');
+    var status = document.getElementById('resendStatus');
+    btn.disabled = true;
+    btn.textContent = '⏳ Envoi…';
+    fetch('/api/resend-invite/' + id, { method: 'POST' })
+      .then(r => r.json())
+      .then(d => {
+        if (d.ok) {
+          btn.textContent = '✅ Renvoyé';
+          status.textContent = 'Email envoyé à ' + new Date().toLocaleTimeString('fr-FR');
+        } else {
+          btn.textContent = '❌ Erreur';
+          status.textContent = d.error || 'Erreur';
+          btn.disabled = false;
+        }
+      })
+      .catch(e => { btn.textContent = '❌ Erreur'; status.textContent = e.message; btn.disabled = false; });
   }
 
   function generateWritten() {
