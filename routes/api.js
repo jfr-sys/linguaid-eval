@@ -475,7 +475,18 @@ router.get('/download/:id/:lang', function(req, res) {
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
         res.setHeader('Content-Disposition', 'attachment; filename="' + fname + '"');
         res.send(buffer);
-        try { fs.unlinkSync(tmpJson); fs.unlinkSync(tmpOut); } catch(e2) {}
+        // Save permanent PDF copy for proposal
+        try {
+          var reportsDir = require('path').join(__dirname, '../data/finalReports');
+          if (!fs.existsSync(reportsDir)) fs.mkdirSync(reportsDir, { recursive: true });
+          var permPdf = require('path').join(reportsDir, req.params.id + (isEN ? '_en' : '_fr') + '.pdf');
+          var execFile2 = require('child_process').execFile;
+          execFile2('soffice', ['--headless','--convert-to','pdf','--outdir', reportsDir, tmpOut], { timeout: 30000 }, function(errSo) {
+            var soOut = require('path').join(reportsDir, require('path').basename(tmpOut).replace('.docx','.pdf'));
+            if (!errSo && fs.existsSync(soOut)) { try { fs.renameSync(soOut, permPdf); } catch(e) {} }
+            try { fs.unlinkSync(tmpJson); fs.unlinkSync(tmpOut); } catch(e2) {}
+          });
+        } catch(eSave) { try { fs.unlinkSync(tmpJson); fs.unlinkSync(tmpOut); } catch(e2) {} }
       } catch(e) { res.status(500).json({ error: e.message }); }
     });
   }

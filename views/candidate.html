@@ -283,18 +283,6 @@
     <div class="stage-title">Proposition de formation</div>
     <div class="stage-status" id="stage6status">Document envoyé au candidat pour accord avant convention</div>
     <div id="propositionForm" style="display:none;margin-top:1rem">
-      <div style="margin-bottom:1rem">
-        <div style="font-size:12px;font-weight:500;color:#666;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">Rapport d’évaluation</div>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          <span id="badgeEN" style="font-size:12px;padding:4px 12px;border-radius:20px;background:#e5e7eb;color:#6b7280">&#127468;&#127463; EN</span>
-          <span id="badgeFR" style="font-size:12px;padding:4px 12px;border-radius:20px;background:#e5e7eb;color:#6b7280">&#127467;&#127479; FR</span>
-          <span style="font-size:12px;color:#9ca3af" id="reportBadgeNote">— téléchargez EN et FR depuis Step 3</span>
-        </div>
-      </div>
-      <div style="margin-bottom:1rem">
-        <div style="font-size:12px;font-weight:500;color:#666;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">Pièces jointes</div>
-        <div id="attachmentList" style="display:flex;flex-direction:column;gap:6px"></div>
-      </div>
       <div style="font-size:12px;font-weight:500;color:#666;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">Proposition de formation</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem">
         <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Civilité</label><select id="propCivility" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"><option>Madame</option><option>Monsieur</option></select></div>
@@ -861,25 +849,7 @@
       var prenom = c.name.split(' ')[0];
       document.getElementById('propBody').value = civ + ' ' + prenom + ',\n\nSuite à notre échange et à votre évaluation, j’ai le plaisir de vous adresser cette proposition de formation en anglais professionnel conçue spécifiquement pour vos besoins.\n\nVous trouverez en pièce jointe votre rapport d’évaluation, le programme de formation détaillé ainsi que la proposition.\n\nN’hésitez pas à me contacter pour toute question ou pour confirmer votre accord.\n\nBien cordialement,\nJoss Frimond\nDirecteur — Linguaid\njfr@linguaid.net | 06 84 49 23 32';
     }
-    fetch('/api/check-pdfs/' + c.id).then(function(r){return r.json();}).then(function(pdfs){
-      var enBadge = document.getElementById('badgeEN');
-      var frBadge = document.getElementById('badgeFR');
-      var note = document.getElementById('reportBadgeNote');
-      if (pdfs.enReport) { enBadge.style.background='#d1fae5';enBadge.style.color='#065f46'; }
-      if (pdfs.frReport) { frBadge.style.background='#d1fae5';frBadge.style.color='#065f46'; }
-      if (pdfs.enReport && pdfs.frReport) note.textContent = '— les deux seront joints';
-      else if (pdfs.enReport || pdfs.frReport) note.textContent = '— téléchargez les deux depuis Step 3';
-      else note.textContent = '— téléchargez EN et/ou FR depuis Step 3';
-      var list = document.getElementById('attachmentList');
-      list.innerHTML = '';
-      function aRow(label, exists) {
-        list.innerHTML += '<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 12px;background:#f8fafc;border-radius:6px;border:0.5px solid #e2e8f0;font-size:13px"><span>'+label+'</span><span style="font-size:12px;color:'+(exists?'#059669':'#d97706')+'">'+(exists?'✓ disponible':'⚠ non disponible')+'</span></div>';
-      }
-      if (pdfs.enReport) aRow('rapport_EN_'+c.name.replace(/\s+/g,'_')+'.pdf', true);
-      if (pdfs.frReport) aRow('rapport_FR_'+c.name.replace(/\s+/g,'_')+'.pdf', true);
-      aRow('programme_'+c.name.replace(/\s+/g,'_')+'.pdf', pdfs.programme);
-      aRow('proposition_'+c.name.replace(/\s+/g,'_')+'.pdf', pdfs.proposition);
-    });
+
     if (cd.proposalSentAt) {
       var sentDate = new Date(cd.proposalSentAt).toLocaleDateString('fr-FR');
       document.getElementById('propositionSentBar').style.display = 'flex';
@@ -1041,14 +1011,7 @@
       if (d.ok) {
         document.getElementById('propositionSentBar').style.display='flex';
         document.getElementById('propositionSentText').textContent='Envoyée le '+new Date().toLocaleDateString('fr-FR')+' à '+p.recipientEmail;
-        fetch('/api/check-pdfs/'+id).then(function(r2){return r2.json();}).then(function(pdfs){
-          var list=document.getElementById('attachmentList'); list.innerHTML='';
-          function aRow(label,exists){list.innerHTML+='<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 12px;background:#f8fafc;border-radius:6px;border:0.5px solid #e2e8f0;font-size:13px"><span>'+label+'</span><span style="font-size:12px;color:'+(exists?'#059669':'#d97706')+'">'+(exists?'✓ disponible':'⚠ non disponible')+'</span></div>';}
-          if(pdfs.enReport)aRow('rapport_EN_'+candidate.name.replace(/\s+/g,'_')+'.pdf',true);
-          if(pdfs.frReport)aRow('rapport_FR_'+candidate.name.replace(/\s+/g,'_')+'.pdf',true);
-          aRow('programme_'+candidate.name.replace(/\s+/g,'_')+'.pdf',pdfs.programme);
-          aRow('proposition_'+candidate.name.replace(/\s+/g,'_')+'.pdf',pdfs.proposition);
-        });
+
       } else { alert('Erreur : '+(d.error||'inconnue')); }
     }).catch(function(){ alert('Erreur réseau'); btn.disabled=false; btn.textContent='Envoyer la proposition'; status.textContent=''; });
   }
