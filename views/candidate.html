@@ -224,56 +224,68 @@
     </div>
   </div>
 
-  <div class="pipeline" style="grid-template-columns:repeat(4,1fr)">
-    <div class="stage" id="stage1">
-      <div class="stage-num">Step 1</div>
-      <div class="stage-title">Written Report</div>
-      <div class="stage-status" id="stage1status">Generate the written evaluation from test data</div>
-      <div id="resendInviteArea" style="display:none;margin-bottom:0.75rem">
-        <button class="btn" id="btnResendInvite" onclick="resendInvite()" style="background:#f59e0b;color:white;border:none">📧 Renvoyer l’invitation au test</button>
-        <span id="resendStatus" style="font-size:12px;color:#666;margin-left:8px"></span>
-      </div>
-      <button class="btn btn-primary" id="btnWritten" onclick="generateWritten()">Generate</button>
-      <div id="stage1downloads" style="display:none;margin-top:0.75rem">
-        <div class="download-btns">
-          <button class="btn btn-en" onclick="downloadWritten('en')" title="Download EN">🇬🇧 EN</button>
-          <button class="btn btn-fr" onclick="downloadWritten('fr')" title="Télécharger FR">🇫🇷 FR</button>
+  <!-- Steps 1-4 compact summary bar -->
+  <div id="stepsCompact" style="background:white;border-radius:12px;padding:1rem 1.5rem;box-shadow:0 2px 8px rgba(0,0,0,0.06);margin-bottom:1rem">
+    <div style="display:flex;align-items:flex-start;gap:0;flex-wrap:wrap">
+      <!-- Step 1 -->
+      <div id="stage1" style="display:flex;flex-direction:column;gap:5px;flex:1;min-width:160px;padding-right:1rem">
+        <div style="font-size:11px;font-weight:600;text-transform:uppercase;color:#999;letter-spacing:0.04em">Step 1 · Written</div>
+        <div id="stage1status" style="font-size:11px;color:#666"></div>
+        <div id="resendInviteArea" style="display:none">
+          <button class="btn" id="btnResendInvite" onclick="resendInvite()" style="font-size:11px;padding:3px 8px;background:#f59e0b;color:white;border:none">📧 Renvoyer</button>
+          <span id="resendStatus" style="font-size:11px;color:#666;margin-left:4px"></span>
         </div>
-        <div class="download-loading" id="writtenDownloadLoading">Generating…</div>
-      </div>
-    </div>
-    <div class="stage" id="stage2">
-      <div class="stage-num">Step 2</div>
-      <div class="stage-title">Oral Assessment</div>
-      <div class="stage-status" id="stage2status">Send oral assessment link to evaluator</div>
-      <div id="oralLinkArea"></div>
-    </div>
-    <div class="stage" id="stage3">
-      <div class="stage-num">Step 3</div>
-      <div class="stage-title">Final Report</div>
-      <div class="stage-status" id="stage3status">Generate once oral assessment is complete</div>
-      <button class="btn btn-primary" id="btnFinal" onclick="generateFinal()" disabled>Generate</button>
-      <div id="stage3downloads" style="display:none;margin-top:0.75rem">
-        <div class="download-btns">
-          <button class="btn btn-en" id="btnReportEN" onclick="downloadReport('en')" title="Download EN">🇬🇧 EN</button>
-          <button class="btn btn-fr" id="btnReportFR" onclick="downloadReport('fr')" title="Télécharger FR">🇫🇷 FR</button>
-        </div>
-        <div class="download-loading" id="downloadLoading">Generating…</div>
-      </div>
-    </div>
-    <div class="stage" id="stage4">
-      <div class="stage-num">Step 4</div>
-      <div class="stage-title">Programme</div>
-      <div class="stage-status" id="stage4status">Create once final report is done</div>
-      <a id="btnProgramme" href="#" class="btn btn-primary" style="display:none">Create →</a>
-      <div id="stage4downloads" style="display:none;margin-top:0.75rem">
-        <div class="download-btns">
-          <button class="btn btn-primary" id="btnDownloadProg" onclick="window.location.href='/api/generate-programme/'+id" title="Télécharger le programme">↓ Télécharger</button>
-          <span id="progPdfBadge" style="display:none;font-size:12px;padding:4px 12px;border-radius:20px;background:#d1fae5;color:#065f46;font-weight:500">📄 PDF disponible</span>
-          <button class="btn" id="btnEditProgramme" onclick="window.location.href=window.location.pathname.split('/').slice(0,3).join('/')+'/programme'" title="Modifier le programme" style="background:#7c3aed;color:white;margin-left:4px">✏️ Modifier</button>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center">
+          <button class="btn btn-primary" id="btnWritten" onclick="generateWritten()" style="font-size:11px;padding:3px 10px">Generate</button>
+          <div id="stage1downloads" style="display:none;gap:4px;align-items:center;flex-wrap:wrap">
+            <button class="btn btn-en" onclick="downloadWritten('en')" style="font-size:11px;padding:3px 8px">🇬🇧 EN</button>
+            <button class="btn btn-fr" onclick="downloadWritten('fr')" style="font-size:11px;padding:3px 8px">🇫🇷 FR</button>
+            <div class="download-loading" id="writtenDownloadLoading" style="font-size:10px">…</div>
+          </div>
         </div>
       </div>
+      <div style="width:1px;background:#e5e7eb;align-self:stretch;margin:2px 0;flex-shrink:0"></div>
+      <!-- Step 2 -->
+      <div id="stage2" style="display:flex;flex-direction:column;gap:5px;flex:1;min-width:180px;padding:0 1rem">
+        <div style="font-size:11px;font-weight:600;text-transform:uppercase;color:#999;letter-spacing:0.04em">Step 2 · Oral</div>
+        <div id="stage2status" style="font-size:11px;color:#666"></div>
+        <div id="oralLinkArea"></div>
+      </div>
+      <div style="width:1px;background:#e5e7eb;align-self:stretch;margin:2px 0;flex-shrink:0"></div>
+      <!-- Step 3 -->
+      <div id="stage3" style="display:flex;flex-direction:column;gap:5px;flex:1;min-width:160px;padding:0 1rem">
+        <div style="font-size:11px;font-weight:600;text-transform:uppercase;color:#999;letter-spacing:0.04em">Step 3 · Rapport</div>
+        <div id="stage3status" style="font-size:11px;color:#666"></div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center">
+          <button class="btn btn-primary" id="btnFinal" onclick="generateFinal()" disabled style="font-size:11px;padding:3px 10px">Generate</button>
+          <div id="stage3downloads" style="display:none;gap:4px;align-items:center;flex-wrap:wrap">
+            <button class="btn btn-en" id="btnReportEN" onclick="downloadReport('en')" style="font-size:11px;padding:3px 8px">🇬🇧 EN</button>
+            <button class="btn btn-fr" id="btnReportFR" onclick="downloadReport('fr')" style="font-size:11px;padding:3px 8px">🇫🇷 FR</button>
+            <div class="download-loading" id="downloadLoading" style="font-size:10px">…</div>
+          </div>
+        </div>
+      </div>
+      <div style="width:1px;background:#e5e7eb;align-self:stretch;margin:2px 0;flex-shrink:0"></div>
+      <!-- Step 4 -->
+      <div id="stage4" style="display:flex;flex-direction:column;gap:5px;flex:1;min-width:150px;padding-left:1rem">
+        <div style="font-size:11px;font-weight:600;text-transform:uppercase;color:#999;letter-spacing:0.04em">Step 4 · Programme</div>
+        <div id="stage4status" style="font-size:11px;color:#666"></div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center">
+          <a id="btnProgramme" href="#" class="btn btn-primary" style="display:none;font-size:11px;padding:3px 10px">Create →</a>
+          <div id="stage4downloads" style="display:none;gap:4px;align-items:center;flex-wrap:wrap">
+            <button class="btn btn-primary" id="btnDownloadProg" onclick="window.location.href='/api/generate-programme/'+id" style="font-size:11px;padding:3px 8px">↓ Télécharger</button>
+            <span id="progPdfBadge" style="display:none;font-size:10px;padding:2px 7px;border-radius:10px;background:#d1fae5;color:#065f46;font-weight:500">📄 PDF</span>
+            <button class="btn" id="btnEditProgramme" onclick="window.location.href=window.location.pathname.split('/').slice(0,3).join('/')+'/programme'" style="font-size:11px;padding:3px 8px;background:#7c3aed;color:white">✏️ Modifier</button>
+          </div>
+        </div>
+      </div>
     </div>
+    <!-- Final report edit toggle -->
+    <div id="finalReportToggleBar" style="display:none;border-top:1px solid #f1f5f9;margin-top:0.75rem;padding-top:0.75rem;display:flex;align-items:center;justify-content:space-between">
+      <span style="font-size:12px;color:#94a3b8">Final Evaluation Report</span>
+      <button onclick="var w=document.getElementById('reportSectionsWrap');w.style.display=w.style.display==='none'?'block':'none'" style="font-size:11px;padding:3px 10px;border-radius:6px;border:1px solid #e2e8f0;background:white;cursor:pointer;font-family:inherit;color:#1F4E79">✎ Éditer sections</button>
+    </div>
+    <div id="reportSectionsWrap" style="display:none;margin-top:0.75rem"><div id="reportSections"></div></div>
   </div>
 
   <!-- STEP 6: PROPOSITION -->
@@ -392,22 +404,12 @@
     </div>
   </div>
 
-  <div class="report-box" id="writtenReportBox" style="display:none">
-    <div class="report-box-header">
-      <h3>Written Evaluation Report</h3>
-    </div>
+  <!-- Written report box removed -->
     <div class="report-rendered" id="writtenReportContent"></div>
   </div>
 
 
 
-  <div class="report-box" id="finalReportBox" style="display:none">
-    <div class="report-box-header">
-      <h3>Final Evaluation Report</h3>
-
-    </div>
-    <div id="reportSections"></div>
-  </div>
 </div>
 
 <script>
@@ -518,12 +520,10 @@
     `;
 
     if (c.writtenReport) {
-      document.getElementById('writtenReportBox').style.display = 'block';
-      document.getElementById('writtenReportContent').innerHTML = marked.parse(c.writtenReport);
       document.getElementById('btnWritten').textContent = 'Regenerate';
       document.getElementById('stage1').classList.add('done');
       document.getElementById('stage1status').textContent = 'Written report generated ✓';
-      document.getElementById('stage1downloads').style.display = 'block';
+      document.getElementById('stage1downloads').style.display = 'flex';
     }
 
     if (c.oralData) {
@@ -552,13 +552,13 @@
     }
 
     if (c.finalReport) {
-      document.getElementById('finalReportBox').style.display = 'block';
+      document.getElementById('finalReportToggleBar').style.display = 'flex';
       renderReportSections(c.finalReport);
       document.getElementById('stage3').classList.add('done');
       document.getElementById('stage3status').textContent = 'Final report generated ✓';
       document.getElementById('btnFinal').textContent = 'Regenerate';
       document.getElementById('btnFinal').disabled = false;
-      document.getElementById('stage3downloads').style.display = 'block';
+      document.getElementById('stage3downloads').style.display = 'flex';
       fetch('/api/check-pdfs/' + c.id).then(function(r){return r.json();}).then(function(pdfs){
         if (pdfs.enReport) { var b=document.getElementById('btnReportEN'); if(b){b.style.background='#059669';b.innerHTML='🇬🇧 EN ✓';b.title='PDF enregistré';} }
         if (pdfs.frReport) { var b=document.getElementById('btnReportFR'); if(b){b.style.background='#059669';b.innerHTML='🇫🇷 FR ✓';b.title='PDF enregistré';} }
@@ -574,7 +574,7 @@
       document.getElementById('stage4').classList.add('done');
       document.getElementById('stage4status').textContent = 'Programme created ✓';
       document.getElementById('btnProgramme').textContent = 'Recreate →';
-      document.getElementById('stage4downloads').style.display = 'block';
+      document.getElementById('stage4downloads').style.display = 'flex';
     }
     showPropositionStep(c);
   }
