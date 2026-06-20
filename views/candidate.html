@@ -498,26 +498,43 @@
 
     const oralUrl = window.location.origin + '/oral/' + c.oralToken;
     const sentTo = c.oralEmailSentTo ? `<div style="font-size:12px;color:#166534;margin-top:8px;">\u2713 Link sent to ${c.oralEmailSentTo}</div>` : '';
-    document.getElementById('oralLinkArea').innerHTML = `
-      <div class="oral-link-box">
-        <label>Send oral assessment link to evaluator</label>
-        <select id="evaluatorSelect" style="width:100%;padding:8px 10px;border:1px solid #bfdbfe;border-radius:6px;font-size:13px;margin-bottom:8px;background:white;color:#1e3a8a;">
-          <option value="">— Choose evaluator —</option>
-          <option value="Louise">Louise</option>
-          <option value="Hannah">Hannah</option>
-          <option value="Anna">Anna</option>
-          <option value="Joss">Joss</option>
-        </select>
-        <div style="display:flex;gap:8px;">
-          <input type="text" id="oralLinkInput" value="${oralUrl}" readonly style="flex:1;font-size:12px;padding:8px 10px;border:1px solid #bfdbfe;border-radius:6px;background:white;color:#1e3a8a;">
-          <button class="btn btn-secondary copy-btn" onclick="copyLink()" style="white-space:nowrap;">Copy</button>
+    if (c.oralData) {
+      // Oral done — show compact resend-only version
+      document.getElementById('oralLinkArea').innerHTML = `
+        <div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;margin-top:2px">
+          <select id="evaluatorSelect" style="font-size:11px;padding:3px 6px;border:1px solid #bfdbfe;border-radius:4px;background:white;color:#1e3a8a;">
+            <option value="">— Évaluateur —</option>
+            <option value="Louise">Louise</option>
+            <option value="Hannah">Hannah</option>
+            <option value="Anna">Anna</option>
+            <option value="Joss">Joss</option>
+          </select>
+          <button class="btn btn-primary" onclick="sendOralLink('${c.id}')" style="font-size:11px;padding:3px 8px">↩ Renvoyer</button>
+          ${sentTo}
         </div>
-        <button class="btn btn-primary" style="width:100%;margin-top:8px;" onclick="sendOralLink('${c.id}')">Send link by email</button>
-        <button class="btn" style="width:100%;margin-top:8px;background:#7c3aed;color:white;" onclick="sendCalendlyLink('${c.id}')">📅 Send Calendly link to candidate</button>
-        <div id="calendlyStatus_${c.id}" style="font-size:12px;color:#166534;margin-top:6px;display:none"></div>
-        ${sentTo}
-      </div>
-    `;
+      `;
+    } else {
+      document.getElementById('oralLinkArea').innerHTML = `
+        <div class="oral-link-box">
+          <label>Send oral assessment link to evaluator</label>
+          <select id="evaluatorSelect" style="width:100%;padding:8px 10px;border:1px solid #bfdbfe;border-radius:6px;font-size:13px;margin-bottom:8px;background:white;color:#1e3a8a;">
+            <option value="">— Choose evaluator —</option>
+            <option value="Louise">Louise</option>
+            <option value="Hannah">Hannah</option>
+            <option value="Anna">Anna</option>
+            <option value="Joss">Joss</option>
+          </select>
+          <div style="display:flex;gap:8px;">
+            <input type="text" id="oralLinkInput" value="${oralUrl}" readonly style="flex:1;font-size:12px;padding:8px 10px;border:1px solid #bfdbfe;border-radius:6px;background:white;color:#1e3a8a;">
+            <button class="btn btn-secondary copy-btn" onclick="copyLink()" style="white-space:nowrap;">Copy</button>
+          </div>
+          <button class="btn btn-primary" style="width:100%;margin-top:8px;" onclick="sendOralLink('${c.id}')">Send link by email</button>
+          <button class="btn" style="width:100%;margin-top:8px;background:#7c3aed;color:white;" onclick="sendCalendlyLink('${c.id}')">📅 Send Calendly link to candidate</button>
+          <div id="calendlyStatus_${c.id}" style="font-size:12px;color:#166534;margin-top:6px;display:none"></div>
+          ${sentTo}
+        </div>
+      `;
+    }
 
     if (c.writtenReport) {
       document.getElementById('btnWritten').textContent = 'Regenerate';
