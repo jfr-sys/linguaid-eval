@@ -1052,7 +1052,9 @@
       if (d.ok) {
         document.getElementById('propositionSentBar').style.display='flex';
         document.getElementById('propositionSentText').textContent='Envoyée le '+new Date().toLocaleDateString('fr-FR')+' à '+p.recipientEmail;
-
+        var sb=document.getElementById('propSendStatus');
+        sb.style.color='#065f46'; sb.textContent='✅ Email envoyé avec succès';
+        setTimeout(function(){sb.textContent='';},4000);
       } else { alert('Erreur : '+(d.error||'inconnue')); }
     }).catch(function(){ alert('Erreur réseau'); btn.disabled=false; btn.textContent='Envoyer la proposition'; status.textContent=''; });
     }).catch(function(){ alert('Erreur réseau'); });
