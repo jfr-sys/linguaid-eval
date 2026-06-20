@@ -1613,7 +1613,7 @@ router.post('/generate-proposition/:id', function(req, res) {
   if (!c) return res.status(404).json({ error: 'Not found' });
   var fs2 = require('fs'), execFile = require('child_process').execFile, pp = require('path');
   var od = c.oralData || {}, body = req.body || {}, cd = c.conventionData || {};
-  var isCPF = !!cd.isCPF;
+  var isCPF = !!(od.isCPF || cd.isCPF);
   var prix = parseInt(body.price || cd.price || 0);
   var cpfMontant = isCPF ? prix - 150 : 0;
   var resteCharge = isCPF ? prix - cpfMontant - 150 : 0;
