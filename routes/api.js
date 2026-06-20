@@ -839,9 +839,9 @@ router.post('/generate-convention/:id', function(req, res) {
   var execFile = require('child_process').execFile;
   var crypto = require('crypto');
   var signingToken = cd.signingToken || crypto.randomBytes(20).toString('hex');
-  var isCPF = cd.isCPF || false;
+  var isCPF = !!(cd.isCPF || od.isCPF);
   var tt = od.legalTrainingType || (isCPF ? 'CPF' : 'NON_CPF');
-  var tplKey = tt === 'CAJA' ? 'CAJA' : tt === 'E360' ? 'E360' : 'NON_CPF';
+  var tplKey = tt === 'CAJA' ? 'CAJA' : tt === 'E360' ? 'E360' : tt === 'CPF' ? 'CPF' : 'NON_CPF';
   // Format dates as French string - prefer oralData (updated when programme regenerated)
   var MONTHS_FR = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
   function fmtDateFr(iso) {
