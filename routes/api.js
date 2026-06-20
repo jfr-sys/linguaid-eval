@@ -1606,6 +1606,70 @@ router.post('/send-proposal/:id', function(req, res) {
     attachments.push({ filename: 'convention_' + c.name.replace(/\s+/g,'_') + '.pdf', path: conventionPdf });
   }
 
+  // ── Proposition PDF — generate via fill_proposition.py ────────────────────
+  var propPdfDir = path.join(__dirname, '../data/propositions');
+  if (!fs2.existsSync(propPdfDir)) fs2.mkdirSync(propPdfDir, { recursive: true });
+  var propPdfPath = path.join(propPdfDir, c.id + '.pdf');
+  var propDocxPath = path.join(propPdfDir, c.id + '.docx');
+  var propJsonPath = path.join(propPdfDir, c.id + '_data.json');
+
+  function generatePropositionAndContinue(cb) {
+    // Build proposition data from candidate
+    var isCPF = !!(cd.isCPF);
+    var prix = parseInt(cd.price || 0);
+    var cpfMontant = isCPF ? prix - 150 : 0;
+    var resteCharge = isCPF ? prix - cpfMontant - 150 : 0;
+    var nomParts = (c.name || '').trim().split(' ');
+    var prenom = nomParts[0] || '';
+    var civiliteShort = (cd.civility === 'Monsieur') ? 'Cher' : 'Ch\u00e8re';
+    var certification = '';
+    if (isCPF && c.courseType === 'legal') certification = 'English 360 (RS6341) \u2014 \u00e9tape 1 vers CAJA (RS6810)';
+    else if (isCPF) certification = 'English 360 (RS6341)';
+    else if (c.courseType === 'legal') certification = 'CAJA (RS6810)';
+    var propData = {
+      civilite: cd.civility || 'Madame',
+      nom_complet: c.name || '',
+      entreprise: c.company || '',
+      email: c.email || '',
+      civilite_court: civiliteShort,
+      prenom: prenom,
+      niveau_actuel: (od.prereqLevel || od.overallLevel || '').toString(),
+      niveau_vise: (od.targetLevel || '').toString(),
+      resume_situation: od.globalComment || '',
+      total_heures: parseInt(od.totalHours || 0),
+      coaching_heures: parseInt(od.coachingHours || od.totalHours || 0),
+      homework_heures: parseInt(od.homeworkHours || 0),
+      date_debut: od.dateStart || cd.dateStart || '',
+      date_fin: od.dateEnd || cd.dateEnd || '',
+      certification: certification,
+      objectifs: od.objectives || [],
+      is_cpf: isCPF,
+      prix: prix,
+      cpf_montant: cpfMontant,
+      reste_charge: resteCharge,
+      cpf_lien: req.body.cpfLien || ''
+    };
+    fs2.writeFileSync(propJsonPath, JSON.stringify(propData));
+    execFile('python3', ['/home/debian/fill_proposition.py', propJsonPath, propDocxPath],
+      { timeout: 30000, env: Object.assign({}, process.env, { PROPOSITION_TEMPLATE: path.join(__dirname, '../views/PROPOSITION_TEMPLATE.docx') }) },
+      function(err) {
+        try { fs2.unlinkSync(propJsonPath); } catch(e) {}
+        if (err || !fs2.existsSync(propDocxPath)) {
+          console.error('fill_proposition failed:', err && err.message);
+          return cb();
+        }
+        execFile('soffice', ['--headless','--convert-to','pdf','--outdir', propPdfDir, propDocxPath],
+          { timeout: 30000 }, function(err2) {
+            try { fs2.unlinkSync(propDocxPath); } catch(e) {}
+            // soffice names output same as docx but .pdf
+            if (!err2 && fs2.existsSync(propPdfPath)) {
+              attachments.unshift({ filename: 'proposition_' + c.name.replace(/\s+/g,'_') + '.pdf', path: propPdfPath });
+            }
+            cb();
+          });
+      });
+  }
+
   // Programme PDF — standard path first, then programmePdfPath, then regenerate
   var progPdfPath = path.join(__dirname, '../data/programmes/' + c.id + '.pdf');
   var progDocxPath = path.join(__dirname, '../data/programmes/' + c.id + '.docx');
@@ -1616,7 +1680,9 @@ router.post('/send-proposal/:id', function(req, res) {
     } else if (c.programmePdfPath && fs2.existsSync(c.programmePdfPath)) {
       attachments.push({ filename: 'programme_' + c.name.replace(/\s+/g,'_') + '.pdf', path: c.programmePdfPath });
     }
-    generateReportAndSend();
+    generatePropositionAndContinue(function() {
+      generateReportAndSend();
+    });
   }
 
   function generateProgPdf() {
