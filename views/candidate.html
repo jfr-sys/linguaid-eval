@@ -340,7 +340,7 @@
         <button class="btn btn-secondary" onclick="openEmailModal()">✉️ Éditer le message</button>
         <button class="btn btn-primary" id="btnDlProp" onclick="downloadProposition(this)">Télécharger la proposition</button>
         <button class="btn btn-primary" id="btnSendProposition" onclick="sendProposition()">Envoyer la proposition</button>
-        <button id="btnPropAccepted" class="btn" style="background:#d1fae5;color:#065f46;border:1px solid #6ee7b7" onclick="markPropositionAccepted()">Accepter</button>
+        <button id="btnPropAccepted" class="btn btn-primary" onclick="markPropositionAccepted()">Accepter</button>
       </div>
       <div id="propSendStatus" style="margin-top:8px;font-size:12px;color:#666"></div>
       <div id="propositionSentBar" style="display:none;margin-top:0.5rem">
@@ -906,19 +906,23 @@
     }
 
     if (cd.proposalSentAt) {
-      var sentDate = new Date(cd.proposalSentAt).toLocaleDateString('fr-FR');
       document.getElementById('propositionSentBar').style.display = 'block';
-      document.getElementById('propositionSentText').textContent = 'Envoyée le ' + sentDate + ' à ' + (cd.proposalRecipient || c.email);
-    }
-    if (cd.proposalAcceptedAt) {
-      var btn=document.getElementById('btnPropAccepted');
-      btn.textContent='✅ Acceptée';
-      btn.style.background='#10b981';
-      btn.style.color='white';
-      btn.style.border='none';
-      btn.onclick=null;
-      btn.style.cursor='default';
-      s6.style.borderTopColor = '#10b981';
+      if (cd.proposalAcceptedAt) {
+        var accDate = new Date(cd.proposalAcceptedAt).toLocaleDateString('fr-FR');
+        document.getElementById('propositionSentText').textContent = 'Acceptée le ' + accDate;
+        var btn=document.getElementById('btnPropAccepted');
+        btn.textContent='✅ Acceptée';
+        btn.classList.remove('btn-primary');
+        btn.style.background='#10b981';
+        btn.style.color='white';
+        btn.style.border='none';
+        btn.onclick=null;
+        btn.style.cursor='default';
+        s6.style.borderTopColor = '#10b981';
+      } else {
+        var sentDate = new Date(cd.proposalSentAt).toLocaleDateString('fr-FR');
+        document.getElementById('propositionSentText').textContent = 'Envoyée le ' + sentDate + ' à ' + (cd.proposalRecipient || c.email);
+      }
     }
 
     // Step 7: unlock if proposition accepted
@@ -1081,17 +1085,7 @@
   }
   function markPropositionAccepted() {
     fetch('/api/mark-proposal-accepted/'+id,{method:'POST'}).then(function(r){return r.json();}).then(function(d){
-      if(d.ok){
-        var btn=document.getElementById('btnPropAccepted');
-        btn.textContent='✅ Acceptée';
-        btn.style.background='#10b981';
-        btn.style.color='white';
-        btn.style.border='none';
-        btn.onclick=null;
-        btn.style.cursor='default';
-        document.getElementById('stage6').style.borderTopColor='#10b981';
-        location.reload();
-      }
+      if(d.ok){ location.reload(); }
     });
   }
 </script>
