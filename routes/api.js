@@ -1673,6 +1673,10 @@ router.post('/send-proposal/:id', function(req, res) {
 
   // ── Generate report PDF then send email ───────────────────────────────────
   var tmpReportPath = path.join(__dirname, '../data/tmp_report_' + c.id + '.pdf');
+  // Permanent FR report cache
+  var frReportsDir = path.join(__dirname, '../data/finalReports');
+  if (!require('fs').existsSync(frReportsDir)) require('fs').mkdirSync(frReportsDir, { recursive: true });
+  var frReportPdf = path.join(frReportsDir, c.id + '_fr.pdf');
 
   function sendProposalEmail() {
     var nodemailer = require('nodemailer');
@@ -1704,6 +1708,13 @@ router.post('/send-proposal/:id', function(req, res) {
 
   function generateReportAndSend() {
     if (c.finalReport) {
+      // If FR report already cached, use immediately
+      if (fs2.existsSync(frReportPdf)) {
+        console.log('Using cached FR report PDF for', c.id);
+        attachments.unshift({ filename: 'rapport_FR_' + c.name.replace(/\s+/g,'_') + '.pdf', path: frReportPdf });
+        sendProposalEmail();
+        return;
+      }
       // Translate report to French first, then generate PDF
       var Anthropic = require('@anthropic-ai/sdk');
       var client2 = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -1729,10 +1740,15 @@ router.post('/send-proposal/:id', function(req, res) {
         execFile('python3', ['/home/debian/fill_report.py', tmpJson, template, tmpDocx], { timeout: 30000 }, function(err2) {
           try { fs2.unlinkSync(tmpJson); } catch(e) {}
           if (!err2 && fs2.existsSync(tmpDocx)) {
-            execFile('soffice', ['--headless','--convert-to','pdf','--outdir', path.join(__dirname,'../data/'), tmpDocx], { timeout: 30000 }, function(err3) {
+            // soffice outputs same name as docx but .pdf — rename to permanent path
+            var sofficeFrOut = path.join(frReportsDir, 'tmp_rpt_' + c.id + '.pdf');
+            execFile('soffice', ['--headless','--convert-to','pdf','--outdir', frReportsDir, tmpDocx], { timeout: 60000 }, function(err3) {
               try { fs2.unlinkSync(tmpDocx); } catch(e) {}
-              if (!err3 && fs2.existsSync(tmpReportPath)) {
-                attachments.unshift({ filename: 'rapport_FR_' + c.name.replace(/\s+/g,'_') + '.pdf', path: tmpReportPath });
+              if (!err3 && fs2.existsSync(sofficeFrOut)) {
+                try { fs2.renameSync(sofficeFrOut, frReportPdf); } catch(e) {}
+              }
+              if (fs2.existsSync(frReportPdf)) {
+                attachments.unshift({ filename: 'rapport_FR_' + c.name.replace(/\s+/g,'_') + '.pdf', path: frReportPdf });
               }
               sendProposalEmail();
             });
