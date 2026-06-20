@@ -329,7 +329,7 @@
         </div>
       </div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <button class="btn btn-primary" onclick="downloadProposition()">Télécharger la proposition</button>
+        <button class="btn btn-primary" id="btnDlProp" onclick="downloadProposition(this)">Télécharger la proposition</button>
         <button class="btn btn-primary" id="btnSendProposition" onclick="sendProposition()">Envoyer la proposition</button>
       </div>
       <div id="propSendStatus" style="margin-top:8px;font-size:12px;color:#666"></div>
@@ -1009,8 +1009,8 @@
       thirdPartyNom: thirdParty ? document.getElementById('propThirdNom').value : ''
     };
   }
-  function downloadProposition() {
-    var btn = event.target;
+  function downloadProposition(btn) {
+    btn = btn || document.getElementById("btnDlProp");
     btn.disabled = true; btn.textContent = 'Génération...';
     var p = buildPropositionPayload();
     fetch('/api/generate-proposition/'+id, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(p)})
