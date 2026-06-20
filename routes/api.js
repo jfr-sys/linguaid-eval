@@ -1723,13 +1723,22 @@ router.post('/send-proposal/:id', function(req, res) {
           content: frText
         };
         var tmpJson = path.join(__dirname, '../data/tmp_rpt_' + c.id + '.json');
+        var tmpDocx = path.join(__dirname, '../data/tmp_rpt_' + c.id + '.docx');
+        var template = path.join(__dirname, '../views/headed_notepaper.docx');
         fs2.writeFileSync(tmpJson, JSON.stringify(reportPayload));
-        execFile('python3', ['/home/debian/fill_report.py', tmpJson, tmpReportPath], { timeout: 30000 }, function(err2) {
+        execFile('python3', ['/home/debian/fill_report.py', tmpJson, template, tmpDocx], { timeout: 30000 }, function(err2) {
           try { fs2.unlinkSync(tmpJson); } catch(e) {}
-          if (!err2 && fs2.existsSync(tmpReportPath)) {
-            attachments.unshift({ filename: 'rapport_FR_' + c.name.replace(/\s+/g,'_') + '.pdf', path: tmpReportPath });
+          if (!err2 && fs2.existsSync(tmpDocx)) {
+            execFile('soffice', ['--headless','--convert-to','pdf','--outdir', path.join(__dirname,'../data/'), tmpDocx], { timeout: 30000 }, function(err3) {
+              try { fs2.unlinkSync(tmpDocx); } catch(e) {}
+              if (!err3 && fs2.existsSync(tmpReportPath)) {
+                attachments.unshift({ filename: 'rapport_FR_' + c.name.replace(/\s+/g,'_') + '.pdf', path: tmpReportPath });
+              }
+              sendProposalEmail();
+            });
+          } else {
+            sendProposalEmail();
           }
-          sendProposalEmail();
         });
       }).catch(function(err) {
         console.error('FR translation failed:', err.message);
@@ -1741,13 +1750,22 @@ router.post('/send-proposal/:id', function(req, res) {
           content: c.finalReport
         };
         var tmpJson = path.join(__dirname, '../data/tmp_rpt_' + c.id + '.json');
+        var tmpDocxEN = path.join(__dirname, '../data/tmp_rpt_en_' + c.id + '.docx');
+        var templateEN = path.join(__dirname, '../views/headed_notepaper.docx');
         fs2.writeFileSync(tmpJson, JSON.stringify(reportPayload));
-        execFile('python3', ['/home/debian/fill_report.py', tmpJson, tmpReportPath], { timeout: 30000 }, function(err2) {
+        execFile('python3', ['/home/debian/fill_report.py', tmpJson, templateEN, tmpDocxEN], { timeout: 30000 }, function(err2) {
           try { fs2.unlinkSync(tmpJson); } catch(e) {}
-          if (!err2 && fs2.existsSync(tmpReportPath)) {
-            attachments.unshift({ filename: 'rapport_EN_' + c.name.replace(/\s+/g,'_') + '.pdf', path: tmpReportPath });
+          if (!err2 && fs2.existsSync(tmpDocxEN)) {
+            execFile('soffice', ['--headless','--convert-to','pdf','--outdir', path.join(__dirname,'../data/'), tmpDocxEN], { timeout: 30000 }, function(err3) {
+              try { fs2.unlinkSync(tmpDocxEN); } catch(e) {}
+              if (!err3 && fs2.existsSync(tmpReportPath)) {
+                attachments.unshift({ filename: 'rapport_EN_' + c.name.replace(/\s+/g,'_') + '.pdf', path: tmpReportPath });
+              }
+              sendProposalEmail();
+            });
+          } else {
+            sendProposalEmail();
           }
-          sendProposalEmail();
         });
       });
     } else {
