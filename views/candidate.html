@@ -1026,8 +1026,7 @@
     // Check FR report is cached before sending
     fetch('/api/check-pdfs/'+id).then(function(r){return r.json();}).then(function(pdfs){
       if (!pdfs.frReport) {
-        alert('⚠️ Rapport FR non disponible.
-Téléchargez le rapport FR depuis Step 3 (bouton 🇫🇷 FR) avant d’envoyer la proposition.');
+        alert('Rapport FR non disponible - Téléchargez le rapport FR depuis Step 3 avant d’envoyer la proposition.');
         return;
       }
       btn.disabled = true; btn.textContent = 'Envoi en cours...';
