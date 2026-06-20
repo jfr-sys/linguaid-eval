@@ -199,6 +199,10 @@ fetch("/candidates/api/" + id)
 
     document.getElementById("prereqLevel").value = cefrLabel(rs.overallLevel) || "";
     if (oral.trainingTitle) document.getElementById("trainingTitle").value = oral.trainingTitle;
+    if (oral.isCPF) {
+      document.getElementById("cpfToggle").checked = true;
+      toggleCPF();
+    }
     document.getElementById("targetLevel").value = cefrLabel(oral.targetLevel) || "";
 
     var coaching = oral.coachingHours || "—";
