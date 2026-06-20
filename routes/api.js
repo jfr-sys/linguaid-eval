@@ -1638,7 +1638,7 @@ router.post('/generate-proposition/:id', function(req, res) {
     date_fin: body.dateEnd || od.dateEnd || '',
     certification: cert,
     objectifs: od.objectives || [],
-    titre: isCPF ? 'Communiquer en anglais professionnel — English 360 (RS6341)' : 'Proposition de formation professionnelle',
+    titre: isCPF ? 'Proposition de formation professionnelle : Communiquer en anglais professionnel — English 360 (RS6341)' : 'Proposition de formation professionnelle',
     is_cpf: isCPF,
     prix: prix,
     cpf_montant: cpfMontant,
