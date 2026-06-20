@@ -1591,70 +1591,137 @@ router.post('/send-proposal/:id', function(req, res) {
   var c = candidates2[cidx];
   var od = c.oralData || {};
   var cd = c.conventionData || {};
+  var fs2 = require('fs');
+  var { execFile } = require('child_process');
 
   var recipientEmail = req.body.recipientEmail || c.email;
   var emailBody      = req.body.emailBody || '';
 
-  // Attachment paths
+  // ── Build attachment list ────────────────────────────────────────────────
   var attachments = [];
+
+  // Convention PDF
   var conventionPdf = cd.pdfPath || path.join(__dirname, '../data/conventions/' + c.id + '.pdf');
-  if (require('fs').existsSync(conventionPdf)) {
+  if (fs2.existsSync(conventionPdf)) {
     attachments.push({ filename: 'convention_' + c.name.replace(/\s+/g,'_') + '.pdf', path: conventionPdf });
   }
+
+  // Programme PDF — standard path first, then programmePdfPath, then regenerate
   var progPdfPath = path.join(__dirname, '../data/programmes/' + c.id + '.pdf');
-  if (require('fs').existsSync(progPdfPath)) {
-    attachments.push({ filename: 'programme_' + c.name.replace(/\s+/g,'_') + '.pdf', path: progPdfPath });
-  } else if (c.programmePdfPath && require('fs').existsSync(c.programmePdfPath)) {
-    attachments.push({ filename: 'programme_' + c.name.replace(/\s+/g,'_') + '.pdf', path: c.programmePdfPath });
+  var progDocxPath = path.join(__dirname, '../data/programmes/' + c.id + '.docx');
+
+  function attachProgAndSend() {
+    if (fs2.existsSync(progPdfPath)) {
+      attachments.push({ filename: 'programme_' + c.name.replace(/\s+/g,'_') + '.pdf', path: progPdfPath });
+    } else if (c.programmePdfPath && fs2.existsSync(c.programmePdfPath)) {
+      attachments.push({ filename: 'programme_' + c.name.replace(/\s+/g,'_') + '.pdf', path: c.programmePdfPath });
+    }
+    generateReportAndSend();
   }
-  // Final report PDF — generate on the fly via fill_report.py
+
+  function generateProgPdf() {
+    // Convert existing docx to PDF via LibreOffice
+    execFile('soffice', ['--headless','--convert-to','pdf','--outdir',
+      path.join(__dirname,'../data/programmes/'), progDocxPath],
+      { timeout: 30000 }, function(err) {
+        attachProgAndSend();
+      });
+  }
+
+  // If programme PDF missing but docx exists, convert it
+  if (!fs2.existsSync(progPdfPath) && !(c.programmePdfPath && fs2.existsSync(c.programmePdfPath))) {
+    if (fs2.existsSync(progDocxPath)) {
+      generateProgPdf();
+    } else {
+      // Regenerate from scratch via fill_programme_final.py
+      var progPayload = {
+        trainingTitle: (od.legalTrainingType === 'CAJA') ? 'Formation en Anglais Juridique' : (cd.isCPF ? 'Communiquer en anglais professionnel – English 360 – Niveau ' + (od.targetLevel||'B2') : 'Formation en Anglais Professionnel'),
+        candidateName: c.name,
+        jobtitle: c.jobtitle || '',
+        dept: c.dept || '',
+        prereqLevel: od.prereqLevel || od.overallLevel || '',
+        targetLevel: od.targetLevel || '',
+        totalHours: od.totalHours || 0,
+        coachingHours: od.coachingHours || od.totalHours || 0,
+        homeworkHours: od.homeworkHours || 0,
+        location: 'A distance',
+        dateStr: (od.dateStart && od.dateEnd) ? ('du ' + od.dateStart + ' au ' + od.dateEnd) : '',
+        isCPF: cd.isCPF || false,
+        topics: od.topics || [],
+        objectives: od.objectives || [],
+        customTopics: '',
+        additionalNotes: ''
+      };
+      var tmpProgJson = path.join(__dirname, '../data/tmp_prog_' + c.id + '.json');
+      var tmpProgDocx = path.join(__dirname, '../data/programmes/' + c.id + '.docx');
+      fs2.writeFileSync(tmpProgJson, JSON.stringify(progPayload));
+      execFile('python3', ['/home/debian/fill_programme_final.py', tmpProgJson, tmpProgDocx],
+        { timeout: 30000 }, function(err) {
+          try { fs2.unlinkSync(tmpProgJson); } catch(e) {}
+          if (!err && fs2.existsSync(tmpProgDocx)) {
+            execFile('soffice', ['--headless','--convert-to','pdf','--outdir',
+              path.join(__dirname,'../data/programmes/'), tmpProgDocx],
+              { timeout: 30000 }, function() { attachProgAndSend(); });
+          } else {
+            attachProgAndSend();
+          }
+        });
+    }
+  } else {
+    attachProgAndSend();
+  }
+
+  // ── Generate report PDF then send email ───────────────────────────────────
   var tmpReportPath = path.join(__dirname, '../data/tmp_report_' + c.id + '.pdf');
+
   function sendProposalEmail() {
     var nodemailer = require('nodemailer');
     var transporter = nodemailer.createTransport({ host: 'localhost', port: 25, secure: false, tls: { rejectUnauthorized: false } });
-    // Build HTML body from plain text (preserve line breaks)
-    var htmlBody = '<div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.7;color:#1a1a1a">'
-      + emailBody.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-                 .replace(/\n\n/g,'</p><p>').replace(/\n/g,'<br>')
+    // Build HTML — body text + branded signature image
+    var bodyHtml = '<div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.8;color:#1a1a1a;max-width:600px">'
+      + '<p>' + emailBody.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+                         .replace(/\n\n/g,'</p><p>').replace(/\n/g,'<br>') + '</p>'
+      + '<br><img src="https://eval.linguaid.net/signature_joss.png" alt="Joss Frimond - Linguaid" style="max-width:400px;display:block;margin-top:8px">'
       + '</div>';
-    htmlBody = '<p>' + htmlBody + '</p>';
     transporter.sendMail({
       from: 'jfr@linguaid.net',
       to: recipientEmail,
       cc: 'jfr@linguaid.net',
       subject: req.body.emailSubject || ('Proposition de formation – ' + c.name),
-      html: htmlBody,
+      html: bodyHtml,
       attachments: attachments
     }, function(err) {
       if (err) { console.error('send-proposal error:', err); return res.status(500).json({ error: err.message }); }
-      // Save state
       candidates2[cidx].conventionData = candidates2[cidx].conventionData || {};
       candidates2[cidx].conventionData.proposalSentAt = new Date().toISOString();
       candidates2[cidx].conventionData.proposalRecipient = recipientEmail;
-      require('fs').writeFileSync(path.join(__dirname,'../data/candidates.json'), JSON.stringify(candidates2,null,2));
+      fs2.writeFileSync(path.join(__dirname,'../data/candidates.json'), JSON.stringify(candidates2,null,2));
+      // Clean up tmp report
+      try { if (fs2.existsSync(tmpReportPath)) fs2.unlinkSync(tmpReportPath); } catch(e) {}
       res.json({ ok: true });
     });
   }
-  // Try to generate final report PDF, attach if successful, then send regardless
-  if (c.finalReport) {
-    var reportPayload = {
-      title: 'English Evaluation Report',
-      subtitle: (c.reportSummary && c.reportSummary.overallLevel) ? 'Overall Level: ' + c.reportSummary.overallLevel : '',
-      candidate_name: c.name,
-      content: c.finalReport
-    };
-    var { execFile } = require('child_process');
-    var tmpJson = path.join(__dirname, '../data/tmp_rpt_' + c.id + '.json');
-    require('fs').writeFileSync(tmpJson, JSON.stringify(reportPayload));
-    execFile('python3', ['/home/debian/fill_report.py', tmpJson, tmpReportPath], { timeout: 30000 }, function(err2) {
-      try { require('fs').unlinkSync(tmpJson); } catch(e) {}
-      if (!err2 && require('fs').existsSync(tmpReportPath)) {
-        attachments.unshift({ filename: 'rapport_' + c.name.replace(/\s+/g,'_') + '.pdf', path: tmpReportPath });
-      }
+
+  function generateReportAndSend() {
+    if (c.finalReport) {
+      var reportPayload = {
+        title: 'English Evaluation Report',
+        subtitle: (c.reportSummary && c.reportSummary.overallLevel) ? 'Overall Level: ' + c.reportSummary.overallLevel : '',
+        candidate_name: c.name,
+        content: c.finalReport
+      };
+      var tmpJson = path.join(__dirname, '../data/tmp_rpt_' + c.id + '.json');
+      fs2.writeFileSync(tmpJson, JSON.stringify(reportPayload));
+      execFile('python3', ['/home/debian/fill_report.py', tmpJson, tmpReportPath], { timeout: 30000 }, function(err2) {
+        try { fs2.unlinkSync(tmpJson); } catch(e) {}
+        if (!err2 && fs2.existsSync(tmpReportPath)) {
+          attachments.unshift({ filename: 'rapport_' + c.name.replace(/\s+/g,'_') + '.pdf', path: tmpReportPath });
+        }
+        sendProposalEmail();
+      });
+    } else {
       sendProposalEmail();
-    });
-  } else {
-    sendProposalEmail();
+    }
   }
 });
 

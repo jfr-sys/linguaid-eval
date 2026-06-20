@@ -302,6 +302,7 @@
       <button class="btn btn-secondary" id="btnSendSign" onclick="sendForSignature()" style="margin-left:8px">Envoyer pour signature</button>
       <button class="btn btn-secondary" id="btnSendCatherine" onclick="sendToCatherine()" style="margin-left:8px;background:#7c3aed;color:white">📧 Envoyer à Catherine</button>
       <div id="signStatus" style="margin-top:8px;font-size:12px;color:#666"></div>
+      <div id="proposalBar" style="display:none;margin-top:1rem;padding:12px 16px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px"><div><div style="font-size:13px;font-weight:600;color:#1F4E79">Proposition client</div><div style="font-size:12px;color:#666" id="proposalBarSub">Rapport final + programme + convention en pièces jointes</div></div><div style="display:flex;gap:8px;align-items:center"><button id="btnProposalAccepted" style="display:none;padding:6px 14px;border-radius:8px;border:1px solid #6ee7b7;background:#d1fae5;color:#065f46;font-size:12px;cursor:pointer;font-family:inherit" onclick="markProposalAccepted()">✅ Proposition acceptée</button><button style="padding:6px 14px;border-radius:8px;border:none;background:#1F4E79;color:white;font-size:12px;cursor:pointer;font-family:inherit" onclick="openProposalModal()">Composer la proposition</button></div></div>
       <div id="signedPdfBlock" style="display:none;margin-top:12px;padding:10px 14px;background:#d1fae5;border-radius:8px;border:1px solid #6ee7b7">
         <span style="font-size:13px;color:#065f46;font-weight:500">✅ Convention signée</span>
         <a id="signedPdfLink" href="#" target="_blank" class="btn btn-primary" style="margin-left:12px;font-size:12px;padding:6px 14px;background:#065f46">Télécharger PDF signé</a>
@@ -821,6 +822,18 @@
       else if (trainingType === 'E360') cpfLabel.textContent = 'Formation CPF - Certification English 360 (RS6341)';
       else cpfLabel.textContent = 'Formation CPF (RS6341)';
     }
+    // Show proposal bar if convention has a price saved
+    var propBar = document.getElementById('proposalBar');
+    if (propBar && cd.price) {
+      propBar.style.display = 'flex';
+      if (cd.proposalSentAt) {
+        var sentDate = new Date(cd.proposalSentAt).toLocaleDateString('fr-FR');
+        document.getElementById('proposalBarSub').textContent = 'Envoyée le ' + sentDate + ' à ' + (cd.proposalRecipient || c.email);
+        var btnAcc = document.getElementById('btnProposalAccepted');
+        if (btnAcc) btnAcc.style.display = cd.proposalAcceptedAt ? 'none' : 'inline-block';
+        if (cd.proposalAcceptedAt) document.getElementById('proposalBarSub').textContent += ' — ✅ Acceptée';
+      }
+    }
   }
   function toggleConvCPF() {
     var isCPF = document.getElementById("convIsCPF").checked;
@@ -849,5 +862,135 @@
 
 
 </script>
+
+<div id="proposalModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;overflow-y:auto;padding:2rem 1rem">
+  <div style="background:white;border-radius:12px;max-width:680px;margin:0 auto;box-shadow:0 8px 32px rgba(0,0,0,0.18);overflow:hidden">
+    <div style="padding:1rem 1.5rem;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between">
+      <span style="font-size:15px;font-weight:600;color:#1F4E79">Composer la proposition</span>
+      <button onclick="closeProposalModal()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#666">&times;</button>
+    </div>
+    <div style="padding:1.25rem 1.5rem">
+      <div style="display:flex;border-bottom:1px solid #e5e7eb;margin-bottom:1rem">
+        <button id="propTabBtn0" onclick="switchProposalTab(0)" style="padding:8px 18px;border:none;background:none;font-size:13px;font-weight:600;color:#1F4E79;border-bottom:2px solid #1F4E79;cursor:pointer">Paramètres</button>
+        <button id="propTabBtn1" onclick="switchProposalTab(1)" style="padding:8px 18px;border:none;background:none;font-size:13px;color:#666;border-bottom:2px solid transparent;cursor:pointer">Aperçu email</button>
+      </div>
+      <div id="proposalTab0">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+          <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Destinataire</label><input id="propRecipient" type="email" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
+          <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Objet</label><input id="propSubject" type="text" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
+          <div id="cpfLinkRow" style="grid-column:1/-1;display:none"><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Lien CPF (moncompteformation)</label><input id="propCpfLink" type="text" placeholder="https://www.moncompteformation.gouv.fr/..." style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#444;cursor:pointer"><input type="checkbox" id="propIncludeProfile" checked style="width:15px;height:15px"> Inclure le résumé du profil</label>
+          <label id="cajaToggleRow" style="display:none;align-items:center;gap:8px;font-size:13px;color:#444;cursor:pointer"><input type="checkbox" id="propIncludeCaja" checked style="width:15px;height:15px"> Mention « étape 1 vers la certification CAJA » <span style="font-size:11px;background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:10px">Juridique CPF</span></label>
+        </div>
+        <button onclick="buildEmailPreview()" style="width:100%;padding:9px;border-radius:8px;border:none;background:#1F4E79;color:white;font-size:13px;font-weight:500;cursor:pointer">Générer l’aperçu email →</button>
+      </div>
+      <div id="proposalTab1" style="display:none">
+        <div style="margin-bottom:8px;display:flex;align-items:center;justify-content:space-between">
+          <span style="font-size:12px;color:#666">Modifiez le texte avant d’envoyer</span>
+          <button onclick="switchProposalTab(0)" style="font-size:12px;padding:4px 12px;border-radius:6px;border:1px solid #e2e8f0;background:white;cursor:pointer">← Paramètres</button>
+        </div>
+        <textarea id="propEmailBody" rows="20" style="width:100%;font-size:13px;padding:10px;border:1px solid #e2e8f0;border-radius:8px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;line-height:1.7;resize:vertical"></textarea>
+        <div style="margin-top:10px"><div style="font-size:12px;color:#666;margin-bottom:6px;font-weight:500">Pièces jointes automatiques :</div><div id="propAttachList" style="display:flex;gap:8px;flex-wrap:wrap"></div></div>
+      </div>
+    </div>
+    <div style="padding:1rem 1.5rem;border-top:1px solid #e5e7eb;display:flex;justify-content:flex-end;gap:8px">
+      <button onclick="closeProposalModal()" style="padding:8px 18px;border-radius:8px;border:1px solid #e2e8f0;background:white;font-size:13px;cursor:pointer;font-family:inherit">Annuler</button>
+      <button id="btnSendProposal" onclick="sendProposal()" style="padding:8px 18px;border-radius:8px;border:none;background:#1F4E79;color:white;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit">Envoyer la proposition</button>
+    </div>
+  </div>
+</div>
+<script>
+  function openProposalModal() {
+    var c=candidate,od=c.oralData||{},cd=c.conventionData||{};
+    var isCPF=!!(cd.isCPF),isLegal=(c.courseType==='legal');
+    document.getElementById('propRecipient').value=c.email||'';
+    document.getElementById('propSubject').value=isLegal?'Proposition de formation – Anglais professionnel dans un contexte juridique':'Proposition de formation en anglais professionnel';
+    document.getElementById('cpfLinkRow').style.display=isCPF?'block':'none';
+    document.getElementById('cajaToggleRow').style.display=(isLegal&&isCPF)?'flex':'none';
+    document.getElementById('proposalTab0').style.display='block';
+    document.getElementById('proposalTab1').style.display='none';
+    document.getElementById('proposalModal').style.display='block';
+    document.body.style.overflow='hidden';
+  }
+  function closeProposalModal(){document.getElementById('proposalModal').style.display='none';document.body.style.overflow='';}
+  function switchProposalTab(n){
+    document.getElementById('proposalTab0').style.display=n===0?'block':'none';
+    document.getElementById('proposalTab1').style.display=n===1?'block':'none';
+    document.getElementById('propTabBtn0').style.borderBottomColor=n===0?'#1F4E79':'transparent';
+    document.getElementById('propTabBtn0').style.color=n===0?'#1F4E79':'#666';
+    document.getElementById('propTabBtn1').style.borderBottomColor=n===1?'#1F4E79':'transparent';
+    document.getElementById('propTabBtn1').style.color=n===1?'#1F4E79':'#666';
+  }
+  function buildEmailPreview(){
+    var c=candidate,od=c.oralData||{},cd=c.conventionData||{};
+    var isCPF=!!(cd.isCPF),isLegal=(c.courseType==='legal');
+    var coachH=parseInt(od.coachingHours||od.totalHours||0),hmwkH=parseInt(od.homeworkHours||0),price=parseInt(cd.price||0);
+    var civility=(cd.civility==='Monsieur')?'Cher':'Chère';
+    var firstName=c.name.split(' ')[0];
+    var inclProfile=document.getElementById('propIncludeProfile').checked;
+    var inclCaja=!!(document.getElementById('propIncludeCaja')&&document.getElementById('propIncludeCaja').checked);
+    var cpfLink=(document.getElementById('propCpfLink')||{}).value||'';
+    var L=[];
+    L.push(civility+' '+firstName+',');L.push('');
+    L.push(isLegal?'Suite à notre échange et à votre évaluation, j’ai le plaisir de vous adresser une proposition de formation en anglais professionnel dans un contexte juridique, sur mesure pour vos besoins.':'Suite à notre échange et à votre évaluation, j’ai le plaisir de vous adresser une proposition de formation en anglais professionnel sur mesure pour vos besoins.');
+    L.push('');
+    if(inclProfile&&(od.globalComment||od.strengths||od.improvements)){
+      L.push('Résumé de votre situation');
+      if(od.globalComment){L.push(od.globalComment);L.push('');}
+      if(od.strengths){L.push('Points forts : '+od.strengths);L.push('');}
+      if(od.improvements){L.push('Axes de progression : '+od.improvements);L.push('');}
+    }
+    L.push('Votre programme de formation');
+    if(coachH>0&&hmwkH>0){
+      L.push('– '+coachH+'h de coaching individuel en visioconférence avec un formateur spécialisé'+(isLegal?' dans l’accompagnement des professionnels du droit':' en anglais professionnel'));
+      L.push('– '+hmwkH+'h de travail guidé en autonomie (activités pédagogiques structurées avec production de livrables)');
+    } else if(coachH>0){
+      L.push('– '+coachH+'h de coaching individuel en visioconférence avec un formateur spécialisé'+(isLegal?' dans l’accompagnement des professionnels du droit':' en anglais professionnel'));
+    }
+    if(isCPF){L.push('– Certification English 360 (RS6341) en fin de formation'+(isLegal&&inclCaja?' — première étape vers la certification CAJA (RS6810)':''));}
+    else if(isLegal){L.push('– Formation en anglais juridique des affaires (certification CAJA RS6810 possible en étape suivante)');}
+    L.push('');
+    if(isCPF&&price>0){
+      var cpfCover=price-150,reste=price-cpfCover-150;
+      L.push('Financement CPF');
+      L.push('Budget total : '+price.toLocaleString('fr-FR')+' € NET DE TAXES');
+      L.push('Prise en charge CPF : '+cpfCover.toLocaleString('fr-FR')+' €');
+      L.push('Participation forfaitaire : 150 € (réglée directement sur Mon Compte Formation)');
+      if(reste>0)L.push('Reste à charge : '+reste.toLocaleString('fr-FR')+' €');
+      L.push('');
+      if(cpfLink){L.push('Lien d’inscription CPF :');L.push(cpfLink);L.push('');L.push('Cliquez sur « Demande de devis ».');L.push('');}
+    } else if(price>0){
+      L.push('Dispositions financières');
+      L.push('Les frais de formation sont de '+price.toLocaleString('fr-FR')+' € NET DE TAXES, à régler à réception de facture.');
+      L.push('');
+    }
+    L.push('Vous trouverez en pièce jointe votre rapport d’évaluation, le programme de formation détaillé ainsi que la convention de formation.');
+    L.push('');L.push('N’hésitez pas à me contacter pour toute question ou pour confirmer votre accord.');
+    L.push('');L.push('Bien cordialement,');L.push('Joss Frimond');L.push('Directeur — Linguaid');L.push('jfr@linguaid.net | 06 84 49 23 32');
+    document.getElementById('propEmailBody').value=L.join('\n');
+    document.getElementById('propAttachList').innerHTML=['Rapport_','Programme_','Convention_'].map(function(pfx){
+      var f=pfx+c.name.replace(/\s+/g,'_')+'.pdf';
+      return '<span style="font-size:12px;padding:4px 10px;border-radius:20px;background:#f1f5f9;border:1px solid #e2e8f0;color:#475569">'+f+'</span>';
+    }).join('');
+    switchProposalTab(1);
+  }
+  function sendProposal(){
+    var btn=document.getElementById('btnSendProposal');
+    btn.disabled=true;btn.textContent='Envoi en cours...';
+    fetch('/api/send-proposal/'+id,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({recipientEmail:document.getElementById('propRecipient').value,emailSubject:document.getElementById('propSubject').value,emailBody:document.getElementById('propEmailBody').value})})
+    .then(function(r){return r.json();}).then(function(d){
+      if(d.ok){closeProposalModal();document.getElementById('proposalBarSub').textContent='Envoyée à '+document.getElementById('propRecipient').value;document.getElementById('btnProposalAccepted').style.display='inline-block';btn.disabled=false;btn.textContent='Envoyer la proposition';}
+      else{alert('Erreur : '+(d.error||'inconnue'));btn.disabled=false;btn.textContent='Envoyer la proposition';}
+    }).catch(function(e){alert('Erreur réseau');btn.disabled=false;btn.textContent='Envoyer la proposition';});
+  }
+  function markProposalAccepted(){
+    fetch('/api/mark-proposal-accepted/'+id,{method:'POST'}).then(function(r){return r.json();}).then(function(d){
+      if(d.ok){document.getElementById('btnProposalAccepted').style.display='none';document.getElementById('proposalBarSub').textContent+=(' — ✅ Acceptée');}
+    });
+  }
+</script>
+
 </body>
 </html>
