@@ -692,7 +692,9 @@
       "signedAt": null,
       "signerIp": null,
       "typedName": null,
-      "signedPdfPath": null
+      "signedPdfPath": null,
+      "proposalSentAt": "2026-06-20T16:57:33.374Z",
+      "proposalRecipient": "jossfrimond@hotmail.com"
     },
     "finalReportSummary": null,
     "programmePdfPath": "/var/www/vhosts/linguaid.net/eval.linguaid.net/app/data/programmes/b6297879e2dd.pdf"

@@ -1690,11 +1690,7 @@ router.post('/send-proposal/:id'
   // ── Build attachment list ────────────────────────────────────────────────
   var attachments = [];
 
-  // Convention PDF
-  var conventionPdf = cd.pdfPath || path.join(__dirname, '../data/conventions/' + c.id + '.pdf');
-  if (fs2.existsSync(conventionPdf)) {
-    attachments.push({ filename: 'convention_' + c.name.replace(/\s+/g,'_') + '.pdf', path: conventionPdf });
-  }
+  // Convention PDF intentionally NOT attached to proposal email
 
   // ── Proposition PDF — generate via fill_proposition.py ────────────────────
   var propPdfDir = path.join(__dirname, '../data/propositions');
