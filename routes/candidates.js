@@ -215,6 +215,16 @@ router.post('/api/new-legal', (req, res) => {
   }
 });
 
+router.post('/api/:id/cpf', function(req, res) {
+  var candidates = getCandidates();
+  var idx = candidates.findIndex(function(x){ return x.id === req.params.id; });
+  if (idx === -1) return res.status(404).json({ error: 'Not found' });
+  if (!candidates[idx].oralData) candidates[idx].oralData = {};
+  candidates[idx].oralData.isCPF = !!req.body.isCPF;
+  saveCandidates(candidates);
+  res.json({ success: true });
+});
+
 module.exports = router;
 
 router.delete('/api/:id', (req, res) => {

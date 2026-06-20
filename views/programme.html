@@ -311,6 +311,12 @@ function toggleCPF() {
   document.getElementById("trainingTitle").value = title;
   var cpfEl = document.getElementById("cpfTopics");
   cpfEl.classList.toggle("show", isCPF);
+  // Save isCPF to oralData immediately
+  fetch("/candidates/api/" + id + "/cpf", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({isCPF: isCPF})
+  });
 }
 
 function getSelectedTopics() {
