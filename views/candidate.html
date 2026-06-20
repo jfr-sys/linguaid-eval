@@ -268,11 +268,10 @@
       <a id="btnProgramme" href="#" class="btn btn-primary" style="display:none">Create →</a>
       <div id="stage4downloads" style="display:none;margin-top:0.75rem">
         <div class="download-btns">
-          <button class="btn btn-en" id="btnProgEN" onclick="downloadProgramme('en')" title="Download EN">🇬🇧 EN</button>
-          <button class="btn btn-fr" id="btnProgFR" onclick="downloadProgramme('fr')" title="Télécharger FR">🇫🇷 FR</button>
+          <button class="btn btn-primary" id="btnDownloadProg" onclick="window.location.href='/api/generate-programme/'+id" title="Télécharger le programme">↓ Télécharger</button>
+          <span id="progPdfBadge" style="display:none;font-size:12px;padding:4px 12px;border-radius:20px;background:#d1fae5;color:#065f46;font-weight:500">📄 PDF disponible</span>
           <button class="btn" id="btnEditProgramme" onclick="window.location.href=window.location.pathname.split('/').slice(0,3).join('/')+'/programme'" title="Modifier le programme" style="background:#7c3aed;color:white;margin-left:4px">✏️ Modifier</button>
         </div>
-        <div class="download-loading" id="programmeDownloadLoading">Generating…</div>
       </div>
     </div>
   </div>
@@ -545,6 +544,7 @@
       fetch('/api/check-pdfs/' + c.id).then(function(r){return r.json();}).then(function(pdfs){
         if (pdfs.enReport) { var b=document.getElementById('btnReportEN'); if(b){b.style.background='#059669';b.innerHTML='🇬🇧 EN ✓';b.title='PDF enregistré';} }
         if (pdfs.frReport) { var b=document.getElementById('btnReportFR'); if(b){b.style.background='#059669';b.innerHTML='🇫🇷 FR ✓';b.title='PDF enregistré';} }
+        if (pdfs.programme) { var pb=document.getElementById('progPdfBadge'); if(pb) pb.style.display='inline-block'; }
       }).catch(function(){});
       // Show programme brick
       document.getElementById('stage4').classList.add('active');
