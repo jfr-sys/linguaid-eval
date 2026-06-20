@@ -1704,20 +1704,51 @@ router.post('/send-proposal/:id', function(req, res) {
 
   function generateReportAndSend() {
     if (c.finalReport) {
-      var reportPayload = {
-        title: 'English Evaluation Report',
-        subtitle: (c.reportSummary && c.reportSummary.overallLevel) ? 'Overall Level: ' + c.reportSummary.overallLevel : '',
-        candidate_name: c.name,
-        content: c.finalReport
-      };
-      var tmpJson = path.join(__dirname, '../data/tmp_rpt_' + c.id + '.json');
-      fs2.writeFileSync(tmpJson, JSON.stringify(reportPayload));
-      execFile('python3', ['/home/debian/fill_report.py', tmpJson, tmpReportPath], { timeout: 30000 }, function(err2) {
-        try { fs2.unlinkSync(tmpJson); } catch(e) {}
-        if (!err2 && fs2.existsSync(tmpReportPath)) {
-          attachments.unshift({ filename: 'rapport_' + c.name.replace(/\s+/g,'_') + '.pdf', path: tmpReportPath });
-        }
-        sendProposalEmail();
+      // Translate report to French first, then generate PDF
+      var Anthropic = require('@anthropic-ai/sdk');
+      var client2 = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+      var titleFR = 'RAPPORT D EVALUATION LINGUISTIQUE INITIALE';
+      var subtitleFR = (c.reportSummary && c.reportSummary.overallLevel)
+        ? 'Niveau global CECRL : ' + c.reportSummary.overallLevel : '';
+      var transPrompt = 'Translate and adapt into French for French professional context. CEFR to CECRL. Keep markdown formatting. Not assessed to Non évalué à ce stade. Do not use backtick code blocks. Report: ' + c.finalReport;
+      client2.messages.create({
+        model: 'claude-sonnet-4-6', max_tokens: 6000,
+        messages: [{ role: 'user', content: transPrompt }]
+      }).then(function(msg) {
+        var frText = msg.content[0].text;
+        var reportPayload = {
+          title: titleFR,
+          subtitle: subtitleFR,
+          candidate_name: c.name,
+          content: frText
+        };
+        var tmpJson = path.join(__dirname, '../data/tmp_rpt_' + c.id + '.json');
+        fs2.writeFileSync(tmpJson, JSON.stringify(reportPayload));
+        execFile('python3', ['/home/debian/fill_report.py', tmpJson, tmpReportPath], { timeout: 30000 }, function(err2) {
+          try { fs2.unlinkSync(tmpJson); } catch(e) {}
+          if (!err2 && fs2.existsSync(tmpReportPath)) {
+            attachments.unshift({ filename: 'rapport_FR_' + c.name.replace(/\s+/g,'_') + '.pdf', path: tmpReportPath });
+          }
+          sendProposalEmail();
+        });
+      }).catch(function(err) {
+        console.error('FR translation failed:', err.message);
+        // Fall back to EN report
+        var reportPayload = {
+          title: 'English Evaluation Report',
+          subtitle: (c.reportSummary && c.reportSummary.overallLevel) ? 'Overall Level: ' + c.reportSummary.overallLevel : '',
+          candidate_name: c.name,
+          content: c.finalReport
+        };
+        var tmpJson = path.join(__dirname, '../data/tmp_rpt_' + c.id + '.json');
+        fs2.writeFileSync(tmpJson, JSON.stringify(reportPayload));
+        execFile('python3', ['/home/debian/fill_report.py', tmpJson, tmpReportPath], { timeout: 30000 }, function(err2) {
+          try { fs2.unlinkSync(tmpJson); } catch(e) {}
+          if (!err2 && fs2.existsSync(tmpReportPath)) {
+            attachments.unshift({ filename: 'rapport_EN_' + c.name.replace(/\s+/g,'_') + '.pdf', path: tmpReportPath });
+          }
+          sendProposalEmail();
+        });
       });
     } else {
       sendProposalEmail();
