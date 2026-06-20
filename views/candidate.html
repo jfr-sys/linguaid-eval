@@ -986,44 +986,6 @@
 
 </script>
 
-<div id="proposalModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;overflow-y:auto;padding:2rem 1rem">
-  <div style="background:white;border-radius:12px;max-width:680px;margin:0 auto;box-shadow:0 8px 32px rgba(0,0,0,0.18);overflow:hidden">
-    <div style="padding:1rem 1.5rem;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between">
-      <span style="font-size:15px;font-weight:600;color:#1F4E79">Composer la proposition</span>
-      <button onclick="closeProposalModal()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#666">&times;</button>
-    </div>
-    <div style="padding:1.25rem 1.5rem">
-      <div style="display:flex;border-bottom:1px solid #e5e7eb;margin-bottom:1rem">
-        <button id="propTabBtn0" onclick="switchProposalTab(0)" style="padding:8px 18px;border:none;background:none;font-size:13px;font-weight:600;color:#1F4E79;border-bottom:2px solid #1F4E79;cursor:pointer">Paramètres</button>
-        <button id="propTabBtn1" onclick="switchProposalTab(1)" style="padding:8px 18px;border:none;background:none;font-size:13px;color:#666;border-bottom:2px solid transparent;cursor:pointer">Aperçu email</button>
-      </div>
-      <div id="proposalTab0">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
-          <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Destinataire</label><input id="propRecipient" type="email" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
-          <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Objet</label><input id="propSubject" type="text" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
-          <div id="cpfLinkRow" style="grid-column:1/-1;display:none"><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Lien CPF (moncompteformation)</label><input id="propCpfLink" type="text" placeholder="https://www.moncompteformation.gouv.fr/..." style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">
-          <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#444;cursor:pointer"><input type="checkbox" id="propIncludeProfile" checked style="width:15px;height:15px"> Inclure le résumé du profil</label>
-          <label id="cajaToggleRow" style="display:none;align-items:center;gap:8px;font-size:13px;color:#444;cursor:pointer"><input type="checkbox" id="propIncludeCaja" checked style="width:15px;height:15px"> Mention « étape 1 vers la certification CAJA » <span style="font-size:11px;background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:10px">Juridique CPF</span></label>
-        </div>
-        <button onclick="buildEmailPreview()" style="width:100%;padding:9px;border-radius:8px;border:none;background:#1F4E79;color:white;font-size:13px;font-weight:500;cursor:pointer">Générer l’aperçu email →</button>
-      </div>
-      <div id="proposalTab1" style="display:none">
-        <div style="margin-bottom:8px;display:flex;align-items:center;justify-content:space-between">
-          <span style="font-size:12px;color:#666">Modifiez le texte avant d’envoyer</span>
-          <button onclick="switchProposalTab(0)" style="font-size:12px;padding:4px 12px;border-radius:6px;border:1px solid #e2e8f0;background:white;cursor:pointer">← Paramètres</button>
-        </div>
-        <textarea id="propEmailBody" rows="20" style="width:100%;font-size:13px;padding:10px;border:1px solid #e2e8f0;border-radius:8px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;line-height:1.7;resize:vertical"></textarea>
-        <div style="margin-top:10px"><div style="font-size:12px;color:#666;margin-bottom:6px;font-weight:500">Pièces jointes automatiques :</div><div id="propAttachList" style="display:flex;gap:8px;flex-wrap:wrap"></div></div>
-      </div>
-    </div>
-    <div style="padding:1rem 1.5rem;border-top:1px solid #e5e7eb;display:flex;justify-content:flex-end;gap:8px">
-      <button onclick="closeProposalModal()" style="padding:8px 18px;border-radius:8px;border:1px solid #e2e8f0;background:white;font-size:13px;cursor:pointer;font-family:inherit">Annuler</button>
-      <div style="font-size:11px;color:#888;margin-bottom:6px;text-align:right">⏳ L’envoi peut prendre 20–30 secondes (traduction FR du rapport en cours)</div>
-      <button id="btnSendProposal" onclick="sendProposal()" style="padding:8px 18px;border-radius:8px;border:none;background:#1F4E79;color:white;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit">Envoyer la proposition</button>
-    </div>
-  </div>
 </div>
 <script>
   function toggleThirdParty() {
