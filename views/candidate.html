@@ -14,12 +14,12 @@
     // Save form data first including signatoryEmail
     var saveData = {
       siret: document.getElementById("convSiret").value,
-      civility: document.getElementById("convCivility").value,
+      civility: document.getElementById("propCivility").value,
       signatory: document.getElementById("convSignatory").value,
       signatoryEmail: document.getElementById("convSignatoryEmail") ? document.getElementById("convSignatoryEmail").value : '',
-      price: document.getElementById("convPrice").value,
-      dateStart: document.getElementById("convDateStart").value,
-      dateEnd: document.getElementById("convDateEnd").value,
+      price: document.getElementById("propPrice").value,
+      dateStart: document.getElementById("propDateStart").value,
+      dateEnd: document.getElementById("propDateEnd").value,
       isCPF: document.getElementById("convIsCPF") ? document.getElementById("convIsCPF").checked : false,
       notes: document.getElementById("convNotes") ? document.getElementById("convNotes").value : '',
       learnerTel: document.getElementById("convLearnerTel") ? document.getElementById("convLearnerTel").value : '',
@@ -55,11 +55,11 @@
   function downloadConvention() {
     var data = {
       siret: document.getElementById("convSiret").value,
-      civility: document.getElementById("convCivility").value,
+      civility: document.getElementById("propCivility").value,
       signatory: document.getElementById("convSignatory").value,
-      price: document.getElementById("convPrice").value,
-      dateStart: document.getElementById("convDateStart").value,
-      dateEnd: document.getElementById("convDateEnd").value,
+      price: document.getElementById("propPrice").value,
+      dateStart: document.getElementById("propDateStart").value,
+      dateEnd: document.getElementById("propDateEnd").value,
       isCPF: document.getElementById("convIsCPF") ? document.getElementById("convIsCPF").checked : false,
       signatoryEmail: document.getElementById("convSignatoryEmail") ? document.getElementById("convSignatoryEmail").value : '',
       notes: document.getElementById("convNotes") ? document.getElementById("convNotes").value : '',
@@ -357,12 +357,8 @@
     <div id="conventionForm" style="display:none;margin-top:1rem">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem">
         <div style="grid-column:1/-1;display:flex;align-items:center;gap:10px;padding:8px 0"><label style="font-size:13px;font-weight:500;color:#1F4E79">Formation CPF (RS6341)</label><input type="checkbox" id="convIsCPF" onchange="toggleConvCPF()" style="width:16px;height:16px;cursor:pointer"><span style="font-size:11px;color:#666">Cochez si financement CPF</span></div><div id="convSiretRow"><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">SIRET entreprise</label><input id="convSiret" type="text" placeholder="123 456 789 00012" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
-        <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Civilite</label><select id="convCivility" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"><option>Madame</option><option>Monsieur</option></select></div>
         <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Signataire entreprise</label><input id="convSignatory" type="text" placeholder="Prenom NOM" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
         <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Email signataire</label><input id="convSignatoryEmail" type="email" placeholder="signataire@entreprise.com" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
-        <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Prix (euros HT)</label><input id="convPrice" type="text" placeholder="3800" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
-        <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Date debut</label><input id="convDateStart" type="date" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
-        <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Date fin</label><input id="convDateEnd" type="date" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
         <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Tél apprenant</label><input id="convLearnerTel" type="text" placeholder="06 xx xx xx xx" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
         <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">N° de commande</label><input id="convOrderNumber" type="text" placeholder="CMD-2026-XXX" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
         <div style="grid-column:1/-1"><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Adresse entreprise</label><input id="convCompanyAddress" type="text" placeholder="1 rue de la Paix, 75001 Paris" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
@@ -933,10 +929,7 @@
       s7.style.borderTopColor = '#2E75B6';
       document.getElementById('stage7status').textContent = 'Remplissez les détails pour générer la convention';
       document.getElementById('conventionForm').style.display = 'block';
-      document.getElementById('convCivility').value = cd.civility || document.getElementById('propCivility').value || 'Madame';
-      document.getElementById('convPrice').value = cd.price || document.getElementById('propPrice').value || '';
-      document.getElementById('convDateStart').value = cd.dateStart || od.dateStart || '';
-      document.getElementById('convDateEnd').value = cd.dateEnd || od.dateEnd || '';
+
       if (cd.siret) document.getElementById('convSiret').value = cd.siret;
       if (cd.signatory) document.getElementById('convSignatory').value = cd.signatory;
       else if (c.name) document.getElementById('convSignatory').value = c.name;
@@ -944,7 +937,7 @@
       if (cd.learnerTel) document.getElementById('convLearnerTel').value = cd.learnerTel;
       if (cd.orderNumber) document.getElementById('convOrderNumber').value = cd.orderNumber;
       if (cd.companyAddress) document.getElementById('convCompanyAddress').value = cd.companyAddress;
-      var isCPF = cd.isCPF || (od.financingMode === 'CPF') || false;
+      var isCPF = !!(od.isCPF || cd.isCPF || (od.financingMode === 'CPF'));
       if (isCPF) document.getElementById('convIsCPF').checked = true;
       var siretRow = document.getElementById('convSiretRow');
       if (siretRow) siretRow.style.display = isCPF ? 'none' : 'block';
