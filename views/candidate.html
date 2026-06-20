@@ -826,7 +826,7 @@
   }
 
   function showPropositionStep(c) {
-    if (c.status !== 'programme_done') return;
+    if (c.status !== 'programme_done' && c.status !== 'final_report_done') return;
     var cd = c.conventionData || {};
     var od = c.oralData || {};
 
