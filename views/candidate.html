@@ -302,7 +302,7 @@
       <button class="btn btn-secondary" id="btnSendSign" onclick="sendForSignature()" style="margin-left:8px">Envoyer pour signature</button>
       <button class="btn btn-secondary" id="btnSendCatherine" onclick="sendToCatherine()" style="margin-left:8px;background:#7c3aed;color:white">📧 Envoyer à Catherine</button>
       <div id="signStatus" style="margin-top:8px;font-size:12px;color:#666"></div>
-      <div id="proposalBar" style="display:none;margin-top:1rem;padding:12px 16px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px"><div><div style="font-size:13px;font-weight:600;color:#1F4E79">Proposition client</div><div style="font-size:12px;color:#666" id="proposalBarSub">Rapport final + programme + convention en pièces jointes</div></div><div style="display:flex;gap:8px;align-items:center"><button id="btnProposalAccepted" style="display:none;padding:6px 14px;border-radius:8px;border:1px solid #6ee7b7;background:#d1fae5;color:#065f46;font-size:12px;cursor:pointer;font-family:inherit" onclick="markProposalAccepted()">✅ Proposition acceptée</button><button style="padding:6px 14px;border-radius:8px;border:none;background:#1F4E79;color:white;font-size:12px;cursor:pointer;font-family:inherit" onclick="openProposalModal()">Composer la proposition</button></div></div>
+      <div id="proposalBar" style="display:none;margin-top:1rem;padding:12px 16px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px"><div><div style="font-size:13px;font-weight:600;color:#1F4E79">Proposition client</div><div style="font-size:12px;color:#666" id="proposalBarSub">Rapport final + programme + convention en pièces jointes</div></div><div style="display:flex;gap:8px;align-items:center"><button id="btnRenvoyer" style="display:none;padding:6px 14px;border-radius:8px;border:1px solid #e2e8f0;background:white;color:#334155;font-size:12px;cursor:pointer;font-family:inherit" onclick="openProposalModal()">Renvoyer</button><button id="btnProposalAccepted" style="display:none;padding:6px 14px;border-radius:8px;border:1px solid #6ee7b7;background:#d1fae5;color:#065f46;font-size:12px;cursor:pointer;font-family:inherit" onclick="markProposalAccepted()">✅ Proposition acceptée</button><button id="btnComposer" style="padding:6px 14px;border-radius:8px;border:none;background:#1F4E79;color:white;font-size:12px;cursor:pointer;font-family:inherit" onclick="openProposalModal()">Composer la proposition</button></div></div>
       <div id="signedPdfBlock" style="display:none;margin-top:12px;padding:10px 14px;background:#d1fae5;border-radius:8px;border:1px solid #6ee7b7">
         <span style="font-size:13px;color:#065f46;font-weight:500">✅ Convention signée</span>
         <a id="signedPdfLink" href="#" target="_blank" class="btn btn-primary" style="margin-left:12px;font-size:12px;padding:6px 14px;background:#065f46">Télécharger PDF signé</a>
@@ -829,9 +829,13 @@
       if (cd.proposalSentAt) {
         var sentDate = new Date(cd.proposalSentAt).toLocaleDateString('fr-FR');
         document.getElementById('proposalBarSub').textContent = 'Envoyée le ' + sentDate + ' à ' + (cd.proposalRecipient || c.email);
-        var btnAcc = document.getElementById('btnProposalAccepted');
-        if (btnAcc) btnAcc.style.display = cd.proposalAcceptedAt ? 'none' : 'inline-block';
-        if (cd.proposalAcceptedAt) document.getElementById('proposalBarSub').textContent += ' — ✅ Acceptée';
+        document.getElementById('btnComposer').style.display = 'none';
+        document.getElementById('btnRenvoyer').style.display = 'inline-block';
+        if (cd.proposalAcceptedAt) {
+          document.getElementById('proposalBarSub').textContent += ' — ✅ Acceptée';
+        } else {
+          document.getElementById('btnProposalAccepted').style.display = 'inline-block';
+        }
       }
     }
   }
@@ -981,13 +985,13 @@
     btn.disabled=true;btn.textContent='Envoi en cours...';
     fetch('/api/send-proposal/'+id,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({recipientEmail:document.getElementById('propRecipient').value,emailSubject:document.getElementById('propSubject').value,emailBody:document.getElementById('propEmailBody').value})})
     .then(function(r){return r.json();}).then(function(d){
-      if(d.ok){closeProposalModal();document.getElementById('proposalBarSub').textContent='Envoyée à '+document.getElementById('propRecipient').value;document.getElementById('btnProposalAccepted').style.display='inline-block';btn.disabled=false;btn.textContent='Envoyer la proposition';}
+      if(d.ok){closeProposalModal();var now=new Date().toLocaleDateString('fr-FR');var recip=document.getElementById('propRecipient').value;document.getElementById('proposalBarSub').textContent='Envoyée le '+now+' à '+recip;document.getElementById('btnComposer').style.display='none';document.getElementById('btnRenvoyer').style.display='inline-block';document.getElementById('btnProposalAccepted').style.display='inline-block';btn.disabled=false;btn.textContent='Envoyer la proposition';}
       else{alert('Erreur : '+(d.error||'inconnue'));btn.disabled=false;btn.textContent='Envoyer la proposition';}
     }).catch(function(e){alert('Erreur réseau');btn.disabled=false;btn.textContent='Envoyer la proposition';});
   }
   function markProposalAccepted(){
     fetch('/api/mark-proposal-accepted/'+id,{method:'POST'}).then(function(r){return r.json();}).then(function(d){
-      if(d.ok){document.getElementById('btnProposalAccepted').style.display='none';document.getElementById('proposalBarSub').textContent+=(' — ✅ Acceptée');}
+      if(d.ok){document.getElementById('btnProposalAccepted').style.display='none';var sub=document.getElementById('proposalBarSub');if(sub.textContent.indexOf('✅')===-1)sub.textContent+=(' — ✅ Acceptée');}
     });
   }
 </script>
