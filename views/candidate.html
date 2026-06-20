@@ -277,10 +277,58 @@
     </div>
   </div>
 
-  <div class="stage" id="stage5" style="background:white;border-radius:12px;padding:1.5rem;box-shadow:0 2px 8px rgba(0,0,0,0.06);border-top:4px solid #e5e7eb;margin-bottom:1.5rem">
-    <div class="stage-num">Step 5</div>
+  <!-- STEP 6: PROPOSITION -->
+  <div class="stage" id="stage6" style="background:white;border-radius:12px;padding:1.5rem;box-shadow:0 2px 8px rgba(0,0,0,0.06);border-top:4px solid #e5e7eb;margin-bottom:1.5rem">
+    <div class="stage-num">Step 6</div>
+    <div class="stage-title">Proposition de formation</div>
+    <div class="stage-status" id="stage6status">Document envoyé au candidat pour accord avant convention</div>
+    <div id="propositionForm" style="display:none;margin-top:1rem">
+      <div style="margin-bottom:1rem">
+        <div style="font-size:12px;font-weight:500;color:#666;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">Rapport d’évaluation</div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <span id="badgeEN" style="font-size:12px;padding:4px 12px;border-radius:20px;background:#e5e7eb;color:#6b7280">&#127468;&#127463; EN</span>
+          <span id="badgeFR" style="font-size:12px;padding:4px 12px;border-radius:20px;background:#e5e7eb;color:#6b7280">&#127467;&#127479; FR</span>
+          <span style="font-size:12px;color:#9ca3af" id="reportBadgeNote">— téléchargez EN et FR depuis Step 3</span>
+        </div>
+      </div>
+      <div style="margin-bottom:1rem">
+        <div style="font-size:12px;font-weight:500;color:#666;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">Pièces jointes</div>
+        <div id="attachmentList" style="display:flex;flex-direction:column;gap:6px"></div>
+      </div>
+      <div style="font-size:12px;font-weight:500;color:#666;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">Proposition de formation</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem">
+        <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Civilité</label><select id="propCivility" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"><option>Madame</option><option>Monsieur</option></select></div>
+        <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Prix (euros HT)</label><input id="propPrice" type="text" placeholder="3800" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
+        <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Date début</label><input id="propDateStart" type="date" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
+        <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Date fin</label><input id="propDateEnd" type="date" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
+        <div style="grid-column:1/-1"><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Lien CPF (si applicable)</label><input id="propCpfLien" type="text" placeholder="https://www.moncompteformation.gouv.fr/..." style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
+      </div>
+      <div style="font-size:12px;font-weight:500;color:#666;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">Email au candidat</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem">
+        <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Destinataire</label><input id="propRecipient" type="email" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
+        <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Objet</label><input id="propSubject" type="text" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
+        <div style="grid-column:1/-1"><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Corps du message</label><textarea id="propBody" rows="6" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px;font-family:inherit;resize:vertical;line-height:1.6"></textarea></div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="downloadProposition()">Télécharger la proposition</button>
+        <button class="btn btn-primary" id="btnSendProposition" onclick="sendProposition()">Envoyer la proposition</button>
+      </div>
+      <div id="propSendStatus" style="margin-top:8px;font-size:12px;color:#666"></div>
+      <div id="propositionSentBar" style="display:none;margin-top:1rem;padding:10px 14px;background:#eff6ff;border-radius:8px;border:1px solid #bfdbfe;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+        <div style="font-size:13px;color:#1e40af" id="propositionSentText"></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn" style="font-size:12px" onclick="sendProposition()">Renvoyer</button>
+          <button id="btnPropAccepted" class="btn" style="font-size:12px;background:#d1fae5;color:#065f46;border-color:#6ee7b7" onclick="markPropositionAccepted()">✅ Proposition acceptée</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 7: CONVENTION -->
+  <div class="stage" id="stage7" style="background:white;border-radius:12px;padding:1.5rem;box-shadow:0 2px 8px rgba(0,0,0,0.06);border-top:4px solid #e5e7eb;margin-bottom:1.5rem;opacity:0.5;pointer-events:none">
+    <div class="stage-num">Step 7</div>
     <div class="stage-title">Convention de formation</div>
-    <div class="stage-status" id="stage5status">Complete once programme is done</div>
+    <div class="stage-status" id="stage7status">Débloqué une fois la proposition acceptée</div>
     <div id="conventionForm" style="display:none;margin-top:1rem">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem">
         <div style="grid-column:1/-1;display:flex;align-items:center;gap:10px;padding:8px 0"><label style="font-size:13px;font-weight:500;color:#1F4E79">Formation CPF (RS6341)</label><input type="checkbox" id="convIsCPF" onchange="toggleConvCPF()" style="width:16px;height:16px;cursor:pointer"><span style="font-size:11px;color:#666">Cochez si financement CPF</span></div><div id="convSiretRow"><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">SIRET entreprise</label><input id="convSiret" type="text" placeholder="123 456 789 00012" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
@@ -294,19 +342,24 @@
         <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">N° de commande</label><input id="convOrderNumber" type="text" placeholder="CMD-2026-XXX" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
         <div style="grid-column:1/-1"><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Adresse entreprise</label><input id="convCompanyAddress" type="text" placeholder="1 rue de la Paix, 75001 Paris" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
       </div>
-      <div style="margin-bottom:0.75rem">
-        <label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Notes pour Catherine (ManageAll)</label>
-        <textarea id="convNotes" placeholder="Ex: CPF, OPCO, modalités particulières..." style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px;min-height:60px;resize:vertical"></textarea>
-      </div>
-      <button class="btn btn-primary" onclick="downloadConvention()">Telecharger la convention</button>
+      <button class="btn btn-primary" onclick="downloadConvention()">Télécharger la convention</button>
       <button class="btn btn-secondary" id="btnSendSign" onclick="sendForSignature()" style="margin-left:8px">Envoyer pour signature</button>
-      <button class="btn btn-secondary" id="btnSendCatherine" onclick="sendToCatherine()" style="margin-left:8px;background:#7c3aed;color:white">📧 Envoyer à Catherine</button>
       <div id="signStatus" style="margin-top:8px;font-size:12px;color:#666"></div>
-      <div id="proposalBar" style="display:none;margin-top:1rem;padding:12px 16px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px"><div><div style="font-size:13px;font-weight:600;color:#1F4E79">Proposition client</div><div style="font-size:12px;color:#666" id="proposalBarSub">Rapport final + programme + convention en pièces jointes</div></div><div style="display:flex;gap:8px;align-items:center"><button id="btnRenvoyer" style="display:none;padding:6px 14px;border-radius:8px;border:1px solid #e2e8f0;background:white;color:#334155;font-size:12px;cursor:pointer;font-family:inherit" onclick="openProposalModal()">Renvoyer</button><button id="btnProposalAccepted" style="display:none;padding:6px 14px;border-radius:8px;border:1px solid #6ee7b7;background:#d1fae5;color:#065f46;font-size:12px;cursor:pointer;font-family:inherit" onclick="markProposalAccepted()">✅ Proposition acceptée</button><button id="btnComposer" style="padding:6px 14px;border-radius:8px;border:none;background:#1F4E79;color:white;font-size:12px;cursor:pointer;font-family:inherit" onclick="openProposalModal()">Composer la proposition</button></div></div>
       <div id="signedPdfBlock" style="display:none;margin-top:12px;padding:10px 14px;background:#d1fae5;border-radius:8px;border:1px solid #6ee7b7">
         <span style="font-size:13px;color:#065f46;font-weight:500">✅ Convention signée</span>
         <a id="signedPdfLink" href="#" target="_blank" class="btn btn-primary" style="margin-left:12px;font-size:12px;padding:6px 14px;background:#065f46">Télécharger PDF signé</a>
       </div>
+    </div>
+  </div>
+
+  <!-- STEP 8: ORDER TO CATHERINE -->
+  <div class="stage" id="stage8" style="background:white;border-radius:12px;padding:1.5rem;box-shadow:0 2px 8px rgba(0,0,0,0.06);border-top:4px solid #e5e7eb;margin-bottom:1.5rem;opacity:0.5;pointer-events:none">
+    <div class="stage-num">Step 8</div>
+    <div class="stage-title">Envoyer à Catherine</div>
+    <div class="stage-status" id="stage8status">Débloqué une fois la convention signée</div>
+    <div id="orderForm" style="display:none;margin-top:1rem">
+      <div style="margin-bottom:0.75rem"><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Notes pour Catherine (ManageAll)</label><textarea id="convNotes" placeholder="Ex: CPF, OPCO, modalités particulières..." style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px;min-height:60px;resize:vertical"></textarea></div>
+      <button class="btn btn-secondary" id="btnSendCatherine" onclick="sendToCatherine()" style="background:#7c3aed;color:white">📧 Envoyer à Catherine</button>
     </div>
   </div>
   <div class="two-col">
@@ -499,6 +552,7 @@
       document.getElementById('btnProgramme').textContent = 'Recreate →';
       document.getElementById('stage4downloads').style.display = 'block';
     }
+    showPropositionStep(c);
   }
 
 
@@ -783,70 +837,121 @@
     .catch(function(e){ alert('Erreur réseau'); btn.disabled = false; btn.textContent = '📧 Envoyer à Catherine'; });
   }
 
-  function showConvention(c) {
-    var el = document.getElementById("conventionForm");
-    if (!el) return;
-    el.style.display = "block";
-    document.getElementById("stage5status").textContent = "Remplissez les details pour generer la convention";
-    document.getElementById("stage5").style.borderTopColor = "#2E75B6";
+  function showPropositionStep(c) {
+    if (c.status !== 'programme_done') return;
     var cd = c.conventionData || {};
     var od = c.oralData || {};
-    // Pre-fill from saved conventionData or fall back to oralData
-    if (cd.siret) document.getElementById("convSiret").value = cd.siret;
-    if (cd.civility) document.getElementById("convCivility").value = cd.civility;
-    if (cd.signatory) document.getElementById("convSignatory").value = cd.signatory; else if (c.name) document.getElementById("convSignatory").value = c.name;
-    var price = cd.price || od.price || '';
-    if (price) document.getElementById("convPrice").value = price;
-    document.getElementById("convDateStart").value = od.dateStart || cd.dateStart || "";
-    document.getElementById("convDateEnd").value = od.dateEnd || cd.dateEnd || "";
-    // CPF: from saved or oralData financing
-    var isCPF = cd.isCPF || (od.financingMode === 'CPF') || false;
-    if (isCPF) { document.getElementById("convIsCPF").checked = true; }
-    // Hide SIRET for CPF
-    var siretRow = document.getElementById("convSiretRow");
-    if (siretRow) siretRow.style.display = isCPF ? 'none' : 'block';
-    // Show signed PDF button if convention has been signed
-    if (c.conventionData && c.conventionData.signedAt) {
-      var block = document.getElementById('signedPdfBlock');
-      var link = document.getElementById('signedPdfLink');
-      if (block) block.style.display = 'block';
-      if (link) link.href = '/api/download-convention-signed/' + c.id;
-      document.getElementById('stage5').style.borderTopColor = '#10b981';
-      document.getElementById('stage5status').textContent = 'Convention signée ✓';
+
+    // Step 6
+    var s6 = document.getElementById('stage6');
+    s6.style.opacity = '1'; s6.style.pointerEvents = 'auto';
+    s6.style.borderTopColor = '#2E75B6';
+    document.getElementById('propositionForm').style.display = 'block';
+    if (cd.civility) document.getElementById('propCivility').value = cd.civility;
+    if (cd.price || od.price) document.getElementById('propPrice').value = cd.price || od.price || '';
+    document.getElementById('propDateStart').value = cd.dateStart || od.dateStart || '';
+    document.getElementById('propDateEnd').value = cd.dateEnd || od.dateEnd || '';
+    document.getElementById('propRecipient').value = c.email || '';
+    var isLegal = c.courseType === 'legal';
+    document.getElementById('propSubject').value = isLegal
+      ? 'Proposition de formation – Anglais professionnel dans un contexte juridique'
+      : 'Proposition de formation en anglais professionnel';
+    if (!document.getElementById('propBody').value) {
+      var civ = (cd.civility === 'Monsieur') ? 'Cher' : 'Chère';
+      var prenom = c.name.split(' ')[0];
+      document.getElementById('propBody').value = civ + ' ' + prenom + ',\n\nSuite à notre échange et à votre évaluation, j’ai le plaisir de vous adresser cette proposition de formation en anglais professionnel conçue spécifiquement pour vos besoins.\n\nVous trouverez en pièce jointe votre rapport d’évaluation, le programme de formation détaillé ainsi que la proposition.\n\nN’hésitez pas à me contacter pour toute question ou pour confirmer votre accord.\n\nBien cordialement,\nJoss Frimond\nDirecteur — Linguaid\njfr@linguaid.net | 06 84 49 23 32';
     }
-    // Update CPF label to reflect training type
-    var cpfLabel = document.querySelector('#conventionForm label');
-    var trainingType = od.legalTrainingType || '';
-    if (cpfLabel) {
-      if (trainingType === 'CAJA') cpfLabel.textContent = 'Formation CPF - Certification CAJA (RS6810)';
-      else if (trainingType === 'E360') cpfLabel.textContent = 'Formation CPF - Certification English 360 (RS6341)';
-      else cpfLabel.textContent = 'Formation CPF (RS6341)';
+    fetch('/api/check-pdfs/' + c.id).then(function(r){return r.json();}).then(function(pdfs){
+      var enBadge = document.getElementById('badgeEN');
+      var frBadge = document.getElementById('badgeFR');
+      var note = document.getElementById('reportBadgeNote');
+      if (pdfs.enReport) { enBadge.style.background='#d1fae5';enBadge.style.color='#065f46'; }
+      if (pdfs.frReport) { frBadge.style.background='#d1fae5';frBadge.style.color='#065f46'; }
+      if (pdfs.enReport && pdfs.frReport) note.textContent = '— les deux seront joints';
+      else if (pdfs.enReport || pdfs.frReport) note.textContent = '— téléchargez les deux depuis Step 3';
+      else note.textContent = '— téléchargez EN et/ou FR depuis Step 3';
+      var list = document.getElementById('attachmentList');
+      list.innerHTML = '';
+      function aRow(label, exists) {
+        list.innerHTML += '<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 12px;background:#f8fafc;border-radius:6px;border:0.5px solid #e2e8f0;font-size:13px"><span>'+label+'</span><span style="font-size:12px;color:'+(exists?'#059669':'#d97706')+'">'+(exists?'✓ disponible':'⚠ non disponible')+'</span></div>';
+      }
+      if (pdfs.enReport) aRow('rapport_EN_'+c.name.replace(/\s+/g,'_')+'.pdf', true);
+      if (pdfs.frReport) aRow('rapport_FR_'+c.name.replace(/\s+/g,'_')+'.pdf', true);
+      aRow('programme_'+c.name.replace(/\s+/g,'_')+'.pdf', pdfs.programme);
+      aRow('proposition_'+c.name.replace(/\s+/g,'_')+'.pdf', pdfs.proposition);
+    });
+    if (cd.proposalSentAt) {
+      var sentDate = new Date(cd.proposalSentAt).toLocaleDateString('fr-FR');
+      document.getElementById('propositionSentBar').style.display = 'flex';
+      document.getElementById('propositionSentText').textContent = 'Envoyée le ' + sentDate + ' à ' + (cd.proposalRecipient || c.email);
+      if (cd.proposalAcceptedAt) {
+        document.getElementById('propositionSentText').textContent += ' — ✅ Acceptée';
+        document.getElementById('btnPropAccepted').style.display = 'none';
+        s6.style.borderTopColor = '#10b981';
+      }
     }
-    // Show proposal bar if convention has a price saved
-    var propBar = document.getElementById('proposalBar');
-    if (propBar && cd.price) {
-      propBar.style.display = 'flex';
-      if (cd.proposalSentAt) {
-        var sentDate = new Date(cd.proposalSentAt).toLocaleDateString('fr-FR');
-        document.getElementById('proposalBarSub').textContent = 'Envoyée le ' + sentDate + ' à ' + (cd.proposalRecipient || c.email);
-        document.getElementById('btnComposer').style.display = 'none';
-        document.getElementById('btnRenvoyer').style.display = 'inline-block';
-        if (cd.proposalAcceptedAt) {
-          document.getElementById('proposalBarSub').textContent += ' — ✅ Acceptée';
-        } else {
-          document.getElementById('btnProposalAccepted').style.display = 'inline-block';
-        }
+
+    // Step 7: unlock if proposition accepted
+    var s7 = document.getElementById('stage7');
+    if (cd.proposalAcceptedAt) {
+      s7.style.opacity = '1'; s7.style.pointerEvents = 'auto';
+      s7.style.borderTopColor = '#2E75B6';
+      document.getElementById('stage7status').textContent = 'Remplissez les détails pour générer la convention';
+      document.getElementById('conventionForm').style.display = 'block';
+      document.getElementById('convCivility').value = cd.civility || document.getElementById('propCivility').value || 'Madame';
+      document.getElementById('convPrice').value = cd.price || document.getElementById('propPrice').value || '';
+      document.getElementById('convDateStart').value = cd.dateStart || od.dateStart || '';
+      document.getElementById('convDateEnd').value = cd.dateEnd || od.dateEnd || '';
+      if (cd.siret) document.getElementById('convSiret').value = cd.siret;
+      if (cd.signatory) document.getElementById('convSignatory').value = cd.signatory;
+      else if (c.name) document.getElementById('convSignatory').value = c.name;
+      if (cd.signatoryEmail) document.getElementById('convSignatoryEmail').value = cd.signatoryEmail;
+      if (cd.learnerTel) document.getElementById('convLearnerTel').value = cd.learnerTel;
+      if (cd.orderNumber) document.getElementById('convOrderNumber').value = cd.orderNumber;
+      if (cd.companyAddress) document.getElementById('convCompanyAddress').value = cd.companyAddress;
+      var isCPF = cd.isCPF || (od.financingMode === 'CPF') || false;
+      if (isCPF) document.getElementById('convIsCPF').checked = true;
+      var siretRow = document.getElementById('convSiretRow');
+      if (siretRow) siretRow.style.display = isCPF ? 'none' : 'block';
+      var trainingType = od.legalTrainingType || '';
+      var cpfLabel = document.querySelector('#conventionForm label');
+      if (cpfLabel) {
+        if (trainingType === 'CAJA') cpfLabel.textContent = 'Formation CPF - Certification CAJA (RS6810)';
+        else if (trainingType === 'E360') cpfLabel.textContent = 'Formation CPF - Certification English 360 (RS6341)';
+        else cpfLabel.textContent = 'Formation CPF (RS6341)';
+      }
+      if (cd.signedAt) {
+        s7.style.borderTopColor = '#10b981';
+        document.getElementById('stage7status').textContent = 'Convention signée ✓';
+        var block = document.getElementById('signedPdfBlock');
+        var link = document.getElementById('signedPdfLink');
+        if (block) block.style.display = 'block';
+        if (link) link.href = '/api/download-convention-signed/' + c.id;
+      }
+    }
+
+    // Step 8: unlock if signed
+    var s8 = document.getElementById('stage8');
+    if (cd.signedAt) {
+      s8.style.opacity = '1'; s8.style.pointerEvents = 'auto';
+      document.getElementById('stage8status').textContent = 'Envoyez l’ordre à Catherine';
+      document.getElementById('orderForm').style.display = 'block';
+      if (cd.notes) document.getElementById('convNotes').value = cd.notes;
+      if (cd.sentToCatherineAt) {
+        s8.style.borderTopColor = '#10b981';
+        document.getElementById('stage8status').textContent = 'Ordre envoyé ✓';
       }
     }
   }
-  function toggleConvCPF() {
+
+    function toggleConvCPF() {
     var isCPF = document.getElementById("convIsCPF").checked;
     var siretRow = document.getElementById("convSiretRow");
     if (siretRow) siretRow.style.display = isCPF ? 'none' : 'block';
   }
   fetch('/candidates/api/' + id)
     .then(r => r.json())
-    .then(function(data){render(data);showConvention(data);})
+    .then(function(data){render(data);showPropositionStep(data);})
     .catch(err => document.getElementById('profileName').textContent = 'Error loading candidate');
 
   function cefrLabel(level) {
@@ -907,92 +1012,55 @@
   </div>
 </div>
 <script>
-  function openProposalModal() {
-    var c=candidate,od=c.oralData||{},cd=c.conventionData||{};
-    var isCPF=!!(cd.isCPF),isLegal=(c.courseType==='legal');
-    document.getElementById('propRecipient').value=c.email||'';
-    document.getElementById('propSubject').value=isLegal?'Proposition de formation – Anglais professionnel dans un contexte juridique':'Proposition de formation en anglais professionnel';
-    document.getElementById('cpfLinkRow').style.display=isCPF?'block':'none';
-    document.getElementById('cajaToggleRow').style.display=(isLegal&&isCPF)?'flex':'none';
-    document.getElementById('proposalTab0').style.display='block';
-    document.getElementById('proposalTab1').style.display='none';
-    document.getElementById('proposalModal').style.display='block';
-    document.body.style.overflow='hidden';
+  function buildPropositionPayload() {
+    return {
+      civility: document.getElementById('propCivility').value,
+      price: document.getElementById('propPrice').value,
+      dateStart: document.getElementById('propDateStart').value,
+      dateEnd: document.getElementById('propDateEnd').value,
+      cpfLien: document.getElementById('propCpfLien').value,
+      recipientEmail: document.getElementById('propRecipient').value,
+      emailSubject: document.getElementById('propSubject').value,
+      emailBody: document.getElementById('propBody').value
+    };
   }
-  function closeProposalModal(){document.getElementById('proposalModal').style.display='none';document.body.style.overflow='';}
-  function switchProposalTab(n){
-    document.getElementById('proposalTab0').style.display=n===0?'block':'none';
-    document.getElementById('proposalTab1').style.display=n===1?'block':'none';
-    document.getElementById('propTabBtn0').style.borderBottomColor=n===0?'#1F4E79':'transparent';
-    document.getElementById('propTabBtn0').style.color=n===0?'#1F4E79':'#666';
-    document.getElementById('propTabBtn1').style.borderBottomColor=n===1?'#1F4E79':'transparent';
-    document.getElementById('propTabBtn1').style.color=n===1?'#1F4E79':'#666';
+  function downloadProposition() {
+    var p = buildPropositionPayload();
+    fetch('/api/generate-proposition/'+id, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(p)})
+    .then(function(r){ if(r.ok){window.location.href='/api/download-proposition/'+id;} else{r.json().then(function(d){alert('Erreur: '+(d.error||'inconnue'));});} });
   }
-  function buildEmailPreview(){
-    var c=candidate,od=c.oralData||{},cd=c.conventionData||{};
-    var isCPF=!!(cd.isCPF),isLegal=(c.courseType==='legal');
-    var coachH=parseInt(od.coachingHours||od.totalHours||0),hmwkH=parseInt(od.homeworkHours||0),price=parseInt(cd.price||0);
-    var civility=(cd.civility==='Monsieur')?'Cher':'Chère';
-    var firstName=c.name.split(' ')[0];
-    var inclProfile=document.getElementById('propIncludeProfile').checked;
-    var inclCaja=!!(document.getElementById('propIncludeCaja')&&document.getElementById('propIncludeCaja').checked);
-    var cpfLink=(document.getElementById('propCpfLink')||{}).value||'';
-    var L=[];
-    L.push(civility+' '+firstName+',');L.push('');
-    L.push(isLegal?'Suite à notre échange et à votre évaluation, j’ai le plaisir de vous adresser une proposition de formation en anglais professionnel dans un contexte juridique, sur mesure pour vos besoins.':'Suite à notre échange et à votre évaluation, j’ai le plaisir de vous adresser une proposition de formation en anglais professionnel sur mesure pour vos besoins.');
-    L.push('');
-    if(inclProfile&&(od.globalComment||od.strengths||od.improvements)){
-      L.push('Résumé de votre situation');
-      if(od.globalComment){L.push(od.globalComment);L.push('');}
-      if(od.strengths){L.push('Points forts : '+od.strengths);L.push('');}
-      if(od.improvements){L.push('Axes de progression : '+od.improvements);L.push('');}
-    }
-    L.push('Votre programme de formation');
-    if(coachH>0&&hmwkH>0){
-      L.push('– '+coachH+'h de coaching individuel en visioconférence avec un formateur spécialisé'+(isLegal?' dans l’accompagnement des professionnels du droit':' en anglais professionnel'));
-      L.push('– '+hmwkH+'h de travail guidé en autonomie (activités pédagogiques structurées avec production de livrables)');
-    } else if(coachH>0){
-      L.push('– '+coachH+'h de coaching individuel en visioconférence avec un formateur spécialisé'+(isLegal?' dans l’accompagnement des professionnels du droit':' en anglais professionnel'));
-    }
-    if(isCPF){L.push('– Certification English 360 (RS6341) en fin de formation'+(isLegal&&inclCaja?' — première étape vers la certification CAJA (RS6810)':''));}
-    else if(isLegal){L.push('– Formation en anglais juridique des affaires (certification CAJA RS6810 possible en étape suivante)');}
-    L.push('');
-    if(isCPF&&price>0){
-      var cpfCover=price-150,reste=price-cpfCover-150;
-      L.push('Financement CPF');
-      L.push('Budget total : '+price.toLocaleString('fr-FR')+' € NET DE TAXES');
-      L.push('Prise en charge CPF : '+cpfCover.toLocaleString('fr-FR')+' €');
-      L.push('Participation forfaitaire : 150 € (réglée directement sur Mon Compte Formation)');
-      if(reste>0)L.push('Reste à charge : '+reste.toLocaleString('fr-FR')+' €');
-      L.push('');
-      if(cpfLink){L.push('Lien d’inscription CPF :');L.push(cpfLink);L.push('');L.push('Cliquez sur « Demande de devis ».');L.push('');}
-    } else if(price>0){
-      L.push('Dispositions financières');
-      L.push('Les frais de formation sont de '+price.toLocaleString('fr-FR')+' € NET DE TAXES, à régler à réception de facture.');
-      L.push('');
-    }
-    L.push('Vous trouverez en pièce jointe votre rapport d’évaluation, le programme de formation détaillé ainsi que la convention de formation.');
-    L.push('');L.push('N’hésitez pas à me contacter pour toute question ou pour confirmer votre accord.');
-    L.push('');L.push('Bien cordialement,');L.push('Joss Frimond');L.push('Directeur — Linguaid');L.push('jfr@linguaid.net | 06 84 49 23 32');
-    document.getElementById('propEmailBody').value=L.join('\n');
-    document.getElementById('propAttachList').innerHTML=['Rapport_','Programme_','Convention_'].map(function(pfx){
-      var f=pfx+c.name.replace(/\s+/g,'_')+'.pdf';
-      return '<span style="font-size:12px;padding:4px 10px;border-radius:20px;background:#f1f5f9;border:1px solid #e2e8f0;color:#475569">'+f+'</span>';
-    }).join('');
-    switchProposalTab(1);
-  }
-  function sendProposal(){
-    var btn=document.getElementById('btnSendProposal');
-    btn.disabled=true;btn.textContent='Envoi en cours...';
-    fetch('/api/send-proposal/'+id,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({recipientEmail:document.getElementById('propRecipient').value,emailSubject:document.getElementById('propSubject').value,emailBody:document.getElementById('propEmailBody').value})})
+  function sendProposition() {
+    var btn = document.getElementById('btnSendProposition');
+    var status = document.getElementById('propSendStatus');
+    btn.disabled = true; btn.textContent = 'Envoi en cours...';
+    status.textContent = 'Génération et envoi...';
+    var p = buildPropositionPayload();
+    fetch('/api/send-proposal/'+id, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(p)})
     .then(function(r){return r.json();}).then(function(d){
-      if(d.ok){closeProposalModal();var now=new Date().toLocaleDateString('fr-FR');var recip=document.getElementById('propRecipient').value;document.getElementById('proposalBarSub').textContent='Envoyée le '+now+' à '+recip;document.getElementById('btnComposer').style.display='none';document.getElementById('btnRenvoyer').style.display='inline-block';document.getElementById('btnProposalAccepted').style.display='inline-block';btn.disabled=false;btn.textContent='Envoyer la proposition';}
-      else{alert('Erreur : '+(d.error||'inconnue'));btn.disabled=false;btn.textContent='Envoyer la proposition';}
-    }).catch(function(e){alert('Erreur réseau');btn.disabled=false;btn.textContent='Envoyer la proposition';});
+      btn.disabled=false; btn.textContent='Envoyer la proposition'; status.textContent='';
+      if (d.ok) {
+        document.getElementById('propositionSentBar').style.display='flex';
+        document.getElementById('propositionSentText').textContent='Envoyée le '+new Date().toLocaleDateString('fr-FR')+' à '+p.recipientEmail;
+        fetch('/api/check-pdfs/'+id).then(function(r2){return r2.json();}).then(function(pdfs){
+          var list=document.getElementById('attachmentList'); list.innerHTML='';
+          function aRow(label,exists){list.innerHTML+='<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 12px;background:#f8fafc;border-radius:6px;border:0.5px solid #e2e8f0;font-size:13px"><span>'+label+'</span><span style="font-size:12px;color:'+(exists?'#059669':'#d97706')+'">'+(exists?'✓ disponible':'⚠ non disponible')+'</span></div>';}
+          if(pdfs.enReport)aRow('rapport_EN_'+candidate.name.replace(/\s+/g,'_')+'.pdf',true);
+          if(pdfs.frReport)aRow('rapport_FR_'+candidate.name.replace(/\s+/g,'_')+'.pdf',true);
+          aRow('programme_'+candidate.name.replace(/\s+/g,'_')+'.pdf',pdfs.programme);
+          aRow('proposition_'+candidate.name.replace(/\s+/g,'_')+'.pdf',pdfs.proposition);
+        });
+      } else { alert('Erreur : '+(d.error||'inconnue')); }
+    }).catch(function(){ alert('Erreur réseau'); btn.disabled=false; btn.textContent='Envoyer la proposition'; status.textContent=''; });
   }
-  function markProposalAccepted(){
+  function markPropositionAccepted() {
     fetch('/api/mark-proposal-accepted/'+id,{method:'POST'}).then(function(r){return r.json();}).then(function(d){
-      if(d.ok){document.getElementById('btnProposalAccepted').style.display='none';var sub=document.getElementById('proposalBarSub');if(sub.textContent.indexOf('✅')===-1)sub.textContent+=(' — ✅ Acceptée');}
+      if(d.ok){
+        document.getElementById('btnPropAccepted').style.display='none';
+        var txt=document.getElementById('propositionSentText');
+        if(txt.textContent.indexOf('✅')===-1)txt.textContent+=' — ✅ Acceptée';
+        document.getElementById('stage6').style.borderTopColor='#10b981';
+        location.reload();
+      }
     });
   }
 </script>
