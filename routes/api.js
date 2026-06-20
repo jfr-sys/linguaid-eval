@@ -1595,7 +1595,20 @@ router.post('/hec-webhook', function(req, res) {
 
 
 // ── Proposal: send proposal email with all 3 PDFs ──────────────────────────
-router.post('/send-proposal/:id', function(req, res) {
+router.get('/check-pdfs/:id', function(req, res) {
+  var c2 = JSON.parse(require('fs').readFileSync(require('path').join(__dirname,'../data/candidates.json'),'utf8'));
+  var c = c2.find(function(x){ return x.id === req.params.id; });
+  var fs2 = require('fs'), pp = require('path');
+  res.json({
+    frReport: fs2.existsSync(pp.join(__dirname,'../data/finalReports/'+c.id+'_fr.pdf')),
+    enReport: fs2.existsSync(pp.join(__dirname,'../data/finalReports/'+c.id+'_en.pdf')),
+    programme: fs2.existsSync(pp.join(__dirname,'../data/programmes/'+c.id+'.pdf')),
+    proposition: fs2.existsSync(pp.join(__dirname,'../data/propositions/'+c.id+'.pdf'))
+  });
+});
+
+router.post('/send-proposal/:id'
+, function(req, res) {
   var candidates2 = JSON.parse(require('fs').readFileSync(path.join(__dirname,'../data/candidates.json'),'utf8'));
   var cidx = candidates2.findIndex(function(x){ return x.id === req.params.id; });
   if (cidx === -1) return res.status(404).json({ error: 'Not found' });
