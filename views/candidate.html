@@ -255,8 +255,8 @@
       <button class="btn btn-primary" id="btnFinal" onclick="generateFinal()" disabled>Generate</button>
       <div id="stage3downloads" style="display:none;margin-top:0.75rem">
         <div class="download-btns">
-          <button class="btn btn-en" onclick="downloadReport('en')" title="Download EN">🇬🇧 EN</button>
-          <button class="btn btn-fr" onclick="downloadReport('fr')" title="Télécharger FR">🇫🇷 FR</button>
+          <button class="btn btn-en" id="btnReportEN" onclick="downloadReport('en')" title="Download EN">🇬🇧 EN</button>
+          <button class="btn btn-fr" id="btnReportFR" onclick="downloadReport('fr')" title="Télécharger FR">🇫🇷 FR</button>
         </div>
         <div class="download-loading" id="downloadLoading">Generating…</div>
       </div>
@@ -528,6 +528,10 @@
       document.getElementById('btnFinal').textContent = 'Regenerate';
       document.getElementById('btnFinal').disabled = false;
       document.getElementById('stage3downloads').style.display = 'block';
+      fetch('/api/check-pdfs/' + c.id).then(function(r){return r.json();}).then(function(pdfs){
+        if (pdfs.enReport) { var b=document.getElementById('btnReportEN'); if(b){b.style.background='#059669';b.innerHTML='🇬🇧 EN ✓';b.title='PDF enregistré';} }
+        if (pdfs.frReport) { var b=document.getElementById('btnReportFR'); if(b){b.style.background='#059669';b.innerHTML='🇫🇷 FR ✓';b.title='PDF enregistré';} }
+      }).catch(function(){});
       // Show programme brick
       document.getElementById('stage4').classList.add('active');
       document.getElementById('btnProgramme').style.display = 'inline-block';
@@ -728,7 +732,15 @@
     loading.style.display = 'block';
     loading.textContent = lang === 'fr' ? 'Traduction en cours…' : 'Generating…';
     window.location.href = '/api/download/' + id + '/' + lang;
-    setTimeout(() => { loading.style.display = 'none'; }, lang === 'fr' ? 15000 : 5000);
+    var delay = lang === 'fr' ? 20000 : 8000;
+    setTimeout(() => {
+      loading.style.display = 'none';
+      // Check if PDF now cached
+      fetch('/api/check-pdfs/' + id).then(function(r){return r.json();}).then(function(pdfs){
+        if (lang==='en' && pdfs.enReport) { var b=document.getElementById('btnReportEN'); if(b){b.style.background='#059669';b.innerHTML='🇬🇧 EN ✓';b.title='PDF enregistré';} }
+        if (lang==='fr' && pdfs.frReport) { var b=document.getElementById('btnReportFR'); if(b){b.style.background='#059669';b.innerHTML='🇫🇷 FR ✓';b.title='PDF enregistré';} }
+      }).catch(function(){});
+    }, delay);
   }
 
   function downloadWritten(lang) {
