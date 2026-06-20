@@ -273,7 +273,7 @@
         <div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center">
           <a id="btnProgramme" href="#" class="btn btn-primary" style="display:none;font-size:11px;padding:3px 10px">Create →</a>
           <div id="stage4downloads" style="display:none;gap:4px;align-items:center;flex-wrap:wrap">
-            <button class="btn btn-primary" id="btnDownloadProg" onclick="window.location.href='/api/generate-programme/'+id" style="font-size:11px;padding:3px 8px">↓ Télécharger</button>
+            <button class="btn btn-primary" id="btnDownloadProg" onclick="window.location.href='/api/generate-programme/'+window.candidateId" style="font-size:11px;padding:3px 8px">↓ Télécharger</button>
             <span id="progPdfBadge" style="display:none;font-size:10px;padding:2px 7px;border-radius:10px;background:#d1fae5;color:#065f46;font-weight:500">📄 PDF</span>
             <button class="btn" id="btnEditProgramme" onclick="window.location.href=window.location.pathname.split('/').slice(0,3).join('/')+'/programme'" style="font-size:11px;padding:3px 8px;background:#7c3aed;color:white">✏️ Modifier</button>
           </div>
@@ -456,6 +456,7 @@
 
   function render(c) {
     candidate = c;
+    window.candidateId = c.id;
     document.getElementById('profileName').textContent = c.name;
     document.getElementById('profileSub').textContent = [c.jobtitle, c.dept].filter(Boolean).join(' — ');
     var companyEl = document.getElementById('profileCompany');
