@@ -307,8 +307,26 @@
           <div style="grid-column:1/-1"><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Adresse email tiers</label><input id="propThirdEmail" type="email" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
         </div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr;gap:0.75rem;margin-bottom:0.75rem">
-        <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Corps du message</label><textarea id="propBody" rows="6" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px;font-family:inherit;resize:vertical;line-height:1.6"></textarea></div>
+      <div style="margin-bottom:0.75rem">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+          <label style="font-size:12px;color:#666">Corps du message</label>
+          <button onclick="openEmailModal()" style="font-size:11px;padding:3px 10px;border-radius:6px;border:1px solid #e2e8f0;background:white;cursor:pointer;color:#1F4E79;font-family:inherit">↗ Plein écran</button>
+        </div>
+        <textarea id="propBody" rows="5" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px;font-family:inherit;resize:vertical;line-height:1.6"></textarea>
+      </div>
+      <!-- Email modal -->
+      <div id="emailModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center">
+        <div style="background:white;border-radius:12px;padding:1.5rem;width:700px;max-width:95vw;max-height:90vh;display:flex;flex-direction:column;gap:1rem">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-weight:500;font-size:15px;color:#1F4E79">Corps du message</span>
+            <button onclick="closeEmailModal()" style="font-size:18px;border:none;background:none;cursor:pointer;color:#666">×</button>
+          </div>
+          <textarea id="propBodyModal" style="flex:1;min-height:400px;font-size:14px;padding:10px;border:1px solid #e2e8f0;border-radius:6px;font-family:inherit;line-height:1.7;resize:none"></textarea>
+          <div style="display:flex;justify-content:flex-end;gap:8px">
+            <button onclick="closeEmailModal()" style="padding:8px 20px;border-radius:8px;border:1px solid #e2e8f0;background:white;cursor:pointer;font-family:inherit">Annuler</button>
+            <button onclick="saveEmailModal()" style="padding:8px 20px;border-radius:8px;border:none;background:#1F4E79;color:white;cursor:pointer;font-family:inherit">Enregistrer</button>
+          </div>
+        </div>
       </div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <button class="btn btn-primary" onclick="downloadProposition()">Télécharger la proposition</button>
@@ -1030,9 +1048,15 @@
     };
   }
   function downloadProposition() {
+    var btn = event.target;
+    btn.disabled = true; btn.textContent = 'Génération...';
     var p = buildPropositionPayload();
     fetch('/api/generate-proposition/'+id, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(p)})
-    .then(function(r){ if(r.ok){window.location.href='/api/download-proposition/'+id;} else{r.json().then(function(d){alert('Erreur: '+(d.error||'inconnue'));});} });
+    .then(function(r){
+      btn.disabled = false; btn.textContent = 'Télécharger la proposition';
+      if(r.ok){ window.location.href='/api/download-proposition/'+id; }
+      else{ r.json().then(function(d){ alert('Erreur: '+(d.error||'inconnue')); }); }
+    }).catch(function(e){ btn.disabled=false; btn.textContent='Télécharger la proposition'; alert('Erreur réseau: '+e.message); });
   }
   function sendProposition() {
     var btn = document.getElementById('btnSendProposition');
@@ -1057,6 +1081,17 @@ Téléchargez le rapport FR depuis Step 3 (bouton 🇫🇷 FR) avant d’envoyer
       } else { alert('Erreur : '+(d.error||'inconnue')); }
     }).catch(function(){ alert('Erreur réseau'); btn.disabled=false; btn.textContent='Envoyer la proposition'; status.textContent=''; });
     }).catch(function(){ alert('Erreur réseau'); });
+  }
+  function openEmailModal() {
+    document.getElementById('propBodyModal').value = document.getElementById('propBody').value;
+    document.getElementById('emailModal').style.display = 'flex';
+  }
+  function closeEmailModal() {
+    document.getElementById('emailModal').style.display = 'none';
+  }
+  function saveEmailModal() {
+    document.getElementById('propBody').value = document.getElementById('propBodyModal').value;
+    closeEmailModal();
   }
   function markPropositionAccepted() {
     fetch('/api/mark-proposal-accepted/'+id,{method:'POST'}).then(function(r){return r.json();}).then(function(d){
