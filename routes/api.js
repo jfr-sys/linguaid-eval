@@ -678,7 +678,7 @@ router.get('/generate-programme/:id', async function(req, res) {
     try { payload = JSON.parse(req.query.data); } catch(e) { return res.status(400).json({ error: 'Invalid data' }); }
   } else {
     var od = c.oralData || {};
-    payload = { candidateName: c.name, jobtitle: c.jobtitle || '', dept: c.dept || '', company: c.company || '', prereqLevel: (c.reportSummary || {}).overallLevel || od.prereqLevel || od.listeningLevel || '', targetLevel: od.targetLevel || '', totalHours: String(od.totalHours || 10), coachingHours: String(od.coachingHours || od.totalHours || 10), homeworkHours: String(od.homeworkHours || 0), isCPF: false, topics: od.topics || [], objectives: od.objectives || od.validatedGoals || [], dateStart: od.dateStart || '', dateEnd: od.dateEnd || '', trainingTitle: od.trainingTitle || (c.courseType === 'legal' ? 'Formation en Anglais Juridique' : '') };
+    payload = { candidateName: c.name, jobtitle: c.jobtitle || '', dept: c.dept || '', company: c.company || '', prereqLevel: (c.reportSummary || {}).overallLevel || od.prereqLevel || od.listeningLevel || '', targetLevel: od.targetLevel || '', totalHours: String(od.totalHours || 10), coachingHours: String(od.coachingHours || od.totalHours || 10), homeworkHours: String(od.homeworkHours || 0), isCPF: false, topics: od.topics || [], objectives: od.objectives || od.validatedGoals || [], dateStart: od.dateStart || '', dateEnd: od.dateEnd || '', trainingTitle: od.trainingTitle || (c.courseType === 'legal' ? 'Formation en Anglais Juridique' : 'Formation en Anglais Professionnel') };
   }
   
   var { execFile } = require('child_process');
