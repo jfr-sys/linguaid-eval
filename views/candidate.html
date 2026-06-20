@@ -1038,6 +1038,13 @@
     var btn = document.getElementById('btnSendProposition');
     var status = document.getElementById('propSendStatus');
     // Check FR report is cached before sending
+    // If body not yet confirmed, open modal first
+    if (!document.getElementById('propBody').value) {
+      openEmailModal();
+      document.getElementById('propBodyModal').addEventListener('change', function(){}, {once:true});
+      alert('Veuillez confirmer le corps du message avant d’envoyer.');
+      return;
+    }
     fetch('/api/check-pdfs/'+id).then(function(r){return r.json();}).then(function(pdfs){
       if (!pdfs.frReport) {
         alert('Rapport FR non disponible - Téléchargez le rapport FR depuis Step 3 avant d’envoyer la proposition.');
