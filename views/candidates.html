@@ -35,6 +35,18 @@
   .name-link { color: #1F4E79; text-decoration: none; font-weight: 500; }
   .name-link:hover { text-decoration: underline; }
   .empty { text-align: center; padding: 3rem; color: #999; font-size: 14px; }
+  .col-filter { position:relative; display:inline-block; }
+  .col-filter-btn { background:none; border:none; cursor:pointer; font-size:11px; color:#94a3b8; padding:0 2px; vertical-align:middle; }
+  .col-filter-btn.active { color:#1F4E79; font-weight:700; }
+  .col-filter-dropdown { display:none; position:absolute; top:100%; left:0; background:white; border:1px solid #e2e8f0; border-radius:8px; box-shadow:0 4px 16px rgba(0,0,0,0.12); z-index:999; min-width:180px; padding:8px 0; }
+  .col-filter-dropdown.open { display:block; }
+  .col-filter-item { display:flex; align-items:center; gap:8px; padding:5px 12px; font-size:12px; color:#334155; cursor:pointer; }
+  .col-filter-item:hover { background:#f8fafc; }
+  .col-filter-item input { width:14px; height:14px; cursor:pointer; flex-shrink:0; }
+  .col-filter-search { width:calc(100% - 16px); margin:4px 8px 6px; padding:5px 8px; border:1px solid #e2e8f0; border-radius:6px; font-size:12px; font-family:inherit; }
+  .col-filter-actions { display:flex; gap:6px; padding:6px 8px 2px; border-top:1px solid #f1f5f9; }
+  .col-filter-actions button { flex:1; font-size:11px; padding:4px 0; border-radius:5px; cursor:pointer; border:1px solid #e2e8f0; background:white; color:#475569; font-family:inherit; }
+  .col-filter-actions button.apply { background:#1F4E79; color:white; border-color:#1F4E79; }
 </style>
 </head>
 <body>
@@ -56,15 +68,17 @@
       <a href="/candidates/new-renewal" class="btn" style="background:#7c3aed;color:white;">↩ Renewal</a>
     </div>
   </div>
+  <div id="statsBar" style="display:flex;gap:1.5rem;align-items:center;margin-bottom:1rem;padding:10px 16px;background:white;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.06);font-size:13px;color:#475569"><span><strong id="statCount">—</strong> candidates</span><span style="color:#e2e8f0">|</span><span>Total budget : <strong id="statBudget" style="color:#1F4E79">—</strong></span></div>
   <div class="card">
     <table>
       <thead>
         <tr>
           <th onclick="sortBy('name')" style="cursor:pointer;user-select:none">Name <span id="sort-name">↕</span></th>
           <th onclick="sortBy('courseType')" style="cursor:pointer;user-select:none">Type <span id="sort-courseType">↕</span></th>
-          <th onclick="sortBy('company')" style="cursor:pointer;user-select:none">Company <span id="sort-company">↕</span></th>
+          <th><span onclick="sortBy('company')" style="cursor:pointer;user-select:none">Company <span id="sort-company">↕</span></span> <div class="col-filter"><button class="col-filter-btn" id="cfb-company" onclick="toggleFilter('company',event)">▾</button><div class="col-filter-dropdown" id="cfd-company"></div></div></th>
           <th onclick="sortBy('createdAt')" style="cursor:pointer;user-select:none">Created <span id="sort-createdAt">↕</span></th>
-          <th onclick="sortBy('status')" style="cursor:pointer;user-select:none;min-width:160px">Status <span id="sort-status">↕</span></th>
+          <th style="min-width:160px"><span onclick="sortBy('status')" style="cursor:pointer;user-select:none">Status <span id="sort-status">↕</span></span> <div class="col-filter"><button class="col-filter-btn" id="cfb-status" onclick="toggleFilter('status',event)">▾</button><div class="col-filter-dropdown" id="cfd-status"></div></div></th>
+          <th onclick="sortBy('budget')" style="cursor:pointer;user-select:none;text-align:right">Budget <span id="sort-budget">⇕</span></th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -76,17 +90,122 @@
 </div>
 <script>
   var all=[], sk='createdAt', sd=-1;
+  var activeFilters = {};
+  var openFilter = null;
+
+  function getFieldVal(x, field) {
+    if (field === 'status') {
+      var cd = x.conventionData || {};
+      if (cd.sentToCatherineAt) return 'Order sent';
+      if (cd.signedAt) return 'Convention signed';
+      if (cd.price) return 'Convention done';
+      if (cd.proposalAcceptedAt) return 'Proposal accepted';
+      if (cd.proposalSentAt) return 'Proposal sent';
+      var map = {csv_uploaded:'CSV uploaded',written_report_done:'Written done',oral_done:'Oral done',final_report_done:'Final done',programme_done:'Programme done',invited:'Invited'};
+      return map[x.status] || x.status;
+    }
+    return (x[field] || '');
+  }
+
+  function toggleFilter(field, e) {
+    e.stopPropagation();
+    if (openFilter && openFilter !== field) {
+      var old = document.getElementById('cfd-' + openFilter);
+      if (old) old.classList.remove('open');
+    }
+    var dd = document.getElementById('cfd-' + field);
+    openFilter = dd.classList.contains('open') ? null : field;
+    dd.classList.toggle('open');
+    if (dd.classList.contains('open')) buildFilterDropdown(field, dd);
+  }
+
+  function buildFilterDropdown(field, dd) {
+    var vals = {};
+    all.forEach(function(x) { var v = getFieldVal(x, field); vals[v] = (vals[v]||0)+1; });
+    var selected = activeFilters[field] || null;
+    var keys = Object.keys(vals).sort();
+    var allChecked = !selected;
+    var html = '<input class="col-filter-search" placeholder="Search..." oninput="cfSearch(this,\'' + field + '\')">';
+    html += '<div id="cfi-wrap-' + field + '">';
+    html += '<div class="col-filter-item"><input type="checkbox" id="cf-all-' + field + '" ' + (allChecked?'checked':'') + ' onchange="cfToggleAll(this,\'' + field + '\')"><label>(Select All)</label></div>';
+    keys.forEach(function(v) {
+      var chk = (allChecked || selected.has(v)) ? 'checked' : '';
+      html += '<div class="col-filter-item"><input type="checkbox" class="cfi-' + field + '" value="' + esc(v) + '" ' + chk + ' onchange="cfItemChange(this,\'' + field + '\')"><label>' + esc(v) + ' (' + vals[v] + ')</label></div>';
+    });
+    html += '</div>';
+    html += '<div class="col-filter-actions">';
+    html += '<button onclick="cfClear(\'' + field + '\')">Clear<\/button>';
+    html += '<button class="apply" onclick="cfApply(\'' + field + '\')">Apply<\/button>';
+    html += '</div>';
+    dd.innerHTML = html;
+  }
+
+  function cfSearch(inp, field) {
+    var q = inp.value.toLowerCase();
+    document.querySelectorAll('.cfi-' + field).forEach(function(cb) {
+      cb.closest('.col-filter-item').style.display = cb.value.toLowerCase().indexOf(q) > -1 ? '' : 'none';
+    });
+  }
+
+  function cfToggleAll(cb, field) {
+    document.querySelectorAll('.cfi-' + field).forEach(function(c) { c.checked = cb.checked; });
+  }
+
+  function cfItemChange(cb, field) {
+    var allCb = document.getElementById('cf-all-' + field);
+    if (allCb) allCb.checked = Array.from(document.querySelectorAll('.cfi-' + field)).every(function(c) { return c.checked; });
+  }
+
+  function cfApply(field) {
+    var allCb = document.getElementById('cf-all-' + field);
+    if (allCb && allCb.checked) {
+      delete activeFilters[field];
+    } else {
+      var checked = Array.from(document.querySelectorAll('.cfi-' + field)).filter(function(c) { return c.checked; }).map(function(c) { return c.value; });
+      activeFilters[field] = new Set(checked);
+    }
+    var btn = document.getElementById('cfb-' + field);
+    if (btn) btn.classList.toggle('active', !!activeFilters[field]);
+    document.getElementById('cfd-' + field).classList.remove('open');
+    openFilter = null;
+    render();
+  }
+
+  function cfClear(field) {
+    delete activeFilters[field];
+    var btn = document.getElementById('cfb-' + field);
+    if (btn) btn.classList.remove('active');
+    document.getElementById('cfd-' + field).classList.remove('open');
+    openFilter = null;
+    render();
+  }
+
+  document.addEventListener('click', function() {
+    if (openFilter) {
+      var dd = document.getElementById('cfd-' + openFilter);
+      if (dd) dd.classList.remove('open');
+      openFilter = null;
+    }
+  });
   var SL={csv_uploaded:['CSV uploaded','badge-csv'],written_report_done:['Written done','badge-written'],oral_done:['Oral done','badge-oral'],final_report_done:['Final done','badge-final'],programme_done:['Programme done','badge-programme']};
   var propBadge=function(x){var cd=x.conventionData||{};if(cd.proposalAcceptedAt)return '<span style="font-size:11px;background:#ede9fe;color:#5b21b6;padding:2px 8px;border-radius:10px;font-weight:600">Proposal accepted</span>';if(cd.proposalSentAt)return '<span style="font-size:11px;background:#dbeafe;color:#1e40af;padding:2px 8px;border-radius:10px;font-weight:600">Proposal sent</span>';return '';};
   function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
   function render(){
     var tb=document.getElementById('candidateList');
     var q=((document.getElementById('searchBox')||{}).value||'').toLowerCase();
-    var rows=all.filter(function(x){return ((x.name||'')+(x.jobtitle||'')+(x.company||'')+(x.status||'')).toLowerCase().indexOf(q)>-1;});
+    var rows=all.filter(function(x){
+      if (q && ((x.name||'')+(x.jobtitle||'')+(x.company||'')+(x.status||'')).toLowerCase().indexOf(q)===-1) return false;
+      for (var f in activeFilters) { if (!activeFilters[f].has(getFieldVal(x,f))) return false; }
+      return true;
+    });
     rows.sort(function(a,b){
       var aPin = a.email==='jossfrimond@hotmail.com'?1:0;
       var bPin = b.email==='jossfrimond@hotmail.com'?1:0;
       if (aPin!==bPin) return bPin-aPin;
+      if (sk==='budget') {
+        var _pa=parseInt((a.conventionData||{}).price||0,10), _pb=parseInt((b.conventionData||{}).price||0,10);
+        return (_pa-_pb)*(-sd);
+      }
       var x=(a[sk]||'').toLowerCase(),y=(b[sk]||'').toLowerCase();
       return x<y?-sd:x>y?sd:0;
     });
@@ -97,9 +216,12 @@
       var advancedBadge = (x.conventionData && (x.conventionData.sentToCatherineAt || x.conventionData.signedAt || x.conventionData.price));
       var statusBadgeHtml = (pb && !advancedBadge) ? '' : '<span class="badge '+sl[1]+'">'+sl[0]+'</span>';
       var propBadgeHtml = advancedBadge ? '' : pb;
-      return '<tr><td><a href="/candidates/'+x.id+'" class="name-link">'+esc(x.name)+'</a></td><td>'+(x.courseType==='legal'?'<span style="font-size:11px;background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:10px;font-weight:600">Juridique</span>':'<span style="font-size:11px;background:#dbeafe;color:#1e40af;padding:2px 8px;border-radius:10px;font-weight:600">Business</span>')+'</td><td>'+esc(x.company||'')+'</td><td>'+(x.createdAt?x.createdAt.slice(0,10):'')+'</td><td>'+statusBadgeHtml+propBadgeHtml+convDone+'</td><td style="display:flex;gap:8px"><a href="/candidates/'+x.id+'" class="name-link">View</a>&nbsp;<button data-id="'+x.id+'" data-name="'+esc(x.name)+'" onclick="doDel(this)" style="background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer">Delete</button></td></tr>';
+      return '<tr><td><a href="/candidates/'+x.id+'" class="name-link">'+esc(x.name)+'</a></td><td>'+(x.courseType==='legal'?'<span style="font-size:11px;background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:10px;font-weight:600">Juridique</span>':'<span style="font-size:11px;background:#dbeafe;color:#1e40af;padding:2px 8px;border-radius:10px;font-weight:600">Business</span>')+'</td><td>'+esc(x.company||'')+'</td><td>'+(x.createdAt?(function(d){var p=d.slice(0,10).split('-');return p[2]+'/'+p[1]+'/'+p[0];})(x.createdAt):'')+'</td><td>'+statusBadgeHtml+propBadgeHtml+convDone+'</td><td style="display:flex;gap:8px"><a href="/candidates/'+x.id+'" class="name-link">View</a>&nbsp;<button data-id="'+x.id+'" data-name="'+esc(x.name)+'" onclick="doDel(this)" style="background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer">Delete</button></td></tr>';
     }).join('');
-    ['name','courseType','company','createdAt','status'].forEach(function(k){var e=document.getElementById('sort-'+k);if(e)e.textContent=k===sk?(sd===1?' ↑':' ↓'):' ⇕';});
+    ['name','courseType','company','createdAt','status'].forEach(function(k){var e=document.getElementById('sort-'+k);if(e)e.textContent=k===sk?(sd===1?' ↑':' ↓'):' ⇕';
+    var _tot=0,_hasp=false; rows.forEach(function(x){var p=parseInt(((x.conventionData)||{}).price||0,10);if(p){_tot+=p;_hasp=true;}});
+    var sc=document.getElementById('statCount'); if(sc) sc.textContent=rows.length;
+    var sb=document.getElementById('statBudget'); if(sb) sb.textContent=_hasp?(_tot.toLocaleString('fr-FR')+' €'):'—';});
   }
   function sortBy(k){sk===k?sd=-sd:(sk=k,sd=1);render();}
   function doDel(btn){
