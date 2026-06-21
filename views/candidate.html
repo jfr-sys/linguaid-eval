@@ -208,16 +208,21 @@
       </div>
       <div class="progress-step" id="pstep5">
         <div class="step-circle" id="pc5">6</div>
-        <div class="step-label">Convention</div>
-        <div class="step-sublabel">Document legal</div>
+        <div class="step-label">Proposition</div>
+        <div class="step-sublabel">Envoyée au candidat</div>
       </div>
       <div class="progress-step" id="pstep6">
         <div class="step-circle" id="pc6">7</div>
-        <div class="step-label">Signé</div>
-        <div class="step-sublabel">Convention signée</div>
+        <div class="step-label">Convention</div>
+        <div class="step-sublabel">Document legal</div>
       </div>
       <div class="progress-step" id="pstep7">
         <div class="step-circle" id="pc7">8</div>
+        <div class="step-label">Signé</div>
+        <div class="step-sublabel">Convention signée</div>
+      </div>
+      <div class="progress-step" id="pstep8">
+        <div class="step-circle" id="pc8">9</div>
         <div class="step-label">ManageAll</div>
         <div class="step-sublabel">Envoyé à Catherine</div>
       </div>
@@ -339,7 +344,7 @@
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <button class="btn btn-secondary" id="btnGenerateEmail" onclick="generatePropositionEmail(this)">✨ Générer &amp; prévisualiser</button>
         <button class="btn btn-primary" id="btnSendProposition" onclick="sendProposition()" disabled style="opacity:0.5">Envoyer la proposition</button>
-        <button id="btnPropAccepted" class="btn btn-primary" onclick="markPropositionAccepted()" style="background:#16a34a;border-color:#16a34a">✅ Acceptée</button>
+        <button id="btnPropAccepted" class="btn btn-secondary" onclick="markPropositionAccepted()" style="">✅ Acceptée</button>
       </div>
       <div style="margin-top:6px"><a href="#" onclick="downloadProposition(event);return false;" style="font-size:12px;color:#64748b;text-decoration:underline">Télécharger la proposition (PDF)</a></div>
       <div id="propSendStatus" style="margin-top:8px;font-size:12px;color:#666"></div>
@@ -410,7 +415,7 @@
 
   marked.setOptions({ breaks: true, gfm: true });
 
-  function updateProgressBar(status, hasConvention, hasSigned, hasSentCatherine) {
+  function updateProgressBar(status, hasProposal, hasConvention, hasSigned, hasSentCatherine) {
     const stepIndex = STATUS_ORDER.indexOf(status);
     for (let i = 0; i < 5; i++) {
       const step = document.getElementById('pstep' + i);
@@ -429,15 +434,20 @@
     }
     var s5 = document.getElementById('pstep5');
     var c5 = document.getElementById('pc5');
-    if (s5 && hasConvention) { s5.classList.remove('pending','active'); s5.classList.add('done'); c5.innerHTML = '✓'; }
+    if (s5 && hasProposal) { s5.classList.remove('pending','active'); s5.classList.add('done'); c5.innerHTML = '✓'; }
+    else if (s5 && status === 'programme_done') { s5.classList.remove('pending','done'); s5.classList.add('active'); c5.innerHTML = '6'; }
     var s6 = document.getElementById('pstep6');
     var c6 = document.getElementById('pc6');
-    if (s6 && hasSigned) { s6.classList.remove('pending','active'); s6.classList.add('done'); c6.innerHTML = '✓'; }
-    else if (s6 && hasConvention) { s6.classList.remove('pending','done'); s6.classList.add('active'); }
+    if (s6 && hasConvention) { s6.classList.remove('pending','active'); s6.classList.add('done'); c6.innerHTML = '✓'; }
+    else if (s6 && hasProposal) { s6.classList.remove('pending','done'); s6.classList.add('active'); }
     var s7 = document.getElementById('pstep7');
     var c7 = document.getElementById('pc7');
-    if (s7 && hasSentCatherine) { s7.classList.remove('pending','active'); s7.classList.add('done'); c7.innerHTML = '✓'; }
-    else if (s7 && hasSigned) { s7.classList.remove('pending','done'); s7.classList.add('active'); }
+    if (s7 && hasSigned) { s7.classList.remove('pending','active'); s7.classList.add('done'); c7.innerHTML = '✓'; }
+    else if (s7 && hasConvention) { s7.classList.remove('pending','done'); s7.classList.add('active'); }
+    var s8 = document.getElementById('pstep8');
+    var c8 = document.getElementById('pc8');
+    if (s8 && hasSentCatherine) { s8.classList.remove('pending','active'); s8.classList.add('done'); c8.innerHTML = '✓'; }
+    else if (s8 && hasSigned) { s8.classList.remove('pending','done'); s8.classList.add('active'); }
   }
 
   function statusBadge(status) {
@@ -461,7 +471,7 @@
     companyEl.dataset.id = c.id;
     document.getElementById('profileMeta').textContent = c.email + (c.testdate ? ' · Test: ' + c.testdate : '');
     document.getElementById('profileBadge').innerHTML = c.isRenewal ? '<span class="badge" style="background:#ede9fe;color:#5b21b6">Renouvellement</span>' : statusBadge(c.status);
-    updateProgressBar(c.status, !!(c.conventionData && c.conventionData.price), !!(c.conventionData && c.conventionData.signedAt), !!(c.conventionData && c.conventionData.sentToCatherineAt));
+    updateProgressBar(c.status, !!(c.conventionData && c.conventionData.proposalSentAt), !!(c.conventionData && c.conventionData.price), !!(c.conventionData && c.conventionData.signedAt), !!(c.conventionData && c.conventionData.sentToCatherineAt));
     if (c.status === 'invited') { var ra = document.getElementById('resendInviteArea'); if (ra) ra.style.display = 'block'; }
 
     const p = Math.round(100 * c.scores.total / (c.scores.max || 30));

@@ -587,6 +587,9 @@ router.post('/api/send-proposition-email/:id', async function(req, res) {
     if (ci3 > -1) {
       cands3[ci3].sentPropositionAt = new Date().toISOString();
       cands3[ci3].sentPropositionTo = recipientEmail;
+      cands3[ci3].conventionData = cands3[ci3].conventionData || {};
+      cands3[ci3].conventionData.proposalSentAt = new Date().toISOString();
+      cands3[ci3].conventionData.proposalRecipient = recipientEmail;
       saveCandidates(cands3);
     }
 
