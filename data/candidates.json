@@ -705,15 +705,15 @@
       "typedName": null,
       "signedPdfPath": null,
       "proposalRecipient": "jossfrimond@hotmail.com",
-      "proposalSentAt": "2026-06-21T19:13:06.495Z",
-      "proposalAcceptedAt": "2026-06-21T19:14:30.907Z"
+      "proposalAcceptedAt": "2026-06-21T20:10:34.304Z",
+      "proposalSentAt": "2026-06-21T20:00:00.000Z"
     },
     "finalReportSummary": null,
     "programmePdfPath": "/var/www/vhosts/linguaid.net/eval.linguaid.net/app/data/programmes/b6297879e2dd.pdf",
     "propositionPdfPath": "/var/www/vhosts/linguaid.net/eval.linguaid.net/app/data/propositions/b6297879e2dd.pdf",
     "propositionDocxPath": "/var/www/vhosts/linguaid.net/eval.linguaid.net/app/data/propositions/b6297879e2dd.docx",
-    "propositionGeneratedAt": "2026-06-21T19:12:58.009Z",
-    "sentPropositionAt": "2026-06-21T19:13:06.495Z",
+    "propositionGeneratedAt": "2026-06-21T20:13:45.229Z",
+    "sentPropositionAt": "2026-06-21T20:13:47.724Z",
     "sentPropositionTo": "jossfrimond@hotmail.com"
   },
   {

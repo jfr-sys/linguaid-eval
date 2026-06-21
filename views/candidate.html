@@ -926,7 +926,7 @@
       document.getElementById('propBody').value = civ2 + ' ' + prenom2 + ',\n\n[Cliquez sur « ✨ Générer l’email » pour générer le message personnalisé]\n\nBien cordialement';
     }
 
-    if (cd.proposalSentAt) {
+    if (cd.proposalSentAt || cd.proposalAcceptedAt) {
       document.getElementById('propositionSentBar').style.display = 'block';
       if (cd.proposalAcceptedAt) {
         var accDate = new Date(cd.proposalAcceptedAt).toLocaleDateString('fr-FR');
