@@ -40,6 +40,8 @@ app.use((req, res, next) => {
 app.use('/', require('./routes/auth'));
 app.use('/candidates', require('./routes/candidates'));
 app.use('/api', require('./routes/api'));
+const programmeRoutes = require('./routes/programme');
+app.use('/', programmeRoutes);
 app.use('/oral', require('./routes/oral'));
 app.use('/sign', require('./routes/sign'));
 
