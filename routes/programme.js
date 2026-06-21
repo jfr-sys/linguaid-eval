@@ -590,6 +590,7 @@ router.post('/api/send-proposition-email/:id', async function(req, res) {
       cands3[ci3].conventionData = cands3[ci3].conventionData || {};
       cands3[ci3].conventionData.proposalSentAt = new Date().toISOString();
       cands3[ci3].conventionData.proposalRecipient = recipientEmail;
+      cands3[ci3].conventionData.isThirdParty = !!(req.body && req.body.thirdPartyEmail);
       saveCandidates(cands3);
     }
 

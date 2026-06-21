@@ -396,9 +396,7 @@
         <div id="convSiretRow"><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">SIRET entreprise</label><input id="convSiret" type="text" placeholder="123 456 789 00012" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
         <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Signataire entreprise</label><input id="convSignatory" type="text" placeholder="Prenom NOM" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
         <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Email signataire</label><input id="convSignatoryEmail" type="email" placeholder="signataire@entreprise.com" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
-        <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Tél apprenant</label><input id="convLearnerTel" type="text" placeholder="06 xx xx xx xx" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
-        <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">N° de commande</label><input id="convOrderNumber" type="text" placeholder="CMD-2026-XXX" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
-        <div style="grid-column:1/-1"><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Adresse entreprise</label><input id="convCompanyAddress" type="text" placeholder="1 rue de la Paix, 75001 Paris" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
+
       </div>
       <button class="btn btn-primary" onclick="downloadConvention()">Télécharger la convention</button>
       <button class="btn btn-secondary" id="btnSendSign" onclick="sendForSignature()" style="margin-left:8px">Envoyer pour signature</button>
@@ -416,6 +414,11 @@
     <div class="stage-title">Envoyer à Catherine</div>
     <div class="stage-status" id="stage8status">Débloqué une fois la convention signée</div>
     <div id="orderForm" style="display:none;margin-top:1rem">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem">
+        <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Tél apprenant</label><input id="convLearnerTel" type="text" placeholder="06 xx xx xx xx" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
+        <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">N° de commande</label><input id="convOrderNumber" type="text" placeholder="CMD-2026-XXX" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
+        <div style="grid-column:1/-1"><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Adresse entreprise</label><input id="convCompanyAddress" type="text" placeholder="1 rue de la Paix, 75001 Paris" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
+      </div>
       <div style="margin-bottom:0.75rem"><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Notes pour Catherine (ManageAll)</label><textarea id="convNotes" placeholder="Ex: CPF, OPCO, modalités particulières..." style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px;min-height:60px;resize:vertical"></textarea></div>
       <button class="btn btn-secondary" id="btnSendCatherine" onclick="sendToCatherine()" style="background:#7c3aed;color:white">📧 Envoyer à Catherine</button>
     </div>
@@ -993,15 +996,21 @@
       if (cd.orderNumber) document.getElementById('convOrderNumber').value = cd.orderNumber;
       if (cd.companyAddress) document.getElementById('convCompanyAddress').value = cd.companyAddress;
       var isCPF = !!(od.isCPF || cd.isCPF || (od.financingMode === 'CPF'));
-      if (isCPF) document.getElementById('convIsCPF').checked = true;
+      var convCpfEl = document.getElementById('convIsCPF');
+      if (convCpfEl) {
+        convCpfEl.checked = isCPF;
+        convCpfEl.disabled = true;
+        convCpfEl.style.opacity = '0.6';
+      }
       var siretRow = document.getElementById('convSiretRow');
       if (siretRow) siretRow.style.display = isCPF ? 'none' : 'block';
-      var trainingType = od.legalTrainingType || '';
       var cpfLabel = document.querySelector('#conventionForm label');
       if (cpfLabel) {
-        if (trainingType === 'CAJA') cpfLabel.textContent = 'Formation CPF - Certification CAJA (RS6810)';
-        else if (trainingType === 'E360') cpfLabel.textContent = 'Formation CPF - Certification English 360 (RS6341)';
-        else cpfLabel.textContent = 'Formation CPF (RS6341)';
+        if (cpfType === 'CAJA') cpfLabel.textContent = 'Formation CPF — Certification CAJA (RS6810)';
+        else if (cpfType === 'E360_LEGAL') cpfLabel.textContent = 'Formation CPF — Certification English 360 (RS6341) — parcours juridique';
+        else if (cpfType === 'E360') cpfLabel.textContent = 'Formation CPF — Certification English 360 (RS6341)';
+        else if (isCPF) cpfLabel.textContent = 'Formation CPF (RS6341)';
+        else cpfLabel.textContent = 'Formation non-CPF';
       }
       if (cd.signedAt) {
         s7.style.borderTopColor = '#10b981';

@@ -234,7 +234,16 @@
       frame.src = `/sign/${token}/pdf`;
       // Force Chrome to show single-page view
       frame.src = `/sign/${token}/pdf#toolbar=1&navpanes=0&scrollbar=1&view=FitH`;
-      if (info.signatoryName) document.getElementById("typed-name").value = info.signatoryName;
+      if (info.signatoryName) {
+        var nameInput = document.getElementById('typed-name');
+        nameInput.value = info.signatoryName;
+        nameInput.readOnly = true;
+        nameInput.style.background = '#f8fafc';
+        nameInput.style.color = '#334155';
+        nameInput.style.border = '1.5px solid #e2e8f0';
+        var nameLabel = nameInput.previousElementSibling;
+        if (nameLabel) nameLabel.textContent = 'Signataire :';
+      }
     })
     .catch(() => {
       document.getElementById('main-form').innerHTML =
