@@ -337,12 +337,11 @@
         </div>
       </div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <button class="btn btn-secondary" id="btnGenerateEmail" onclick="generatePropositionEmail(this)">✨ Générer l’email</button>
-        <button class="btn btn-secondary" onclick="openEmailModal()">✉️ Éditer le message</button>
-        <button class="btn btn-primary" id="btnDlProp" onclick="downloadProposition(this)">Télécharger la proposition</button>
-        <button class="btn btn-primary" id="btnSendProposition" onclick="sendProposition()">Envoyer la proposition</button>
-        <button id="btnPropAccepted" class="btn btn-primary" onclick="markPropositionAccepted()">Accepter</button>
+        <button class="btn btn-secondary" id="btnGenerateEmail" onclick="generatePropositionEmail(this)">✨ Générer &amp; prévisualiser</button>
+        <button class="btn btn-primary" id="btnSendProposition" onclick="sendProposition()" disabled style="opacity:0.5">Envoyer la proposition</button>
+        <button id="btnPropAccepted" class="btn btn-primary" onclick="markPropositionAccepted()" style="background:#16a34a;border-color:#16a34a">✅ Acceptée</button>
       </div>
+      <div style="margin-top:6px"><a href="#" onclick="downloadProposition(event);return false;" style="font-size:12px;color:#64748b;text-decoration:underline">Télécharger la proposition (PDF)</a></div>
       <div id="propSendStatus" style="margin-top:8px;font-size:12px;color:#666"></div>
       <div id="propositionSentBar" style="display:none;margin-top:0.5rem">
         <div style="font-size:12px;color:#94a3b8" id="propositionSentText"></div>
@@ -890,10 +889,11 @@
     s6.style.borderTopColor = '#2E75B6';
     document.getElementById('propositionForm').style.display = 'block';
     if (cd.civility) document.getElementById('propCivility').value = cd.civility;
-    if (cd.price || od.price) document.getElementById('propPrice').value = cd.price || od.price || '';
+    document.getElementById('propPrice').value = cd.price || od.edofPrice || od.price || '';
     document.getElementById('propDateStart').value = cd.dateStart || od.dateStart || '';
     document.getElementById('propDateEnd').value = cd.dateEnd || od.dateEnd || '';
     document.getElementById('propRecipient').value = c.email || '';
+    if (od.edofMCFLink) document.getElementById('propCpfLien').value = od.edofMCFLink;
     var isLegal = c.courseType === 'legal' || od.cpfType === 'E360_LEGAL' || od.cpfType === 'CAJA';
     var isCPF = !!(od.isCPF);
     var cpfType = od.cpfType || '';
@@ -1037,16 +1037,17 @@
       thirdPartyNom: thirdParty ? document.getElementById('propThirdNom').value : ''
     };
   }
-  function downloadProposition(btn) {
-    btn = btn || document.getElementById("btnDlProp");
-    btn.disabled = true; btn.textContent = 'Génération...';
+  function downloadProposition(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    var btn = document.getElementById('btnGenerateEmail');
+    if (btn) { btn.disabled = true; btn.textContent = 'Génération...'; }
     var p = buildPropositionPayload();
     fetch('/api/generate-proposition/'+id, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(p)})
     .then(function(r){
-      btn.disabled = false; btn.textContent = 'Télécharger la proposition';
+      if (btn) { btn.disabled = false; btn.textContent = '✨ Générer & prévisualiser'; }
       if(r.ok){ window.location.href='/api/download-proposition/'+id; }
       else{ r.json().then(function(d){ alert('Erreur: '+(d.error||'inconnue')); }); }
-    }).catch(function(e){ btn.disabled=false; btn.textContent='Télécharger la proposition'; alert('Erreur réseau: '+e.message); });
+    }).catch(function(e){ btn.disabled=false; if (btn) btn.textContent='✨ Générer & prévisualiser'; alert('Erreur réseau: '+e.message); });
   }
   function sendProposition() {
     var btn = document.getElementById('btnSendProposition');
@@ -1218,6 +1219,8 @@
         status.style.color = '#065f46';
         status.textContent = '\u2705 Proposition g\xe9n\xe9r\xe9e \u2014 v\xe9rifiez le message avant envoi';
         setTimeout(function() { status.textContent = ''; status.style.color = '#666'; }, 5000);
+        var sendBtn = document.getElementById('btnSendProposition');
+        if (sendBtn) { sendBtn.disabled = false; sendBtn.style.opacity = '1'; }
       })
       .catch(function(e) {
         btn.disabled = false;

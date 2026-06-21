@@ -678,7 +678,6 @@
       "civility": "Madame",
       "signatory": "Caz Boolox",
       "signatoryEmail": "",
-      "price": "10200",
       "dateStart": "2026-06-22",
       "dateEnd": "2026-11-30",
       "isCPF": true,
@@ -693,9 +692,7 @@
       "signerIp": null,
       "typedName": null,
       "signedPdfPath": null,
-      "proposalSentAt": "2026-06-20T20:41:01.456Z",
-      "proposalRecipient": "jossfrimond@hotmail.com",
-      "proposalAcceptedAt": "2026-06-20T20:48:49.207Z"
+      "proposalRecipient": "jossfrimond@hotmail.com"
     },
     "finalReportSummary": null,
     "programmePdfPath": "/var/www/vhosts/linguaid.net/eval.linguaid.net/app/data/programmes/b6297879e2dd.pdf"
