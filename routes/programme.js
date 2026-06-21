@@ -22,7 +22,7 @@ function saveCandidates(data) {
 // POST /candidates/api/:id/cpf-type
 // Saves cpfType to oralData. Resets edofActionId if type changes.
 // ---------------------------------------------------------------------------
-router.post('/candidates/api/:id/cpf-type', function(req, res) {
+router.post('/api/candidates/api/:id/cpf-type', function(req, res) {
   var candidates = getCandidates();
   var idx = candidates.findIndex(function(x) { return x.id === req.params.id; });
   if (idx === -1) return res.status(404).json({ error: 'Not found' });
@@ -47,7 +47,7 @@ router.post('/candidates/api/:id/cpf-type', function(req, res) {
 // POST /candidates/api/:id/edof-action
 // Saves selected EDOF action and derives hours/price/link from catalogue.
 // ---------------------------------------------------------------------------
-router.post('/candidates/api/:id/edof-action', function(req, res) {
+router.post('/api/candidates/api/:id/edof-action', function(req, res) {
   var candidates = getCandidates();
   var idx = candidates.findIndex(function(x) { return x.id === req.params.id; });
   if (idx === -1) return res.status(404).json({ error: 'Not found' });
@@ -85,7 +85,7 @@ router.get('/api/catalogue/:cpfType', function(req, res) {
 // POST /suggest-topics/:id
 // AI suggestion of topics and objectives from the evaluation report
 // ---------------------------------------------------------------------------
-router.post('/suggest-topics/:id', async function(req, res) {
+router.post('/api/suggest-topics/:id', async function(req, res) {
   var candidates = getCandidates();
   var c = candidates.find(function(x) { return x.id === req.params.id; });
   if (!c) return res.status(404).json({ error: 'Not found' });
@@ -110,7 +110,7 @@ router.post('/suggest-topics/:id', async function(req, res) {
 // Main programme document generation — calls fill_programme_final.py
 // FAILSAFE: blocks generation if isCPF=true and cpfType is missing/invalid
 // ---------------------------------------------------------------------------
-router.get('/generate-programme/:id', async function(req, res) {
+router.get('/api/generate-programme/:id', async function(req, res) {
   var candidates = getCandidates();
   var c = candidates.find(function(cand) { return cand.id === req.params.id; });
   if (!c) return res.status(404).json({ error: 'Not found' });
@@ -231,8 +231,71 @@ router.get('/generate-programme/:id', async function(req, res) {
 // GET /generate-programme-legal/:id
 // Redirects to programme page (legal courses use same flow)
 // ---------------------------------------------------------------------------
-router.get('/generate-programme-legal/:id', function(req, res) {
+router.get('/api/generate-programme-legal/:id', function(req, res) {
   res.redirect('/candidates/' + req.params.id + '/programme');
+});
+
+// ---------------------------------------------------------------------------
+// POST /api/personalise-objectives/:id
+// AI-generated personalisation suffixes for CPF referential objectives.
+// Returns one short contextualising phrase per objective based on candidate profile.
+// FAILSAFE: never replaces base objectives, only adds context.
+// ---------------------------------------------------------------------------
+router.post('/api/personalise-objectives/:id', async function(req, res) {
+  const candidates = getCandidates();
+  const c = candidates.find(x => x.id === req.params.id);
+  if (!c) return res.status(404).json({ error: 'Not found' });
+
+  const { cpfType, topics, targetLevel } = req.body;
+  const validTypes = ['E360', 'E360_LEGAL', 'CAJA'];
+  if (!validTypes.includes(cpfType)) {
+    return res.status(400).json({ error: 'Invalid cpfType: ' + cpfType });
+  }
+
+  const REFERENTIAL_OBJECTIVES = {"E360": ["Dialoguer en anglais pour échanger des informations pertinentes dans un contexte professionnel", "Prendre la parole en continu pour transmettre et partager des informations en milieu professionnel", "Comprendre des communications orales en anglais et identifier des informations pertinentes en contexte professionnel", "Composer des textes professionnels en anglais adaptés au contexte et au public", "Analyser des textes professionnels en anglais pour en extraire et utiliser l’information pertinente"], "E360_LEGAL": ["Dialoguer en anglais pour échanger des informations pertinentes dans un contexte juridique professionnel", "Prendre la parole en continu pour transmettre et partager des informations dans un milieu juridique anglophone", "Comprendre des communications orales en anglais et identifier des informations pertinentes dans un contexte juridique", "Composer des textes professionnels en anglais adaptés au contexte et aux interlocuteurs juridiques", "Analyser des textes professionnels juridiques en anglais pour en extraire et utiliser l’information pertinente"], "CAJA": ["Se présenter dans un cadre professionnel et établir un bon contact avec un client, un collègue ou un confrère", "Mener un premier entretien pour comprendre la situation, poser les bonnes questions et identifier les attentes", "Expliquer une problématique juridique, proposer des options et aider à la prise de décision", "Rédiger des documents professionnels adaptés au contexte : emails, lettres, notes d’avocat", "Corriger ou rédiger des clauses contractuelles claires, précises et structurées", "Conduire une négociation, formuler ou répondre à des propositions, et défendre les intérêts de son client"]};
+
+  const bases = REFERENTIAL_OBJECTIVES[cpfType] || [];
+  const od = c.oralData || {};
+  const goals = (od.validatedGoals || []).map(g => g.goal || g).join(', ');
+  const topicList = (topics || []).join(', ');
+
+  const prompt = [
+    'Tu es expert en formation professionnelle en anglais (certifications CPF francaises).',
+    'Pour chacun des ' + bases.length + ' objectifs pedagogiques suivants, genere UNE courte phrase de personnalisation (15 mots maximum) qui ancre l objectif dans le contexte professionnel du candidat.',
+    'La phrase DOIT completer l objectif de base sans le remplacer ni le contredire.',
+    'La phrase commence par "notamment", "en particulier", "dans le cadre de", "pour" ou expression similaire.',
+    'Si le contexte est insuffisant pour personnaliser un objectif, retourne une chaine vide "" pour cet objectif.',
+    '',
+    'Profil candidat:',
+    '- Poste: ' + (c.jobtitle || 'non precise'),
+    '- Departement: ' + (c.dept || 'non precise'),
+    '- Entreprise: ' + (c.company || 'non precisee'),
+    '- Objectifs valides lors du bilan oral: ' + (goals || 'non precises'),
+    '- Themes de coaching selectionnes: ' + (topicList || 'non selectionnes'),
+    '- Niveau cible: ' + (targetLevel || 'non precise'),
+    '',
+    'Objectifs de base du referentiel ' + (cpfType === 'CAJA' ? 'RS6810' : 'RS6341') + ':',
+    ...bases.map((b, i) => (i+1) + '. ' + b),
+    '',
+    'Reponds UNIQUEMENT avec un objet JSON valide: {"suffixes": ["phrase1", "phrase2", ...]}',
+    'Exactement ' + bases.length + ' elements dans le tableau, dans le meme ordre que les objectifs.',
+    'Ne mets aucun texte avant ou apres le JSON. Pas de markdown.',
+  ].join('\n');
+
+  try {
+    const msg = await client.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 1000,
+      messages: [{ role: 'user', content: prompt }]
+    });
+    const raw = msg.content[0].text.trim().replace(/^```[a-z]*\n?/, '').replace(/```$/, '').trim();
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed.suffixes)) throw new Error('Invalid response format');
+    res.json({ success: true, suffixes: parsed.suffixes, cpfType: cpfType });
+  } catch (e) {
+    console.error('personalise-objectives error:', e.message);
+    res.status(500).json({ error: e.message });
+  }
 });
 
 module.exports = router;
