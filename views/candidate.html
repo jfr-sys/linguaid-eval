@@ -1030,7 +1030,7 @@
       cpfLien: document.getElementById('propCpfLien').value,
       recipientEmail: document.getElementById('propRecipient').value,
       emailSubject: document.getElementById('propSubject').value,
-      emailBody: document.getElementById('propBody').value,
+      emailBody: document.getElementById('propBodyModal').value || document.getElementById('propBody').value,
       thirdPartyEmail: thirdParty ? document.getElementById('propThirdEmail').value : '',
       thirdPartyCivility: thirdParty ? document.getElementById('propThirdCivility').value : '',
       thirdPartyPrenom: thirdParty ? document.getElementById('propThirdPrenom').value : '',
@@ -1071,9 +1071,9 @@
     fetch('/api/send-proposition-email/'+id, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(p)})
     .then(function(r){return r.json();}).then(function(d){
       btn.disabled=false; btn.textContent='Envoyer la proposition'; status.textContent='';
-      if (d.ok) {
+      if (d.success || d.ok) {
         document.getElementById('propositionSentBar').style.display='flex';
-        document.getElementById('propositionSentText').textContent='Envoyée le '+new Date().toLocaleDateString('fr-FR')+' à '+p.recipientEmail;
+        document.getElementById('propositionSentText').textContent='Envoyée le '+new Date().toLocaleDateString('fr-FR')+' à '+(d.to||p.recipientEmail);
         var sb=document.getElementById('propSendStatus');
         sb.style.color='#065f46'; sb.textContent='✅ Email envoyé avec succès';
         setTimeout(function(){sb.textContent='';},4000);
@@ -1211,7 +1211,7 @@
         status.textContent = '';
         if (d.error) { alert('Erreur\u00a0: ' + d.error); return; }
         // Build email body using the returned resumeSituation
-        var body = buildEmailBody(d.resumeSituation || '', candData, candData.oralData || {}, candData.conventionData || {});
+        var body = buildEmailBody(d.resumeSituation || '', candidate, candidate.oralData || {}, candidate.conventionData || {});
         document.getElementById('propBody').value = body;
         document.getElementById('propBodyModal').value = body;
         // Open modal for review

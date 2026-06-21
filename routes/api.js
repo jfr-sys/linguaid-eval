@@ -1496,61 +1496,6 @@ router.get('/check-pdfs/:id', function(req, res) {
   });
 });
 
-router.post('/generate-proposition/:id', function(req, res) {
-  var cands = JSON.parse(require('fs').readFileSync(require('path').join(__dirname,'../data/candidates.json'),'utf8'));
-  var c = cands.find(function(x){ return x.id === req.params.id; });
-  if (!c) return res.status(404).json({ error: 'Not found' });
-  var fs2 = require('fs'), execFile = require('child_process').execFile, pp = require('path');
-  var od = c.oralData || {}, body = req.body || {}, cd = c.conventionData || {};
-  var isCPF = !!(od.isCPF || cd.isCPF);
-  var prix = parseInt(body.price || cd.price || 0);
-  var cpfMontant = isCPF ? prix - 150 : 0;
-  var resteCharge = isCPF ? prix - cpfMontant - 150 : 0;
-  var cert = '';
-  if (isCPF && c.courseType === 'legal') cert = 'English 360 (RS6341)';
-  else if (isCPF) cert = 'English 360 (RS6341)';
-  else if (c.courseType === 'legal') cert = 'CAJA (RS6810)';
-  var propData = {
-    civilite: body.civility || 'Madame',
-    nom_complet: c.name || '',
-    entreprise: c.company || '',
-    email: c.email || '',
-    civilite_court: body.civility === 'Monsieur' ? 'Cher' : 'Ch\u00e8re',
-    prenom: (c.name || '').trim().split(' ')[0] || '',
-    niveau_actuel: ((c.reportSummary||{}).overallLevel || od.prereqLevel || od.overallLevel || '').toString(),
-    niveau_vise: (od.targetLevel || '').toString(),
-    resume_situation: od.globalComment || '',
-    total_heures: parseInt(od.totalHours || 0),
-    coaching_heures: parseInt(od.coachingHours || od.totalHours || 0),
-    homework_heures: parseInt(od.homeworkHours || 0),
-    date_debut: body.dateStart || od.dateStart || '',
-    date_fin: body.dateEnd || od.dateEnd || '',
-    certification: cert,
-    objectifs: od.objectives || [],
-    titre: isCPF ? 'Proposition de formation professionnelle : Communiquer en anglais professionnel — English 360 (RS6341)' : 'Proposition de formation professionnelle',
-    is_cpf: isCPF,
-    prix: prix,
-    cpf_montant: cpfMontant,
-    reste_charge: resteCharge,
-    cpf_lien: body.cpfLien || ''
-  };
-  var propDir = pp.join(__dirname, '../data/propositions');
-  if (!fs2.existsSync(propDir)) fs2.mkdirSync(propDir, { recursive: true });
-  var propJson = pp.join(propDir, c.id + '_data.json');
-  var propDocx = pp.join(propDir, c.id + '.docx');
-  var propPdf  = pp.join(propDir, c.id + '.pdf');
-  fs2.writeFileSync(propJson, JSON.stringify(propData));
-  var env2 = Object.assign({}, process.env, { PROPOSITION_TEMPLATE: pp.join(__dirname, '../views/PROPOSITION_TEMPLATE.docx') });
-  execFile('python3', ['/home/debian/fill_proposition.py', propJson, propDocx], { timeout: 30000, env: env2 }, function(err) {
-    try { fs2.unlinkSync(propJson); } catch(e) {}
-    if (err || !fs2.existsSync(propDocx)) return res.status(500).json({ error: 'fill_proposition failed' });
-    execFile('soffice', ['--headless','--convert-to','pdf','--outdir', propDir, propDocx], { timeout: 30000 }, function(err2) {
-      if (err2 || !fs2.existsSync(propPdf)) return res.status(500).json({ error: 'PDF conversion failed' });
-      res.json({ ok: true });
-    });
-  });
-});
-
 router.get('/download-proposition/:id', function(req, res) {
   var pp = require('path');
   var propPdf = pp.join(__dirname, '../data/propositions/' + req.params.id + '.pdf');
