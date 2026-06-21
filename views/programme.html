@@ -11,13 +11,13 @@
   .nav-logo { font-size: 18px; font-weight: 700; }
   .nav-right a { color: rgba(255,255,255,0.8); text-decoration: none; font-size: 13px; }
   .container { max-width: 800px; margin: 0 auto; padding: 2rem; }
-  .back { font-size: 13px; color: #666; text-decoration: none; display: inline-block; margin-bottom: 1rem; }
+  .back { font-size: 13px; color: #666; text-decoration: none; display: inline-block; margin-bottom: 1rem; border: none !important; background: none !important; padding: 0 !important; }
   .card { background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 1rem; }
   h2 { font-size: 20px; font-weight: 700; color: #1F4E79; margin-bottom: 0.5rem; }
   .section-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: #94a3b8; margin-bottom: 0.75rem; }
   label { font-size: 13px; color: #475569; display: block; margin-bottom: 4px; margin-top: 14px; font-weight: 500; }
-  input, select, textarea { width: 100%; padding: 9px 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; outline: none; font-family: inherit; color: #1a1a1a; }
-  input:focus, select:focus, textarea:focus { border-color: #2E75B6; }
+  input[type=text], input[type=number], input[type=date], select, textarea { width: 100%; padding: 9px 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; outline: none; font-family: inherit; color: #1a1a1a; }
+  input[type=text]:focus, input[type=number]:focus, input[type=date]:focus, select:focus, textarea:focus { border-color: #2E75B6; }
   textarea { resize: vertical; min-height: 80px; }
   .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .toggle-row { display: flex; align-items: center; gap: 12px; padding: 1rem; background: #eff6ff; border-radius: 10px; border: 1px solid #bfdbfe; margin-bottom: 1rem; }
@@ -38,6 +38,8 @@
   .cpf-only { display: none; }
   .cpf-only.show { display: block; }
   .cpf-badge { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; border-radius: 6px; padding: 3px 10px; font-size: 12px; font-weight: 600; display: inline-block; margin-left: 8px; }
+  .caja-badge { background: #ede9fe; color: #5b21b6; border: 1px solid #c4b5fd; border-radius: 6px; padding: 3px 10px; font-size: 12px; font-weight: 600; display: inline-block; margin-left: 8px; }
+  .legal-badge { background: #ecfdf5; color: #065f46; border: 1px solid #6ee7b7; border-radius: 6px; padding: 3px 10px; font-size: 12px; font-weight: 600; display: inline-block; margin-left: 8px; }
   .info-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
   .info-row:last-child { border-bottom: none; }
   .info-label { color: #64748b; font-weight: 500; }
@@ -49,14 +51,60 @@
   .btn-row { display: flex; justify-content: space-between; margin-top: 1.5rem; }
   .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.4); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
   @keyframes spin { to { transform: rotate(360deg); } }
-  .warning { background: #fef3c7; border: 1px solid #fcd34d; border-radius: 8px; padding: 0.75rem 1rem; font-size: 13px; color: #92400e; margin-top: 8px; }
+  .warning { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 10px 14px; font-size: 13px; color: #92400e; margin-top: 10px; }
+
+  /* CPF type selector */
+  .cpf-type-selector { display: none; margin-top: 1rem; padding: 1rem; background: #f8fafc; border-radius: 10px; border: 1px solid #e2e8f0; }
+  .cpf-type-selector.show { display: block; }
+  .cpf-type-selector .section-label { margin-bottom: 0.5rem; }
+  .cpf-type-options { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+  .cpf-type-option { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border: 2px solid #e2e8f0; border-radius: 8px; cursor: pointer; transition: all 0.12s; }
+  .cpf-type-option:hover { border-color: #2E75B6; background: #eff6ff; }
+  .cpf-type-option.selected { border-color: #1F4E79; background: #dbeafe; }
+  .cpf-type-option input[type=radio] { width: auto; margin: 0; margin-top: 2px; cursor: pointer; flex-shrink: 0; }
+  .cpf-type-option .opt-title { font-size: 13px; font-weight: 600; color: #1e40af; }
+  .cpf-type-option .opt-sub { font-size: 12px; color: #64748b; margin-top: 2px; }
+
+  /* EDOF action selector */
+  .edof-selector { display: none; margin-top: 1rem; padding: 1rem; background: #f0fdf4; border-radius: 10px; border: 1px solid #bbf7d0; }
+  .edof-selector.show { display: block; }
+  .edof-selector .section-label { color: #065f46; margin-bottom: 0.5rem; }
+  .edof-selector select { font-size: 13px; }
+  .edof-info { display: none; margin-top: 10px; padding: 10px 12px; background: white; border-radius: 8px; border: 1px solid #d1fae5; font-size: 13px; }
+  .edof-info.show { display: flex; gap: 24px; flex-wrap: wrap; }
+  .edof-stat { display: flex; flex-direction: column; }
+  .edof-stat-label { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
+  .edof-stat-value { font-size: 15px; font-weight: 700; color: #1F4E79; margin-top: 2px; }
+  .edof-link { font-size: 12px; color: #2E75B6; text-decoration: none; margin-top: 6px; display: inline-block; }
+  .edof-link:hover { text-decoration: underline; }
+
+  /* Locked objectives for CPF */
+  .objectives-locked { display: none; }
+  .objectives-locked.show { display: block; }
+  .objectives-free { display: block; }
+  .objectives-free.hide { display: none; }
+  .obj-locked-item { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 10px; }
+  .obj-num { background: #dbeafe; color: #1e40af; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; flex-shrink: 0; margin-top: 2px; }
+  .obj-text-wrap { flex: 1; }
+  .obj-base { font-size: 13px; color: #1a1a1a; font-weight: 500; padding: 6px 10px; background: #f1f5f9; border-radius: 6px; border-left: 3px solid #1F4E79; }
+  .obj-suffix-wrap { margin-top: 4px; }
+  .obj-suffix { width: 100%; font-size: 12px; color: #475569; border: 1px dashed #cbd5e1; border-radius: 6px; padding: 5px 8px; background: white; font-style: italic; }
+  .obj-lock-note { font-size: 11px; color: #64748b; margin-top: 4px; }
+
+  /* CAJA content block */
+  .caja-content-block { display: none; margin-top: 1rem; padding: 1rem; background: #faf5ff; border-radius: 10px; border: 1px solid #e9d5ff; }
+  .caja-content-block.show { display: block; }
+  .caja-content-block .section-label { color: #6d28d9; }
+  .caja-comp-item { padding: 8px 12px; border: 1px solid #e9d5ff; border-radius: 8px; margin-bottom: 6px; font-size: 13px; background: white; color: #3b0764; }
+  .caja-comp-item strong { color: #5b21b6; }
 </style>
 </head>
 <body>
 <nav class="nav">
-  <div class="nav-logo">linguaid eval</div>
-  <div class="nav-right"><a href="/logout">Sign out</a></div>
+  <div class="nav-logo">Linguaid Eval</div>
+  <div class="nav-right"><a href="/candidates">← Tous les candidats</a></div>
 </nav>
+
 <div class="container">
   <a href="#" class="back" id="backLink">← Retour au dossier</a>
 
@@ -65,10 +113,11 @@
     <div id="candidateInfo"></div>
   </div>
 
+  <!-- CPF TOGGLE -->
   <div class="toggle-row">
     <div>
-      <div class="toggle-label">Formation CPF <span class="cpf-badge">RS6341</span></div>
-      <div class="toggle-sub">English 360 — certification incluse</div>
+      <div class="toggle-label" id="cpfToggleLabel">Formation CPF <span class="cpf-badge" id="cpfBadge">RS6341</span></div>
+      <div class="toggle-sub" id="cpfToggleSub">English 360 — certification incluse</div>
     </div>
     <label class="toggle">
       <input type="checkbox" id="cpfToggle" onchange="toggleCPF()">
@@ -76,11 +125,54 @@
     </label>
   </div>
 
+  <!-- CPF TYPE SELECTOR (appears when CPF is ticked) -->
+  <div class="cpf-type-selector" id="cpfTypeSelector">
+    <div class="section-label">Type de certification CPF</div>
+    <div class="cpf-type-options">
+      <div class="cpf-type-option" onclick="selectCpfType('E360', this)">
+        <input type="radio" name="cpfType" value="E360">
+        <div>
+          <div class="opt-title">Anglais professionnel — English 360 <span class="cpf-badge">RS6341</span></div>
+          <div class="opt-sub">Salariés tous secteurs — anglais professionnel général</div>
+        </div>
+      </div>
+      <div class="cpf-type-option" onclick="selectCpfType('E360_LEGAL', this)">
+        <input type="radio" name="cpfType" value="E360_LEGAL">
+        <div>
+          <div class="opt-title">Anglais juridique — English 360 pour avocats <span class="legal-badge">RS6341</span></div>
+          <div class="opt-sub">Avocats et juristes — étape préalable vers CAJA, attestation niveau B2</div>
+        </div>
+      </div>
+      <div class="cpf-type-option" onclick="selectCpfType('CAJA', this)">
+        <input type="radio" name="cpfType" value="CAJA">
+        <div>
+          <div class="opt-title">Anglais juridique des affaires — CAJA <span class="caja-badge">RS6810</span></div>
+          <div class="opt-sub">Avocats et juristes d'affaires — niveau B2 requis en prérequis</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EDOF ACTION SELECTOR (appears when cpfType is set) -->
+  <div class="edof-selector" id="edofSelector">
+    <div class="section-label">Offre EDOF — Mon Compte Formation</div>
+    <select id="edofActionSelect" onchange="selectEdofAction()">
+      <option value="">Sélectionnez le volume horaire...</option>
+    </select>
+    <div class="edof-info" id="edofInfo">
+      <div class="edof-stat"><span class="edof-stat-label">Total</span><span class="edof-stat-value" id="edofTotal">—</span></div>
+      <div class="edof-stat"><span class="edof-stat-label">Coaching</span><span class="edof-stat-value" id="edofCoaching">—</span></div>
+      <div class="edof-stat"><span class="edof-stat-label">TP / e-learning</span><span class="edof-stat-value" id="edofTP">—</span></div>
+      <div class="edof-stat"><span class="edof-stat-label">Prix CPF</span><span class="edof-stat-value" id="edofPrice">—</span></div>
+      <div style="width:100%"><a class="edof-link" id="edofLink" href="#" target="_blank">Voir sur Mon Compte Formation ↗</a></div>
+    </div>
+  </div>
+
   <div class="card">
     <div class="section-label">Titre et cadre de la formation</div>
     <div class="info-row">
       <span class="info-label">Intitulé</span>
-      <input class="info-value" id="trainingTitle" type="text" value="Formation en Anglais Professionnel" style="border:1px solid #e2e8f0;border-radius:6px;padding:4px 8px;font-size:14px;font-weight:600;width:55%;text-align:right">
+      <input class="info-value" id="trainingTitle" type="text" value="Formation en Anglais Professionnel" onchange="titleManuallyEdited=true" style="border:1px solid #e2e8f0;border-radius:6px;padding:4px 8px;font-size:14px;font-weight:600;width:55%;text-align:right">
     </div>
     <div class="info-row">
       <span class="info-label">Niveau prérequis</span>
@@ -95,7 +187,7 @@
       <input class="info-value" id="coachingHours" type="number" min="0" max="200" value="" style="border:1px solid #e2e8f0;border-radius:6px;padding:4px 8px;font-size:14px;font-weight:600;width:100px;text-align:right">
     </div>
     <div class="info-row">
-      <span class="info-label">Heures autonomie</span>
+      <span class="info-label">Heures autonomie / TP</span>
       <input class="info-value" id="homeworkHours" type="number" min="0" max="200" value="0" style="border:1px solid #e2e8f0;border-radius:6px;padding:4px 8px;font-size:14px;font-weight:600;width:100px;text-align:right">
     </div>
     <div class="info-row">
@@ -134,22 +226,63 @@
     <div class="section-label">Contenu de la formation</div>
     <p style="font-size:13px;color:#64748b;margin-bottom:1rem">Sélectionnez les thèmes à inclure dans le programme :</p>
 
-    <button id="btnSuggest" onclick="suggestTopics()" style="margin-bottom:10px;font-size:12px;padding:6px 14px;border-radius:6px;border:1px solid #2E75B6;background:#eff6ff;color:#1e40af;cursor:pointer">✨ Suggestion IA — pré-sélectionner les thèmes</button><div class="topics-grid" id="topicsGrid"></div>
+    <!-- Standard topics (hidden for CAJA) -->
+    <div id="standardTopicsSection">
+      <button id="btnSuggest" onclick="suggestTopics()" style="margin-bottom:10px;font-size:12px;padding:6px 14px;border-radius:6px;border:1px solid #2E75B6;background:#eff6ff;color:#1e40af;cursor:pointer">✨ Suggestion IA — pré-sélectionner les thèmes</button>
+      <div class="topics-grid" id="topicsGrid"></div>
 
-    <div class="cpf-only" id="cpfTopics">
-      <div style="margin-top:1rem;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:#92400e;margin-bottom:8px">Préparation certification English 360 <span class="cpf-badge">CPF</span></div>
-      <div class="topics-grid" id="cpfTopicsGrid"></div>
+      <!-- CPF cert prep block (E360 / E360_LEGAL only) - LOCKED, not user-selectable -->
+      <div class="cpf-only" id="cpfTopics" style="margin-top:1rem;padding:1rem;background:#fffbeb;border-radius:10px;border:1px solid #fcd34d;">
+        <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:#92400e;margin-bottom:8px" id="cpfTopicsLabel">
+          🔒 Préparation certification English 360 <span class="cpf-badge">CPF</span> — contenu fixé par le référentiel RS6341
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:13px;color:#78350f;">
+          <div style="padding:6px 10px;background:white;border-radius:6px;border:1px solid #fde68a">✓ Compréhension orale (listening)</div>
+          <div style="padding:6px 10px;background:white;border-radius:6px;border:1px solid #fde68a">✓ Expression orale (speaking)</div>
+          <div style="padding:6px 10px;background:white;border-radius:6px;border:1px solid #fde68a">✓ Compréhension écrite (reading)</div>
+          <div style="padding:6px 10px;background:white;border-radius:6px;border:1px solid #fde68a">✓ Expression écrite (writing)</div>
+          <div style="padding:6px 10px;background:white;border-radius:6px;border:1px solid #fde68a">✓ Grammaire et vocabulaire ciblés</div>
+          <div style="padding:6px 10px;background:white;border-radius:6px;border:1px solid #fde68a">✓ Entraînement aux épreuves de certification</div>
+        </div>
+        <div style="font-size:11px;color:#92400e;margin-top:8px">Ces 5 compétences sont évaluées par l’examen English 360 et doivent figurer dans tout dossier CPF RS6341.</div>
+      </div>
+
+      <label style="margin-top:1rem">Thèmes supplémentaires (optionnel)</label>
+      <textarea id="customTopics" placeholder="Ajoutez des thèmes spécifiques au secteur ou au poste du candidat..." style="min-height:60px"></textarea>
     </div>
 
-    <label style="margin-top:1rem">Thèmes supplémentaires (optionnel)</label>
-    <textarea id="customTopics" placeholder="Ajoutez des thèmes spécifiques au secteur ou au poste du candidat..." style="min-height:60px"></textarea>
+    <!-- CAJA competences block (fixed, shown only for CAJA) -->
+    <div class="caja-content-block" id="cajaContentBlock">
+      <div class="section-label">Compétences CAJA — Référentiel RS6810 (fixe)</div>
+      <div class="caja-comp-item"><strong>C1</strong> — Initier un premier contact et se présenter professionnellement en anglais juridique</div>
+      <div class="caja-comp-item"><strong>C2</strong> — Conduire un entretien initial avec un client ou collègue en anglais</div>
+      <div class="caja-comp-item"><strong>C3</strong> — Fournir des conseils juridiques à l'oral en anglais</div>
+      <div class="caja-comp-item"><strong>C4</strong> — Produire des écrits professionnels et documents juridiques en anglais</div>
+      <div class="caja-comp-item"><strong>C5</strong> — Rédiger et réviser des clauses contractuelles en anglais</div>
+      <div class="caja-comp-item"><strong>C6</strong> — Assurer des négociations oralement en anglais</div>
+      <label style="margin-top:1rem">Notes complémentaires sur le contenu</label>
+      <textarea id="cajaCustomTopics" placeholder="Contexte professionnel spécifique, domaines juridiques prioritaires..." style="min-height:60px"></textarea>
+    </div>
   </div>
 
   <div class="card">
     <div class="section-label">Objectifs pédagogiques</div>
-    <p style="font-size:13px;color:#64748b;margin-bottom:1rem">Pré-remplis depuis le rapport final. Vous pouvez les modifier.</p>
-    <div id="objectivesContainer"></div>
-    <button onclick="addObjective()" style="margin-top:8px;font-size:12px;padding:6px 14px;border-radius:6px;border:1px solid #cbd5e1;background:white;cursor:pointer;font-family:inherit">+ Ajouter un objectif</button>
+
+    <!-- LOCKED objectives for CPF (referential-based) -->
+    <div class="objectives-locked" id="objectivesLocked">
+      <div style="font-size:12px;color:#64748b;margin-bottom:12px;padding:8px 12px;background:#f8fafc;border-radius:6px;border-left:3px solid #1F4E79">
+        🔒 Objectifs définis par le référentiel certification (<span id="refLabel">RS6341</span>). La base est fixe ; vous pouvez personnaliser le contexte professionnel dans le champ italic sous chaque objectif.
+      </div>
+      <div id="lockedObjectivesContainer"></div>
+      <button onclick="aiPersonaliseObjectives()" id="btnPersonalise" style="margin-top:12px;font-size:12px;padding:7px 16px;border-radius:6px;border:1px solid #2E75B6;background:#eff6ff;color:#1e40af;cursor:pointer;font-family:inherit">✨ Personnaliser via IA</button>
+    </div>
+
+    <!-- FREE objectives for non-CPF -->
+    <div class="objectives-free" id="objectivesFree">
+      <p style="font-size:13px;color:#64748b;margin-bottom:1rem">Pré-remplis depuis le rapport final. Vous pouvez les modifier.</p>
+      <div id="objectivesContainer"></div>
+      <button onclick="addObjective()" style="margin-top:8px;font-size:12px;padding:6px 14px;border-radius:6px;border:1px solid #cbd5e1;background:white;cursor:pointer;font-family:inherit">+ Ajouter un objectif</button>
+    </div>
   </div>
 
   <div class="card">
@@ -159,7 +292,10 @@
 
   <div class="btn-row">
     <a href="#" class="btn btn-primary" id="backBtn">← Retour</a>
-    <button class="btn btn-success" id="generateBtn" onclick="generateProgramme()">Générer le programme ⬇</button><button class="btn" id="btnSuggest" onclick="suggestTopics()" style="background:#2E75B6;color:white;margin-left:8px">✨ Suggestion IA</button>
+    <div style="display:flex;gap:8px">
+      <button class="btn" id="btnSuggest2" onclick="suggestTopics()" style="background:#2E75B6;color:white">✨ Suggestion IA</button>
+      <button class="btn btn-success" id="generateBtn" onclick="generateProgramme()">Générer le programme ⬇</button>
+    </div>
   </div>
 </div>
 
@@ -177,8 +313,40 @@ var CPF_TOPICS = [
   "Simulation d'examen blanc"
 ];
 
+// Referential objectives per cpfType
+var REFERENTIAL_OBJECTIVES = {
+  E360: [
+    "Dialoguer en anglais pour échanger des informations pertinentes dans un contexte professionnel",
+    "Prendre la parole en continu pour transmettre et partager des informations en milieu professionnel",
+    "Comprendre des communications orales en anglais et identifier des informations pertinentes en contexte professionnel",
+    "Composer des textes professionnels en anglais adaptés au contexte et au public",
+    "Analyser des textes professionnels en anglais pour en extraire et utiliser l'information pertinente"
+  ],
+  E360_LEGAL: [
+    "Dialoguer en anglais pour échanger des informations pertinentes dans un contexte juridique professionnel",
+    "Prendre la parole en continu pour transmettre et partager des informations dans un milieu juridique anglophone",
+    "Comprendre des communications orales en anglais et identifier des informations pertinentes dans un contexte juridique",
+    "Composer des textes professionnels en anglais adaptés au contexte et aux interlocuteurs juridiques",
+    "Analyser des textes professionnels juridiques en anglais pour en extraire et utiliser l'information pertinente"
+  ],
+  CAJA: [
+    "Se présenter dans un cadre professionnel et établir un bon contact avec un client, un collègue ou un confrère",
+    "Mener un premier entretien pour comprendre la situation, poser les bonnes questions et identifier les attentes",
+    "Expliquer une problématique juridique, proposer des options et aider à la prise de décision",
+    "R\u00e9diger des documents professionnels adapt\u00e9s au contexte : emails, lettres, notes d\u2019avocat",
+    "Corriger ou r\u00e9diger des clauses contractuelles claires, pr\u00e9cises et structur\u00e9es",
+    "Conduire une n\u00e9gociation, formuler ou r\u00e9pondre \u00e0 des propositions, et d\u00e9fendre les int\u00e9r\u00eats de son client"
+  ]
+};
+
+var REF_LABELS = { E360: 'RS6341', E360_LEGAL: 'RS6341', CAJA: 'RS6810' };
+
 var candData = null;
 var objectives = [];
+var objectiveSuffixes = []; // AI-generated personalisation suffixes
+var currentCpfType = null;
+var currentEdofAction = null;
+var titleManuallyEdited = false;
 var id = window.location.pathname.split("/")[2];
 
 document.getElementById("backLink").href = "/candidates/" + id;
@@ -187,7 +355,6 @@ document.getElementById("backBtn").href = "/candidates/" + id;
 fetch("/candidates/api/" + id)
   .then(r => r.json())
   .then(function(c) {
-    console.log('candidate data loaded:', c.name, 'rs:', JSON.stringify(c.reportSummary), 'oral:', JSON.stringify(c.oralData));
     candData = c;
     var rs = c.reportSummary || {};
     var oral = c.oralData || {};
@@ -199,30 +366,43 @@ fetch("/candidates/api/" + id)
 
     document.getElementById("prereqLevel").value = cefrLabel(rs.overallLevel) || "";
     if (oral.trainingTitle) document.getElementById("trainingTitle").value = oral.trainingTitle;
+
+    // Restore cpfType and EDOF action if previously saved
     if (oral.isCPF) {
       document.getElementById("cpfToggle").checked = true;
-      toggleCPF();
+      document.getElementById("cpfTypeSelector").classList.add("show");
+      if (oral.cpfType) {
+        currentCpfType = oral.cpfType;
+        // Tick the right radio
+        document.querySelectorAll('.cpf-type-option').forEach(function(opt) {
+          var radio = opt.querySelector('input[type=radio]');
+          if (radio.value === oral.cpfType) {
+            radio.checked = true;
+            opt.classList.add('selected');
+          }
+        });
+        populateEdofDropdown(oral.cpfType, oral.edofActionId);
+        updateCpfUI(oral.cpfType);
+      }
     }
-    document.getElementById("targetLevel").value = cefrLabel(oral.targetLevel) || "";
 
-    var coaching = oral.coachingHours || "—";
+    document.getElementById("targetLevel").value = cefrLabel(oral.targetLevel) || "";
+    var coaching = oral.coachingHours || "";
     var homework = oral.homeworkHours || 0;
-    var total = oral.totalHours || "—";
-    document.getElementById("coachingHours").value = coaching !== "—" ? coaching : "";
+    document.getElementById("coachingHours").value = coaching;
     document.getElementById("homeworkHours").value = homework;
-    var hw = parseInt(oral.homeworkHours) || 0;
     if (oral.dateStart) document.getElementById("dateStart").value = oral.dateStart;
     if (oral.dateEnd) document.getElementById("dateEnd").value = oral.dateEnd;
-    document.getElementById("deliveryMode").value = hw > 0 ? "Visio blended individuel" : "Visio individuel";
-    // Keep homeworkHours in sync with delivery mode dropdown
+    document.getElementById("deliveryMode").value = parseInt(homework) > 0 ? "Visio blended individuel" : "Visio individuel";
     document.getElementById("deliveryMode").addEventListener("change", function() {
-      if (this.value === "Visio individuel") {
-        document.getElementById("homeworkHours").value = 0;
-      }
+      if (this.value === "Visio individuel") document.getElementById("homeworkHours").value = 0;
     });
 
-    // Extract objectives: oralData.objectives first, then finalReport regex, then fallback
-    var oral_obj = (c.oralData || {}).objectives;
+    // Restore saved objective suffixes
+    if (Array.isArray(oral.objectiveSuffixes)) objectiveSuffixes = oral.objectiveSuffixes;
+
+    // Extract free objectives
+    var oral_obj = oral.objectives;
     if (Array.isArray(oral_obj) && oral_obj.length > 0) {
       objectives = oral_obj;
     } else {
@@ -230,44 +410,201 @@ fetch("/candidates/api/" + id)
       var objSection = report.match(/##\s*Learning Objectives[\s\S]*?(?=##|$)/i);
       if (objSection) {
         var matches = objSection[0].match(/^\d+\.\s+.+|^-\s+.+/gm);
-        if (matches) {
-          objectives = matches.map(function(m) { return m.replace(/^[\d\.\-\s]+/, "").trim(); }).filter(Boolean).slice(0,5);
-        }
+        if (matches) objectives = matches.map(function(m) { return m.replace(/^[\d\.\-\s]+/, "").trim(); }).filter(Boolean).slice(0,5);
       }
     }
     if (!objectives.length) {
       if (c.courseType === 'legal') {
         objectives = [
           "Lire et analyser des documents juridiques en anglais (contrats, clauses, jurisprudence)",
-          "Rédiger des écrits juridiques professionnels en anglais (emails, mémos, notes)",
-          "Communiquer à l'oral en anglais dans des contextes juridiques professionnels"
+          "R\u00e9diger des \u00e9crits juridiques professionnels en anglais (emails, m\u00e9mos, notes)",
+          "Communiquer \u00e0 l\u2019oral en anglais dans des contextes juridiques professionnels"
         ];
       } else {
         objectives = [
-          "Développer ses compétences en anglais sur les quatre dimensions du CECRL : compréhension écrite et orale, expression écrite et orale",
-          "Comprendre des échanges professionnels en anglais et interagir avec des interlocuteurs internationaux",
-          "S'exprimer avec plus de fluidité et de précision à l'oral dans des situations professionnelles courantes"
+          "D\u00e9velopper ses comp\u00e9tences en anglais sur les quatre dimensions du CECRL : compr\u00e9hension \u00e9crite et orale, expression \u00e9crite et orale",
+          "Comprendre des \u00e9changes professionnels en anglais et interagir avec des interlocuteurs internationaux",
+          "S\u2019exprimer avec plus de fluidit\u00e9 et de pr\u00e9cision \u00e0 l\u2019oral dans des situations professionnelles courantes"
         ];
       }
     }
+
     renderObjectives();
     renderTopics();
 
-    // Check CPF warning
     var level = rs.overallLevel || "";
-    if (["A1-","A1","A2"].includes(level)) {
-      document.getElementById("cpfWarning").style.display = "block";
-    }
+    if (["A1-","A1","A2"].includes(level)) document.getElementById("cpfWarning").style.display = "block";
   });
 
+// ── CPF TOGGLE ──────────────────────────────────────────────────────────────
+function toggleCPF() {
+  var isCPF = document.getElementById("cpfToggle").checked;
+  document.getElementById("cpfTypeSelector").classList.toggle("show", isCPF);
+  if (!isCPF) {
+    // Reset CPF state
+    titleManuallyEdited = false;
+    currentCpfType = null;
+    currentEdofAction = null;
+    document.getElementById("edofSelector").classList.remove("show");
+    document.getElementById("edofInfo").classList.remove("show");
+    document.querySelectorAll('.cpf-type-option').forEach(function(o) { o.classList.remove('selected'); o.querySelector('input').checked = false; });
+    updateCpfUI(null);
+    // Save isCPF=false
+    fetch("/candidates/api/" + id + "/cpf", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({isCPF: false}) });
+  } else {
+    fetch("/candidates/api/" + id + "/cpf", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({isCPF: true}) });
+  }
+}
+
+// ── CPF TYPE SELECTION ───────────────────────────────────────────────────────
+function selectCpfType(type, el) {
+  document.querySelectorAll('.cpf-type-option').forEach(function(o) { o.classList.remove('selected'); });
+  el.classList.add('selected');
+  el.querySelector('input[type=radio]').checked = true;
+  currentCpfType = type;
+  currentEdofAction = null;
+
+  // Save to server
+  fetch("/candidates/api/" + id + "/cpf-type", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({cpfType: type}) });
+
+  populateEdofDropdown(type, null);
+  updateCpfUI(type);
+}
+
+function updateCpfUI(type) {
+  var isCPF = !!type;
+  var isLegal = candData && candData.courseType === "legal";
+
+  // Update badge
+  var badge = document.getElementById("cpfBadge");
+  badge.className = type === 'CAJA' ? 'caja-badge' : type === 'E360_LEGAL' ? 'legal-badge' : 'cpf-badge';
+  badge.textContent = type ? REF_LABELS[type] : 'RS6341';
+
+  // Update training title (only if not manually edited by user)
+  if (!titleManuallyEdited) {
+    var targetLv = document.getElementById("targetLevel").value || "B2";
+    var titles = {
+      E360: "Communiquer en anglais professionnel \u2013 English 360 \u2013 Niveau " + targetLv,
+      E360_LEGAL: "Communiquer en anglais professionnel \u2013 English 360 en contexte juridique \u2013 Niveau " + targetLv,
+      CAJA: "Communiquer en anglais juridique des affaires \u2013 CAJA \u2013 Niveau " + targetLv
+    };
+    if (type && titles[type]) {
+      document.getElementById("trainingTitle").value = titles[type];
+    } else if (!isCPF) {
+      document.getElementById("trainingTitle").value = isLegal ? "Formation en Anglais Juridique" : "Formation en Anglais Professionnel";
+    }
+  }
+
+  // Show/hide CPF cert prep topics
+  var cpfTopicsEl = document.getElementById("cpfTopics");
+  cpfTopicsEl.classList.toggle("show", isCPF && type !== 'CAJA');
+
+  // Show/hide CAJA content block
+  document.getElementById("cajaContentBlock").classList.toggle("show", type === 'CAJA');
+  document.getElementById("standardTopicsSection").style.display = type === 'CAJA' ? 'none' : 'block';
+
+  // Update ref label
+  if (type) document.getElementById("refLabel").textContent = REF_LABELS[type];
+
+  // Toggle objectives mode
+  document.getElementById("objectivesLocked").classList.toggle("show", isCPF);
+  document.getElementById("objectivesFree").classList.toggle("hide", isCPF);
+
+  if (isCPF && type) renderLockedObjectives(type);
+}
+
+// ── EDOF DROPDOWN ────────────────────────────────────────────────────────────
+function populateEdofDropdown(type, savedActionId) {
+  fetch("/api/catalogue/" + type)
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var sel = document.getElementById("edofActionSelect");
+      sel.innerHTML = '<option value="">S\u00e9lectionnez le volume horaire...</option>';
+      (data.actions || []).forEach(function(a) {
+        var opt = document.createElement("option");
+        opt.value = a.id;
+        opt.textContent = a.label;
+        if (savedActionId && a.id === savedActionId) opt.selected = true;
+        sel.appendChild(opt);
+      });
+      document.getElementById("edofSelector").classList.add("show");
+      if (savedActionId) {
+        // Restore saved action display and set currentEdofAction
+        var saved = (data.actions || []).find(function(a) { return a.id === savedActionId; });
+        if (saved) { currentEdofAction = saved; showEdofInfo(saved); }
+      }
+    });
+}
+
+function selectEdofAction() {
+  var sel = document.getElementById("edofActionSelect");
+  var actionId = sel.value;
+  if (!actionId || !currentCpfType) { currentEdofAction = null; return; }
+
+  fetch("/api/catalogue/" + currentCpfType)
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var action = (data.actions || []).find(function(a) { return a.id === actionId; });
+      if (!action) { currentEdofAction = null; return; }
+      currentEdofAction = action;
+      showEdofInfo(action);
+
+      // Save to server and update hours fields
+      fetch("/candidates/api/" + id + "/edof-action", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({edofActionId: actionId})
+      }).then(function(r) { return r.json(); }).then(function(res) {
+        if (res.success) {
+          document.getElementById("coachingHours").value = action.coachingHours;
+          document.getElementById("homeworkHours").value = action.tpHours;
+          document.getElementById("deliveryMode").value = action.tpHours > 0 ? "Visio blended individuel" : "Visio individuel";
+        }
+      });
+    });
+}
+
+function showEdofInfo(action) {
+  document.getElementById("edofTotal").textContent = action.totalHours + "h";
+  document.getElementById("edofCoaching").textContent = action.coachingHours + "h";
+  document.getElementById("edofTP").textContent = action.tpHours + "h";
+  document.getElementById("edofPrice").textContent = action.price.toLocaleString('fr-FR') + " \u20ac";
+  document.getElementById("edofLink").href = action.link;
+  document.getElementById("edofInfo").classList.add("show");
+}
+
+// ── LOCKED OBJECTIVES (CPF) ──────────────────────────────────────────────────
+function renderLockedObjectives(type) {
+  var bases = REFERENTIAL_OBJECTIVES[type] || [];
+  // Pad suffixes array
+  while (objectiveSuffixes.length < bases.length) objectiveSuffixes.push("");
+  var container = document.getElementById("lockedObjectivesContainer");
+  container.innerHTML = bases.map(function(base, i) {
+    return '<div class="obj-locked-item">' +
+      '<div class="obj-num">' + (i+1) + '</div>' +
+      '<div class="obj-text-wrap">' +
+        '<div class="obj-base">' + base + '</div>' +
+        '<div class="obj-suffix-wrap">' +
+          '<input type="text" class="obj-suffix" placeholder="Personnalisation IA (contexte professionnel...)" ' +
+            'value="' + (objectiveSuffixes[i] || '') + '" ' +
+            'onchange="objectiveSuffixes[' + i + ']=this.value" ' +
+            'style="font-style:italic;font-size:12px;color:#475569;border:1px dashed #cbd5e1;border-radius:6px;padding:5px 8px;background:white;">' +
+          '<div class="obj-lock-note">\u{1F512} Base fixe (r\u00e9f\u00e9rentiel ' + REF_LABELS[type] + ') \u2014 le champ ci-dessus personnalise le contexte</div>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }).join("");
+}
+
+// ── FREE OBJECTIVES (non-CPF) ────────────────────────────────────────────────
 function renderObjectives() {
   var c = document.getElementById("objectivesContainer");
   c.innerHTML = objectives.map(function(o, i) {
     return '<div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:8px">' +
       '<span style="background:#dbeafe;color:#1e40af;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0;margin-top:2px">' + (i+1) + '</span>' +
       '<textarea onchange="objectives[' + i + ']=this.value" style="min-height:60px;font-size:13px">' + o + '</textarea>' +
-      '<button onclick="objectives.splice(' + i + ',1);renderObjectives()" style="padding:4px 8px;border-radius:6px;border:1px solid #fca5a5;background:#fee2e2;color:#991b1b;cursor:pointer;font-family:inherit;flex-shrink:0">✕</button>' +
-      '</div>';
+      '<button onclick="objectives.splice(' + i + ',1);renderObjectives()" style="padding:4px 8px;border-radius:6px;border:1px solid #fca5a5;background:#fee2e2;color:#991b1b;cursor:pointer;font-family:inherit;flex-shrink:0">\u2715</button>' +
+    '</div>';
   }).join("");
 }
 
@@ -276,13 +613,16 @@ function addObjective() {
   renderObjectives();
 }
 
+// ── TOPICS ───────────────────────────────────────────────────────────────────
 function renderTopics() {
   var savedTopics = (candData && candData.oralData && candData.oralData.topics) ? candData.oralData.topics : [];
   var g = document.getElementById("topicsGrid");
   g.innerHTML = STANDARD_TOPICS.map(function(t) {
-    var sel = savedTopics.indexOf(t) !== -1 ? ' selected' : '';
+    var sel = savedTopics.indexOf(t) !== -1;
+    // Pre-tick "Anglais juridique" for E360_LEGAL
+    if (currentCpfType === 'E360_LEGAL' && t === 'Anglais juridique') sel = true;
     var chk = sel ? ' checked' : '';
-    return '<div class="topic-item' + sel + '" onclick="toggleTopic(this)">' +
+    return '<div class="topic-item' + (sel ? ' selected' : '') + '" onclick="toggleTopic(this)">' +
       '<input type="checkbox"' + chk + ' onchange="this.parentElement.classList.toggle(\'selected\',this.checked)">' +
       '<label>' + t + '</label></div>';
   }).join("");
@@ -302,106 +642,166 @@ function toggleTopic(el) {
   el.classList.toggle("selected", cb.checked);
 }
 
-function toggleCPF() {
-  var isCPF = document.getElementById("cpfToggle").checked;
-  var isLegal = candData && candData.courseType === "legal";
-  var title = isCPF
-    ? "Communiquer en anglais professionnel – English 360 – Niveau " + (document.getElementById("targetLevel").value || "B2")
-    : (isLegal ? "Formation en Anglais Juridique" : "Formation en Anglais Professionnel");
-  document.getElementById("trainingTitle").value = title;
-  var cpfEl = document.getElementById("cpfTopics");
-  cpfEl.classList.toggle("show", isCPF);
-  // Save isCPF to oralData immediately
-  fetch("/candidates/api/" + id + "/cpf", {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({isCPF: isCPF})
-  });
-}
-
 function getSelectedTopics() {
   var topics = [];
   document.querySelectorAll(".topic-item.selected label").forEach(function(l) { topics.push(l.textContent); });
   return topics;
 }
 
+// ── GENERATE PROGRAMME ───────────────────────────────────────────────────────
 function generateProgramme() {
+  var isCPF = document.getElementById("cpfToggle").checked;
+
+  // FAILSAFE: block if CPF but no type selected
+  if (isCPF && !currentCpfType) {
+    alert("Veuillez s\u00e9lectionner un type de certification CPF (E360, E360 juridique ou CAJA) avant de g\u00e9n\u00e9rer le programme.");
+    return;
+  }
+  // FAILSAFE: block if CPF but no EDOF action selected
+  if (isCPF && !currentEdofAction) {
+    alert("Veuillez s\u00e9lectionner une offre EDOF (Mon Compte Formation) avant de g\u00e9n\u00e9rer le programme.");
+    return;
+  }
+
   var btn = document.getElementById("generateBtn");
   btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span>Génération en cours…';
+  btn.innerHTML = '<span class="spinner"></span>G\u00e9n\u00e9ration en cours\u2026';
 
-  var isCPF = document.getElementById("cpfToggle").checked;
   var rs = (candData.finalReportSummary || candData.reportSummary || {});
   var oral = candData.oralData || {};
 
+  // Build final objectives for payload
+  var finalObjectives;
+  if (isCPF && currentCpfType) {
+    var bases = REFERENTIAL_OBJECTIVES[currentCpfType] || [];
+    finalObjectives = bases.map(function(base, i) {
+      var suffix = (objectiveSuffixes[i] || "").trim();
+      return suffix ? base + ", " + suffix : base;
+    });
+  } else {
+    finalObjectives = objectives;
+  }
+
+  var coachingH = parseInt(document.getElementById("coachingHours").value) || 0;
+  var homeworkH = document.getElementById("deliveryMode").value === "Visio individuel" ? 0 : (parseInt(document.getElementById("homeworkHours").value) || 0);
+
   var payload = {
     isCPF: isCPF,
+    cpfType: currentCpfType || null,
+    edofActionId: currentEdofAction ? currentEdofAction.id : null,
+    edofPrice: currentEdofAction ? currentEdofAction.price : null,
+    edofMCFLink: currentEdofAction ? currentEdofAction.link : null,
     trainingTitle: document.getElementById("trainingTitle").value,
     prereqLevel: document.getElementById("prereqLevel").value || rs.overallLevel || "",
     targetLevel: document.getElementById("targetLevel").value || oral.targetLevel || "",
-    coachingHours: parseInt(document.getElementById("coachingHours").value) || 0,
-    homeworkHours: document.getElementById("deliveryMode").value === "Visio individuel" ? 0 : (parseInt(document.getElementById("homeworkHours").value) || 0),
-    totalHours: String((parseInt(document.getElementById("coachingHours").value) || 0) + (document.getElementById("deliveryMode").value === "Visio individuel" ? 0 : (parseInt(document.getElementById("homeworkHours").value) || 0))),
+    coachingHours: coachingH,
+    homeworkHours: homeworkH,
+    totalHours: String(coachingH + homeworkH),
     location: document.getElementById("location").value,
     dateStart: document.getElementById("dateStart").value,
     dateEnd: document.getElementById("dateEnd").value,
-    objectives: objectives,
-    topics: getSelectedTopics(),
-    customTopics: document.getElementById("customTopics").value,
+    objectives: finalObjectives,
+    objectiveSuffixes: objectiveSuffixes,
+    topics: currentCpfType === 'CAJA' ? [] : getSelectedTopics(),
+    customTopics: currentCpfType === 'CAJA'
+      ? document.getElementById("cajaCustomTopics").value
+      : document.getElementById("customTopics").value,
     additionalNotes: document.getElementById("additionalNotes").value,
     candidateName: candData.name,
     jobtitle: candData.jobtitle,
     dept: candData.dept,
-    confirmedFormat: oral.confirmedFormat || "À distance"
+    company: candData.company,
+    confirmedFormat: oral.confirmedFormat || "A distance"
   };
 
   window.location.href = "/api/generate-programme/" + id + "?" + new URLSearchParams({data: JSON.stringify(payload)});
   setTimeout(function() {
     btn.disabled = false;
-    btn.innerHTML = "Générer le programme ⬇";
+    btn.innerHTML = "G\u00e9n\u00e9rer le programme \u2b07";
   }, 8000);
 }
 
-  function cefrLabel(level) {
-    if (!level) return '';
-    var map = {
-      'A1':'A1 (0)','A1+':'A1+ (0.5)',
-      'A2':'A2 (1)','A2+':'A2+ (1.5)',
-      'B1':'B1 (2)','B1+':'B1+ (2.5)',
-      'B2':'B2 (3)','B2+':'B2+ (3.5)',
-      'C1':'C1 (4)','C1+':'C1+ (4.5)',
-      'C2':'C2 (5)'
-    };
-    if (/\(\d/.test(level)) return level;
-    return map[level.trim()] || level;
-  }
+// ── AI SUGGESTION ─────────────────────────────────────────────────────────────
+function suggestTopics() {
+  var btn = document.getElementById('btnSuggest');
+  var btn2 = document.getElementById('btnSuggest2');
+  btn.textContent = '\u23f3 Analyse...'; btn.disabled = true;
+  btn2.textContent = '\u23f3 Analyse...'; btn2.disabled = true;
+  var topics = [];
+  var objArr = [];
+  document.querySelectorAll('#topicsGrid .topic-item label, #cpfTopicsGrid .topic-item label').forEach(function(l){topics.push(l.textContent.trim());});
+  document.querySelectorAll('#objectivesContainer textarea').forEach(function(t){if(t.value.trim())objArr.push(t.value.trim());});
+  fetch('/api/suggest-topics/'+id,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({topics:topics,objectives:objArr})})
+  .then(function(r){return r.json();})
+  .then(function(d){
+    if(d.success){
+      document.querySelectorAll('.topic-item').forEach(function(el){el.classList.remove('selected');el.querySelector('input[type=checkbox]').checked=false;});
+      document.querySelectorAll('#topicsGrid .topic-item, #cpfTopicsGrid .topic-item').forEach(function(el){
+        var lbl=el.querySelector('label').textContent.trim();
+        if(d.topics&&d.topics.indexOf(lbl)>-1){el.classList.add('selected');el.querySelector('input[type=checkbox]').checked=true;}
+      });
+    } else { alert('Erreur: '+d.error); }
+    btn.textContent='\u2728 Suggestion IA'; btn.disabled=false;
+    btn2.textContent='\u2728 Suggestion IA'; btn2.disabled=false;
+  }).catch(function(e){alert(e.message);btn.textContent='\u2728 Suggestion IA';btn.disabled=false;btn2.textContent='\u2728 Suggestion IA';btn2.disabled=false;});
+}
 
 
-  function suggestTopics() {
-    var btn = document.getElementById('btnSuggest');
-    btn.textContent = '⏳ Analyse...';
-    btn.disabled = true;
-    var topics = [];
-    var objectives = [];
-    document.querySelectorAll('#topicsGrid .topic-item label, #cpfTopicsGrid .topic-item label').forEach(function(l){topics.push(l.textContent.trim());});
-    document.querySelectorAll('#objectivesContainer .topic-item label').forEach(function(l){objectives.push(l.textContent.trim());});
-    fetch('/api/suggest-topics/'+id,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({topics:topics,objectives:objectives})})
-    .then(function(r){return r.json();})
-    .then(function(d){
-      if(d.success){
-        document.querySelectorAll('.topic-item').forEach(function(el){el.classList.remove('selected');el.querySelector('input[type=checkbox]').checked=false;});
-        document.querySelectorAll('#topicsGrid .topic-item, #cpfTopicsGrid .topic-item').forEach(function(el){
-          var lbl=el.querySelector('label').textContent.trim();
-          if(d.topics&&d.topics.indexOf(lbl)>-1){el.classList.add('selected');el.querySelector('input[type=checkbox]').checked=true;}
-        });
-        document.querySelectorAll('#objectivesContainer .topic-item').forEach(function(el){
-          var lbl=el.querySelector('label').textContent.trim();
-          if(d.objectives&&d.objectives.indexOf(lbl)>-1){el.classList.add('selected');el.querySelector('input[type=checkbox]').checked=true;}
-        });
-      } else { alert('Erreur: '+d.error); }
-      btn.textContent='✨ Suggestion IA'; btn.disabled=false;
-    }).catch(function(e){alert(e.message);btn.textContent='✨ Suggestion IA';btn.disabled=false;});
+// ── AI OBJECTIVE PERSONALISATION ─────────────────────────────────────────────
+function aiPersonaliseObjectives() {
+  if (!currentCpfType || !candData) {
+    alert('Veuillez d’abord sélectionner un type CPF.');
+    return;
   }
+  var btn = document.getElementById('btnPersonalise');
+  btn.textContent = '⏳ Personnalisation en cours...';
+  btn.disabled = true;
+
+  var topics = currentCpfType === 'CAJA' ? [] : getSelectedTopics();
+
+  fetch('/api/personalise-objectives/' + id, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      cpfType: currentCpfType,
+      topics: topics,
+      targetLevel: document.getElementById('targetLevel').value
+    })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    btn.textContent = '✨ Personnaliser via IA';
+    btn.disabled = false;
+    if (!d.success) { alert('Erreur: ' + (d.error || 'inconnue')); return; }
+    var suffixes = d.suffixes || [];
+    objectiveSuffixes = suffixes;
+    // Update input fields
+    var inputs = document.querySelectorAll('.obj-suffix');
+    inputs.forEach(function(inp, i) {
+      if (suffixes[i] !== undefined) inp.value = suffixes[i];
+    });
+  })
+  .catch(function(e) {
+    btn.textContent = '✨ Personnaliser via IA';
+    btn.disabled = false;
+    alert('Erreur: ' + e.message);
+  });
+}
+
+// ── UTILITIES ─────────────────────────────────────────────────────────────────
+function cefrLabel(level) {
+  if (!level) return '';
+  var map = {
+    'A1':'A1 (0)','A1+':'A1+ (0.5)',
+    'A2':'A2 (1)','A2+':'A2+ (1.5)',
+    'B1':'B1 (2)','B1+':'B1+ (2.5)',
+    'B2':'B2 (3)','B2+':'B2+ (3.5)',
+    'C1':'C1 (4)','C1+':'C1+ (4.5)',
+    'C2':'C2 (5)'
+  };
+  if (/\(\d/.test(level)) return level;
+  return map[level.trim()] || level;
+}
 </script>
 </body>
 </html>
