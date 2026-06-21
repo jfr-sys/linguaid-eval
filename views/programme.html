@@ -367,6 +367,9 @@ fetch("/candidates/api/" + id)
     document.getElementById("prereqLevel").value = cefrLabel(rs.overallLevel) || "";
     if (oral.trainingTitle) document.getElementById("trainingTitle").value = oral.trainingTitle;
 
+    // Restore saved objective suffixes BEFORE CPF UI render (renderLockedObjectives reads this)
+    if (Array.isArray(oral.objectiveSuffixes)) objectiveSuffixes = oral.objectiveSuffixes;
+
     // Restore cpfType and EDOF action if previously saved
     if (oral.isCPF) {
       document.getElementById("cpfToggle").checked = true;
@@ -398,8 +401,6 @@ fetch("/candidates/api/" + id)
       if (this.value === "Visio individuel") document.getElementById("homeworkHours").value = 0;
     });
 
-    // Restore saved objective suffixes
-    if (Array.isArray(oral.objectiveSuffixes)) objectiveSuffixes = oral.objectiveSuffixes;
 
     // Extract free objectives
     var oral_obj = oral.objectives;

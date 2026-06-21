@@ -309,4 +309,288 @@ router.post('/api/personalise-objectives/:id', async function(req, res) {
   }
 });
 
+
+// ---------------------------------------------------------------------------
+// Shared helpers
+// ---------------------------------------------------------------------------
+const nodemailer = require('nodemailer');
+const os = require('os');
+
+function getTransporter() {
+  return nodemailer.createTransport({ host: 'localhost', port: 25, secure: false, tls: { rejectUnauthorized: false } });
+}
+
+const SIGNATURE_HTML = '<br><img src="https://eval.linguaid.net/signature_joss.png" alt="Joss Frimond - Linguaid" style="max-width:400px;display:block;margin-top:8px">';
+
+const MONTHS_FR = ['janvier','f\xe9vrier','mars','avril','mai','juin','juillet','ao\xfbt','septembre','octobre','novembre','d\xe9cembre'];
+function fmtDateFr(iso) {
+  if (!iso) return '\xe0 d\xe9finir';
+  const d = new Date(iso);
+  return d.getUTCDate() + ' ' + MONTHS_FR[d.getUTCMonth()] + ' ' + d.getUTCFullYear();
+}
+
+// ---------------------------------------------------------------------------
+// POST /api/generate-proposition/:id
+// Fills PROPOSITION_TEMPLATE.docx, converts to PDF via LibreOffice
+// Stores docx at data/propositions/:id.docx and pdf at data/propositions/:id.pdf
+// ---------------------------------------------------------------------------
+router.post('/api/generate-proposition/:id', async function(req, res) {
+  const candidates = getCandidates();
+  const c = candidates.find(x => x.id === req.params.id);
+  if (!c) return res.status(404).json({ error: 'Not found' });
+
+  const od = c.oralData || {};
+  const cd = c.conventionData || {};
+  const rs = c.finalReportSummary || c.reportSummary || {};
+  const isCPF = !!(od.isCPF);
+  const cpfType = od.cpfType || '';
+  const isLegal = c.courseType === 'legal' || cpfType === 'E360_LEGAL' || cpfType === 'CAJA';
+
+  // Build objectives with suffixes
+  const REFERENTIAL_OBJECTIVES = {
+    'E360': [
+      'Dialoguer en anglais pour \xe9changer des informations pertinentes dans un contexte professionnel',
+      'Prendre la parole en continu pour transmettre et partager des informations en milieu professionnel',
+      'Comprendre des communications orales en anglais et identifier des informations pertinentes en contexte professionnel',
+      'Composer des textes professionnels en anglais adapt\xe9s au contexte et au public',
+      "Analyser des textes professionnels en anglais pour en extraire et utiliser l'information pertinente"
+    ],
+    'E360_LEGAL': [
+      'Dialoguer en anglais pour \xe9changer des informations pertinentes dans un contexte juridique professionnel',
+      'Prendre la parole en continu pour transmettre et partager des informations dans un milieu juridique anglophone',
+      'Comprendre des communications orales en anglais et identifier des informations pertinentes dans un contexte juridique',
+      'Composer des textes professionnels en anglais adapt\xe9s au contexte et aux interlocuteurs juridiques',
+      "Analyser des textes professionnels juridiques en anglais pour en extraire et utiliser l'information pertinente"
+    ],
+    'CAJA': [
+      'Se pr\xe9senter dans un cadre professionnel et \xe9tablir un bon contact avec un client, un coll\xe8gue ou un confr\xe8re',
+      'Mener un premier entretien pour comprendre la situation, poser les bonnes questions et identifier les attentes',
+      'Expliquer une probl\xe9matique juridique, proposer des options et aider \xe0 la prise de d\xe9cision',
+      "R\xe9diger des documents professionnels adapt\xe9s au contexte\u00a0: emails, lettres, notes d'avocat",
+      'Corriger ou r\xe9diger des clauses contractuelles claires, pr\xe9cises et structur\xe9es',
+      "Conduire une n\xe9gociation, formuler ou r\xe9pondre \xe0 des propositions, et d\xe9fendre les int\xe9r\xeats du client"
+    ]
+  };
+
+  let objectives = od.objectives || [];
+  if (isCPF && cpfType && REFERENTIAL_OBJECTIVES[cpfType]) {
+    const bases = REFERENTIAL_OBJECTIVES[cpfType];
+    const suffixes = od.objectiveSuffixes || [];
+    objectives = bases.map((base, i) => {
+      const suffix = (suffixes[i] || '').trim();
+      return suffix ? base + ', ' + suffix : base;
+    });
+  }
+
+  // Price
+  const price = cd.price || od.edofPrice || '';
+  let priceInt = parseInt(price, 10) || 0;
+  if (!priceInt && !isCPF) {
+    const ch = parseInt(od.coachingHours, 10) || 0;
+    const hw = parseInt(od.homeworkHours, 10) || 0;
+    priceInt = isLegal ? (ch * 132 + (hw > 0 ? 200 : 0)) : (ch * 90 + hw * 30);
+  }
+
+  // AI-generated needs summary
+  let resumeSituation = '';
+  try {
+    const goals = (od.validatedGoals || []).map(g => g.goal || g).join(', ');
+    const criteria = (od.criteria || []).map(cr => typeof cr === 'object' ? (cr.comment || '') : cr).filter(Boolean).join('. ');
+    const prompt = [
+      'Tu es expert en formation professionnelle en anglais.',
+      "R\xe9dige 1 \xe0 2 phrases courtes (max 40 mots total) qui r\xe9sument les besoins et objectifs du candidat, \xe0 partir des informations suivantes.",
+      'Commence par \u00ab\u00a0j\u2019ai bien not\xe9\u00a0\u00bb ou expression similaire, en fran\xe7ais.',
+      'Ne mentionne pas de niveaux CECRL, pas de certifications, pas de pr\xe9nom.',
+      '',
+      'Poste : ' + (c.jobtitle || 'non pr\xe9cis\xe9'),
+      'Entreprise : ' + (c.company || 'non pr\xe9cis\xe9e'),
+      'Objectifs valid\xe9s : ' + (goals || 'non pr\xe9cis\xe9s'),
+      'Observations \xe9valuateur : ' + (criteria || 'non pr\xe9cis\xe9es'),
+      '',
+      'R\xe9ponds uniquement avec les 1-2 phrases, sans pr\xe9ambule ni ponctuation finale superflue.'
+    ].join('\n');
+
+    const msg = await client.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 120,
+      messages: [{ role: 'user', content: prompt }]
+    });
+    resumeSituation = msg.content[0].text.trim();
+  } catch (e) {
+    console.error('generate-proposition AI error:', e.message);
+    resumeSituation = '';
+  }
+
+  // Build data payload for fill_proposition.py
+  const nameParts = (c.name || '').trim().split(/\s+/);
+  const firstName = nameParts[0] || '';
+  const lastName = nameParts.slice(1).join(' ') || '';
+
+  const propData = {
+    isCPF,
+    cpfType,
+    courseType: c.courseType || '',
+    civility: cd.civility || (isLegal ? 'Ma\xeetre' : 'Madame'),
+    firstName,
+    lastName,
+    candidateName: c.name || '',
+    company: c.company || c.dept || '',
+    email: c.email || '',
+    prereqLevel: rs.overallLevel || od.prereqLevel || '',
+    targetLevel: od.targetLevel || '',
+    totalHours: String(od.totalHours || ''),
+    coachingHours: String(od.coachingHours || ''),
+    homeworkHours: String(od.homeworkHours || '0'),
+    dateStart: fmtDateFr(od.dateStart),
+    dateEnd: fmtDateFr(od.dateEnd),
+    objectives,
+    resumeSituation,
+    price: priceInt ? String(priceInt) : String(price),
+    edofMCFLink: od.edofMCFLink || ''
+  };
+
+  // Paths
+  const propDir = path.join(__dirname, '../data/propositions');
+  if (!fs.existsSync(propDir)) fs.mkdirSync(propDir, { recursive: true });
+
+  const tmpJson = path.join(os.tmpdir(), 'prop_' + c.id + '.json');
+  const docxOut = path.join(propDir, c.id + '.docx');
+  const pdfOut  = path.join(propDir, c.id + '.pdf');
+  const template = path.join(__dirname, '../views/PROPOSITION_TEMPLATE.docx');
+  const script = '/home/debian/fill_proposition.py';
+
+  fs.writeFileSync(tmpJson, JSON.stringify(propData, null, 2));
+
+  execFile('python3', [script, tmpJson, template, docxOut], function(err, stdout, stderr) {
+    if (err) {
+      console.error('fill_proposition error:', stderr);
+      return res.status(500).json({ error: 'Proposition generation failed: ' + stderr });
+    }
+
+    // Convert docx to PDF via LibreOffice
+    execFile('soffice', ['--headless', '--convert-to', 'pdf', '--outdir', propDir, docxOut], { timeout: 30000 }, function(errPdf, stdoutPdf, stderrPdf) {
+      // LibreOffice outputs to same dir with .pdf extension
+      const soOut = path.join(propDir, path.basename(docxOut).replace('.docx', '.pdf'));
+      if (errPdf || !fs.existsSync(soOut)) {
+        console.error('LibreOffice proposition error:', stderrPdf);
+        return res.status(500).json({ error: 'PDF conversion failed: ' + stderrPdf });
+      }
+      if (soOut !== pdfOut) {
+        fs.renameSync(soOut, pdfOut);
+      }
+
+      // Save propositionPdfPath to candidate
+      const cands2 = getCandidates();
+      const ci2 = cands2.findIndex(x => x.id === req.params.id);
+      if (ci2 > -1) {
+        cands2[ci2].propositionPdfPath = pdfOut;
+        cands2[ci2].propositionDocxPath = docxOut;
+        cands2[ci2].propositionGeneratedAt = new Date().toISOString();
+        saveCandidates(cands2);
+      }
+
+      res.json({ success: true, pdfPath: pdfOut, resumeSituation });
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// POST /api/send-proposition-email/:id
+// Sends proposition email with 3 PDF attachments: proposition + programme + rapport
+// Body: { recipientEmail, recipientType ('learner'|'hr'), emailBody (edited by user) }
+// ---------------------------------------------------------------------------
+router.post('/api/send-proposition-email/:id', async function(req, res) {
+  const candidates = getCandidates();
+  const c = candidates.find(x => x.id === req.params.id);
+  if (!c) return res.status(404).json({ error: 'Not found' });
+
+  const od = c.oralData || {};
+  const isCPF = !!(od.isCPF);
+  const cpfType = od.cpfType || '';
+  const isLegal = c.courseType === 'legal' || cpfType === 'E360_LEGAL' || cpfType === 'CAJA';
+
+  const recipientEmail = req.body.recipientEmail || c.email;
+  const recipientType  = req.body.recipientType || 'learner';  // 'learner' | 'hr'
+  const emailBody      = req.body.emailBody || '';             // pre-edited HTML body from UI
+
+  if (!recipientEmail) return res.status(400).json({ error: 'No recipient email' });
+  if (!emailBody) return res.status(400).json({ error: 'No email body' });
+
+  // ── Subject line by template type ──────────────────────────────────────
+  let subject;
+  if (isCPF) {
+    if (cpfType === 'CAJA')       subject = 'Votre formation en anglais juridique des affaires \u2013 certification CAJA (CPF)';
+    else if (cpfType === 'E360_LEGAL') subject = 'Votre formation en anglais professionnel \u2013 parcours adapt\xe9 aux professionnels du droit (CPF)';
+    else                          subject = 'Votre formation en anglais professionnel avec la certification English 360 (CPF)';
+  } else {
+    if (recipientType === 'hr')   subject = 'Proposition de formation en anglais ' + (isLegal ? 'juridique' : 'professionnel') + ' \u2013 ' + (c.name || '');
+    else                          subject = 'Votre proposition de formation en anglais ' + (isLegal ? 'juridique' : 'professionnel');
+  }
+
+  // ── HTML body: convert plain text line breaks to HTML, add signature ───
+  const htmlBody = '<div style="font-family:Arial,sans-serif;font-size:14px;color:#222;line-height:1.7">'
+    + emailBody
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\n\n/g, '</p><p>')
+        .replace(/\n/g, '<br>')
+    + SIGNATURE_HTML
+    + '</div>';
+
+  // ── Collect attachments ─────────────────────────────────────────────────
+  const attachments = [];
+  const safeName = (c.name || 'candidat').replace(/\s+/g, '_');
+
+  // 1. Proposition PDF
+  const propPdf = path.join(__dirname, '../data/propositions/' + c.id + '.pdf');
+  if (fs.existsSync(propPdf)) {
+    attachments.push({ filename: 'proposition_' + safeName + '.pdf', path: propPdf });
+  } else {
+    return res.status(400).json({ error: 'Proposition PDF not found \u2014 please generate it first' });
+  }
+
+  // 2. Programme PDF
+  const progPdf = path.join(__dirname, '../data/programmes/' + c.id + '.pdf');
+  if (fs.existsSync(progPdf)) {
+    attachments.push({ filename: 'programme_formation_' + safeName + '.pdf', path: progPdf });
+  }
+
+  // 3. Rapport d'évaluation (FR preferred)
+  const reportPdfFr = path.join(__dirname, '../data/finalReports/' + c.id + '_fr.pdf');
+  const reportPdfEn = path.join(__dirname, '../data/finalReports/' + c.id + '_en.pdf');
+  if (fs.existsSync(reportPdfFr)) {
+    attachments.push({ filename: 'rapport_evaluation_' + safeName + '.pdf', path: reportPdfFr });
+  } else if (fs.existsSync(reportPdfEn)) {
+    attachments.push({ filename: 'rapport_evaluation_' + safeName + '.pdf', path: reportPdfEn });
+  }
+
+  // ── Send ────────────────────────────────────────────────────────────────
+  const transporter = getTransporter();
+  transporter.sendMail({
+    from: 'jfr@linguaid.net',
+    to: recipientEmail,
+    subject,
+    html: '<p>' + htmlBody + '</p>',
+    attachments
+  }, function(err) {
+    if (err) {
+      console.error('send-proposition-email error:', err);
+      return res.status(500).json({ error: err.message });
+    }
+
+    // Save sentPropositionAt
+    const cands3 = getCandidates();
+    const ci3 = cands3.findIndex(x => x.id === req.params.id);
+    if (ci3 > -1) {
+      cands3[ci3].sentPropositionAt = new Date().toISOString();
+      cands3[ci3].sentPropositionTo = recipientEmail;
+      saveCandidates(cands3);
+    }
+
+    res.json({ success: true, to: recipientEmail, attachments: attachments.map(a => a.filename) });
+  });
+});
+
 module.exports = router;
