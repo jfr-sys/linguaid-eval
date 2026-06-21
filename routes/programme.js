@@ -178,6 +178,8 @@ router.get('/api/generate-programme/:id', async function(req, res) {
     if (payload.targetLevel)  candidates2[cidx].oralData.targetLevel  = payload.targetLevel;
     if (payload.totalHours)   candidates2[cidx].oralData.totalHours   = parseInt(payload.totalHours, 10) || payload.totalHours;
     if (payload.topics && payload.topics.length) candidates2[cidx].oralData.topics = payload.topics;
+    if (Array.isArray(payload.objectiveSuffixes)) candidates2[cidx].oralData.objectiveSuffixes = payload.objectiveSuffixes;
+    if (payload.trainingTitle) candidates2[cidx].oralData.trainingTitle = payload.trainingTitle;
     saveCandidates(candidates2);
   }
 
@@ -291,6 +293,15 @@ router.post('/api/personalise-objectives/:id', async function(req, res) {
     const raw = msg.content[0].text.trim().replace(/^```[a-z]*\n?/, '').replace(/```$/, '').trim();
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed.suffixes)) throw new Error('Invalid response format');
+    // Save suffixes to oralData so they persist across page reloads
+    const cands2 = getCandidates();
+    const ci2 = cands2.findIndex(x => x.id === req.params.id);
+    if (ci2 > -1) {
+      if (!cands2[ci2].oralData) cands2[ci2].oralData = {};
+      cands2[ci2].oralData.objectiveSuffixes = parsed.suffixes;
+      cands2[ci2].oralData.cpfType = cpfType;
+      saveCandidates(cands2);
+    }
     res.json({ success: true, suffixes: parsed.suffixes, cpfType: cpfType });
   } catch (e) {
     console.error('personalise-objectives error:', e.message);

@@ -669,113 +669,6 @@ function buildProgramme(p) {
   });
 }
 
-router.get('/generate-programme/:id', async function(req, res) {
-  var candidates = getCandidates();
-  var c = candidates.find(function(cand) { return cand.id === req.params.id; });
-  if (!c) return res.status(404).json({ error: 'Not found' });
-  var payload;
-  if (req.query.data) {
-    try { payload = JSON.parse(req.query.data); } catch(e) { return res.status(400).json({ error: 'Invalid data' }); }
-  } else {
-    var od = c.oralData || {};
-    payload = { candidateName: c.name, jobtitle: c.jobtitle || '', dept: c.dept || '', company: c.company || '', prereqLevel: (c.reportSummary || {}).overallLevel || od.prereqLevel || od.listeningLevel || '', targetLevel: od.targetLevel || '', totalHours: String(od.totalHours || 10), coachingHours: String(od.coachingHours || od.totalHours || 10), homeworkHours: String(od.homeworkHours || 0), isCPF: false, topics: od.topics || [], objectives: od.objectives || od.validatedGoals || [], dateStart: od.dateStart || '', dateEnd: od.dateEnd || '', trainingTitle: od.trainingTitle || (c.courseType === 'legal' ? 'Formation en Anglais Juridique' : 'Formation en Anglais Professionnel') };
-  }
-  
-  var { execFile } = require('child_process');
-  var path = require('path');
-  var tmpJson = '/tmp/prog_' + req.params.id + '.json';
-  var tmpOut = '/tmp/prog_' + req.params.id + '.docx';
-  var template = path.join(__dirname, '../views/template_programme.docx');
-  var script = '/home/debian/fill_programme_final.py';
-  
-  // Build dateStr
-  var dateStr = 'Dates à définir';
-  if (payload.dateStart && payload.dateEnd) {
-    var ds = new Date(payload.dateStart);
-    var de = new Date(payload.dateEnd);
-    var months = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
-    dateStr = 'Du ' + ds.getDate() + ' ' + months[ds.getMonth()] + ' ' + ds.getFullYear() + ' au ' + de.getDate() + ' ' + months[de.getMonth()] + ' ' + de.getFullYear();
-  }
-  payload.dateStr = dateStr;
-  
-  console.log('PROGRAMME PAYLOAD:', JSON.stringify({isCPF: payload.isCPF, topicsCount: (payload.topics||[]).length, topics: payload.topics}));
-  // Save dates to candidate record
-  var candidates2 = getCandidates();
-  var cidx = candidates2.findIndex(function(x) { return x.id === req.params.id; });
-  if (cidx >= 0 && payload.dateStart) {
-    candidates2[cidx].oralData.dateStart = payload.dateStart;
-    candidates2[cidx].oralData.dateEnd = payload.dateEnd || payload.dateStart;
-    if (payload.targetLevel) candidates2[cidx].oralData.targetLevel = payload.targetLevel;
-    if (payload.totalHours) candidates2[cidx].oralData.totalHours = parseInt(payload.totalHours, 10) || payload.totalHours;
-    if (payload.topics && payload.topics.length) candidates2[cidx].oralData.topics = payload.topics;
-    saveCandidates(candidates2);
-  }
-  require('fs').writeFileSync(tmpJson, JSON.stringify(payload));
-  
-  // Update fill script to accept args
-  execFile('python3', [script, tmpJson, template, tmpOut], function(err, stdout, stderr) {
-    if (err) {
-      console.error('Programme script error:', stderr);
-      return res.status(500).json({ error: 'Programme generation failed: ' + stderr });
-    }
-    try {
-      var fs2 = require('fs');
-      var buffer = fs2.readFileSync(tmpOut);
-      var safeName = (payload.candidateName || 'Candidat').replace(/\s+/g, '_');
-      var filename = 'Programme_formation_' + safeName + '.docx';
-      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-      res.setHeader('Content-Disposition', 'attachment; filename="' + filename + '"');
-      res.send(buffer);
-      // Save permanent copy and convert to PDF
-      var progDir = path.join(__dirname, '../data/programmes');
-      if (!fs2.existsSync(progDir)) fs2.mkdirSync(progDir, { recursive: true });
-      var permDocx = path.join(progDir, req.params.id + '.docx');
-      var permPdf  = path.join(progDir, req.params.id + '.pdf');
-      fs2.copyFileSync(tmpOut, permDocx);
-      // Convert to PDF via LibreOffice
-      execFile('soffice', ['--headless', '--convert-to', 'pdf', '--outdir', progDir, permDocx], function(pdfErr) {
-        if (pdfErr) console.error('Programme PDF conversion failed:', pdfErr);
-        else {
-          // Save PDF path to candidate
-          var cands3 = getCandidates();
-          var ci3 = cands3.findIndex(function(x) { return x.id === req.params.id; });
-          if (ci3 > -1) { cands3[ci3].programmePdfPath = permPdf; saveCandidates(cands3); }
-        }
-      });
-      fs2.unlinkSync(tmpJson);
-      fs2.unlinkSync(tmpOut);
-      // Mark programme as done
-      var cands = getCandidates();
-      var cidx = cands.findIndex(function(x) { return x.id === req.params.id; });
-      if (cidx > -1) { cands[cidx].status = 'programme_done'; saveCandidates(cands); }
-    } catch(e) {
-      res.status(500).json({ error: 'Failed to read output: ' + e.message });
-    }
-  });
-});
-
-
-
-
-router.post('/suggest-topics/:id', async (req, res) => {
-  const candidates = getCandidates();
-  const c = candidates.find(x => x.id === req.params.id);
-  if (!c) return res.status(404).json({ error: 'Not found' });
-  const topics = req.body.topics || [];
-  const objectives = req.body.objectives || [];
-  const report = (c.finalReport || c.writtenReport || '').substring(0, 3000);
-  if (!report) return res.status(400).json({ error: 'No report available' });
-  const topicList = topics.map((t,i) => (i+1)+'. '+t).join('\n');
-  const objList = objectives.map((o,i) => (i+1)+'. '+o).join('\n');
-  const prompt = 'Based on this English evaluation report, select the most relevant training topics and suggest 3 learning objectives.\n\nAVAILABLE TOPICS:\n' + topicList + '\n\nAVAILABLE OBJECTIVES:\n' + objList + '\n\nREPORT:\n' + report + '\n\nRespond ONLY with valid JSON: {"topics": ["exact topic name"], "objectives": ["exact objective"]}';
-  try {
-    const msg = await client.messages.create({ model: 'claude-sonnet-4-6', max_tokens: 1000, messages: [{ role: 'user', content: prompt }] });
-    const text = msg.content[0].text.trim().replace(/^```[a-z]*\n?/,'').replace(/```$/,'').trim();
-    res.json({ success: true, ...JSON.parse(text) });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-
 router.get('/download-convention-signed/:id', function(req, res) {
   var candidates = getCandidates();
   var candidate = candidates.find(function(c) { return c.id === req.params.id; });
@@ -953,10 +846,6 @@ router.post('/parse-legal-questionnaire', async function(req, res) {
     console.error('parse-legal-questionnaire error:', e);
     res.status(500).json({ error: e.message });
   }
-});
-
-router.get('/generate-programme-legal/:id', function(req, res) {
-  res.redirect('/candidates/' + req.params.id + '/programme');
 });
 
 // Typeform webhook - fired when candidate completes the test
