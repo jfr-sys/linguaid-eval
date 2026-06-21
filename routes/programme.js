@@ -571,6 +571,7 @@ router.post('/api/send-proposition-email/:id', async function(req, res) {
   transporter.sendMail({
     from: 'jfr@linguaid.net',
     to: recipientEmail,
+    cc: 'jfr@linguaid.net',
     subject,
     html: '<p>' + htmlBody + '</p>',
     attachments
