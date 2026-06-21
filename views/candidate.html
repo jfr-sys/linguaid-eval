@@ -1213,7 +1213,7 @@
     var status = document.getElementById('propSendStatus');
     status.textContent = 'G\xe9n\xe9ration de la proposition et du message...';
 
-    fetch('/api/generate-proposition/' + id, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) })
+    fetch('/api/generate-proposition/' + id, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ price: document.getElementById('propPrice').value, dateStart: document.getElementById('propDateStart').value, dateEnd: document.getElementById('propDateEnd').value, civility: document.getElementById('propCivility').value }) })
       .then(function(r) { return r.json(); })
       .then(function(d) {
         btn.disabled = false;
@@ -1221,7 +1221,11 @@
         status.textContent = '';
         if (d.error) { alert('Erreur\u00a0: ' + d.error); return; }
         // Build email body using the returned resumeSituation
-        var body = buildEmailBody(d.resumeSituation || '', candidate, candidate.oralData || {}, candidate.conventionData || {});
+        var formConv = Object.assign({}, candidate.conventionData || {}, {
+          price: document.getElementById('propPrice').value,
+          civility: document.getElementById('propCivility').value
+        });
+        var body = buildEmailBody(d.resumeSituation || '', candidate, candidate.oralData || {}, formConv);
         document.getElementById('propBody').value = body;
         document.getElementById('propBodyModal').value = body;
         // Open modal for review

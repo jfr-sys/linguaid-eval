@@ -383,7 +383,7 @@ router.post('/api/generate-proposition/:id', async function(req, res) {
   }
 
   // Price
-  const price = cd.price || od.edofPrice || '';
+  const price = req.body.price || cd.price || od.edofPrice || '';
   let priceInt = parseInt(price, 10) || 0;
   if (!priceInt && !isCPF) {
     const ch = parseInt(od.coachingHours, 10) || 0;
