@@ -1835,4 +1835,18 @@ ${evalLinksHtml}
   Promise.all(promises).then(() => res.json({ sent, failed }));
 });
 
+
+// POST /api/mark-oral-booked/:id
+router.post('/mark-oral-booked/:id', (req, res) => {
+  const { id } = req.params;
+  const dataPath = path.join(__dirname, '../data/candidates.json');
+  const candidates = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
+  const idx = candidates.findIndex(x => x.id === id);
+  if (idx === -1) return res.status(404).json({ error: 'Not found' });
+  candidates[idx].status = 'oral_booked';
+  candidates[idx].oralBookedAt = new Date().toISOString();
+  fs.writeFileSync(dataPath, JSON.stringify(candidates, null, 2));
+  res.json({ ok: true });
+});
+
 module.exports = router;

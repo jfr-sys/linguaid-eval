@@ -112,7 +112,7 @@
       if (cd.price) return 'Convention done';
       if (cd.proposalAcceptedAt) return 'Proposal accepted';
       if (cd.proposalSentAt) return 'Proposal sent';
-      var map = {csv_uploaded:'CSV uploaded',written_report_done:'Written done',oral_done:'Oral done',final_report_done:'Final done',programme_done:'Programme done',invited:'Invited'};
+      var map = {csv_uploaded:'CSV uploaded',written_report_done:'Written done',oral_booked:'Oral booked',oral_done:'Oral done',final_report_done:'Final done',programme_done:'Programme done',invited:'Invited'};
       return map[x.status] || x.status;
     }
     return (x[field] || '');
@@ -198,7 +198,7 @@
       openFilter = null;
     }
   });
-  var SL={csv_uploaded:['CSV uploaded','badge-csv'],written_report_done:['Written done','badge-written'],oral_done:['Oral done','badge-oral'],final_report_done:['Final done','badge-final'],programme_done:['Programme done','badge-programme']};
+  var SL={csv_uploaded:['CSV uploaded','badge-csv'],written_report_done:['Written done','badge-written'],oral_booked:['Oral booked','badge-oral'],oral_done:['Oral done','badge-oral'],final_report_done:['Final done','badge-final'],programme_done:['Programme done','badge-programme']};
   var propBadge=function(x){var cd=x.conventionData||{};if(cd.proposalAcceptedAt)return '<span style="font-size:11px;background:#ede9fe;color:#5b21b6;padding:2px 8px;border-radius:10px;font-weight:600">Proposal accepted</span>';if(cd.proposalSentAt)return '<span style="font-size:11px;background:#dbeafe;color:#1e40af;padding:2px 8px;border-radius:10px;font-weight:600">Proposal sent</span>';return '';};
   function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
   function render(){
