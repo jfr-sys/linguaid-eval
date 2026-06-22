@@ -1793,4 +1793,46 @@ router.post('/mark-proposal-accepted/:id', function(req, res) {
   res.json({ ok: true });
 });
 
+
+// POST /api/send-oral-reminders — bulk oral reminder emails
+router.post('/send-oral-reminders', express.json(), (req, res) => {
+  const { ids, evaluators } = req.body;
+  if (!ids || !ids.length) return res.json({ sent: 0, failed: 0 });
+  const calendlyLinks = {
+    Hannah: 'https://calendly.com/coursdanglais24/english-oral-test',
+    Anna:   'https://calendly.com/ajmalzy/30min',
+    Louise: 'https://calendly.com/linguaid/formation-anglais',
+  };
+  const evalList = (evaluators && evaluators.length) ? evaluators : ['Hannah'];
+  const evalLinksHtml = evalList.map(function(name) {
+    const url = calendlyLinks[name] || '';
+    return '<p style="margin:10px 0"><a href="' + url + '" style="background:#1F4E79;color:white;padding:10px 24px;border-radius:8px;text-decoration:none;font-weight:bold;display:inline-block">' + name + ' → Réserver</a></p>';
+  }).join('\n');
+  const candidates = JSON.parse(fs.readFileSync(path.join(__dirname, '../data/candidates.json'), 'utf8'));
+  const nodemailer = require('nodemailer');
+  const transporter = nodemailer.createTransport({ host: 'localhost', port: 25, secure: false, tls: { rejectUnauthorized: false } });
+  let sent = 0, failed = 0;
+  const promises = ids.map(id => {
+    const c = candidates.find(x => x.id === id);
+    if (!c || c.status !== 'written_report_done') { failed++; return Promise.resolve(); }
+    const firstName = (c.name || '').split(' ')[0];
+    const html = `<div style="font-family:Arial,sans-serif;font-size:14px;color:#222;line-height:1.7">
+<p>Bonjour ${firstName},</p>
+<p>Votre bilan écrit est prêt. L’étape suivante de votre évaluation est l’entretien oral, d’une durée d’environ 30 minutes.</p>
+<p>Merci de réserver votre créneau directement avec l’un de nos évaluateurs via les liens ci-dessous :</p>
+${evalLinksHtml}
+<p>N’hésitez pas à nous contacter pour toute question.</p>
+<p>Bien cordialement,</p>
+<img src="https://eval.linguaid.net/signature_joss.png" style="max-width:400px">
+</div>`;
+    return transporter.sendMail({
+      from: 'jfr@linguaid.net',
+      to: c.email,
+      subject: 'Votre évaluation orale en anglais — Linguaid',
+      html,
+    }).then(() => { sent++; }).catch(e => { console.error('Reminder mail error', c.email, e); failed++; });
+  });
+  Promise.all(promises).then(() => res.json({ sent, failed }));
+});
+
 module.exports = router;

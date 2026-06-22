@@ -69,10 +69,21 @@
     </div>
   </div>
   <div id="statsBar" style="display:flex;gap:1.5rem;align-items:center;margin-bottom:1rem;padding:10px 16px;background:white;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.06);font-size:13px;color:#475569"><span><strong id="statCount">—</strong> candidates</span><span style="color:#e2e8f0">|</span><span>Total budget : <strong id="statBudget" style="color:#1F4E79">—</strong></span></div>
+  <div id="bulkBar" style="display:none;align-items:center;gap:1rem;margin-bottom:1rem;padding:10px 16px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;font-size:13px;color:#1e40af">
+    <span id="bulkCount" style="font-weight:600"></span>
+    <span>Evaluator:</span>
+    <label style="display:flex;align-items:center;gap:4px;font-weight:400"><input type="checkbox" class="eval-chk" value="Hannah" checked> Hannah</label>
+    <label style="display:flex;align-items:center;gap:4px;font-weight:400"><input type="checkbox" class="eval-chk" value="Anna"> Anna</label>
+    <label style="display:flex;align-items:center;gap:4px;font-weight:400"><input type="checkbox" class="eval-chk" value="Louise"> Louise</label>
+    <button onclick="sendBulkReminder()" style="background:#1F4E79;color:white;border:none;padding:6px 16px;border-radius:6px;font-size:13px;cursor:pointer;font-weight:600">✉️ Send oral reminder</button>
+    <button onclick="clearSelection()" style="background:none;border:1px solid #93c5fd;padding:5px 12px;border-radius:6px;font-size:12px;cursor:pointer;color:#1e40af">Clear</button>
+    <span id="bulkStatus" style="font-size:12px;color:#166534;font-weight:500"></span>
+  </div>
   <div class="card">
     <table>
       <thead>
         <tr>
+          <th style="width:32px"><input type="checkbox" id="chkAll" onchange="toggleAll(this)" title="Select all written_done"></th>
           <th onclick="sortBy('name')" style="cursor:pointer;user-select:none">Name <span id="sort-name">↕</span></th>
           <th onclick="sortBy('courseType')" style="cursor:pointer;user-select:none">Type <span id="sort-courseType">↕</span></th>
           <th><span onclick="sortBy('company')" style="cursor:pointer;user-select:none">Company <span id="sort-company">↕</span></span> <div class="col-filter"><button class="col-filter-btn" id="cfb-company" onclick="toggleFilter('company',event)">▾</button><div class="col-filter-dropdown" id="cfd-company"></div></div></th>
@@ -216,7 +227,7 @@
       var advancedBadge = (x.conventionData && (x.conventionData.sentToCatherineAt || x.conventionData.signedAt || x.conventionData.price));
       var statusBadgeHtml = (pb && !advancedBadge) ? '' : '<span class="badge '+sl[1]+'">'+sl[0]+'</span>';
       var propBadgeHtml = advancedBadge ? '' : pb;
-      return '<tr><td><a href="/candidates/'+x.id+'" class="name-link">'+esc(x.name)+'</a></td><td>'+(x.courseType==='legal'?'<span style="font-size:11px;background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:10px;font-weight:600">Juridique</span>':'<span style="font-size:11px;background:#dbeafe;color:#1e40af;padding:2px 8px;border-radius:10px;font-weight:600">Business</span>')+'</td><td>'+esc(x.company||'')+'</td><td>'+(x.createdAt?(function(d){var p=d.slice(0,10).split('-');return p[2]+'/'+p[1]+'/'+p[0];})(x.createdAt):'')+'</td><td>'+statusBadgeHtml+propBadgeHtml+convDone+'</td><td style="display:flex;gap:8px"><a href="/candidates/'+x.id+'" class="name-link">View</a>&nbsp;<button data-id="'+x.id+'" data-name="'+esc(x.name)+'" onclick="doDel(this)" style="background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer">Delete</button></td></tr>';
+      return '<tr><td style="text-align:center">'+(x.status==='written_report_done'?'<input type="checkbox" class="row-chk" data-id="'+x.id+'" data-name="'+esc(x.name)+'" onchange="updateBulkBar()">':'')+'</td><td><a href="/candidates/'+x.id+'" class="name-link">'+esc(x.name)+'</a></td><td>'+(x.courseType==='legal'?'<span style="font-size:11px;background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:10px;font-weight:600">Juridique</span>':'<span style="font-size:11px;background:#dbeafe;color:#1e40af;padding:2px 8px;border-radius:10px;font-weight:600">Business</span>')+'</td><td>'+esc(x.company||'')+'</td><td>'+(x.createdAt?(function(d){var p=d.slice(0,10).split('-');return p[2]+'/'+p[1]+'/'+p[0];})(x.createdAt):'')+'</td><td>'+statusBadgeHtml+propBadgeHtml+convDone+'</td><td style="text-align:right;font-size:13px;color:#1F4E79;font-weight:500">'+((x.conventionData&&x.conventionData.price)?x.conventionData.price+' €':'')+'</td><td style="display:flex;gap:8px"><a href="/candidates/'+x.id+'" class="name-link">View</a>&nbsp;<button data-id="'+x.id+'" data-name="'+esc(x.name)+'" onclick="doDel(this)" style="background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer">Delete</button></td></tr>';
     }).join('');
     ['name','courseType','company','createdAt','status'].forEach(function(k){var e=document.getElementById('sort-'+k);if(e)e.textContent=k===sk?(sd===1?' ↑':' ↓'):' ⇕';
     var _tot=0,_hasp=false; rows.forEach(function(x){var p=parseInt(((x.conventionData)||{}).price||0,10);if(p){_tot+=p;_hasp=true;}});
@@ -274,6 +285,62 @@ async function sendInvite() {
     else { status.textContent = data.error || 'Error'; status.style.display='block'; btn.disabled=false; btn.textContent='Send invite'; }
   } catch(e) { status.textContent = 'Network error'; status.style.display='block'; btn.disabled=false; btn.textContent='Send invite'; }
 }
+
+  function toggleAll(cb) {
+    document.querySelectorAll('.row-chk').forEach(function(c) { c.checked = cb.checked; });
+    updateBulkBar();
+  }
+
+  function updateBulkBar() {
+    var checked = document.querySelectorAll('.row-chk:checked');
+    var bar = document.getElementById('bulkBar');
+    var cnt = document.getElementById('bulkCount');
+    var allCb = document.getElementById('chkAll');
+    if (checked.length > 0) {
+      bar.style.display = 'flex';
+      cnt.textContent = checked.length + ' candidate' + (checked.length > 1 ? 's' : '') + ' selected';
+    } else {
+      bar.style.display = 'none';
+    }
+    var all = document.querySelectorAll('.row-chk');
+    if (allCb) allCb.checked = all.length > 0 && checked.length === all.length;
+  }
+
+  function clearSelection() {
+    document.querySelectorAll('.row-chk').forEach(function(c) { c.checked = false; });
+    var allCb = document.getElementById('chkAll');
+    if (allCb) allCb.checked = false;
+    document.getElementById('bulkBar').style.display = 'none';
+    document.getElementById('bulkStatus').textContent = '';
+  }
+
+  function sendBulkReminder() {
+    var checked = Array.from(document.querySelectorAll('.row-chk:checked'));
+    if (!checked.length) return;
+    var evaluators = Array.from(document.querySelectorAll('.eval-chk:checked')).map(function(c){return c.value;});
+    if (!evaluators.length) { alert('Please select at least one evaluator.'); return; }
+    var names = checked.map(function(c) { return c.dataset.name; }).join(', ');
+    if (!confirm('Send oral reminder to ' + checked.length + ' candidate(s) with links for: ' + evaluators.join(', ') + '?\n\n' + names)) return;
+    var ids = checked.map(function(c) { return c.dataset.id; });
+    var status = document.getElementById('bulkStatus');
+    status.textContent = 'Sending…';
+    status.style.color = '#1e40af';
+    fetch('/api/send-oral-reminders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids: ids, evaluators: evaluators })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      status.textContent = '✅ Sent to ' + (d.sent||0) + ' candidate(s)' + (d.failed ? ' (⚠️ ' + d.failed + ' failed)' : '');
+      status.style.color = '#166534';
+      setTimeout(clearSelection, 3000);
+    })
+    .catch(function(e) {
+      status.textContent = '❌ Error: ' + e;
+      status.style.color = '#991b1b';
+    });
+  }
 </script>
 </body>
 </html>
