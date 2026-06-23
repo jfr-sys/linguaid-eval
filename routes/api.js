@@ -272,6 +272,75 @@ Also add a clearly delimited JSON block:
   }
 });
 
+
+async function generateLegalIntakeReport(req, res, candidates, idx) {
+  const c = candidates[idx];
+  const oral = c.oralData;
+  const wr = c.writtenReport || '';
+
+  const prompt = `You are an expert English language consultant for Linguaid France, specialising in legal English coaching for French legal professionals.
+
+Generate a concise, professional Final Evaluation Report for a legal English candidate based on a needs-analysis interview (not a formal CEFR test). Write in English. Use markdown formatting (## headers, **bold**, - bullets). Do NOT produce a scored CEFR sub-skill table.
+
+CANDIDATE:
+Name: ${c.name}
+Job title: ${c.jobtitle || ''}
+Company: ${c.company || ''}
+Profile: ${oral.lawyerType || ''}
+Interview date: ${oral.interviewDate || ''}
+Weekly English usage: ${oral.usagePct || 'not specified'}
+Other languages spoken: ${oral.otherLangs || 'none mentioned'}
+
+LEGAL CONTEXT:
+Legal domains: ${oral.legalDomains || 'not specified'}
+Dominant skills required: ${oral.dominantSkills || 'not specified'}
+Main blockers: ${oral.blockers || 'not specified'}
+
+EVALUATION:
+Approximate level: ${oral.approxLevel || 'not assessed'}
+Priority gaps: ${oral.priorityGaps || 'not specified'}
+Interviewer notes: ${oral.notes || ''}
+
+${wr ? 'WRITTEN TEST BACKGROUND (for context only):\n' + wr.slice(0, 800) : ''}
+
+RECOMMENDATION:
+Recommended programme: ${oral.recommendedProgramme || ''}
+Target level: ${oral.targetLevel || ''}
+Recommended hours: ${oral.totalHours || ''}
+Proposed start: ${oral.dateStart || ''}
+Financing: ${oral.financing || ''}
+
+Generate a professional report with these sections:
+## Professional Context
+## Needs Identified
+## Current Level & Key Gaps
+## Learning Objectives
+## Recommendation
+## Sign-off
+
+Interviewer: Joss Frimond, Linguaid France. Do not wrap any part of your response in backtick code blocks.`;
+
+  try {
+    const message = await client.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 3000,
+      messages: [{ role: 'user', content: prompt }]
+    });
+
+    const report = message.content[0].text.replace(/```[a-z]*\n/g, '').replace(/```/g, '');
+    candidates[idx].finalReport = report;
+    candidates[idx].status = 'final_report_done';
+    if (oral.recommendedProgramme) candidates[idx].oralData.cpfType = oral.recommendedProgramme;
+    if (oral.targetLevel) candidates[idx].oralData.targetLevel = oral.targetLevel;
+    if (oral.totalHours) candidates[idx].oralData.totalHours = parseInt(oral.totalHours, 10) || oral.totalHours;
+    saveCandidates(candidates);
+    res.json({ success: true, report });
+  } catch(err) {
+    console.error('generateLegalIntakeReport error:', err);
+    res.status(500).json({ error: err.message });
+  }
+}
+
 router.post('/generate-final/:id', async (req, res) => {
   const candidates = getCandidates();
   const idx = candidates.findIndex(c => c.id === req.params.id);
