@@ -1403,6 +1403,9 @@ router.post('/send-to-catherine/:id', function(req, res) {
     var cd = c.conventionData || {};
     var od = c.oralData || {};
     var notes = (req.body && req.body.notes) || '';
+    var learnerTel = (req.body && req.body.learnerTel) || cd.learnerTel || '';
+    var orderNumber = (req.body && req.body.orderNumber) || cd.orderNumber || '';
+    var companyAddress = (req.body && req.body.companyAddress) || cd.companyAddress || '';
 
     // Find programme PDF - check standard locations
     var fs = require('fs');
@@ -1439,9 +1442,9 @@ router.post('/send-to-catherine/:id', function(req, res) {
       '<tr><td style="padding:6px 12px;background:#f1f5f9;font-weight:600">Prix HT</td><td style="padding:6px 12px;border-bottom:1px solid #e2e8f0">' + (cd.price || '—') + ' €</td></tr>' +
       '<tr><td style="padding:6px 12px;background:#f1f5f9;font-weight:600">CPF</td><td style="padding:6px 12px;border-bottom:1px solid #e2e8f0">' + (cd.isCPF ? 'Oui' : 'Non') + '</td></tr>' +
       '<tr><td style="padding:6px 12px;background:#f1f5f9;font-weight:600">Signataire</td><td style="padding:6px 12px;border-bottom:1px solid #e2e8f0">' + (cd.signatory || '—') + '</td></tr>' +
-      '<tr><td style="padding:6px 12px;background:#f1f5f9;font-weight:600">Tél apprenant</td><td style="padding:6px 12px;border-bottom:1px solid #e2e8f0">' + (cd.learnerTel || '—') + '</td></tr>' +
-      '<tr><td style="padding:6px 12px;background:#f1f5f9;font-weight:600">Adresse entreprise</td><td style="padding:6px 12px;border-bottom:1px solid #e2e8f0">' + (cd.companyAddress || '—') + '</td></tr>' +
-      '<tr><td style="padding:6px 12px;background:#f1f5f9;font-weight:600">N° de commande</td><td style="padding:6px 12px;border-bottom:1px solid #e2e8f0">' + (cd.orderNumber || '—') + '</td></tr>' +
+      '<tr><td style="padding:6px 12px;background:#f1f5f9;font-weight:600">Tél apprenant</td><td style="padding:6px 12px;border-bottom:1px solid #e2e8f0">' + (learnerTel || '—') + '</td></tr>' +
+      '<tr><td style="padding:6px 12px;background:#f1f5f9;font-weight:600">Adresse entreprise</td><td style="padding:6px 12px;border-bottom:1px solid #e2e8f0">' + (companyAddress || '—') + '</td></tr>' +
+      '<tr><td style="padding:6px 12px;background:#f1f5f9;font-weight:600">N° de commande</td><td style="padding:6px 12px;border-bottom:1px solid #e2e8f0">' + (orderNumber || '—') + '</td></tr>' +
       '<tr><td style="padding:6px 12px;background:#f1f5f9;font-weight:600">Convention</td><td style="padding:6px 12px;border-bottom:1px solid #e2e8f0">' + signed + '</td></tr>' +
       (notes ? '<tr><td style="padding:6px 12px;background:#fef3c7;font-weight:600">Notes</td><td style="padding:6px 12px;border-bottom:1px solid #e2e8f0;background:#fef3c7">' + notes + '</td></tr>' : '') +
       '</table>' +

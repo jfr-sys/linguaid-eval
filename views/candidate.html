@@ -930,11 +930,19 @@
     btn.disabled = true;
     btn.textContent = 'Envoi en cours…';
     var notes = document.getElementById('convNotes') ? document.getElementById('convNotes').value : '';
-    fetch('/api/send-to-catherine/' + id, {
+    var learnerTel = document.getElementById('convLearnerTel') ? document.getElementById('convLearnerTel').value : '';
+    var orderNumber = document.getElementById('convOrderNumber') ? document.getElementById('convOrderNumber').value : '';
+    var companyAddress = document.getElementById('convCompanyAddress') ? document.getElementById('convCompanyAddress').value : '';
+    // Save step 8 fields to conventionData first, then send
+    fetch('/api/save-convention/' + id, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ notes: notes })
-    })
+      body: JSON.stringify({ learnerTel: learnerTel, orderNumber: orderNumber, companyAddress: companyAddress, notes: notes })
+    }).then(function(){ return fetch('/api/send-to-catherine/' + id, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ notes: notes, learnerTel: learnerTel, orderNumber: orderNumber, companyAddress: companyAddress })
+    }); })
     .then(function(r){ return r.json(); })
     .then(function(d){
       if (d.success) {
