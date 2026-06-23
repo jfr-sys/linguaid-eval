@@ -1461,6 +1461,15 @@ router.post('/send-to-catherine/:id', function(req, res) {
       attachments.push({ filename: 'programme_' + c.name.replace(/\s+/g,'_') + '.pdf', path: c.programmePdfPath });
     }
 
+    // Attach EN final report PDF if available
+    var reportPdfPath = path.join(__dirname, '../data/finalReports/' + c.id + '_en.pdf');
+    if (!fs.existsSync(reportPdfPath)) {
+      reportPdfPath = path.join(__dirname, '../data/reports/' + c.id + '_en.pdf');
+    }
+    if (fs.existsSync(reportPdfPath)) {
+      attachments.push({ filename: 'rapport_evaluation_' + c.name.replace(/\s+/g,'_') + '.pdf', path: reportPdfPath });
+    }
+
     // Mark sentToCatherineAt
     var cands4 = getCandidates();
     var ci4 = cands4.findIndex(function(x){ return x.id === req.params.id; });
