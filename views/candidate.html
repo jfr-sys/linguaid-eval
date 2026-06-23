@@ -1326,5 +1326,22 @@ function markBooked(id){
     .then(function(d){if(d.ok){window.location.reload();}else{alert(d.error||'Error');}});
 }
 </script>
+
+<script>
+  window.sendIntakeLink = async function(candidateId) {
+    try {
+      const res = await fetch('/api/send-intake-link/' + candidateId, { method: 'POST' });
+      const data = await res.json();
+      if (data.ok) {
+        alert('Lien entretien envoyé à jfr@linguaid.net');
+        location.reload();
+      } else {
+        alert('Erreur: ' + (data.error || 'inconnue'));
+      }
+    } catch(e) {
+      alert('Erreur réseau');
+    }
+  };
+</script>
 </body>
 </html>
