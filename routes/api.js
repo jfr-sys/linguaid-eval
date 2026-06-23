@@ -278,8 +278,17 @@ router.post('/generate-final/:id', async (req, res) => {
   if (idx === -1) return res.status(404).json({ error: 'Not found' });
   const c = candidates[idx];
 
-  if (!c.writtenReport || !c.oralData) {
-    return res.status(400).json({ error: 'Missing written report or oral assessment data' });
+  if (!c.oralData) {
+    return res.status(400).json({ error: 'Missing oral/intake assessment data' });
+  }
+
+  // Route to simplified legal intake report if applicable
+  if (c.oralData && c.oralData.intakeType === 'legal_intake') {
+    return generateLegalIntakeReport(req, res, candidates, idx);
+  }
+
+  if (!c.writtenReport) {
+    return res.status(400).json({ error: 'Missing written report' });
   }
 
   const oral = c.oralData;
@@ -798,6 +807,40 @@ router.post('/generate-convention/:id', function(req, res) {
     });
   });
 });
+
+router.post('/send-intake-link/:id', function(req, res) {
+  var candidates = JSON.parse(fs.readFileSync(path.join(dataDir, 'candidates.json'), 'utf8'));
+  var idx = candidates.findIndex(function(x) { return x.id === req.params.id; });
+  if (idx === -1) return res.status(404).json({ error: 'Candidate not found' });
+  var c = candidates[idx];
+  // Generate intakeToken if not present
+  if (!c.intakeToken) {
+    c.intakeToken = require('crypto').randomBytes(8).toString('hex');
+    candidates[idx] = c;
+    saveCandidates(candidates);
+  }
+  var intakeUrl = 'https://eval.linguaid.net/oral/intake/' + c.intakeToken;
+  var nodemailer = require('nodemailer');
+  var transporter = nodemailer.createTransport({ host: 'localhost', port: 25, secure: false, tls: { rejectUnauthorized: false } });
+  var body = [
+    'Entretien de positionnement \u2014 ' + c.name,
+    '',
+    'Lien vers le formulaire :',
+    intakeUrl,
+    '',
+    'Linguaid Eval'
+  ].join('\n');
+  transporter.sendMail({
+    from: 'eval@linguaid.net',
+    to: 'jfr@linguaid.net',
+    subject: 'Entretien de positionnement \u2014 ' + c.name,
+    text: body
+  }, function(err) {
+    if (err) { console.error('sendMail error:', err); return res.status(500).json({ error: err.message }); }
+    res.json({ ok: true, url: intakeUrl });
+  });
+});
+
 router.post('/send-oral-link/:id', function(req, res) {
   var candidates = JSON.parse(fs.readFileSync(path.join(dataDir, 'candidates.json'), 'utf8'));
   var c = candidates.find(function(x) { return x.id === req.params.id; });

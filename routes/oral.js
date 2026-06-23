@@ -52,7 +52,7 @@ router.get('/:token', (req, res) => {
 
 router.get('/data/:token', (req, res) => {
   const candidates = getCandidates();
-  const candidate = candidates.find(c => c.oralToken === req.params.token);
+  const candidate = candidates.find(c => c.oralToken === req.params.token || c.intakeToken === req.params.token);
   if (!candidate) return res.status(404).json({ error: 'Not found' });
   res.json({
     name: candidate.name,
@@ -126,5 +126,79 @@ router.post('/submit/:token', async (req, res) => {
 
   res.json({ success: true });
 });
+
+
+// ── Legal intake form routes ───────────────────────────────────────────────
+
+router.get('/intake/:token', (req, res) => {
+  const candidates = getCandidates();
+  const candidate = candidates.find(c => c.intakeToken === req.params.token);
+  if (!candidate) return res.status(404).send('Lien d\u2019entretien invalide ou expiré.');
+  res.sendFile(path.join(__dirname, '../views/oral_intake.html'));
+});
+
+// /oral/data/:token already handles intakeToken — add fallback
+router.get('/intake-data/:token', (req, res) => {
+  const candidates = getCandidates();
+  const candidate = candidates.find(c => c.intakeToken === req.params.token);
+  if (!candidate) return res.status(404).json({ error: 'Not found' });
+  res.json({
+    id: candidate.id,
+    name: candidate.name,
+    email: candidate.email || null,
+    jobtitle: candidate.jobtitle,
+    company: candidate.company,
+    dept: candidate.dept,
+    lawyerType: candidate.lawyerType || null,
+    courseType: candidate.courseType,
+  });
+});
+
+router.post('/submit-intake/:token', express.json(), async (req, res) => {
+  const candidates = getCandidates();
+  const idx = candidates.findIndex(c => c.intakeToken === req.params.token);
+  if (idx === -1) return res.status(404).json({ error: 'Not found' });
+
+  candidates[idx].oralData = req.body;
+  candidates[idx].status = 'oral_done';
+  saveCandidates(candidates);
+
+  const candidate = candidates[idx];
+  const candidateUrl = 'https://eval.linguaid.net/candidates/' + candidate.id;
+
+  try {
+    await transporter.sendMail({
+      from: 'eval@linguaid.net',
+      to: 'jfr@linguaid.net',
+      subject: 'Entretien de positionnement enregistr\u00e9 \u2014 ' + candidate.name,
+      html: `
+        <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
+          <div style="background:#1F4E79;padding:24px 32px;border-radius:8px 8px 0 0">
+            <h1 style="color:white;font-size:20px;margin:0">linguaid eval</h1>
+          </div>
+          <div style="background:#f8fafc;padding:32px;border-radius:0 0 8px 8px;border:1px solid #e2e8f0;border-top:none">
+            <h2 style="color:#1F4E79;font-size:18px;margin:0 0 16px">Entretien de positionnement enregistr\u00e9</h2>
+            <p style="color:#334155;font-size:15px;margin:0 0 24px">
+              L\u2019entretien de positionnement pour <strong>${candidate.name}</strong> a \u00e9t\u00e9 enregistr\u00e9.
+              Le rapport final est pr\u00eat \u00e0 \u00eatre g\u00e9n\u00e9r\u00e9.
+            </p>
+            <table style="width:100%;border-collapse:collapse;margin-bottom:24px">
+              <tr><td style="padding:8px 0;color:#64748b;font-size:13px;border-bottom:1px solid #e2e8f0">Candidat</td><td style="padding:8px 0;font-size:13px;font-weight:600;border-bottom:1px solid #e2e8f0">${candidate.name}</td></tr>
+              <tr><td style="padding:8px 0;color:#64748b;font-size:13px;border-bottom:1px solid #e2e8f0">Poste</td><td style="padding:8px 0;font-size:13px;border-bottom:1px solid #e2e8f0">${candidate.jobtitle || '\u2014'}</td></tr>
+              <tr><td style="padding:8px 0;color:#64748b;font-size:13px;border-bottom:1px solid #e2e8f0">Entreprise</td><td style="padding:8px 0;font-size:13px;border-bottom:1px solid #e2e8f0">${candidate.company || '\u2014'}</td></tr>
+              <tr><td style="padding:8px 0;color:#64748b;font-size:13px">Programme recommand\u00e9</td><td style="padding:8px 0;font-size:13px">${req.body.recommendedProgramme || '\u2014'}</td></tr>
+            </table>
+            <a href="${candidateUrl}" style="display:inline-block;background:#1F4E79;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-size:14px;font-weight:500">G\u00e9n\u00e9rer le rapport final \u2192</a>
+          </div>
+        </div>
+      `
+    });
+  } catch (err) {
+    console.error('Intake email error:', err.message);
+  }
+
+  res.json({ success: true });
+});
+
 
 module.exports = router;

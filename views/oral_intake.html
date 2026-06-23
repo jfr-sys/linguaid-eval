@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Linguaid — Entretien de positionnement</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f4f8; min-height: 100vh; }
+  .nav { background: #1F4E79; color: white; padding: 0 2rem; height: 56px; display: flex; align-items: center; gap: 1rem; }
+  .nav-logo { font-size: 18px; font-weight: 700; }
+  .nav-sub { font-size: 13px; opacity: 0.65; }
+  .nav-badge { background: #7c3aed; color: white; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; letter-spacing: 0.05em; }
+  .container { max-width: 780px; margin: 0 auto; padding: 2rem 1rem 4rem; }
+
+  .candidate-bar { background: white; border-radius: 12px; padding: 1.25rem 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 1.5rem; }
+  .candidate-name { font-size: 20px; font-weight: 700; color: #1F4E79; }
+  .candidate-meta { font-size: 13px; color: #666; margin-top: 3px; }
+  .chip { display: inline-flex; align-items: center; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-top: 8px; margin-right: 6px; }
+  .chip-legal { background: #ede9fe; color: #5b21b6; }
+
+  .step-progress { background: white; border-radius: 12px; padding: 1rem 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 1.5rem; }
+  .step-labels { display: flex; justify-content: space-between; margin-bottom: 8px; }
+  .step-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; text-align: center; flex: 1; }
+  .step-label.done { color: #10b981; }
+  .step-label.active { color: #1F4E79; }
+  .progress-track { display: flex; gap: 4px; }
+  .prog-step { flex: 1; height: 6px; border-radius: 3px; background: #e5e7eb; }
+  .prog-step.done { background: #10b981; }
+  .prog-step.active { background: #2E75B6; }
+
+  .card { background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 1rem; }
+  .section-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: #94a3b8; margin-bottom: 0.4rem; }
+  h2 { font-size: 18px; font-weight: 700; color: #1F4E79; margin-bottom: 0.75rem; }
+
+  label { font-size: 13px; color: #475569; display: block; margin-bottom: 4px; margin-top: 14px; font-weight: 500; }
+  label:first-child { margin-top: 0; }
+  input[type=text], input[type=date], input[type=number], select, textarea {
+    width: 100%; padding: 9px 12px; border: 1px solid #e2e8f0; border-radius: 8px;
+    font-size: 14px; outline: none; transition: border-color 0.15s; font-family: inherit; color: #1a1a1a;
+  }
+  input:focus, select:focus, textarea:focus { border-color: #2E75B6; }
+  textarea { resize: vertical; min-height: 90px; }
+
+  .readonly-field { background: #f8fafc; color: #64748b; cursor: default; }
+
+  /* Radio pills */
+  .pill-group { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+  .pill-option { position: relative; }
+  .pill-option input[type=radio] { position: absolute; opacity: 0; width: 0; height: 0; }
+  .pill-option label {
+    display: inline-flex; align-items: center; padding: 7px 16px;
+    border: 1.5px solid #e2e8f0; border-radius: 20px; font-size: 13px; font-weight: 500;
+    cursor: pointer; color: #475569; margin: 0; transition: all 0.12s;
+  }
+  .pill-option input[type=radio]:checked + label { background: #1F4E79; color: white; border-color: #1F4E79; }
+
+  /* Checkbox chips */
+  .check-grid { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+  .check-chip { position: relative; }
+  .check-chip input[type=checkbox] { position: absolute; opacity: 0; width: 0; height: 0; }
+  .check-chip label {
+    display: inline-flex; align-items: center; padding: 6px 14px;
+    border: 1.5px solid #e2e8f0; border-radius: 8px; font-size: 13px;
+    cursor: pointer; color: #475569; margin: 0; transition: all 0.12s;
+  }
+  .check-chip input[type=checkbox]:checked + label { background: #ede9fe; color: #5b21b6; border-color: #a78bfa; font-weight: 600; }
+
+  /* CEFR selector */
+  .cefr-grid { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+  .cefr-btn {
+    border: 1.5px solid #e2e8f0; border-radius: 8px; padding: 10px 18px;
+    font-size: 14px; font-weight: 600; cursor: pointer; background: white;
+    color: #64748b; transition: all 0.12s; font-family: inherit;
+  }
+  .cefr-btn:hover { border-color: #2E75B6; color: #1F4E79; }
+  .cefr-btn.selected { background: #1F4E79; color: white; border-color: #1F4E79; }
+
+  .divider { height: 1px; background: #f1f5f9; margin: 1rem 0; }
+
+  .submit-area { margin-top: 1.5rem; }
+  .btn-submit {
+    width: 100%; padding: 14px; background: #1F4E79; color: white;
+    border: none; border-radius: 10px; font-size: 15px; font-weight: 600;
+    cursor: pointer; font-family: inherit; transition: background 0.15s;
+  }
+  .btn-submit:hover { background: #163d61; }
+  .btn-submit:disabled { background: #94a3b8; cursor: not-allowed; }
+
+  .success-screen { display: none; text-align: center; padding: 3rem 1rem; }
+  .success-icon { font-size: 48px; margin-bottom: 1rem; }
+  .success-title { font-size: 22px; font-weight: 700; color: #1F4E79; margin-bottom: 0.5rem; }
+  .success-sub { font-size: 14px; color: #64748b; }
+
+  .error-msg { background: #fee2e2; color: #991b1b; border-radius: 8px; padding: 10px 14px; font-size: 13px; margin-top: 0.75rem; display: none; }
+</style>
+</head>
+<body>
+
+<div class="nav">
+  <span class="nav-logo">linguaid</span>
+  <span class="nav-sub">English Evaluation System</span>
+  <span class="nav-badge">ANGLAIS JURIDIQUE</span>
+</div>
+
+<div class="container">
+
+  <div id="mainForm">
+
+    <div class="candidate-bar" id="candidateBar">
+      <div class="candidate-name" id="candidateName">Chargement…</div>
+      <div class="candidate-meta" id="candidateMeta"></div>
+      <span class="chip chip-legal">⚖️ Anglais juridique</span>
+    </div>
+
+    <div class="step-progress">
+      <div class="step-labels">
+        <span class="step-label done">Typeform</span>
+        <span class="step-label done">Rapport écrit</span>
+        <span class="step-label active">Entretien</span>
+        <span class="step-label">Rapport final</span>
+        <span class="step-label">Programme</span>
+      </div>
+      <div class="progress-track">
+        <div class="prog-step done"></div>
+        <div class="prog-step done"></div>
+        <div class="prog-step active"></div>
+        <div class="prog-step"></div>
+        <div class="prog-step"></div>
+      </div>
+    </div>
+
+    <!-- Section 1: Contexte -->
+    <div class="card">
+      <div class="section-label">Section 1</div>
+      <h2>Contexte professionnel</h2>
+
+      <label>Nom</label>
+      <input type="text" id="f_name" class="readonly-field" readonly>
+
+      <label>Entreprise</label>
+      <input type="text" id="f_company" class="readonly-field" readonly>
+
+      <label>Poste</label>
+      <input type="text" id="f_jobtitle" class="readonly-field" readonly>
+
+      <label>Date de l\u2019entretien</label>
+      <input type="date" id="f_interviewDate">
+
+      <label>Profil</label>
+      <div class="pill-group">
+        <div class="pill-option"><input type="radio" name="lawyerType" id="lt_avocat" value="Avocat"><label for="lt_avocat">Avocat</label></div>
+        <div class="pill-option"><input type="radio" name="lawyerType" id="lt_juriste" value="Juriste"><label for="lt_juriste">Juriste</label></div>
+        <div class="pill-option"><input type="radio" name="lawyerType" id="lt_autre" value="Autre"><label for="lt_autre">Autre</label></div>
+      </div>
+
+      <label>% pratique anglais / semaine</label>
+      <input type="text" id="f_usagePct" placeholder="ex: 40% - en croissance">
+
+      <label>Langues déjà parlées</label>
+      <input type="text" id="f_otherLangs" placeholder="ex: bilingue allemand, espagnol scolaire">
+    </div>
+
+    <!-- Section 2: Besoins -->
+    <div class="card">
+      <div class="section-label">Section 2</div>
+      <h2>Besoins identifiés</h2>
+
+      <label>Domaines juridiques</label>
+      <div class="check-grid">
+        <div class="check-chip"><input type="checkbox" id="dom_affaires" value="Droit des affaires / M&A"><label for="dom_affaires">Affaires / M&A</label></div>
+        <div class="check-chip"><input type="checkbox" id="dom_contentieux" value="Contentieux / Litigation"><label for="dom_contentieux">Contentieux</label></div>
+        <div class="check-chip"><input type="checkbox" id="dom_social" value="Droit social"><label for="dom_social">Droit social</label></div>
+        <div class="check-chip"><input type="checkbox" id="dom_immo" value="Immobilier"><label for="dom_immo">Immobilier</label></div>
+        <div class="check-chip"><input type="checkbox" id="dom_ip" value="IP / IT"><label for="dom_ip">IP / IT</label></div>
+        <div class="check-chip"><input type="checkbox" id="dom_fiscal" value="Droit fiscal"><label for="dom_fiscal">Fiscal</label></div>
+        <div class="check-chip"><input type="checkbox" id="dom_autre" value="Autre"><label for="dom_autre">Autre</label></div>
+      </div>
+      <input type="text" id="f_domainsOther" placeholder="Préciser si Autre…" style="margin-top:8px">
+
+      <label>Compétences dominantes requises</label>
+      <div class="check-grid">
+        <div class="check-chip"><input type="checkbox" id="sk_emails" value="Emails professionnels"><label for="sk_emails">Emails</label></div>
+        <div class="check-chip"><input type="checkbox" id="sk_calls" value="Calls en solo"><label for="sk_calls">Calls en solo</label></div>
+        <div class="check-chip"><input type="checkbox" id="sk_meetings" value="Réunions clients"><label for="sk_meetings">Réunions clients</label></div>
+        <div class="check-chip"><input type="checkbox" id="sk_nego" value="Négociations"><label for="sk_nego">Négociations</label></div>
+        <div class="check-chip"><input type="checkbox" id="sk_drafting" value="Rédaction contrats / briefs"><label for="sk_drafting">Rédaction</label></div>
+        <div class="check-chip"><input type="checkbox" id="sk_reading" value="Lecture de documents"><label for="sk_reading">Lecture docs</label></div>
+        <div class="check-chip"><input type="checkbox" id="sk_pres" value="Présentations"><label for="sk_pres">Présentations</label></div>
+      </div>
+
+      <label>Principaux blocages (à l\u2019oral, à l\u2019écrit, confiance…)</label>
+      <textarea id="f_blockers" placeholder="ex: stress à l\u2019oral, peur des fautes, manque de vocabulaire juridique, différence entre ce qu\u2019il veut dire et ce qui sort…"></textarea>
+    </div>
+
+    <!-- Section 3: Évaluation -->
+    <div class="card">
+      <div class="section-label">Section 3</div>
+      <h2>Évaluation</h2>
+
+      <label>Niveau approximatif</label>
+      <div class="cefr-grid">
+        <button type="button" class="cefr-btn" onclick="selectLevel(this,'A2')">A2</button>
+        <button type="button" class="cefr-btn" onclick="selectLevel(this,'B1')">B1</button>
+        <button type="button" class="cefr-btn" onclick="selectLevel(this,'B1+')">B1+</button>
+        <button type="button" class="cefr-btn" onclick="selectLevel(this,'B2')">B2</button>
+        <button type="button" class="cefr-btn" onclick="selectLevel(this,'B2+')">B2+</button>
+        <button type="button" class="cefr-btn" onclick="selectLevel(this,'C1')">C1</button>
+      </div>
+      <input type="hidden" id="f_approxLevel">
+
+      <label>Gaps prioritaires</label>
+      <div class="check-grid">
+        <div class="check-chip"><input type="checkbox" id="gap_oral" value="Expression orale"><label for="gap_oral">Expression orale</label></div>
+        <div class="check-chip"><input type="checkbox" id="gap_co" value="Compréhension orale"><label for="gap_co">Compréhension orale</label></div>
+        <div class="check-chip"><input type="checkbox" id="gap_ecrit" value="Expression écrite"><label for="gap_ecrit">Expression écrite</label></div>
+        <div class="check-chip"><input type="checkbox" id="gap_vocab" value="Vocabulaire juridique"><label for="gap_vocab">Vocabulaire juridique</label></div>
+        <div class="check-chip"><input type="checkbox" id="gap_confiance" value="Confiance / aisance"><label for="gap_confiance">Confiance / aisance</label></div>
+        <div class="check-chip"><input type="checkbox" id="gap_lecture" value="Lecture de documents complexes"><label for="gap_lecture">Lecture docs complexes</label></div>
+      </div>
+
+      <label>Notes libres (observations de l\u2019entretien)</label>
+      <textarea id="f_notes" rows="5" placeholder="Ce que vous avez noté pendant l\u2019entretien — contexte, profil, anecdotes, nuances. Ces notes alimentent directement le rapport final."></textarea>
+    </div>
+
+    <!-- Section 4: Recommandation -->
+    <div class="card">
+      <div class="section-label">Section 4</div>
+      <h2>Recommandation</h2>
+
+      <label>Programme recommandé</label>
+      <div class="pill-group">
+        <div class="pill-option"><input type="radio" name="programme" id="prog_e360" value="E360"><label for="prog_e360">E360</label></div>
+        <div class="pill-option"><input type="radio" name="programme" id="prog_e360l" value="E360_LEGAL"><label for="prog_e360l">E360 Legal</label></div>
+        <div class="pill-option"><input type="radio" name="programme" id="prog_caja" value="CAJA"><label for="prog_caja">CAJA</label></div>
+      </div>
+
+      <label>Niveau cible</label>
+      <div class="cefr-grid">
+        <button type="button" class="cefr-btn" onclick="selectTarget(this,'B1')">B1</button>
+        <button type="button" class="cefr-btn" onclick="selectTarget(this,'B1+')">B1+</button>
+        <button type="button" class="cefr-btn" onclick="selectTarget(this,'B2')">B2</button>
+        <button type="button" class="cefr-btn" onclick="selectTarget(this,'B2+')">B2+</button>
+        <button type="button" class="cefr-btn" onclick="selectTarget(this,'C1')">C1</button>
+      </div>
+      <input type="hidden" id="f_targetLevel">
+
+      <label>Heures recommandées</label>
+      <input type="number" id="f_hours" min="10" max="120" placeholder="ex: 30">
+
+      <label>Date de démarrage envisagée</label>
+      <input type="date" id="f_dateStart">
+
+      <label>Financement envisagé</label>
+      <div class="pill-group">
+        <div class="pill-option"><input type="radio" name="financing" id="fin_cpf" value="CPF"><label for="fin_cpf">CPF</label></div>
+        <div class="pill-option"><input type="radio" name="financing" id="fin_emp" value="Employeur"><label for="fin_emp">Employeur</label></div>
+        <div class="pill-option"><input type="radio" name="financing" id="fin_perso" value="Personnel"><label for="fin_perso">Personnel</label></div>
+        <div class="pill-option"><input type="radio" name="financing" id="fin_nsp" value="À définir"><label for="fin_nsp">À définir</label></div>
+      </div>
+    </div>
+
+    <div class="error-msg" id="errorMsg"></div>
+
+    <div class="submit-area">
+      <button class="btn-submit" id="btnSubmit" onclick="submitIntake()">
+        Enregistrer et générer le rapport final →
+      </button>
+    </div>
+
+  </div><!-- /mainForm -->
+
+  <div class="success-screen" id="successScreen">
+    <div class="success-icon">✅</div>
+    <div class="success-title">Entretien enregistré</div>
+    <div class="success-sub">Le rapport final est prêt à être généré depuis la fiche candidat.</div>
+  </div>
+
+</div><!-- /container -->
+
+<script>
+  const token = window.location.pathname.split('/').pop();
+  let candidateId = null;
+
+  // Today as default interview date
+  document.getElementById('f_interviewDate').value = new Date().toISOString().slice(0,10);
+
+  fetch('/oral/data/' + token)
+    .then(r => r.json())
+    .then(c => {
+      candidateId = c.id;
+      document.getElementById('candidateName').textContent = c.name || '';
+      document.getElementById('candidateMeta').textContent = [c.jobtitle, c.company].filter(Boolean).join(' — ');
+      document.getElementById('f_name').value = c.name || '';
+      document.getElementById('f_company').value = c.company || '';
+      document.getElementById('f_jobtitle').value = c.jobtitle || '';
+      // Pre-fill lawyerType if already captured
+      if (c.lawyerType) {
+        var r = document.querySelector('input[name=lawyerType][value="' + c.lawyerType + '"]');
+        if (r) r.checked = true;
+      }
+    })
+    .catch(() => {
+      document.getElementById('candidateName').textContent = 'Lien invalide ou expiré';
+    });
+
+  function selectLevel(btn, val) {
+    document.querySelectorAll('.cefr-grid')[0].querySelectorAll('.cefr-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    document.getElementById('f_approxLevel').value = val;
+  }
+
+  function selectTarget(btn, val) {
+    document.querySelectorAll('.cefr-grid')[1].querySelectorAll('.cefr-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    document.getElementById('f_targetLevel').value = val;
+  }
+
+  function getChecked(name) {
+    return Array.from(document.querySelectorAll('input[name="' + name + '"]:checked')).map(x => x.value);
+  }
+
+  function getCheckboxGroup(ids) {
+    return ids.filter(id => document.getElementById(id) && document.getElementById(id).checked)
+              .map(id => document.getElementById(id).value);
+  }
+
+  function submitIntake() {
+    const btn = document.getElementById('btnSubmit');
+    const errEl = document.getElementById('errorMsg');
+    errEl.style.display = 'none';
+
+    const approxLevel = document.getElementById('f_approxLevel').value;
+    const targetLevel = document.getElementById('f_targetLevel').value;
+    const programme = document.querySelector('input[name=programme]:checked');
+    const hours = document.getElementById('f_hours').value;
+
+    if (!approxLevel) { showErr('Veuillez sélectionner le niveau approximatif.'); return; }
+    if (!targetLevel) { showErr('Veuillez sélectionner le niveau cible.'); return; }
+    if (!programme) { showErr('Veuillez sélectionner le programme recommandé.'); return; }
+    if (!hours) { showErr('Veuillez indiquer le nombre d\u2019heures recommandées.'); return; }
+
+    const domains = getCheckboxGroup(['dom_affaires','dom_contentieux','dom_social','dom_immo','dom_ip','dom_fiscal','dom_autre']);
+    const skills = getCheckboxGroup(['sk_emails','sk_calls','sk_meetings','sk_nego','sk_drafting','sk_reading','sk_pres']);
+    const gaps = getCheckboxGroup(['gap_oral','gap_co','gap_ecrit','gap_vocab','gap_confiance','gap_lecture']);
+    const lawyerType = document.querySelector('input[name=lawyerType]:checked');
+    const financing = document.querySelector('input[name=financing]:checked');
+
+    const payload = {
+      interviewDate: document.getElementById('f_interviewDate').value,
+      lawyerType: lawyerType ? lawyerType.value : '',
+      usagePct: document.getElementById('f_usagePct').value,
+      otherLangs: document.getElementById('f_otherLangs').value,
+      legalDomains: domains.join(', ') + (document.getElementById('f_domainsOther').value ? ' — ' + document.getElementById('f_domainsOther').value : ''),
+      dominantSkills: skills.join(', '),
+      blockers: document.getElementById('f_blockers').value,
+      approxLevel: approxLevel,
+      priorityGaps: gaps.join(', '),
+      notes: document.getElementById('f_notes').value,
+      recommendedProgramme: programme.value,
+      targetLevel: targetLevel,
+      totalHours: parseInt(hours, 10),
+      dateStart: document.getElementById('f_dateStart').value,
+      financing: financing ? financing.value : '',
+      // Mark as intake type so generate-final knows the data shape
+      intakeType: 'legal_intake'
+    };
+
+    btn.disabled = true;
+    btn.textContent = 'Enregistrement…';
+
+    fetch('/oral/submit-intake/' + token, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        document.getElementById('mainForm').style.display = 'none';
+        document.getElementById('successScreen').style.display = 'block';
+      } else {
+        showErr(data.error || 'Erreur lors de l\u2019enregistrement.');
+        btn.disabled = false;
+        btn.textContent = 'Enregistrer et générer le rapport final →';
+      }
+    })
+    .catch(() => {
+      showErr('Erreur réseau. Veuillez réessayer.');
+      btn.disabled = false;
+      btn.textContent = 'Enregistrer et générer le rapport final →';
+    });
+  }
+
+  function showErr(msg) {
+    const el = document.getElementById('errorMsg');
+    el.textContent = msg;
+    el.style.display = 'block';
+    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+</script>
+</body>
+</html>
