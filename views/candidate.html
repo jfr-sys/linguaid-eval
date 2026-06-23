@@ -481,7 +481,7 @@
     var s8 = document.getElementById('pstep8');
     var c8 = document.getElementById('pc8');
     if (s8 && hasSentCatherine) { s8.classList.remove('pending','active'); s8.classList.add('done'); c8.innerHTML = '✓'; }
-    else if (s8 && hasSigned) { s8.classList.remove('pending','done'); s8.classList.add('active'); }
+    else if (s8 && (hasSigned || hasConvention)) { s8.classList.remove('pending','done'); s8.classList.add('active'); }
   }
 
   function statusBadge(status) {
@@ -1052,7 +1052,7 @@
 
     // Step 8: unlock if signed
     var s8 = document.getElementById('stage8');
-    if (cd.signedAt) {
+    if (cd.signedAt || cd.generatedAt) {
       s8.style.opacity = '1'; s8.style.pointerEvents = 'auto';
       document.getElementById('stage8status').textContent = 'Envoyez l’ordre à Catherine';
       document.getElementById('orderForm').style.display = 'block';
