@@ -451,9 +451,9 @@ function toggleCPF() {
     document.querySelectorAll('.cpf-type-option').forEach(function(o) { o.classList.remove('selected'); o.querySelector('input').checked = false; });
     updateCpfUI(null);
     // Save isCPF=false
-    fetch("/candidates/api/" + id + "/cpf", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({isCPF: false}) });
+    fetch("/api/candidates/api/" + id + "/cpf", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({isCPF: false}) });
   } else {
-    fetch("/candidates/api/" + id + "/cpf", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({isCPF: true}) });
+    fetch("/api/candidates/api/" + id + "/cpf", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({isCPF: true}) });
   }
 }
 
@@ -466,7 +466,7 @@ function selectCpfType(type, el) {
   currentEdofAction = null;
 
   // Save to server
-  fetch("/candidates/api/" + id + "/cpf-type", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({cpfType: type}) });
+  fetch("/api/candidates/api/" + id + "/cpf-type", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({cpfType: type}) });
 
   populateEdofDropdown(type, null);
   updateCpfUI(type);
@@ -551,7 +551,7 @@ function selectEdofAction() {
       showEdofInfo(action);
 
       // Save to server and update hours fields
-      fetch("/candidates/api/" + id + "/edof-action", {
+      fetch("/api/candidates/api/" + id + "/edof-action", {
         method: "POST",
         headers: {"Content-Type":"application/json"},
         body: JSON.stringify({edofActionId: actionId})
