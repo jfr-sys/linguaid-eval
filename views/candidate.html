@@ -419,6 +419,7 @@
         <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">N° de commande</label><input id="convOrderNumber" type="text" placeholder="CMD-2026-XXX" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
         <div style="grid-column:1/-1"><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Adresse entreprise</label><input id="convCompanyAddress" type="text" placeholder="1 rue de la Paix, 75001 Paris" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
       </div>
+      <div style="margin-bottom:0.75rem"><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Disponibilités apprenant</label><input id="convAvailabilities" type="text" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px" placeholder="Ex: Lundi soir, Vendredi midi-14h"></div>
       <div style="margin-bottom:0.75rem"><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Notes pour Catherine (ManageAll)</label><textarea id="convNotes" placeholder="Ex: CPF, OPCO, modalités particulières..." style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px;min-height:60px;resize:vertical"></textarea></div>
       <button class="btn btn-secondary" id="btnSendCatherine" onclick="sendToCatherine()" style="background:#7c3aed;color:white">📧 Envoyer à Catherine</button>
     </div>
@@ -933,15 +934,16 @@
     var learnerTel = document.getElementById('convLearnerTel') ? document.getElementById('convLearnerTel').value : '';
     var orderNumber = document.getElementById('convOrderNumber') ? document.getElementById('convOrderNumber').value : '';
     var companyAddress = document.getElementById('convCompanyAddress') ? document.getElementById('convCompanyAddress').value : '';
+    var availabilities = document.getElementById('convAvailabilities') ? document.getElementById('convAvailabilities').value : '';
     // Save step 8 fields to conventionData first, then send
     fetch('/api/save-convention/' + id, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ learnerTel: learnerTel, orderNumber: orderNumber, companyAddress: companyAddress, notes: notes })
+      body: JSON.stringify({ learnerTel: learnerTel, orderNumber: orderNumber, companyAddress: companyAddress, notes: notes, availabilities: availabilities })
     }).then(function(){ return fetch('/api/send-to-catherine/' + id, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ notes: notes, learnerTel: learnerTel, orderNumber: orderNumber, companyAddress: companyAddress })
+      body: JSON.stringify({ notes: notes, learnerTel: learnerTel, orderNumber: orderNumber, companyAddress: companyAddress, availabilities: availabilities })
     }); })
     .then(function(r){ return r.json(); })
     .then(function(d){
@@ -1064,7 +1066,21 @@
       s8.style.opacity = '1'; s8.style.pointerEvents = 'auto';
       document.getElementById('stage8status').textContent = 'Envoyez l’ordre à Catherine';
       document.getElementById('orderForm').style.display = 'block';
-      if (cd.notes) document.getElementById('convNotes').value = cd.notes;
+      // Pre-populate availabilities
+      var availEl = document.getElementById('convAvailabilities');
+      if (availEl && !availEl.value) {
+        var savedAvail = cd.availabilities || '';
+        if (!savedAvail && od.validatedAvail && od.validatedAvail.length) {
+          savedAvail = od.validatedAvail.map(function(a){ return a.day + ' ' + a.time; }).join(', ');
+        }
+        if (!savedAvail && od.schedNotes) savedAvail = od.schedNotes;
+        availEl.value = savedAvail;
+      }
+      // Pre-populate notes
+      var noteParts = [];
+      if (cd.notes) noteParts.push(cd.notes);
+      if (od.schedNotes && !(cd.notes && cd.notes.includes(od.schedNotes))) noteParts.push('Créneaux idéaux : ' + od.schedNotes);
+      if (noteParts.length) document.getElementById('convNotes').value = noteParts.join('\n');
       if (cd.sentToCatherineAt) {
         s8.style.borderTopColor = '#10b981';
         document.getElementById('stage8status').textContent = 'Ordre envoyé ✓';

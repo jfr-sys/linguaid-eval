@@ -1406,6 +1406,7 @@ router.post('/send-to-catherine/:id', function(req, res) {
     var learnerTel = (req.body && req.body.learnerTel) || cd.learnerTel || '';
     var orderNumber = (req.body && req.body.orderNumber) || cd.orderNumber || '';
     var companyAddress = (req.body && req.body.companyAddress) || cd.companyAddress || '';
+    var availabilities = (req.body && req.body.availabilities) || cd.availabilities || (od.validatedAvail ? od.validatedAvail.map(function(a){return a.day+' '+a.time;}).join(', ') : '') || od.schedNotes || '';
 
     // Find programme PDF - check standard locations
     var fs = require('fs');
@@ -1443,6 +1444,7 @@ router.post('/send-to-catherine/:id', function(req, res) {
       '<tr><td style="padding:6px 12px;background:#f1f5f9;font-weight:600">CPF</td><td style="padding:6px 12px;border-bottom:1px solid #e2e8f0">' + (cd.isCPF ? 'Oui' : 'Non') + '</td></tr>' +
       '<tr><td style="padding:6px 12px;background:#f1f5f9;font-weight:600">Signataire</td><td style="padding:6px 12px;border-bottom:1px solid #e2e8f0">' + (cd.signatory || '—') + '</td></tr>' +
       '<tr><td style="padding:6px 12px;background:#f1f5f9;font-weight:600">Tél apprenant</td><td style="padding:6px 12px;border-bottom:1px solid #e2e8f0">' + (learnerTel || '—') + '</td></tr>' +
+      '<tr><td style="padding:6px 12px;background:#f1f5f9;font-weight:600">Disponibilités</td><td style="padding:6px 12px;border-bottom:1px solid #e2e8f0">' + (availabilities || '—') + '</td></tr>' +
       '<tr><td style="padding:6px 12px;background:#f1f5f9;font-weight:600">Adresse entreprise</td><td style="padding:6px 12px;border-bottom:1px solid #e2e8f0">' + (companyAddress || '—') + '</td></tr>' +
       '<tr><td style="padding:6px 12px;background:#f1f5f9;font-weight:600">N° de commande</td><td style="padding:6px 12px;border-bottom:1px solid #e2e8f0">' + (orderNumber || '—') + '</td></tr>' +
       '<tr><td style="padding:6px 12px;background:#f1f5f9;font-weight:600">Convention</td><td style="padding:6px 12px;border-bottom:1px solid #e2e8f0">' + signed + '</td></tr>' +
