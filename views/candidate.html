@@ -1074,6 +1074,15 @@
           savedAvail = od.validatedAvail.map(function(a){ return a.day + ' ' + a.time; }).join(', ');
         }
         if (!savedAvail && od.schedNotes) savedAvail = od.schedNotes;
+        if (!savedAvail && c.avail) {
+          var avParts = [];
+          ['lundi','mardi','mercredi','jeudi','vendredi','Lundi','Mardi','Mercredi','Jeudi','Vendredi'].forEach(function(d){
+            if (c.avail[d]) avParts.push(d + ' ' + c.avail[d]);
+          });
+          // deduplicate
+          avParts = avParts.filter(function(v,i,a){return a.indexOf(v)===i;});
+          savedAvail = avParts.join(', ');
+        }
         availEl.value = savedAvail;
       }
       // Pre-populate notes
