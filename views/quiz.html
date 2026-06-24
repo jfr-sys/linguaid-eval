@@ -77,7 +77,7 @@ var QUESTIONS = [
   {
     id: 'q2',
     text: 'Lequel de ces mots est un faux ami (faux cognate) ?',
-    options: ['Assistance (aide)', 'Actually (en fait, pas "actuellement")', 'Information (information)', 'Communication (communication)'],
+    options: ['Assistance (aide)', 'Actually', 'Information (information)', 'Communication (communication)'],
     correct: 1
   },
   {
@@ -106,7 +106,7 @@ var QUESTIONS = [
 ];
 
 function init() {
-  fetch('/api/quiz/' + token)
+  fetch('/api/quiz-info/' + token)
     .then(r => r.json())
     .then(d => {
       document.getElementById('loading').style.display = 'none';

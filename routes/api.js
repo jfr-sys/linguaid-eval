@@ -2148,6 +2148,8 @@ router.post('/generate-quiz-link/:id', function(req, res) {
     var token = crypto.randomBytes(16).toString('hex');
     candidates[idx].quizToken = token;
     candidates[idx].quizSentAt = new Date().toISOString();
+    delete candidates[idx].quizScore;
+    delete candidates[idx].quizCompletedAt;
     saveCandidates(candidates);
     var od = c.oralData || {};
     var isLegal = c.courseType === 'legal' || od.cpfType === 'E360_LEGAL' || od.cpfType === 'CAJA';
