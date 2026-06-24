@@ -32,6 +32,7 @@
   .badge-convention { background: #e0e7ff; color: #3730a3; }       /* indigo */
   .badge-signed     { background: #ede9fe; color: #5b21b6; }       /* violet */
   .badge-order      { background: #fae8ff; color: #86198f; border: 1px solid #e879f9; font-weight: 700; } /* pink/done */
+  .badge-convoc     { background: #fef3c7; color: #b45309; border: 1px solid #fbbf24; font-weight: 700; } /* amber/convoc */
   .name-link { color: #1F4E79; text-decoration: none; font-weight: 500; }
   .name-link:hover { text-decoration: underline; }
   .empty { text-align: center; padding: 3rem; color: #999; font-size: 14px; }
@@ -222,7 +223,7 @@
     });
     if(!rows.length){tb.innerHTML='<tr><td colspan="5" class="empty">'+(q?'No results.':'No candidates yet.')+'</td></tr>';return;}
     tb.innerHTML=rows.map(function(x){
-      var sl = (x.conventionData && x.conventionData.sentToCatherineAt) ? ['Order sent','badge-order'] : (x.conventionData && x.conventionData.signedAt) ? ['Convention signed','badge-signed'] : (x.conventionData && x.conventionData.price) ? ['Convention done','badge-convention'] : (SL[x.status]||['Invited','badge-invited']); var convDone = '';
+      var sl = (x.conventionData && x.conventionData.convocationSentAt) ? ['Convocation sent','badge-convoc'] : (x.conventionData && x.conventionData.sentToCatherineAt) ? ['Order sent','badge-order'] : (x.conventionData && x.conventionData.signedAt) ? ['Convention signed','badge-signed'] : (x.conventionData && x.conventionData.price) ? ['Convention done','badge-convention'] : (SL[x.status]||['Invited','badge-invited']); var convDone = '';
       var pb=propBadge(x);
       var advancedBadge = (x.conventionData && (x.conventionData.sentToCatherineAt || x.conventionData.signedAt || x.conventionData.price));
       var statusBadgeHtml = (pb && !advancedBadge) ? '' : '<span class="badge '+sl[1]+'">'+sl[0]+'</span>';

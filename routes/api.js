@@ -2137,4 +2137,144 @@ router.post('/send-convocation/:id', function(req, res) {
 });
 
 
+// ── Step 10: Generate quiz link ───────────────────────────────────────────────
+router.post('/generate-quiz-link/:id', function(req, res) {
+  try {
+    var crypto = require('crypto');
+    var candidates = getCandidates();
+    var idx = candidates.findIndex(function(x) { return x.id === req.params.id; });
+    if (idx === -1) return res.status(404).json({ error: 'Not found' });
+    var c = candidates[idx];
+    var token = crypto.randomBytes(16).toString('hex');
+    candidates[idx].quizToken = token;
+    candidates[idx].quizSentAt = new Date().toISOString();
+    saveCandidates(candidates);
+    var od = c.oralData || {};
+    var isLegal = c.courseType === 'legal' || od.cpfType === 'E360_LEGAL' || od.cpfType === 'CAJA';
+    var moduleName = isLegal ? 'Yes, you Ken English' : 'Travaux personnels Volet 2';
+    var quizUrl = 'https://eval.linguaid.net/quiz/' + token;
+    var trainingTitle = od.trainingTitle || (isLegal ? 'Formation en anglais juridique' : 'Formation en anglais professionnel');
+    var civility = (c.conventionData && c.conventionData.civility) || '';
+    var lastName = (c.name || '').split(' ').slice(-1)[0];
+    var greeting = civility ? civility + ' ' + lastName : (c.name || '');
+    var sigPath2 = require('path').join(__dirname, '../views/signature_catherine.png');
+    var sigCid2 = 'signature_catherine2';
+    var sigHtml2 = require('fs').existsSync(sigPath2)
+      ? '<img src="cid:' + sigCid2 + '" alt="Signature" style="max-width:400px;display:block;margin-top:8px">'
+      : '<p><strong>Catherine Frimond-Laubi\u00e8s</strong><br>Responsable suivi<br>cfr@linguaid.net</p>';
+    var html2 = '<div style="font-family:Arial,sans-serif;font-size:14px;color:#222;line-height:1.7;max-width:600px">'
+      + '<p>Bonjour ' + greeting + ',</p>'
+      + '<p>Dans le cadre de votre formation <strong>' + trainingTitle + '</strong>, nous vous invitons \u00e0 compl\u00e9ter le module suivant\u00a0:</p>'
+      + '<p style="margin-left:1rem"><strong>' + moduleName + '</strong></p>'
+      + '<p>Veuillez cliquer sur le bouton ci-dessous pour acc\u00e9der \u00e0 votre questionnaire de fin de module\u00a0:</p>'
+      + '<p><a href="' + quizUrl + '" style="background:#1F4E79;color:white;padding:12px 24px;border-radius:6px;text-decoration:none;display:inline-block;font-weight:600">Acc\u00e9der au questionnaire</a></p>'
+      + '<p style="font-size:12px;color:#666">Lien direct\u00a0: ' + quizUrl + '</p>'
+      + '<p>Ce questionnaire est \u00e0 compl\u00e9ter une seule fois. Vos r\u00e9ponses seront enregistr\u00e9es automatiquement et une attestation vous sera adress\u00e9e.</p>'
+      + '<p>Nous restons \u00e0 votre disposition pour toute question.</p>'
+      + '<p>Bien cordialement,</p>'
+      + sigHtml2
+      + '</div>';
+    var transporter2 = require('nodemailer').createTransport({ host: 'localhost', port: 25, secure: false, tls: { rejectUnauthorized: false } });
+    var quizAttachments = [];
+    if (require('fs').existsSync(sigPath2)) {
+      quizAttachments.push({ filename: 'signature_catherine.png', path: sigPath2, cid: sigCid2 });
+    }
+    transporter2.sendMail({ from: 'cfr@linguaid.net', to: c.email, cc: 'jfr@linguaid.net',
+      subject: 'Questionnaire de fin de module \u2013 ' + moduleName, html: html2, attachments: quizAttachments },
+      function(err) { if (err) console.error('quiz-link mail error:', err); else console.log('Quiz link sent to ' + c.name); });
+    res.json({ ok: true, token: token });
+  } catch(err) { console.error('generate-quiz-link error:', err); res.status(500).json({ error: err.message }); }
+});
+
+// ── Step 10: Upload attestation ────────────────────────────────────────────────
+router.post('/upload-attestation/:id', function(req, res) {
+  try {
+    var multer = require('multer');
+    var path2 = require('path');
+    var fs2 = require('fs');
+    var attestDir = path2.join(__dirname, '../data/attestations');
+    if (!fs2.existsSync(attestDir)) fs2.mkdirSync(attestDir, { recursive: true });
+    var storage = multer.diskStorage({
+      destination: function(req, file, cb) { cb(null, attestDir); },
+      filename: function(req, file, cb) { cb(null, req.params.id + '_attestation_' + Date.now() + path2.extname(file.originalname)); }
+    });
+    var upload = multer({ storage: storage }).single('attestation');
+    upload(req, res, function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      if (!req.file) return res.status(400).json({ error: 'No file received' });
+      var candidates = getCandidates();
+      var idx = candidates.findIndex(function(x) { return x.id === req.params.id; });
+      if (idx > -1) {
+        candidates[idx].attestationPath = req.file.path;
+        candidates[idx].attestationUploadedAt = new Date().toISOString();
+        candidates[idx].attestationFilename = req.file.originalname;
+        saveCandidates(candidates);
+      }
+      console.log('Attestation uploaded for ' + req.params.id);
+      res.json({ ok: true, filename: req.file.originalname });
+    });
+  } catch(err) { console.error('upload-attestation error:', err); res.status(500).json({ error: err.message }); }
+});
+
+// ── Quiz: info + submit ────────────────────────────────────────────────────────
+router.get('/quiz-info/:token', function(req, res) {
+  var candidates = getCandidates();
+  var c = candidates.find(function(x) { return x.quizToken === req.params.token; });
+  if (!c) return res.json({ error: 'invalid' });
+  if (c.quizScore !== undefined) return res.json({ alreadyDone: true });
+  var od = c.oralData || {};
+  var isLegal = c.courseType === 'legal' || od.cpfType === 'E360_LEGAL' || od.cpfType === 'CAJA';
+  res.json({ ok: true, title: isLegal ? 'Module Yes, you Ken English' : 'Module Travaux personnels Volet 2' });
+});
+
+router.post('/quiz-submit/:token', function(req, res) {
+  var candidates = getCandidates();
+  var idx = candidates.findIndex(function(x) { return x.quizToken === req.params.token; });
+  if (idx === -1) return res.status(404).json({ error: 'invalid' });
+  if (candidates[idx].quizScore !== undefined) return res.json({ alreadyDone: true });
+  var answers = (req.body && req.body.answers) || {};
+  var CORRECT = { q1: 1, q2: 1, q3: 0, q4: 1, q5: 2 };
+  var score = 0;
+  Object.keys(CORRECT).forEach(function(qid) { if (parseInt(answers[qid]) === CORRECT[qid]) score++; });
+  candidates[idx].quizScore = score;
+  candidates[idx].quizTotal = 5;
+  candidates[idx].quizCompletedAt = new Date().toISOString();
+  saveCandidates(candidates);
+  console.log('Quiz completed for ' + candidates[idx].name + ': ' + score + '/5');
+
+  // Generate attestation PDF
+  var path3 = require('path');
+  var fs3 = require('fs');
+  var execFile3 = require('child_process').execFile;
+  var attestDir2 = path3.join(__dirname, '../data/attestations');
+  if (!fs3.existsSync(attestDir2)) fs3.mkdirSync(attestDir2, { recursive: true });
+  var attestPdf = path3.join(attestDir2, candidates[idx].id + '_attestation_quiz.pdf');
+  var attestJson = path3.join(attestDir2, candidates[idx].id + '_quiz_data.json');
+  var od2 = candidates[idx].oralData || {};
+  var isLegal2 = candidates[idx].courseType === 'legal' || od2.cpfType === 'E360_LEGAL' || od2.cpfType === 'CAJA';
+  fs3.writeFileSync(attestJson, JSON.stringify({
+    name: candidates[idx].name,
+    company: candidates[idx].company || '',
+    jobtitle: candidates[idx].jobtitle || '',
+    moduleName: isLegal2 ? 'Yes, you Ken English' : 'Travaux personnels Volet 2',
+    trainingTitle: od2.trainingTitle || '',
+    score: score,
+    total: 5,
+    completedAt: candidates[idx].quizCompletedAt,
+    pdfPath: attestPdf
+  }));
+  execFile3('python3', ['/home/debian/generate_attestation.py', attestJson], function(err2) {
+    if (err2) { console.error('Attestation generation error:', err2.message); }
+    else {
+      var cands4 = getCandidates();
+      var i4 = cands4.findIndex(function(x) { return x.id === candidates[idx].id; });
+      if (i4 > -1) { cands4[i4].attestationPath = attestPdf; cands4[i4].attestationFilename = 'attestation_quiz.pdf'; saveCandidates(cands4); }
+      console.log('Attestation generated for ' + candidates[idx].name);
+    }
+  });
+
+  res.json({ ok: true, score: score, total: 5 });
+});
+
+
 module.exports = router;

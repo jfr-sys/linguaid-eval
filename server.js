@@ -28,7 +28,7 @@ if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
 
 // Auth middleware
 app.use((req, res, next) => {
-  const publicPaths = ["/login", "/oral/", "/sign/", "/api/"];
+  const publicPaths = ["/login", "/oral/", "/sign/", "/api/", "/quiz/"];
   const isPublic = publicPaths.some(p => req.path.startsWith(p));
   if (!req.session.user && !isPublic) {
     return res.redirect('/login');
@@ -43,6 +43,7 @@ app.use('/api', require('./routes/api'));
 const programmeRoutes = require('./routes/programme');
 app.use('/', programmeRoutes);
 app.use('/oral', require('./routes/oral'));
+app.get('/quiz/:token', function(req, res) { res.sendFile(require('path').join(__dirname, 'views/quiz.html')); });
 app.use('/sign', require('./routes/sign'));
 
 app.listen(PORT, () => {

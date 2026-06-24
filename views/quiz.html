@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Questionnaire de fin de module — Linguaid</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; background: #f1f5f9; color: #1e293b; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .card { background: white; border-radius: 16px; padding: 2.5rem; max-width: 640px; width: 100%; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
+  .logo { font-size: 22px; font-weight: 700; color: #1F4E79; margin-bottom: 0.25rem; }
+  .subtitle { font-size: 13px; color: #94a3b8; margin-bottom: 2rem; }
+  h1 { font-size: 18px; color: #1F4E79; margin-bottom: 0.5rem; }
+  .intro { font-size: 13px; color: #64748b; margin-bottom: 2rem; line-height: 1.6; }
+  .question { margin-bottom: 1.5rem; }
+  .question-text { font-size: 14px; font-weight: 600; color: #1e293b; margin-bottom: 0.75rem; }
+  .options { display: flex; flex-direction: column; gap: 8px; }
+  .option { display: flex; align-items: flex-start; gap: 10px; padding: 10px 14px; border: 2px solid #e2e8f0; border-radius: 8px; cursor: pointer; transition: all 0.15s; font-size: 13px; }
+  .option:hover { border-color: #93c5fd; background: #eff6ff; }
+  .option input[type=radio] { margin-top: 2px; flex-shrink: 0; accent-color: #1F4E79; }
+  .option.selected { border-color: #1F4E79; background: #eff6ff; }
+  .btn { background: #1F4E79; color: white; border: none; border-radius: 8px; padding: 12px 28px; font-size: 14px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 1.5rem; transition: background 0.2s; }
+  .btn:hover { background: #1e3a5f; }
+  .btn:disabled { background: #94a3b8; cursor: not-allowed; }
+  .result { text-align: center; padding: 2rem 0; }
+  .result-score { font-size: 48px; font-weight: 700; color: #1F4E79; margin-bottom: 0.5rem; }
+  .result-label { font-size: 16px; color: #475569; margin-bottom: 1.5rem; }
+  .result-detail { font-size: 13px; color: #94a3b8; }
+  .progress-bar { height: 4px; background: #e2e8f0; border-radius: 2px; margin-bottom: 2rem; }
+  .progress-fill { height: 100%; background: #1F4E79; border-radius: 2px; transition: width 0.3s; }
+  #errorMsg { color: #dc2626; font-size: 13px; margin-top: 1rem; display: none; }
+  #loading { text-align: center; color: #94a3b8; padding: 2rem; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">Linguaid France</div>
+  <div class="subtitle">Questionnaire de fin de module</div>
+  <div id="loading">Chargement du questionnaire...</div>
+  <div id="quizContent" style="display:none">
+    <h1 id="quizTitle"></h1>
+    <p class="intro" id="quizIntro"></p>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    <div id="questionsContainer"></div>
+    <button class="btn" id="submitBtn" onclick="submitQuiz()" disabled>Soumettre mes réponses</button>
+    <div id="errorMsg"></div>
+  </div>
+  <div id="resultContent" style="display:none" class="result">
+    <div class="result-score" id="resultScore"></div>
+    <div class="result-label" id="resultLabel"></div>
+    <div class="result-detail">Vos résultats ont été enregistrés. Merci !</div>
+  </div>
+  <div id="alreadyDone" style="display:none" class="result">
+    <div style="font-size:40px;margin-bottom:1rem">✅</div>
+    <div style="font-size:16px;color:#1F4E79;font-weight:600">Questionnaire déjà complété</div>
+    <div style="font-size:13px;color:#94a3b8;margin-top:0.5rem">Vous avez déjà répondu à ce questionnaire.</div>
+  </div>
+  <div id="invalidToken" style="display:none" class="result">
+    <div style="font-size:40px;margin-bottom:1rem">❌</div>
+    <div style="font-size:16px;color:#dc2626;font-weight:600">Lien invalide</div>
+    <div style="font-size:13px;color:#94a3b8;margin-top:0.5rem">Ce lien n'est pas valide ou a expiré.</div>
+  </div>
+</div>
+
+<script>
+var token = window.location.pathname.split('/quiz/')[1];
+var questions = [];
+var answers = {};
+
+var QUESTIONS = [
+  {
+    id: 'q1',
+    text: 'Quelle préposition complète correctement cette phrase : "She arrived ___ the meeting on time" ?',
+    options: ['in', 'at', 'on', 'to'],
+    correct: 1
+  },
+  {
+    id: 'q2',
+    text: 'Lequel de ces mots est un faux ami (faux cognate) ?',
+    options: ['Assistance (aide)', 'Actually (en fait, pas "actuellement")', 'Information (information)', 'Communication (communication)'],
+    correct: 1
+  },
+  {
+    id: 'q3',
+    text: 'Comment dit-on "plaider coupable" en anglais ?',
+    options: ['To plead guilty', 'To admit fault', 'To confess liability', 'To acknowledge guilt'],
+    correct: 0
+  },
+  {
+    id: 'q4',
+    text: 'Quelle phrase utilise correctement le présent parfait ?',
+    options: [
+      'I have seen him yesterday.',
+      'She has worked here since 2020.',
+      'They have arrived last week.',
+      'He has went to court.'
+    ],
+    correct: 1
+  },
+  {
+    id: 'q5',
+    text: 'Dans un contexte professionnel, quelle formule de clôture d\'email est la plus appropriée ?',
+    options: ['Bye bye!', 'See you!', 'Yours sincerely,', 'Cheers mate,'],
+    correct: 2
+  }
+];
+
+function init() {
+  fetch('/api/quiz/' + token)
+    .then(r => r.json())
+    .then(d => {
+      document.getElementById('loading').style.display = 'none';
+      if (d.error === 'invalid') { document.getElementById('invalidToken').style.display = 'block'; return; }
+      if (d.alreadyDone) { document.getElementById('alreadyDone').style.display = 'block'; return; }
+      questions = QUESTIONS;
+      document.getElementById('quizTitle').textContent = d.title || 'Questionnaire de fin de module';
+      document.getElementById('quizIntro').textContent = 'Répondez aux questions ci-dessous. Ce questionnaire comporte ' + questions.length + ' questions.';
+      renderQuestions();
+      document.getElementById('quizContent').style.display = 'block';
+    })
+    .catch(() => {
+      document.getElementById('loading').textContent = 'Erreur de chargement. Veuillez réessayer.';
+    });
+}
+
+function renderQuestions() {
+  var container = document.getElementById('questionsContainer');
+  container.innerHTML = '';
+  questions.forEach(function(q, i) {
+    var div = document.createElement('div');
+    div.className = 'question';
+    var qText = '<div class="question-text">' + (i+1) + '. ' + q.text + '</div><div class="options">';
+    q.options.forEach(function(opt, j) {
+      qText += '<label class="option" id="opt_' + q.id + '_' + j + '">'
+        + '<input type="radio" name="' + q.id + '" value="' + j + '" onchange="selectAnswer(\'' + q.id + '\',' + j + ')">'
+        + opt + '</label>';
+    });
+    qText += '</div>';
+    div.innerHTML = qText;
+    container.appendChild(div);
+  });
+}
+
+function selectAnswer(qid, val) {
+  answers[qid] = val;
+  var q = questions.find(function(x) { return x.id === qid; });
+  if (q) {
+    q.options.forEach(function(_, j) {
+      var el = document.getElementById('opt_' + qid + '_' + j);
+      if (el) el.classList.toggle('selected', j === val);
+    });
+  }
+  var pct = (Object.keys(answers).length / questions.length) * 100;
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('submitBtn').disabled = Object.keys(answers).length < questions.length;
+}
+
+function submitQuiz() {
+  var btn = document.getElementById('submitBtn');
+  btn.disabled = true; btn.textContent = 'Envoi en cours...';
+  fetch('/api/quiz-submit/' + token, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ answers: answers })
+  })
+  .then(r => r.json())
+  .then(d => {
+    document.getElementById('quizContent').style.display = 'none';
+    document.getElementById('resultContent').style.display = 'block';
+    document.getElementById('resultScore').textContent = d.score + '/' + d.total;
+    document.getElementById('resultLabel').textContent = d.score >= 4 ? '🎉 Excellent résultat !' : d.score >= 3 ? '👍 Bon résultat' : '📚 Continuez à pratiquer';
+  })
+  .catch(function() {
+    btn.disabled = false; btn.textContent = 'Soumettre mes réponses';
+    var err = document.getElementById('errorMsg');
+    err.style.display = 'block'; err.textContent = 'Erreur réseau, veuillez réessayer.';
+  });
+}
+
+init();
+</script>
+</body>
+</html>

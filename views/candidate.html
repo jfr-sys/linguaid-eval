@@ -137,6 +137,8 @@
   #pstep7.done:not(:last-child)::after { background: #d8b4fe; }
   #pstep8.done .step-circle { background: #ec4899; border-color: #ec4899; }
   #pstep8.done .step-label, #pstep8.done .step-sublabel { color: #be185d; }
+  #pstep9.done .step-circle { background: #f59e0b; border-color: #f59e0b; }
+  #pstep9.done .step-label, #pstep9.done .step-sublabel { color: #b45309; }
   .step-label { font-size: 12px; font-weight: 500; margin-top: 8px; color: #94a3b8; text-align: center; }
   .progress-step.done .step-label { color: #10b981; }
   .progress-step.active .step-label { color: #1F4E79; font-weight: 600; }
@@ -266,6 +268,11 @@
         <div class="step-circle" id="pc8">9</div>
         <div class="step-label">ManageAll</div>
         <div class="step-sublabel">Envoyé à Catherine</div>
+      </div>
+      <div class="progress-step" id="pstep9">
+        <div class="step-circle" id="pc9">10</div>
+        <div class="step-label">Convocation</div>
+        <div class="step-sublabel">Envoyée à l'apprenant</div>
       </div>
     </div>
   </div>
@@ -560,7 +567,7 @@
 
   marked.setOptions({ breaks: true, gfm: true });
 
-  function updateProgressBar(status, hasProposal, hasConvention, hasSigned, hasSentCatherine) {
+  function updateProgressBar(status, hasProposal, hasConvention, hasSigned, hasSentCatherine, hasConvocation) {
     const stepIndex = STATUS_ORDER.indexOf(status);
     for (let i = 0; i < 5; i++) {
       const step = document.getElementById('pstep' + i);
@@ -593,6 +600,10 @@
     var c8 = document.getElementById('pc8');
     if (s8 && hasSentCatherine) { s8.classList.remove('pending','active'); s8.classList.add('done'); c8.innerHTML = '✓'; }
     else if (s8 && (hasSigned || hasConvention)) { s8.classList.remove('pending','done'); s8.classList.add('active'); }
+    var s9 = document.getElementById('pstep9');
+    var c9 = document.getElementById('pc9');
+    if (s9 && hasConvocation) { s9.classList.remove('pending','active'); s9.classList.add('done'); c9.innerHTML = '✓'; }
+    else if (s9 && hasSentCatherine) { s9.classList.remove('pending','done'); s9.classList.add('active'); c9.innerHTML = '10'; }
   }
 
   function statusBadge(status) {
@@ -617,7 +628,7 @@
     companyEl.dataset.id = c.id;
     document.getElementById('profileMeta').textContent = c.email + (c.testdate ? ' · Test: ' + c.testdate : '');
     document.getElementById('profileBadge').innerHTML = c.isRenewal ? '<span class="badge" style="background:#ede9fe;color:#5b21b6">Renouvellement</span>' : statusBadge(c.status);
-    updateProgressBar(c.status, !!(c.conventionData && c.conventionData.proposalSentAt), !!(c.conventionData && c.conventionData.price), !!(c.conventionData && c.conventionData.signedAt), !!(c.conventionData && c.conventionData.sentToCatherineAt));
+    updateProgressBar(c.status, !!(c.conventionData && c.conventionData.proposalSentAt), !!(c.conventionData && c.conventionData.price), !!(c.conventionData && c.conventionData.signedAt), !!(c.conventionData && c.conventionData.sentToCatherineAt), !!(c.conventionData && c.conventionData.convocationSentAt));
     if (c.status === 'invited') { var ra = document.getElementById('resendInviteArea'); if (ra) ra.style.display = 'block'; }
 
     const p = Math.round(100 * c.scores.total / (c.scores.max || 30));
