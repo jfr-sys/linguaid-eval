@@ -190,6 +190,16 @@
   .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
   .tag { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 12px; background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; margin: 2px; }
   .download-loading { font-size: 12px; color: #64748b; font-style: italic; margin-top: 6px; display: none; }
+
+  /* ── Tabs ── */
+  .tabs-bar { display: flex; gap: 0; border-bottom: 1px solid #e5e7eb; margin-bottom: 1rem; background: white; border-radius: 12px 12px 0 0; padding: 0 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .tab-btn { padding: 12px 18px; font-size: 13px; font-weight: 500; cursor: pointer; color: #94a3b8; border-bottom: 2px solid transparent; margin-bottom: -1px; background: none; border-top: none; border-left: none; border-right: none; font-family: inherit; transition: all 0.15s; }
+  .tab-btn.active { color: #1F4E79; border-bottom-color: #1F4E79; }
+  .tab-btn:hover:not(.active) { color: #475569; }
+  .tab-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #10b981; margin-left: 6px; vertical-align: middle; }
+  .tab-dot.warn { background: #f59e0b; }
+  .tab-pane { display: none; }
+  .tab-pane.active { display: block; }
 </style>
 </head>
 <body>
@@ -261,6 +271,13 @@
   </div>
 
   <!-- Steps 1-4 compact summary bar -->
+  <div class="tabs-bar">
+    <button class="tab-btn active" onclick="switchTab('eval',this)">Évaluation <span class="tab-dot" id="tdot-eval"></span></button>
+    <button class="tab-btn" onclick="switchTab('dossier',this)">Dossier <span class="tab-dot" id="tdot-dossier" style="display:none"></span></button>
+    <button class="tab-btn" onclick="switchTab('formation',this)">Formation <span class="tab-dot warn" id="tdot-formation" style="display:none"></span></button>
+    <button class="tab-btn" onclick="switchTab('data',this)">Données</button>
+  </div>
+  <div class="tab-pane active" id="tab-eval">
   <div id="stepsCompact" style="background:white;border-radius:12px;padding:1rem 1.5rem;box-shadow:0 2px 8px rgba(0,0,0,0.06);margin-bottom:1rem">
     <div style="display:flex;align-items:flex-start;gap:0;flex-wrap:wrap">
       <!-- Step 1 -->
@@ -324,6 +341,9 @@
     <div id="reportSectionsWrap" style="display:none;margin-top:0.75rem"><div id="reportSections"></div></div>
   </div>
 
+  </div><!-- /tab-eval -->
+
+  <div class="tab-pane" id="tab-dossier">
   <!-- STEP 6: PROPOSITION -->
   <div class="stage" id="stage6" style="background:white;border-radius:12px;padding:1.5rem;box-shadow:0 2px 8px rgba(0,0,0,0.06);border-top:4px solid #e5e7eb;margin-bottom:1.5rem">
     <div class="stage-num">Step 6</div>
@@ -424,6 +444,97 @@
       <button class="btn btn-secondary" id="btnSendCatherine" onclick="sendToCatherine()" style="background:#7c3aed;color:white">📧 Envoyer à Catherine</button>
     </div>
   </div>
+  </div><!-- /tab-dossier -->
+
+  <div class="tab-pane" id="tab-formation">
+    <div class="stage" id="stage9" style="background:white;border-radius:12px;padding:1.5rem;box-shadow:0 2px 8px rgba(0,0,0,0.06);border-top:4px solid #e5e7eb;margin-bottom:1.5rem;opacity:0.5;pointer-events:none">
+      <div class="stage-num">Step 9</div>
+      <div class="stage-title">Convocation</div>
+      <div class="stage-status" id="stage9status">Débloqué une fois la commande envoyée à Catherine</div>
+      <div id="convocationForm" style="display:none;margin-top:1rem">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem">
+          <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Formateur</label>
+          <select id="convocTrainer" onchange="fillTrainerContact(this.value)" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px">
+            <option value="">— Choisir —</option>
+            <option value="anna">Anna Malzy</option>
+            <option value="hannah">Hannah Durrant</option>
+            <option value="leone">Leone Crinnion</option>
+            <option value="stephanie">Stephanie Cooper-Slockyj</option>
+            <option value="natasha">Natasha Costello</option>
+            <option value="louisek">Louise Kulbicki</option>
+            <option value="louiseg">Louise Garavaglia</option>
+            <option value="lynsey">Lynsey Redfern</option>
+            <option value="joss">Joss Frimond (test)</option>
+          </select></div>
+          <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Contact formateur</label><input id="convocTrainerContact" type="text" readonly style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px;background:#f8fafc" placeholder="Auto-rempli" /></div>
+          <div>
+            <label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Première séance</label>
+            <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+              <input id="convocSessionDate" type="date" style="font-size:13px;padding:5px 8px;border:1px solid #e2e8f0;border-radius:6px;flex:1;min-width:130px" onchange="updateSessionString()" />
+              <select id="convocSessionStart" style="font-size:13px;padding:5px 8px;border:1px solid #e2e8f0;border-radius:6px" onchange="updateSessionString()">
+                <option value="">Début</option>
+                <option>8h00</option><option>8h30</option><option>9h00</option><option>9h30</option>
+                <option>10h00</option><option>10h30</option><option>11h00</option><option>11h30</option>
+                <option>12h00</option><option>12h30</option><option>13h00</option><option>13h30</option>
+                <option>14h00</option><option>14h30</option><option>15h00</option><option>15h30</option>
+                <option>16h00</option><option>16h30</option><option>17h00</option><option>17h30</option>
+                <option>18h00</option><option>18h30</option><option>19h00</option><option>19h30</option>
+                <option>20h00</option>
+              </select>
+              <span style="font-size:12px;color:#666">à</span>
+              <select id="convocSessionEnd" style="font-size:13px;padding:5px 8px;border:1px solid #e2e8f0;border-radius:6px" onchange="updateSessionString()">
+                <option value="">Fin</option>
+                <option>8h00</option><option>8h30</option><option>9h00</option><option>9h30</option>
+                <option>10h00</option><option>10h30</option><option>11h00</option><option>11h30</option>
+                <option>12h00</option><option>12h30</option><option>13h00</option><option>13h30</option>
+                <option>14h00</option><option>14h30</option><option>15h00</option><option>15h30</option>
+                <option>16h00</option><option>16h30</option><option>17h00</option><option>17h30</option>
+                <option>18h00</option><option>18h30</option><option>19h00</option><option>19h30</option>
+                <option>20h00</option>
+              </select>
+            </div>
+            <div id="convocSessionPreview" style="font-size:11px;color:#94a3b8;margin-top:4px;font-style:italic"></div>
+            <input type="hidden" id="convocFirstSession" />
+          </div>
+          <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">CC (optionnel)</label><input id="convocCC" type="text" placeholder="rh@entreprise.com" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px" /></div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="btn btn-primary" onclick="sendConvocation()" id="btnSendConvoc">📧 Envoyer la convocation</button>
+        </div>
+        <div id="convocStatus" style="margin-top:8px;font-size:12px;color:#666"></div>
+        <div style="margin-top:6px;font-size:11px;color:#94a3b8">Envoi depuis cfr@linguaid.net · CC : formateur + jfr@linguaid.net · PJ : programme PDF + livret d'accueil</div>
+      </div>
+    </div>
+
+    <div class="stage" id="stage10" style="background:white;border-radius:12px;padding:1.5rem;box-shadow:0 2px 8px rgba(0,0,0,0.06);border-top:4px solid #e5e7eb;margin-bottom:1.5rem;opacity:0.5;pointer-events:none">
+      <div class="stage-num">Step 10</div>
+      <div class="stage-title">Suivi Volet 2</div>
+      <div class="stage-status" id="stage10status">Débloqué après convocation envoyée</div>
+      <div id="suiviForm" style="display:none;margin-top:1rem">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+          <div>
+            <div style="font-size:12px;font-weight:600;color:#1F4E79;margin-bottom:8px">Quiz Volet 2</div>
+            <div style="font-size:12px;color:#666;margin-bottom:8px">Génère un lien unique envoyé à l'apprenant. Score et date enregistrés automatiquement.</div>
+            <button class="btn btn-primary" onclick="generateQuizLink()" id="btnGenQuiz">✨ Générer le lien quiz</button>
+            <div id="quizLinkBox" style="display:none;margin-top:10px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px">
+              <div style="font-size:12px;color:#1e40af;margin-bottom:4px">Lien envoyé à l'apprenant :</div>
+              <div id="quizLinkDisplay" style="font-size:11px;color:#1e3a8a;word-break:break-all"></div>
+              <div id="quizScoreDisplay" style="font-size:12px;color:#1e40af;margin-top:6px"></div>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:12px;font-weight:600;color:#1F4E79;margin-bottom:8px">Attestation fin de module</div>
+            <div style="font-size:12px;color:#666;margin-bottom:8px">Uploadez l'attestation reçue de Ken Fagan (ou marquez les travaux personnels comme complétés).</div>
+            <button class="btn" onclick="document.getElementById('attestationUpload').click()" style="background:#7c3aed;color:white">📎 Uploader l'attestation</button>
+            <input type="file" id="attestationUpload" style="display:none" accept=".pdf,.jpg,.png" onchange="uploadAttestation(this)" />
+            <div id="attestationStatus" style="margin-top:8px;font-size:12px;color:#666">Aucun document uploadé</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /tab-formation -->
+
+  <div class="tab-pane" id="tab-data">
   <div class="two-col">
     <div class="report-box">
       <h3>Test Data</h3>
@@ -438,8 +549,7 @@
   <!-- Written report box removed -->
     <div class="report-rendered" id="writtenReportContent"></div>
   </div>
-
-
+  </div><!-- /tab-data -->
 
 </div>
 
@@ -659,6 +769,8 @@
       document.getElementById('stage4downloads').style.display = 'flex';
     }
     showPropositionStep(c);
+    showStep9(c);
+    updateTabDots(c);
   }
 
 
@@ -1376,5 +1488,166 @@ function markBooked(id){
     }
   };
 </script>
+
+<script>
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  var pane = document.getElementById('tab-' + name);
+  if (pane) pane.classList.add('active');
+}
+
+var TRAINERS = {
+  anna:      { name: 'Anna Malzy',               email: 'ajmalzy@gmail.com',           tel: '07 70 00 02 06' },
+  hannah:    { name: 'Hannah Durrant',            email: 'coursdanglais24@gmail.com',   tel: '07 86 87 11 72' },
+  leone:     { name: 'Leone Crinnion',            email: 'leonecrinnion@hotmail.com',   tel: '07 67 31 66 91' },
+  stephanie: { name: 'Stephanie Cooper-Slockyj', email: 'slockyj@gmail.com',           tel: '06 62 12 04 29' },
+  natasha:   { name: 'Natasha Costello',          email: 'nclegalenglish@gmail.com',    tel: '06 31 61 72 00' },
+  louisek:   { name: 'Louise Kulbicki',           email: 'lbkulbicki@gmail.com',        tel: '0039 320 7958909' },
+  louiseg:   { name: 'Louise Garavaglia',         email: 'louise.garavaglia@gmail.com', tel: '06 08 96 21 00' },
+  lynsey:    { name: 'Lynsey Redfern',            email: 'redfern.lynsey@gmail.com',    tel: '06 33 39 03 44' },
+  joss:      { name: 'Joss Frimond',              email: 'jossfrimond@hotmail.com',     tel: '06 84 49 23 32' }
+};
+
+var DAYS_FR = ['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'];
+var MONTHS_FR = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+
+function updateSessionString() {
+  var d = document.getElementById('convocSessionDate').value;
+  var s = document.getElementById('convocSessionStart').value;
+  var e = document.getElementById('convocSessionEnd').value;
+  var preview = document.getElementById('convocSessionPreview');
+  var hidden = document.getElementById('convocFirstSession');
+  if (!d) { preview.textContent = ''; hidden.value = ''; return; }
+  var dt = new Date(d + 'T12:00:00');
+  var dayName = DAYS_FR[dt.getDay()];
+  var dayNum = dt.getDate();
+  var monthName = MONTHS_FR[dt.getMonth()];
+  var year = dt.getFullYear();
+  var str = dayName + ' ' + dayNum + ' ' + monthName + ' ' + year;
+  if (s) str += ' de ' + s;
+  if (s && e) str += ' à ' + e;
+  hidden.value = str;
+  preview.textContent = str;
+}
+
+function fillTrainerContact(val) {
+  var t = TRAINERS[val];
+  var el = document.getElementById('convocTrainerContact');
+  if (t && el) el.value = t.email + (t.tel ? ' — ' + t.tel : '');
+}
+
+function showStep9(c) {
+  var s9 = document.getElementById('stage9');
+  if (!s9) return;
+  if (c && c.conventionData && (c.conventionData.signedAt || c.conventionData.sentToCatherineAt)) {
+    s9.style.opacity = '1'; s9.style.pointerEvents = 'auto';
+    document.getElementById('convocationForm').style.display = 'block';
+    document.getElementById('stage9status').textContent = 'Envoyez la convocation à l’apprenant';
+    if (c.conventionData && c.conventionData.convocationSentAt) {
+      s9.style.borderTopColor = '#10b981';
+      document.getElementById('stage9status').textContent = 'Convocation envoyée ✓';
+      document.getElementById('btnSendConvoc').textContent = '↩ Renvoyer';
+      var tdot = document.getElementById('tdot-formation');
+      if (tdot) { tdot.style.display='inline-block'; tdot.className='tab-dot'; }
+      showStep10(c);
+    } else {
+      var tdot = document.getElementById('tdot-formation');
+      if (tdot) { tdot.style.display='inline-block'; }
+    }
+    if (c.conventionData && c.conventionData.convocTrainer) {
+      var sel = document.getElementById('convocTrainer');
+      if (sel) sel.value = c.conventionData.convocTrainer;
+      fillTrainerContact(c.conventionData.convocTrainer);
+    }
+  }
+}
+
+function showStep10(c) {
+  var s10 = document.getElementById('stage10');
+  if (!s10) return;
+  s10.style.opacity = '1'; s10.style.pointerEvents = 'auto';
+  document.getElementById('suiviForm').style.display = 'block';
+  document.getElementById('stage10status').textContent = 'Générez le lien quiz et uploadez l’attestation';
+  if (c.quizToken) {
+    document.getElementById('quizLinkBox').style.display = 'block';
+    document.getElementById('quizLinkDisplay').textContent = window.location.origin + '/quiz/' + c.quizToken;
+    if (c.quizScore !== undefined && c.quizScore !== null) {
+      document.getElementById('quizScoreDisplay').textContent = 'Score : ' + c.quizScore + '/5 — ' + new Date(c.quizCompletedAt).toLocaleDateString('fr-FR');
+      s10.style.borderTopColor = '#10b981';
+    }
+  }
+  if (c.attestationPath) {
+    document.getElementById('attestationStatus').textContent = '✅ Attestation uploadée';
+    document.getElementById('attestationStatus').style.color = '#065f46';
+  }
+}
+
+function sendConvocation() {
+  var btn = document.getElementById('btnSendConvoc');
+  var status = document.getElementById('convocStatus');
+  var trainer = document.getElementById('convocTrainer').value;
+  var firstSession = document.getElementById('convocFirstSession').value;
+  var cc = document.getElementById('convocCC').value;
+  if (!trainer) { alert('Veuillez sélectionner un formateur.'); return; }
+  btn.disabled = true; btn.textContent = 'Envoi en cours...';
+  fetch('/api/send-convocation/' + id, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ trainer: trainer, firstSession: firstSession, cc: cc })
+  }).then(r => r.json()).then(d => {
+    btn.disabled = false;
+    if (d.ok || d.success) {
+      btn.textContent = '↩ Renvoyer';
+      status.style.color = '#065f46';
+      status.textContent = '✅ Convocation envoyée à ' + (candidate.email || '') + ' — ' + new Date().toLocaleDateString('fr-FR');
+      document.getElementById('stage9').style.borderTopColor = '#10b981';
+      document.getElementById('stage9status').textContent = 'Convocation envoyée ✓';
+      showStep10(candidate);
+    } else {
+      btn.textContent = '📧 Envoyer la convocation';
+      status.style.color = '#dc2626';
+      status.textContent = 'Erreur : ' + (d.error || 'inconnue');
+    }
+  }).catch(e => { btn.disabled = false; btn.textContent = '📧 Envoyer la convocation'; status.textContent = 'Erreur réseau'; });
+}
+
+function generateQuizLink() {
+  var btn = document.getElementById('btnGenQuiz');
+  btn.disabled = true; btn.textContent = 'Génération...';
+  fetch('/api/generate-quiz-link/' + id, { method: 'POST' })
+    .then(r => r.json()).then(d => {
+      btn.disabled = false; btn.textContent = '✨ Générer le lien quiz';
+      if (d.ok && d.token) {
+        document.getElementById('quizLinkBox').style.display = 'block';
+        document.getElementById('quizLinkDisplay').textContent = window.location.origin + '/quiz/' + d.token;
+        document.getElementById('quizScoreDisplay').textContent = 'En attente de réponse...';
+      } else { alert('Erreur : ' + (d.error || 'inconnue')); }
+    }).catch(() => { btn.disabled = false; alert('Erreur réseau'); });
+}
+
+function uploadAttestation(input) {
+  if (!input.files.length) return;
+  var formData = new FormData();
+  formData.append('attestation', input.files[0]);
+  fetch('/api/upload-attestation/' + id, { method: 'POST', body: formData })
+    .then(r => r.json()).then(d => {
+      var st = document.getElementById('attestationStatus');
+      if (d.ok) { st.textContent = '✅ Attestation uploadée — ' + input.files[0].name; st.style.color = '#065f46'; }
+      else { st.textContent = 'Erreur : ' + (d.error || 'inconnue'); st.style.color = '#dc2626'; }
+    }).catch(() => { document.getElementById('attestationStatus').textContent = 'Erreur réseau'; });
+}
+
+// Tab dot: show dossier dot if proposition accepted or further
+function updateTabDots(c) {
+  var cd = c.conventionData || {};
+  if (cd.proposalAcceptedAt || cd.generatedAt || cd.sentToCatherineAt) {
+    var d = document.getElementById('tdot-dossier');
+    if (d) d.style.display = 'inline-block';
+  }
+}
+</script>
+
 </body>
 </html>

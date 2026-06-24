@@ -1975,4 +1975,145 @@ router.post('/mark-oral-booked/:id', (req, res) => {
   res.json({ ok: true });
 });
 
+
+// ── Step 9: Send convocation to learner ──────────────────────────────────────
+var CONVOC_TRAINERS = {"anna": {"name": "Anna Malzy", "email": "ajmalzy@gmail.com", "tel": "07 70 00 02 06"}, "hannah": {"name": "Hannah Durrant", "email": "coursdanglais24@gmail.com", "tel": "07 86 87 11 72"}, "leone": {"name": "Leone Crinnion", "email": "leonecrinnion@hotmail.com", "tel": "07 67 31 66 91"}, "stephanie": {"name": "Stephanie Cooper-Slockyj", "email": "slockyj@gmail.com", "tel": "06 62 12 04 29"}, "natasha": {"name": "Natasha Costello", "email": "nclegalenglish@gmail.com", "tel": "06 31 61 72 00"}, "louisek": {"name": "Louise Kulbicki", "email": "lbkulbicki@gmail.com", "tel": "0039 320 7958909"}, "louiseg": {"name": "Louise Garavaglia", "email": "louise.garavaglia@gmail.com", "tel": "06 08 96 21 00"}, "lynsey": {"name": "Lynsey Redfern", "email": "redfern.lynsey@gmail.com", "tel": "06 33 39 03 44"}, "joss": {"name": "Joss Frimond", "email": "jossfrimond@hotmail.com", "tel": "06 84 49 23 32"}};
+
+router.post('/send-convocation/:id', function(req, res) {
+  try {
+    var candidates = getCandidates();
+    var c = candidates.find(function(x){ return x.id === req.params.id; });
+    if (!c) return res.status(404).json({ error: 'Not found' });
+
+    var cd = c.conventionData || {};
+    var od = c.oralData || {};
+    var trainerKey = (req.body && req.body.trainer) || '';
+    var firstSession = (req.body && req.body.firstSession) || '';
+    var ccExtra = (req.body && req.body.cc) || '';
+
+    var trainer = CONVOC_TRAINERS[trainerKey];
+    if (!trainer) return res.status(400).json({ error: 'Formateur inconnu: ' + trainerKey });
+
+    var isCPF = !!(cd.isCPF);
+    var cpfType = od.cpfType || '';
+    var isLegal = c.courseType === 'legal' || cpfType === 'E360_LEGAL' || cpfType === 'CAJA';
+    var totalHours = od.totalHours || 0;
+    var coachingHours = od.coachingHours || totalHours;
+    var homeworkHours = od.homeworkHours || 0;
+    var trainingTitle = od.trainingTitle || (isLegal ? 'Formation en anglais juridique' : 'Formation en anglais professionnel');
+    var targetLevel = od.targetLevel || '';
+    var civility = cd.civility || 'Madame/Monsieur';
+    var lastName = (c.name || '').split(' ').slice(-1)[0];
+
+    var SEP = '\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500';
+
+    // Volet 2 description depends on type
+    var volet2Section = '';
+    if (isCPF && isLegal) {
+      volet2Section = '<p style="margin:0 0 6px 0"><strong>' + SEP + '<br>VOLET 2 — MODULE E-LEARNING (' + homeworkHours + ' heures)<br>' + SEP + '</strong></p>'
+        + '<p style="margin:0 0 4px 0">Module : <em>\u00ab Yes, you Ken English \u00bb</em> \u2013 anglais professionnel en contexte juridique, en ligne</p>'
+        + '<p style="margin:0 0 4px 0">Modalit\u00e9 : acc\u00e8s \u00e0 distance, en autonomie accompagn\u00e9e</p>'
+        + '<p style="margin:0 0 12px 0">Vos codes d\u2019acc\u00e8s \u00e0 la plateforme vous seront communiqu\u00e9s s\u00e9par\u00e9ment dans les prochains jours.</p>';
+    } else {
+      volet2Section = '<p style="margin:0 0 6px 0"><strong>' + SEP + '<br>VOLET 2 — MODULE TRAVAUX PERSONNELS (' + homeworkHours + ' heures)<br>' + SEP + '</strong></p>'
+        + '<p style="margin:0 0 4px 0">Module : <em>\u00ab Travaux personnels \u00bb</em> \u2013 travaux pr\u00e9par\u00e9s par votre coach en anglais professionnel</p>'
+        + '<p style="margin:0 0 12px 0">Modalit\u00e9 : les travaux seront envoy\u00e9s sur votre bo\u00eete mail asynchrone avec vos cours de visio</p>';
+    }
+
+    // Certification section for CPF only
+    var certSection = '';
+    if (isCPF) {
+      var certName = cpfType === 'CAJA'
+        ? 'Certification en Anglais Juridique des Affaires (CAJA \u2013 RS6810)'
+        : 'Communiquer en anglais professionnel \u2013 English 360 \u2013 Niveau ' + (targetLevel || 'B2');
+      certSection = '<p style="margin:0 0 6px 0"><strong>' + SEP + '<br>\u00c9TAPE FINALE \u2014 CERTIFICATION<br>' + SEP + '</strong></p>'
+        + '<p style="margin:0 0 4px 0">\u00c0 l\u2019issue des deux volets de formation, vous passerez la certification :</p>'
+        + '<p style="margin:0 0 4px 0"><strong>' + certName + '</strong></p>'
+        + '<p style="margin:0 0 12px 0">Nous vous accompagnerons dans les d\u00e9marches d\u2019inscription \u00e0 l\u2019examen et vous communiquerons les modalit\u00e9s de passage en temps utile.</p>';
+    }
+
+    var html = '<div style="font-family:Arial,sans-serif;font-size:14px;color:#222;line-height:1.7;max-width:680px">'
+      + '<p style="margin:0 0 12px 0">Bonjour ' + civility + ' ' + lastName + ',</p>'
+      + '<p style="margin:0 0 16px 0">Nous avons le plaisir de vous confirmer votre nouvelle formation et vous adressons la pr\u00e9sente convocation.</p>'
+
+      + '<p style="margin:0 0 6px 0"><strong>' + SEP + '<br>VOTRE PARCOURS DE FORMATION<br>' + SEP + '</strong></p>'
+      + '<p style="margin:0 0 4px 0">' + (isCPF ? 'Niveau vis\u00e9 : ' + trainingTitle : 'Intitul\u00e9 de la formation : ' + trainingTitle) + '</p>'
+      + '<p style="margin:0 0 4px 0">Organisme de formation : Linguaid France SAS</p>'
+      + '<p style="margin:0 0 12px 0">Dur\u00e9e totale : ' + totalHours + ' heures</p>'
+
+      + '<p style="margin:0 0 6px 0"><strong>' + SEP + '<br>VOLET 1 \u2014 COURS INDIVIDUELS EN VISIO (' + coachingHours + ' heures)<br>' + SEP + '</strong></p>'
+      + '<p style="margin:0 0 4px 0">Formateur : ' + trainer.name + '</p>'
+      + '<p style="margin:0 0 4px 0">Contact : ' + trainer.email + (trainer.tel ? ' \u2013 ' + trainer.tel : '') + '</p>'
+      + '<p style="margin:0 0 4px 0">Modalit\u00e9 : cours particuliers par visioconf\u00e9rence (Zoom ou Teams)</p>'
+      + (firstSession ? '<p style="margin:0 0 4px 0">Premi\u00e8re s\u00e9ance : <strong>' + firstSession + '</strong></p>' : '')
+      + '<p style="margin:0 0 4px 0">Les s\u00e9ances suivantes seront planifi\u00e9es directement avec votre formateur selon vos disponibilit\u00e9s respectives.</p>'
+      + '<p style="margin:0 0 12px 0"><em>Politique d\u2019annulation (volet 1 uniquement) : toute annulation par le stagiaire intervenant moins de 48 heures avant le d\u00e9but d\u2019une s\u00e9ance sera comptabilis\u00e9e comme une heure effectivement r\u00e9alis\u00e9e.</em></p>'
+
+      + volet2Section
+
+      + certSection
+
+      + '<p style="margin:0 0 6px 0"><strong>' + SEP + '<br>DOCUMENTS JOINTS<br>' + SEP + '</strong></p>'
+      + '<ul style="margin:0 0 12px 0;padding-left:1.5rem">'
+      + '<li>Programme de formation</li>'
+      + '<li>Livret d\u2019accueil (dont r\u00e8glement int\u00e9rieur)</li>'
+      + (isCPF && isLegal ? '<li>Kit bienvenue E360</li>' : '')
+      + '</ul>'
+
+      + '<p style="margin:0 0 12px 0">Nous restons \u00e0 votre disposition pour toute question relative \u00e0 votre parcours. Dans le cadre de notre d\u00e9marche qualit\u00e9 (certification Qualiopi), nous serons \u00e9galement en contact avec vous en cours et en fin de formation afin de nous assurer que celle-ci correspond \u00e0 vos attentes et objectifs.</p>'
+      + '<p style="margin:0 0 16px 0">Have a great training !</p>'
+      + '<p style="margin:0">Bien cordialement,<br><strong>Catherine Frimond-Laubi\u00e8s</strong><br>Responsable suivi<br>+33 699 10 68 54<br>cfr@linguaid.net</p>'
+      + '</div>';
+
+    // Attachments: programme PDF + livret d'accueil
+    var fs2 = require('fs');
+    var path2 = require('path');
+    var attachments = [];
+    var progPdfPath = path2.join(__dirname, '../data/programmes/' + c.id + '.pdf');
+    if (fs2.existsSync(progPdfPath)) {
+      attachments.push({ filename: 'programme_' + c.name.replace(/\s+/g,'_') + '.pdf', path: progPdfPath });
+    } else if (c.programmePdfPath && fs2.existsSync(c.programmePdfPath)) {
+      attachments.push({ filename: 'programme_' + c.name.replace(/\s+/g,'_') + '.pdf', path: c.programmePdfPath });
+    }
+    var livretPath = path2.join(__dirname, '../views/livret_accueil.pdf');
+    if (fs2.existsSync(livretPath)) {
+      attachments.push({ filename: 'livret_accueil_linguaid.pdf', path: livretPath });
+    }
+
+    // CC list: trainer + jfr + optional extra
+    var ccList = [trainer.email, 'jfr@linguaid.net'];
+    if (ccExtra) ccList.push(ccExtra);
+
+    var nodemailer = require('nodemailer');
+    var transporter = nodemailer.createTransport({ host: 'localhost', port: 25, secure: false, tls: { rejectUnauthorized: false } });
+
+    transporter.sendMail({
+      from: 'cfr@linguaid.net',
+      to: c.email,
+      cc: ccList.join(','),
+      subject: 'Convocation \u2013 ' + trainingTitle,
+      html: html,
+      attachments: attachments
+    }, function(err) {
+      if (err) { console.error('send-convocation error:', err); return res.status(500).json({ error: err.message }); }
+
+      // Save convocationSentAt + trainer choice
+      var cands5 = getCandidates();
+      var ci5 = cands5.findIndex(function(x){ return x.id === req.params.id; });
+      if (ci5 > -1) {
+        cands5[ci5].conventionData = Object.assign(cands5[ci5].conventionData || {}, {
+          convocationSentAt: new Date().toISOString(),
+          convocTrainer: trainerKey
+        });
+        saveCandidates(cands5);
+      }
+      res.json({ ok: true });
+    });
+  } catch(err) {
+    console.error('send-convocation error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
 module.exports = router;
