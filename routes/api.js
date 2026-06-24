@@ -363,7 +363,7 @@ router.post('/generate-final/:id', async (req, res) => {
   const oral = c.oralData;
   const summary = c.reportSummary || {};
   const validatedGoals = (oral.validatedGoals || []).map(g => `${g.goal} [${g.status}]`).join('\n');
-  const validatedAvail = (oral.validatedAvail || []).map(a => `${a.day} ${a.time} [${a.status}]`).join(', ');
+  const validatedAvail = (Array.isArray(oral.validatedAvail) ? oral.validatedAvail : Object.values(oral.validatedAvail || {})).map(a => `${a.day} ${a.time} [${a.status}]`).join(', ');
 
   const prompt = `You are an expert English language evaluator for Linguaid France. Generate a complete Final English Language Evaluation Report combining written test results and oral assessment.
 

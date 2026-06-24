@@ -2845,5 +2845,113 @@
         "Discourse connectors and paragraph organisation — no connectors, qualifiers or multi-sentence discourse produced"
       ]
     }
+  },
+  {
+    "id": "test_e360_b7f43e",
+    "name": "Test E360 Standard",
+    "email": "jossfrimond@hotmail.com",
+    "company": "Test",
+    "jobtitle": "Test",
+    "dept": "",
+    "status": "programme_done",
+    "courseType": null,
+    "oralData": {
+      "cpfType": "E360",
+      "totalHours": 20,
+      "coachingHours": 15,
+      "homeworkHours": 5,
+      "trainingTitle": "Communiquer en anglais professionnel – English 360 – Niveau B2",
+      "targetLevel": "B2"
+    },
+    "conventionData": {
+      "signedAt": "2026-06-24T19:46:00.351030Z",
+      "isCPF": true,
+      "civility": "Monsieur",
+      "price": 1650,
+      "dateStart": "2026-09-01",
+      "dateEnd": "2026-12-31",
+      "convocationSentAt": "2026-06-24T19:46:25.823Z",
+      "convocTrainer": "joss"
+    }
+  },
+  {
+    "id": "test_e360l_ba66ee",
+    "name": "Test E360 Legal",
+    "email": "jossfrimond@hotmail.com",
+    "company": "Test",
+    "jobtitle": "Avocat",
+    "dept": "",
+    "status": "programme_done",
+    "courseType": "legal",
+    "oralData": {
+      "cpfType": "E360_LEGAL",
+      "totalHours": 20,
+      "coachingHours": 10,
+      "homeworkHours": 10,
+      "trainingTitle": "Communiquer en anglais professionnel – English 360 – Niveau B2",
+      "targetLevel": "B2"
+    },
+    "conventionData": {
+      "signedAt": "2026-06-24T19:46:00.351030Z",
+      "isCPF": true,
+      "civility": "Monsieur",
+      "price": 1650,
+      "dateStart": "2026-09-01",
+      "dateEnd": "2026-12-31",
+      "convocationSentAt": "2026-06-24T19:50:58.278Z",
+      "convocTrainer": "joss"
+    }
+  },
+  {
+    "id": "test_noncpf_4c3e43",
+    "name": "Test Non CPF",
+    "email": "jossfrimond@hotmail.com",
+    "company": "Test",
+    "jobtitle": "Test",
+    "dept": "",
+    "status": "programme_done",
+    "courseType": null,
+    "oralData": {
+      "cpfType": null,
+      "totalHours": 30,
+      "coachingHours": 20,
+      "homeworkHours": 10,
+      "trainingTitle": "Formation en anglais professionnel",
+      "targetLevel": "B2"
+    },
+    "conventionData": {
+      "signedAt": "2026-06-24T19:46:00.351030Z",
+      "isCPF": false,
+      "civility": "Madame",
+      "price": 2000,
+      "convocationSentAt": "2026-06-24T19:51:01.864Z",
+      "convocTrainer": "joss"
+    }
+  },
+  {
+    "id": "test_caja_4d4cb2",
+    "name": "Test CAJA",
+    "email": "jossfrimond@hotmail.com",
+    "company": "Test",
+    "jobtitle": "Avocat",
+    "dept": "",
+    "status": "programme_done",
+    "courseType": "legal",
+    "oralData": {
+      "cpfType": "CAJA",
+      "totalHours": 30,
+      "coachingHours": 20,
+      "homeworkHours": 10,
+      "trainingTitle": "Formation en anglais juridique + Certification CAJA",
+      "targetLevel": "B2"
+    },
+    "conventionData": {
+      "signedAt": "2026-06-24T19:52:00.228162Z",
+      "isCPF": true,
+      "civility": "Madame",
+      "price": 3250,
+      "convocationSentAt": "2026-06-24T19:52:59.890Z",
+      "convocTrainer": "joss"
+    }
   }
 ]
