@@ -708,7 +708,9 @@
     "sentPropositionTo": "jossfrimond@hotmail.com",
     "quizToken": "f36a5917f2db532e97fe4a7bf091911e",
     "quizSentAt": "2026-06-24T20:53:45.471Z",
-    "quizTotal": 5
+    "quizTotal": 5,
+    "quizScore": 5,
+    "quizCompletedAt": "2026-06-24T20:57:20.008Z"
   },
   {
     "id": "a9f99cbdda3b",
