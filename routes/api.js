@@ -842,7 +842,7 @@ router.post('/generate-convention/:id', function(req, res) {
     dateStart: dateStart,
     dateEnd: dateEnd,
     dateStr: dateStr,
-    price: String(cd.price || ''),
+    price: String(cd.price || od.edofPrice || od.price || ''),
     signatory: cd.signatory || '',
     signingToken: signingToken,
     trainingType: tplKey,
