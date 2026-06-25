@@ -2283,7 +2283,8 @@ router.post('/quiz-submit/:token', function(req, res) {
     completedAt: candidates[idx].quizCompletedAt,
     pdfPath: attestPdf,
     dateStart: (candidates[idx].oralData && candidates[idx].oralData.dateStart) || null,
-    dateEnd: (candidates[idx].oralData && candidates[idx].oralData.dateEnd) || null
+    dateEnd: (candidates[idx].oralData && candidates[idx].oralData.dateEnd) || null,
+    durationHours: (candidates[idx].oralData && candidates[idx].oralData.homeworkHours) || null
   }));
   var crypto2 = require('crypto');
   var attestToken = crypto2.randomBytes(16).toString('hex');
@@ -2391,6 +2392,7 @@ router.post('/generate-standalone-attestation', async function(req, res) {
     var dateEnd = (req.body.dateEnd || '').trim();
     var score = parseInt(req.body.score) || 0;
     var moduleName = (req.body.moduleName || 'Travaux personnels - Yes You Ken English').trim();
+    var durationHours = req.body.durationHours ? parseInt(req.body.durationHours) : null;
 
     if (!name || !email || !trainingTitle || !dateStart || !dateEnd) {
       return res.status(400).json({ error: 'Missing required fields' });
@@ -2417,6 +2419,7 @@ router.post('/generate-standalone-attestation', async function(req, res) {
       completedAt: completedAt,
       dateStart: dateStart,
       dateEnd: dateEnd,
+      durationHours: durationHours,
       pdfPath: attestPdf,
     };
 

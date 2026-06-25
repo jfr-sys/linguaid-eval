@@ -116,6 +116,7 @@ async function generate() {
         jobtitle: document.getElementById('jobtitle').value.trim(),
         trainingTitle, dateStart, dateEnd, score,
         moduleName: document.getElementById('moduleName').value.trim(),
+        durationHours: document.getElementById('durationHours').value.trim(),
       })
     });
     const data = await r.json();
