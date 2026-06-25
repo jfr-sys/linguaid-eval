@@ -418,7 +418,7 @@ Additional Notes: ${oral.additionalNotes || ''}
 Generate a complete professional Final Evaluation Report with markdown formatting (## headers, ### subheaders, **bold**, - bullets) covering:
 1. Executive summary with overall CEFR level across all 5 skills
 2. Skill-by-skill assessment (Reading, Writing, Grammar, Listening, Speaking) with strengths and development areas
-3. Exactly 3 operational learning objectives using Bloom's taxonomy action verbs
+3. Exactly 3 SMART learning objectives in French. Format: bold action verb + context/content (max 10 words) followed by 'afin de' or 'pour' + the finalité (max 8 words). One sentence each, no sub-clauses, no percentages, no rubrics, no portfolios. Example: '**Rédiger des emails professionnels clairs et structurés** afin de gérer les échanges écrits de manière autonome.'
 4. Training plan with hours breakdown, priority content areas, and confirmed scheduling
 5. Professional evaluator narrative summary
 6. Sign-off block with evaluator name, dates, and Linguaid France details`;
@@ -439,7 +439,7 @@ Generate a complete professional Final Evaluation Report with markdown formattin
       const extractMsg = await client.messages.create({
         model: 'claude-sonnet-4-6',
         max_tokens: 800,
-        messages: [{ role: 'user', content: 'Tu es expert en formation linguistique. Extrais les 3 objectifs pédagogiques de ce rapport d\'évaluation. Traduis-les en français si le rapport est en anglais. Réponds UNIQUEMENT avec un tableau JSON de 3 chaînes en français. Pas de préambule, pas de markdown, pas de backticks. Juste le tableau JSON. Rapport:\n' + report }]
+        messages: [{ role: 'user', content: 'Tu es expert en formation linguistique. Extrais les 3 objectifs pédagogiques de ce rapport d\'évaluation. Traduis-les en français si le rapport est en anglais. Chaque objectif doit être une phrase courte et SMART avec une finalité : action + contexte (max 10 mots) + \'pour\' ou \'afin de\' + finalité (max 8 mots). Pas de sous-clauses, pas de pourcentages, pas de rubriques. Réponds UNIQUEMENT avec un tableau JSON de 3 chaînes en français. Pas de préambule, pas de markdown, pas de backticks. Juste le tableau JSON. Rapport:\n' + report }]
       });
       const extractText = extractMsg.content[0].text.trim().replace(/^```[a-z]*\n?/, '').replace(/```$/, '').trim();
       const extracted = JSON.parse(extractText);
