@@ -270,4 +270,95 @@ router.get('/attestation/:token/signed-pdf', function(req, res) {
 });
 
 
+// ── Standalone attestation signing ──────────────────────────────────────────
+function getStandaloneStore() {
+  var p = require('path').join(__dirname, '../data/attestations/standalone_tokens.json');
+  try { return JSON.parse(fs.readFileSync(p, 'utf8')); } catch(e) { return {}; }
+}
+function saveStandaloneStore(store) {
+  var p = require('path').join(__dirname, '../data/attestations/standalone_tokens.json');
+  fs.writeFileSync(p, JSON.stringify(store, null, 2));
+}
+
+router.get('/standalone/:token', function(req, res) {
+  var store = getStandaloneStore();
+  var rec = store[req.params.token];
+  if (!rec) return res.status(404).send('<h2>Lien invalide ou expiré.</h2>');
+  if (rec.signedAt) return res.send('<html><body style="font-family:sans-serif;max-width:600px;margin:60px auto;text-align:center"><h2>✅ Document déjà signé</h2><p>Cette attestation a été signée le ' + new Date(rec.signedAt).toLocaleDateString("fr-FR") + '.</p></body></html>');
+  res.sendFile(require('path').join(__dirname, '../views/sign.html'));
+});
+
+router.get('/standalone/:token/pdf', function(req, res) {
+  var store = getStandaloneStore();
+  var rec = store[req.params.token];
+  if (!rec || !fs.existsSync(rec.attestationPath)) return res.status(404).send('Not found');
+  res.setHeader('Content-Type', 'application/pdf');
+  res.sendFile(rec.attestationPath);
+});
+
+router.get('/standalone/:token/info', function(req, res) {
+  var store = getStandaloneStore();
+  var rec = store[req.params.token];
+  if (!rec) return res.status(404).json({ error: 'Invalid token' });
+  if (rec.signedAt) return res.json({ alreadySigned: true });
+  res.json({ candidateName: rec.name, signatoryName: rec.name, isAttestation: true });
+});
+
+router.post('/standalone/:token/submit', express.json({ limit: '5mb' }), function(req, res) {
+  var token = req.params.token;
+  var store = getStandaloneStore();
+  var rec = store[token];
+  if (!rec) return res.status(404).json({ error: 'Invalid token' });
+  if (rec.signedAt) return res.json({ success: true, alreadySigned: true });
+
+  var signatureImg = req.body.signatureImg || req.body.signature;
+  var typedName = req.body.typedName || rec.name;
+  var timestamp = new Date().toISOString();
+  var signerIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
+
+  var unsignedPdf = rec.attestationPath;
+  var signedPdf = unsignedPdf.replace('_standalone.pdf', '_standalone_signe.pdf');
+
+  var embedArgs = JSON.stringify({
+    pdfPath: unsignedPdf, signatureImg: signatureImg, typedName: typedName,
+    timestamp: timestamp, signerIp: signerIp, outputPath: signedPdf, isAttestation: true,
+  });
+
+  execFile('python3', ['/home/debian/embed_signature.py', embedArgs], function(err, stdout, stderr) {
+    if (err) { console.error('embed_signature error:', stderr); return res.status(500).json({ error: 'Failed to embed signature' }); }
+    var result;
+    try { result = JSON.parse(stdout); } catch(e) { return res.status(500).json({ error: 'Invalid response' }); }
+    if (!result.success) return res.status(500).json({ error: result.error });
+
+    store[token].signedAt = timestamp;
+    store[token].signerIp = signerIp;
+    store[token].typedName = typedName;
+    store[token].signedPdfPath = signedPdf;
+    store[token].sigImg = signatureImg;
+    saveStandaloneStore(store);
+
+    var nodemailer = require('nodemailer');
+    var transporter = nodemailer.createTransport({ host: 'localhost', port: 25, secure: false, tls: { rejectUnauthorized: false } });
+    transporter.sendMail({
+      from: 'noreply@linguaid.net', to: 'jfr@linguaid.net',
+      subject: '✅ Attestation signée — ' + rec.name,
+      text: 'Attestation standalone signée par ' + typedName + '\nDate : ' + new Date(timestamp).toLocaleString('fr-FR') + '\nIP : ' + signerIp,
+      attachments: [{ filename: 'attestation_signee_' + rec.name.replace(/\s+/g,'_') + '.pdf', path: signedPdf }],
+    }).catch(function(e) { console.error('Email error:', e); });
+
+    res.json({ success: true });
+  });
+});
+
+router.get('/standalone/:token/signed-pdf', function(req, res) {
+  var store = getStandaloneStore();
+  var rec = store[req.params.token];
+  if (!rec || !rec.signedPdfPath || !fs.existsSync(rec.signedPdfPath)) return res.status(404).send('Not found');
+  var name = (rec.name || 'attestation').replace(/\s+/g, '_');
+  res.setHeader('Content-Disposition', 'attachment; filename="attestation_signee_' + name + '.pdf"');
+  res.setHeader('Content-Type', 'application/pdf');
+  res.sendFile(rec.signedPdfPath);
+});
+
+
 module.exports = router;

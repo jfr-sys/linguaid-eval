@@ -836,7 +836,7 @@ router.post('/generate-convention/:id', function(req, res) {
     totalHours: String(od.totalHours || ''),
     coachingHours: String(od.coachingHours || ''),
     homeworkHours: String(od.homeworkHours || ''),
-    prereqLevel: (c.reportSummary || {}).overallLevel || '',
+    prereqLevel: calc5SkillLevel(c) || '',
     targetLevel: od.targetLevel || '',
     location: 'A distance',
     dateStart: dateStart,
@@ -1685,7 +1685,7 @@ router.post('/send-proposal/:id'
       email: c.email || '',
       civilite_court: civiliteShort,
       prenom: prenom,
-      niveau_actuel: ((c.reportSummary||{}).overallLevel || od.prereqLevel || od.overallLevel || '').toString(),
+      niveau_actuel: (calc5SkillLevel(c) || od.prereqLevel || od.overallLevel || '').toString(),
       niveau_vise: (od.targetLevel || '').toString(),
       resume_situation: od.globalComment || '',
       total_heures: parseInt(od.totalHours || 0),
@@ -1757,7 +1757,7 @@ router.post('/send-proposal/:id'
         candidateName: c.name,
         jobtitle: c.jobtitle || '',
         dept: c.dept || '',
-        prereqLevel: od.prereqLevel || od.overallLevel || '',
+        prereqLevel: calc5SkillLevel(c) || od.prereqLevel || od.overallLevel || '',
         targetLevel: od.targetLevel || '',
         totalHours: od.totalHours || 0,
         coachingHours: od.coachingHours || od.totalHours || 0,
@@ -1879,7 +1879,7 @@ router.post('/send-proposal/:id'
         // Fall back to EN report
         var reportPayload = {
           title: 'English Evaluation Report',
-          subtitle: (c.reportSummary && c.reportSummary.overallLevel) ? 'Overall Level: ' + c.reportSummary.overallLevel : '',
+          subtitle: calc5SkillLevel(c) ? 'Overall Level: ' + calc5SkillLevel(c) : '',
           candidate_name: c.name,
           content: c.finalReport
         };
@@ -2353,6 +2353,111 @@ router.get('/download-attestation-signed/:id', function(req, res) {
   res.setHeader('Content-Disposition', 'attachment; filename="attestation_signee_' + name + '.pdf"');
   res.setHeader('Content-Type', 'application/pdf');
   res.sendFile(p);
+});
+
+
+// ── Standalone attestation generator (for non-platform learners) ────────────
+router.post('/generate-standalone-attestation', async function(req, res) {
+  try {
+    var crypto3 = require('crypto');
+    var path3 = require('path');
+    var fs3 = require('fs');
+    var execFile3 = require('child_process').execFile;
+
+    var name = (req.body.name || '').trim();
+    var email = (req.body.email || '').trim();
+    var company = (req.body.company || '').trim();
+    var jobtitle = (req.body.jobtitle || '').trim();
+    var trainingTitle = (req.body.trainingTitle || '').trim();
+    var dateStart = (req.body.dateStart || '').trim();
+    var dateEnd = (req.body.dateEnd || '').trim();
+    var score = parseInt(req.body.score) || 0;
+    var moduleName = (req.body.moduleName || 'Travaux personnels - Yes You Ken English').trim();
+
+    if (!name || !email || !trainingTitle || !dateStart || !dateEnd) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    // Generate unique ID for this attestation
+    var uid = crypto3.randomBytes(8).toString('hex');
+    var attestDir = path3.join(__dirname, '../data/attestations');
+    if (!fs3.existsSync(attestDir)) fs3.mkdirSync(attestDir, { recursive: true });
+
+    var attestPdf = path3.join(attestDir, uid + '_attestation_standalone.pdf');
+    var attestJson = path3.join(attestDir, uid + '_standalone_data.json');
+
+    var completedAt = new Date().toISOString();
+
+    var jsonData = {
+      name: name,
+      company: company,
+      jobtitle: jobtitle,
+      trainingTitle: trainingTitle,
+      moduleName: moduleName,
+      score: score,
+      total: 5,
+      completedAt: completedAt,
+      dateStart: dateStart,
+      dateEnd: dateEnd,
+      pdfPath: attestPdf,
+    };
+
+    fs3.writeFileSync(attestJson, JSON.stringify(jsonData));
+
+    // Generate PDF
+    var { execFileSync } = require('child_process');
+    try {
+      execFileSync('python3', ['/home/debian/generate_attestation.py', attestJson]);
+    } catch(e) {
+      console.error('Attestation PDF error:', e.message);
+      return res.status(500).json({ error: 'PDF generation failed: ' + e.message });
+    }
+
+    // Generate signing token — store in a simple JSON store
+    var token = crypto3.randomBytes(16).toString('hex');
+    var storeFile = path3.join(attestDir, 'standalone_tokens.json');
+    var store = {};
+    try { store = JSON.parse(fs3.readFileSync(storeFile, 'utf8')); } catch(e) {}
+    store[token] = {
+      name: name, email: email, company: company, jobtitle: jobtitle,
+      trainingTitle: trainingTitle, moduleName: moduleName,
+      dateStart: dateStart, dateEnd: dateEnd, score: score,
+      completedAt: completedAt,
+      attestationPath: attestPdf,
+      createdAt: new Date().toISOString(),
+    };
+    fs3.writeFileSync(storeFile, JSON.stringify(store, null, 2));
+
+    var signingUrl = 'https://eval.linguaid.net/sign/standalone/' + token;
+
+    // Send email
+    var nodemailer3 = require('nodemailer');
+    var t3 = nodemailer3.createTransport({ host: 'localhost', port: 25, secure: false, tls: { rejectUnauthorized: false } });
+    var htmlBody = '<div style="font-family:sans-serif;max-width:600px;margin:0 auto">'
+      + '<p>Bonjour ' + name + ',</p>'
+      + '<p>Veuillez trouver ci-dessous le lien pour signer électroniquement votre attestation de réalisation du module <strong>' + moduleName + '</strong>, dans le cadre de : <em>' + trainingTitle + '</em>.</p>'
+      + '<p style="text-align:center;margin:30px 0">'
+      + '<a href="' + signingUrl + '" style="background:#1e4e79;color:white;padding:14px 28px;border-radius:6px;text-decoration:none;font-size:16px">✍️ Signer mon attestation</a>'
+      + '</p>'
+      + '<p style="color:#666;font-size:12px">Ce lien est personnel. En cas de problème, contactez-nous à <a href="mailto:cfr@linguaid.net">cfr@linguaid.net</a>.</p>'
+      + '<p style="color:#666;font-size:12px">Linguaid France SAS – 2 rue Hergé, 66750 Saint Cyprien</p>'
+      + '</div>';
+
+    await t3.sendMail({
+      from: 'cfr@linguaid.net',
+      to: email,
+      cc: 'jfr@linguaid.net',
+      subject: 'Signature de votre attestation de formation – Linguaid France',
+      html: htmlBody,
+    });
+
+    console.log('Standalone attestation sent to ' + name + ' (' + email + ')');
+    res.json({ ok: true, signingUrl: signingUrl, uid: uid });
+
+  } catch(e) {
+    console.error('generate-standalone-attestation error:', e);
+    res.status(500).json({ error: e.message });
+  }
 });
 
 

@@ -364,7 +364,19 @@ fetch("/candidates/api/" + id)
       '<div class="info-row"><span class="info-label">Poste</span><span class="info-value">' + (c.jobtitle||"—") + '</span></div>' +
       '<div class="info-row"><span class="info-label">Entreprise</span><span class="info-value">' + (c.company||c.dept||"—") + '</span></div>';
 
-    document.getElementById("prereqLevel").value = cefrLabel(rs.overallLevel) || "";
+    // Calculate 5-skill average for prereq level
+    var cefrMap5 = {'A1':0,'A1+':0.5,'A2':1,'A2+':1.5,'B1':2,'B1+':2.5,'B2':3,'B2+':3.5,'C1':4,'C1+':4.5,'C2':5};
+    var cefrRevMap5 = {0:'A1',0.5:'A1+',1:'A2',1.5:'A2+',2:'B1',2.5:'B1+',3:'B2',3.5:'B2+',4:'C1',4.5:'C1+',5:'C2'};
+    var allLevels = [rs.grammarLevel, rs.writingLevel, rs.readingLevel, (c.oralData||{}).listeningLevel, (c.oralData||{}).speakingLevel]
+      .map(function(l){ return cefrMap5[l]; })
+      .filter(function(n){ return typeof n === 'number'; });
+    var prereq5 = rs.overallLevel;
+    if (allLevels.length === 5) {
+      var avg5 = allLevels.reduce(function(a,b){return a+b;},0) / 5;
+      var rounded5 = Math.round(avg5 * 2) / 2;
+      prereq5 = cefrRevMap5[rounded5] || rs.overallLevel;
+    }
+    document.getElementById("prereqLevel").value = cefrLabel(prereq5) || "";
     if (oral.trainingTitle) document.getElementById("trainingTitle").value = oral.trainingTitle;
 
     // Restore saved objective suffixes BEFORE CPF UI render (renderLockedObjectives reads this)
