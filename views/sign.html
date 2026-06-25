@@ -223,8 +223,9 @@
 
   // Load candidate info and set PDF src
   const pathParts = window.location.pathname.split('/').filter(Boolean);
-  const isAttestation = pathParts.includes('attestation');
-  const baseUrl = isAttestation ? `/sign/attestation/${token}` : `/sign/${token}`;
+  const isStandalone = pathParts.includes('standalone');
+  const isAttestation = pathParts.includes('attestation') || isStandalone;
+  const baseUrl = isStandalone ? `/sign/standalone/${token}` : isAttestation ? `/sign/attestation/${token}` : `/sign/${token}`;
 
   fetch(`${baseUrl}/info`)
     .then(r => r.json())
