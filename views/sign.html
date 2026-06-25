@@ -153,7 +153,7 @@
 
 <div class="header">
   <div>
-    <h1>Linguaid — Convention de formation</h1>
+    <h1 id="page-title">Linguaid — Convention de formation</h1>
     <p>Signature électronique</p>
   </div>
 </div>
@@ -164,9 +164,9 @@
 
     <!-- Step 1: PDF preview -->
     <div class="card">
-      <h2>📄 Votre convention de formation</h2>
+      <h2 id="doc-title">📄 Votre convention de formation</h2>
       <embed id="pdf-frame" src="" type="application/pdf" />
-      <p class="pdf-note">Veuillez lire attentivement votre convention avant de signer.</p>
+      <p class="pdf-note" id="pdf-note">Veuillez lire attentivement votre convention avant de signer.</p>
     </div>
 
     <!-- Step 2: Typed name -->
@@ -226,6 +226,17 @@
   const isStandalone = pathParts.includes('standalone');
   const isAttestation = pathParts.includes('attestation') || isStandalone;
   const baseUrl = isStandalone ? `/sign/standalone/${token}` : isAttestation ? `/sign/attestation/${token}` : `/sign/${token}`;
+
+  // Update page titles for attestation pages
+  if (isAttestation || isStandalone) {
+    document.title = 'Signer votre attestation de réalisation — Linguaid';
+    var pt = document.getElementById('page-title');
+    if (pt) pt.textContent = 'Linguaid — Attestation de réalisation';
+    var dt = document.getElementById('doc-title');
+    if (dt) dt.textContent = '📄 Votre attestation de réalisation';
+    var pn = document.getElementById('pdf-note');
+    if (pn) pn.textContent = 'Veuillez lire attentivement votre attestation avant de signer.';
+  }
 
   fetch(`${baseUrl}/info`)
     .then(r => r.json())
