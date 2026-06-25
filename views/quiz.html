@@ -49,6 +49,10 @@
     <div class="result-score" id="resultScore"></div>
     <div class="result-label" id="resultLabel"></div>
     <div class="result-detail">Vos résultats ont été enregistrés. Merci !</div>
+    <div id="signingCta" style="display:none;margin-top:24px;padding:16px;background:#f0f9ff;border-radius:8px;border:1px solid #bae6fd">
+      <p style="color:#0c4a6e;font-weight:600;margin:0 0 12px 0;font-size:15px">Dernière étape : signez votre attestation</p>
+      <a id="signingLink" href="#" style="display:inline-block;background:#1e4e79;color:white;padding:12px 24px;border-radius:6px;text-decoration:none;font-size:15px">✍️ Signer mon attestation</a>
+    </div>
   </div>
   <div id="alreadyDone" style="display:none" class="result">
     <div style="font-size:40px;margin-bottom:1rem">✅</div>
@@ -169,6 +173,10 @@ function submitQuiz() {
     document.getElementById('resultContent').style.display = 'block';
     document.getElementById('resultScore').textContent = d.score + '/' + d.total;
     document.getElementById('resultLabel').textContent = d.score >= 4 ? '🎉 Excellent résultat !' : d.score >= 3 ? '👍 Bon résultat' : '📚 Continuez à pratiquer';
+    if (d.signingUrl) {
+      document.getElementById('signingLink').href = d.signingUrl;
+      document.getElementById('signingCta').style.display = 'block';
+    }
   })
   .catch(function() {
     btn.disabled = false; btn.textContent = 'Soumettre mes réponses';

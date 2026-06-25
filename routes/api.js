@@ -2263,19 +2263,96 @@ router.post('/quiz-submit/:token', function(req, res) {
     score: score,
     total: 5,
     completedAt: candidates[idx].quizCompletedAt,
-    pdfPath: attestPdf
+    pdfPath: attestPdf,
+    dateStart: (candidates[idx].oralData && candidates[idx].oralData.dateStart) || null,
+    dateEnd: (candidates[idx].oralData && candidates[idx].oralData.dateEnd) || null
   }));
+  var crypto2 = require('crypto');
+  var attestToken = crypto2.randomBytes(16).toString('hex');
+
   execFile3('python3', ['/home/debian/generate_attestation.py', attestJson], function(err2) {
     if (err2) { console.error('Attestation generation error:', err2.message); }
     else {
       var cands4 = getCandidates();
       var i4 = cands4.findIndex(function(x) { return x.id === candidates[idx].id; });
-      if (i4 > -1) { cands4[i4].attestationPath = attestPdf; cands4[i4].attestationFilename = 'attestation_quiz.pdf'; saveCandidates(cands4); }
+      if (i4 > -1) {
+        cands4[i4].attestationPath = attestPdf;
+        cands4[i4].attestationFilename = 'attestation_quiz.pdf';
+        cands4[i4].attestationSignToken = attestToken;
+        cands4[i4].attestationSignSentAt = new Date().toISOString();
+        saveCandidates(cands4);
+      }
       console.log('Attestation generated for ' + candidates[idx].name);
     }
   });
 
-  res.json({ ok: true, score: score, total: 5 });
+  res.json({ ok: true, score: score, total: 5, signingUrl: 'https://eval.linguaid.net/sign/attestation/' + attestToken });
+});
+
+// ── Step 10: Send attestation for e-signature ──────────────────────────────
+router.post('/send-attestation-signing/:id', function(req, res) {
+  try {
+    var candidates = getCandidates();
+    var idx = candidates.findIndex(function(x) { return x.id === req.params.id; });
+    if (idx === -1) return res.status(404).json({ error: 'Candidate not found' });
+    var c = candidates[idx];
+
+    var attestPdf = c.attestationPath;
+    if (!attestPdf || !require('fs').existsSync(attestPdf)) {
+      return res.status(400).json({ error: 'Attestation PDF not found. Generate the quiz link first.' });
+    }
+
+    // Generate signing token
+    var crypto = require('crypto');
+    var token = crypto.randomBytes(16).toString('hex');
+
+    candidates[idx].attestationSignToken = token;
+    candidates[idx].attestationSignSentAt = new Date().toISOString();
+    saveCandidates(candidates);
+
+    var signingUrl = 'https://eval.linguaid.net/sign/attestation/' + token;
+    var learnerEmail = c.email;
+    var learnerName = c.name;
+    var trainingTitle = (c.oralData && c.oralData.trainingTitle) || 'votre formation';
+
+    var nodemailer2 = require('nodemailer');
+    var transporter2 = nodemailer2.createTransport({ host: 'localhost', port: 25, secure: false, tls: { rejectUnauthorized: false } });
+
+    var htmlBody = '<div style="font-family:sans-serif;max-width:600px;margin:0 auto">'
+      + '<p>Bonjour ' + learnerName + ',</p>'
+      + '<p>Veuillez trouver ci-dessous le lien pour signer électroniquement votre attestation de réalisation du module <strong>Travaux personnels – Yes You Ken English</strong>, dans le cadre de : <em>' + trainingTitle + '</em>.</p>'
+      + '<p style="text-align:center;margin:30px 0">'
+      + '<a href="' + signingUrl + '" style="background:#1e4e79;color:white;padding:14px 28px;border-radius:6px;text-decoration:none;font-size:16px">Signer mon attestation</a>'
+      + '</p>'
+      + '<p style="color:#666;font-size:12px">Ce lien est personnel et ne doit pas être partagé. En cas de problème, contactez-nous à <a href="mailto:cfr@linguaid.net">cfr@linguaid.net</a>.</p>'
+      + '<p style="color:#666;font-size:12px">Linguaid France SAS – 2 rue Hergé, 66750 Saint Cyprien</p>'
+      + '</div>';
+
+    transporter2.sendMail({
+      from: 'cfr@linguaid.net',
+      to: learnerEmail,
+      cc: 'jfr@linguaid.net',
+      subject: 'Signature de votre attestation de formation – Linguaid France',
+      html: htmlBody,
+    }, function(err) {
+      if (err) { console.error('send-attestation-signing error:', err); return res.status(500).json({ error: err.message }); }
+      console.log('Attestation signing link sent to ' + learnerName + ' (' + learnerEmail + ')');
+      res.json({ ok: true, token: token });
+    });
+  } catch(e) { console.error('send-attestation-signing error:', e); res.status(500).json({ error: e.message }); }
+});
+
+
+router.get('/download-attestation-signed/:id', function(req, res) {
+  var candidates = getCandidates();
+  var c = candidates.find(function(x) { return x.id === req.params.id; });
+  if (!c) return res.status(404).send('Not found');
+  var p = c.attestationSignedPdfPath;
+  if (!p || !require('fs').existsSync(p)) return res.status(404).send('Signed attestation not found');
+  var name = (c.name || 'attestation').replace(/\s+/g, '_');
+  res.setHeader('Content-Disposition', 'attachment; filename="attestation_signee_' + name + '.pdf"');
+  res.setHeader('Content-Type', 'application/pdf');
+  res.sendFile(p);
 });
 
 

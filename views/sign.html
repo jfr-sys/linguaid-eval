@@ -219,21 +219,25 @@
 </div>
 
 <script>
-  const token = window.location.pathname.split('/sign/')[1]?.replace(/\/$/, '');
+  const pathSegs = window.location.pathname.split('/').filter(Boolean); const token = pathSegs[pathSegs.length - 1];
 
   // Load candidate info and set PDF src
-  fetch(`/sign/${token}/info`)
+  const pathParts = window.location.pathname.split('/').filter(Boolean);
+  const isAttestation = pathParts.includes('attestation');
+  const baseUrl = isAttestation ? `/sign/attestation/${token}` : `/sign/${token}`;
+
+  fetch(`${baseUrl}/info`)
     .then(r => r.json())
     .then(info => {
       if (info.alreadySigned) {
         document.getElementById('main-form').innerHTML =
-          '<div class="card" style="text-align:center;padding:40px"><div style="font-size:2rem">✅</div><h2 style="color:#1a7a3a;margin:12px 0">Déjà signé</h2><p>Cette convention a déjà été signée. Vous pouvez fermer cette fenêtre.</p></div>';
+          `<div class="card" style="text-align:center;padding:40px"><div style="font-size:2rem">✅</div><h2 style="color:#1a7a3a;margin:12px 0">Déjà signé</h2><p>Ce document a déjà été signé. Vous pouvez fermer cette fenêtre.</p></div>`;
         return;
       }
       const frame = document.getElementById('pdf-frame');
-      frame.src = `/sign/${token}/pdf`;
+      frame.src = `${baseUrl}/pdf`;
       // Force Chrome to show single-page view
-      frame.src = `/sign/${token}/pdf#toolbar=1&navpanes=0&scrollbar=1&view=FitH`;
+      frame.src = `${baseUrl}/pdf#toolbar=1&navpanes=0&scrollbar=1&view=FitH`;
       if (info.signatoryName) {
         var nameInput = document.getElementById('typed-name');
         nameInput.value = info.signatoryName;
@@ -315,7 +319,7 @@
     status.textContent = 'Enregistrement de votre signature…';
 
     try {
-      const resp = await fetch(`/sign/${token}/submit`, {
+      const resp = await fetch(`${baseUrl}/submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ typedName, signatureImg }),
@@ -332,7 +336,11 @@
       document.getElementById('success-screen').style.display = 'block';
       document.getElementById('sign-timestamp').textContent =
         `Signé le ${new Date().toLocaleString('fr-FR')} — ${typedName}`;
-      document.getElementById('download-signed').href = `/sign/${token}/signed-pdf`;
+      document.getElementById('download-signed').href = `${baseUrl}/signed-pdf`;
+      if (isAttestation) {
+        document.querySelector('#success-screen h2').textContent = 'Attestation signée avec succès';
+        document.getElementById('download-signed').textContent = '⬇ Télécharger votre attestation signée';
+      }
 
     } catch (err) {
       status.className   = 'error';

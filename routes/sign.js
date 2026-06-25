@@ -163,4 +163,111 @@ router.get('/:token/signed-pdf', (req, res) => {
   res.sendFile(signedPdfPath);
 });
 
+// ── Attestation signing routes ────────────────────────────────────────────────
+function findByAttestToken(token) {
+  var candidates = loadCandidates();
+  return candidates.find(function(c) { return c.attestationSignToken === token; });
+}
+
+router.get('/attestation/:token', function(req, res) {
+  var token = req.params.token;
+  var candidate = findByAttestToken(token);
+  if (!candidate) return res.status(404).send('<h2>Lien invalide ou expiré.</h2>');
+  if (candidate.attestationSignedAt) {
+    return res.status(200).send('<html><body style="font-family:sans-serif;max-width:600px;margin:60px auto;text-align:center"><h2>✅ Document déjà signé</h2><p>Cette attestation a été signée le ' + new Date(candidate.attestationSignedAt).toLocaleDateString('fr-FR') + '.</p><p>Vous pouvez fermer cette fenêtre.</p></body></html>');
+  }
+  res.sendFile(path.join(__dirname, '../views/sign.html'));
+});
+
+router.get('/attestation/:token/pdf', function(req, res) {
+  var token = req.params.token;
+  var candidate = findByAttestToken(token);
+  if (!candidate) return res.status(404).send('Not found');
+  var pdfPath = candidate.attestationPath;
+  if (!pdfPath || !fs.existsSync(pdfPath)) return res.status(404).send('PDF not found');
+  res.setHeader('Content-Type', 'application/pdf');
+  res.sendFile(pdfPath);
+});
+
+router.get('/attestation/:token/info', function(req, res) {
+  var token = req.params.token;
+  var candidate = findByAttestToken(token);
+  if (!candidate) return res.status(404).json({ error: 'Invalid token' });
+  if (candidate.attestationSignedAt) return res.json({ alreadySigned: true });
+  res.json({
+    candidateName: candidate.name,
+    trainingType: 'Attestation de réalisation – Travaux personnels',
+    signatoryName: candidate.name,
+    isAttestation: true,
+  });
+});
+
+router.post('/attestation/:token/submit', express.json({ limit: '5mb' }), function(req, res) {
+  var token = req.params.token;
+  var candidates = loadCandidates();
+  var idx = candidates.findIndex(function(c) { return c.attestationSignToken === token; });
+  if (idx === -1) return res.status(404).json({ error: 'Invalid token' });
+  if (candidates[idx].attestationSignedAt) return res.json({ success: true, alreadySigned: true });
+
+  var signatureImg = req.body.signatureImg || req.body.signature;
+  var typedName = req.body.typedName || candidates[idx].name;
+  var timestamp = new Date().toISOString();
+  var signerIp = req.ip || req.connection.remoteAddress;
+
+  var unsignedPdf = candidates[idx].attestationPath;
+  if (unsignedPdf && !unsignedPdf.startsWith('/')) {
+    unsignedPdf = require('path').join(__dirname, '..', unsignedPdf);
+  }
+  var signedPdf = unsignedPdf.replace('_attestation_quiz.pdf', '_attestation_quiz_signe.pdf');
+
+  var embedArgs = JSON.stringify({
+    pdfPath: unsignedPdf,
+    signatureImg: signatureImg,
+    typedName: typedName,
+    timestamp: timestamp,
+    signerIp: signerIp,
+    outputPath: signedPdf,
+    isAttestation: true,
+  });
+
+  execFile('python3', ['/home/debian/embed_signature.py', embedArgs], function(err, stdout, stderr) {
+    if (err) { console.error('embed_signature error:', stderr); return res.status(500).json({ error: 'Failed to embed signature' }); }
+    var result;
+    try { result = JSON.parse(stdout); } catch(e) { return res.status(500).json({ error: 'Invalid response' }); }
+    if (!result.success) return res.status(500).json({ error: result.error });
+
+    candidates[idx].attestationSignedAt = timestamp;
+    candidates[idx].attestationSignerIp = signerIp;
+    candidates[idx].attestationTypedName = typedName;
+    candidates[idx].attestationSignedPdfPath = signedPdf;
+    candidates[idx].attestationSigImg = signatureImg;
+    saveCandidates(candidates);
+
+    var nodemailer = require('nodemailer');
+    var transporter = nodemailer.createTransport({ host: 'localhost', port: 25, secure: false, tls: { rejectUnauthorized: false } });
+    transporter.sendMail({
+      from: 'noreply@linguaid.net',
+      to: 'jfr@linguaid.net',
+      subject: '✅ Attestation signée — ' + candidates[idx].name,
+      text: 'L\'attestation de ' + candidates[idx].name + ' a été signée électroniquement.\n\nSignataire : ' + typedName + '\nDate : ' + new Date(timestamp).toLocaleString('fr-FR') + '\nIP : ' + signerIp,
+      attachments: [{ filename: 'attestation_signee.pdf', path: signedPdf }],
+    }).catch(function(e) { console.error('Email notification failed:', e); });
+
+    res.json({ success: true });
+  });
+});
+
+router.get('/attestation/:token/signed-pdf', function(req, res) {
+  var token = req.params.token;
+  var candidate = findByAttestToken(token);
+  if (!candidate) return res.status(404).send('Not found');
+  var signedPdfPath = candidate.attestationSignedPdfPath;
+  if (!signedPdfPath || !fs.existsSync(signedPdfPath)) return res.status(404).send('Signed PDF not found');
+  var name = (candidate.name || 'attestation').replace(/\s+/g, '_');
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', 'attachment; filename="attestation_signee_' + name + '.pdf"');
+  res.sendFile(signedPdfPath);
+});
+
+
 module.exports = router;
