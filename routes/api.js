@@ -2398,7 +2398,7 @@ router.post('/generate-standalone-attestation', async function(req, res) {
     var trainingTitle = (req.body.trainingTitle || '').trim();
     var dateStart = (req.body.dateStart || '').trim();
     var dateEnd = (req.body.dateEnd || '').trim();
-    var score = parseInt(req.body.score) || 0;
+    var score = (req.body.score !== null && req.body.score !== undefined && req.body.score !== '') ? parseInt(req.body.score) : null;
     var moduleName = (req.body.moduleName || 'Travaux personnels - Yes You Ken English').trim();
     var durationHours = req.body.durationHours ? parseInt(req.body.durationHours) : null;
     var subtitle = (req.body.subtitle !== undefined) ? (req.body.subtitle || '') : null;
