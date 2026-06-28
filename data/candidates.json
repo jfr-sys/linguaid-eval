@@ -753,22 +753,32 @@
     "name": "Eleonore Gestat",
     "email": "Eleonore.gestat@bbraun.com",
     "company": "B BRAUN",
-    "jobtitle": "",
-    "dept": "",
-    "testdate": "",
+    "jobtitle": "Juriste droit des affaires",
+    "dept": "Juridique",
+    "testdate": "2026-06-28",
     "scores": {
-      "total": 0,
+      "total": 25,
       "max": 26
     },
     "freewriting": {
-      "q39": "",
-      "q40": "",
-      "q41": ""
+      "q39": "I work for B. Braun as a legal counsel in the french legal team.",
+      "q40": "I grew up in the North of France, I used to live in the city of Lille, until the end of my studies. Then, I moved to Paris for work.",
+      "q41": "I plan to visit Corsica for summer vacations with my family. I'd like to visit Bonifacio."
     },
-    "goals": [],
-    "avail": {},
-    "otherNeeds": "",
-    "status": "invited",
+    "goals": [
+      "Participer à une discussion ou une réunion courte en exprimant ses idées",
+      "Comprendre et utiliser le vocabulaire essentiel de son domaine professionnel",
+      "Répondre avec aisance à des questions déstabilisantes lors d’une présentation orale",
+      "Préparer et présenter efficacement une prise de parole stratégique ou un pitch professionnel (mission, équipe, institution)",
+      "Mener une négociation simple ou intermédiaire en défendant ses intérêts tout en trouvant un compromis professionnel"
+    ],
+    "avail": {
+      "Mardi": "Après-midi",
+      "Jeudi": "Matin, Après-midi",
+      "Vendredi": "Après-midi"
+    },
+    "otherNeeds": "Développer un anglais technique sur mon domaine d'activité",
+    "status": "csv_uploaded",
     "oralToken": "5745f2e98ff80f7f",
     "createdAt": "2026-06-11T10:11:41.743Z",
     "invitedAt": "2026-06-11T10:11:41.743Z",

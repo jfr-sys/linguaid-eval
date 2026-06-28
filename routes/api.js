@@ -2401,6 +2401,7 @@ router.post('/generate-standalone-attestation', async function(req, res) {
     var score = parseInt(req.body.score) || 0;
     var moduleName = (req.body.moduleName || 'Travaux personnels - Yes You Ken English').trim();
     var durationHours = req.body.durationHours ? parseInt(req.body.durationHours) : null;
+    var subtitle = (req.body.subtitle !== undefined) ? (req.body.subtitle || '') : null;
 
     if (!name || !email || !trainingTitle || !dateStart || !dateEnd) {
       return res.status(400).json({ error: 'Missing required fields' });
@@ -2428,6 +2429,7 @@ router.post('/generate-standalone-attestation', async function(req, res) {
       dateStart: dateStart,
       dateEnd: dateEnd,
       durationHours: durationHours,
+      subtitle: subtitle,
       pdfPath: attestPdf,
     };
 
