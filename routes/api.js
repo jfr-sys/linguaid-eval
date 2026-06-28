@@ -1368,6 +1368,14 @@ router.post('/send-calendly-link/:id', function(req, res) {
     html: htmlBody
   }, function(err) {
     if (err) { console.error('calendly mail error:', err); return res.status(500).json({ error: err.message }); }
+    // Record when link was sent and which evaluator was assigned
+    var cidx2 = candidates.findIndex(function(x){ return x.id === req.params.id; });
+    if (cidx2 !== -1) {
+      candidates[cidx2].oralLinkSentAt = new Date().toISOString();
+      candidates[cidx2].oralLastReminderAt = new Date().toISOString();
+      if (evaluator) candidates[cidx2].oralEvaluator = evaluator;
+      require('fs').writeFileSync(require('path').join(dataDir, 'candidates.json'), JSON.stringify(candidates, null, 2));
+    }
     res.json({ ok: true });
   });
 });
@@ -2481,5 +2489,33 @@ router.post('/generate-standalone-attestation', async function(req, res) {
   }
 });
 
+
+
+// POST /api/calendly-webhook — called by Zapier when a candidate books an oral slot
+router.post('/calendly-webhook', express.json(), function(req, res) {
+  try {
+    var email = (req.body.email || '').trim().toLowerCase();
+    var bookedAt = req.body.bookedAt || new Date().toISOString();
+    if (!email) return res.status(400).json({ error: 'email required' });
+
+    var dataPath = require('path').join(dataDir, 'candidates.json');
+    var candidates = JSON.parse(require('fs').readFileSync(dataPath, 'utf8'));
+    var idx = candidates.findIndex(function(c) {
+      return (c.email || '').toLowerCase() === email;
+    });
+    if (idx === -1) {
+      console.log('calendly-webhook: no candidate found for email', email);
+      return res.json({ ok: true, matched: false });
+    }
+    candidates[idx].oralBookedAt = bookedAt;
+    candidates[idx].oralBookedDate = bookedAt;
+    require('fs').writeFileSync(dataPath, JSON.stringify(candidates, null, 2));
+    console.log('calendly-webhook: booked', candidates[idx].name, bookedAt);
+    res.json({ ok: true, matched: true, name: candidates[idx].name });
+  } catch(e) {
+    console.error('calendly-webhook error:', e);
+    res.status(500).json({ error: e.message });
+  }
+});
 
 module.exports = router;

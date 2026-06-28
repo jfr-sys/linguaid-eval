@@ -718,7 +718,9 @@
     "attestationSignedAt": "2026-06-25T09:23:11.402Z",
     "attestationSignerIp": "88.185.73.211",
     "attestationTypedName": "Caz",
-    "attestationSignedPdfPath": "/var/www/vhosts/linguaid.net/eval.linguaid.net/app/data/attestations/b6297879e2dd_attestation_quiz_signe.pdf"
+    "attestationSignedPdfPath": "/var/www/vhosts/linguaid.net/eval.linguaid.net/app/data/attestations/b6297879e2dd_attestation_quiz_signe.pdf",
+    "oralBookedAt": "2026-06-26T08:06:47.535Z",
+    "oralBookedDate": "2026-06-26T08:06:47.535Z"
   },
   {
     "id": "a9f99cbdda3b",
@@ -963,7 +965,7 @@
       "Vendredi": "Après-midi"
     },
     "otherNeeds": "développer mon vocabulaire",
-    "status": "written_report_done",
+    "status": "oral_booked",
     "oralToken": "525d7c0bf5d4609c",
     "createdAt": "2026-06-11T10:12:04.733Z",
     "invitedAt": "2026-06-11T10:12:04.733Z",
@@ -981,7 +983,8 @@
         "Comma splices and sentence boundary control in extended writing",
         "British vs. American English spelling consistency (organise/organize, specialised/specialized)"
       ]
-    }
+    },
+    "oralBookedAt": "2026-06-27T16:01:44.453Z"
   },
   {
     "id": "3503fd53df63",
@@ -1563,7 +1566,7 @@
       "Jeudi": "Matin, Entre Midi et 14h"
     },
     "otherNeeds": "",
-    "status": "written_report_done",
+    "status": "oral_booked",
     "oralToken": "8bde243736a4e45e",
     "createdAt": "2026-06-17T13:03:50.749Z",
     "invitedAt": "2026-06-17T13:03:50.749Z",
@@ -1581,7 +1584,9 @@
         "Idiomatic time expressions — calques from French (these next years → in the next few years)",
         "Sentence complexity — limited use of subordination, relative clauses, and discourse connectors"
       ]
-    }
+    },
+    "oralEmailSentTo": "Hannah",
+    "oralBookedAt": "2026-06-27T16:01:36.970Z"
   },
   {
     "id": "21799e7e9763",
@@ -2505,7 +2510,8 @@
         "Professional and HR-specific collocations and register"
       ]
     },
-    "oralBookedAt": "2026-06-22T19:32:46.185Z"
+    "oralBookedAt": "2026-06-22T19:32:46.185Z",
+    "oralEmailSentTo": "Hannah"
   },
   {
     "id": "716a0445bcc6",
@@ -2535,7 +2541,7 @@
       "Vendredi": "Après-midi, Matin"
     },
     "otherNeeds": "Réussir à formuler des phrases simples, dans mon domaine d'activité",
-    "status": "written_report_done",
+    "status": "oral_booked",
     "oralToken": "1977141efb9c2093",
     "createdAt": "2026-06-22T12:24:16.242Z",
     "writtenReport": "# Initial English Language Evaluation Report\n**Linguaid France — Candidate Assessment**\n\n---\n\n| Field | Details |\n|---|---|\n| **Candidate Name** | Barbelin Damien |\n| **Email** | Damien.barbelin.DB@gmail.com |\n| **Department** | Service approvisionnement |\n| **Job Title** | Assistant gestionnaire approvisionnement |\n| **Test Date** | 22 June 2026 |\n| **Evaluator** | Linguaid France — Language Assessment Team |\n\n---\n\n## 1. Overall CEFR Level\n\n**MCQ Score: 12/26 (46%)**\n\nBased on the scoring rubric applied by Linguaid France, a score of **46%** places the candidate at the threshold of the **A2+ (1.5)** band — just below the B1 (60%) cutoff. When combined with the written production evidence (see sections below), the overall profile is consistent with a **solid A2+ (1.5)** learner who demonstrates some emergent B1-level writing instincts but lacks the grammatical accuracy and range to be firmly classified at B1.\n\n> **Assigned Overall Level: A2+ (1.5)**\n\nAt this level, Damien can communicate basic personal and professional information in familiar contexts, handle routine written messages with limited accuracy, and understand simple, clearly structured input. He is not yet equipped for the autonomous professional communication his role and stated goals require.\n\n---\n\n## 2. Skill Assessment Overview\n\n| Skill Area | Estimated Level | Notes |\n|---|---|---|\n| **Grammar (MCQ)** | A2+ (1.5) | 46% — systematic gaps in tense control, modals, articles |\n| **Writing (Free Production)** | A2+ (1.5) | Communicates clearly at a basic level; recurring errors |\n| **Reading / Vocabulary** | A2+ (1.5) | Functional vocabulary range; limited professional register |\n| **Overall** | **A2+ (1.5)** | Coherent profile across all skills |\n\nDamien presents a **consistent cross-skill profile**, with no dramatic discrepancy between receptive and productive abilities. This is a positive indicator for training: progress made in grammar and vocabulary should transfer relatively quickly into improved writing and spoken production.\n\n---\n\n## 3. Detailed Grammar Analysis\n\n### 3.1 What Damien Gets Right\n\n- **Basic present simple construction** is generally functional: *\"I work to BBraun\"*, *\"I have two children\"*, *\"My favorite hobbies are\"* — the subject-verb agreement is mostly respected.\n- **Basic use of future simple (will + infinitive)**: *\"I will go in holidays in July\"* — the structure is recognisable and communicatively clear, even if the collocation is imprecise.\n- **Coordinating conjunctions**: The use of *\"and\"* to link clauses and list items is consistent and appropriate.\n- **Possessive determiners**: Correct use of *\"my\"* and *\"we\"* throughout, showing basic pronoun awareness.\n- **Modal intent (want to)**: *\"we want to go to Spain\"* — correct deployment of *want to* for future intention.\n\n### 3.2 Identified Grammar Gaps\n\n#### ❌ Preposition of Employment\n> *\"I work **to** BBraun since 18 years old\"*\n\nThe correct structure is **\"I have worked at/for BBraun since I was 18\"** or **\"since I was 18 years old.\"** Two errors appear in this single sentence:\n- **\"work to\"** → should be **\"work for\"** or **\"work at\"** (preposition of employment)\n- **\"since 18 years old\"** → grammatically incomplete; the subject and verb are missing from the subordinate clause\n\n#### ❌ Present Perfect for Duration\n> *\"I work to BBraun **since** 18 years old\"*\n\nIn English, **since** and **for** require the **present perfect** tense, not the present simple. The correct form would be: *\"I **have worked** for BBraun **since I was 18**\"* or *\"for 18 years.\"* This is one of the most common and professionally significant gaps at this level.\n\n#### ❌ Age Expression\n> *\"I'm **forty one years**\"*\n\nThe standard English expression requires the noun: **\"I'm forty-one years **old**\"** — the adjective *old* is obligatory and cannot be omitted. Similarly, *\"Chloé **7 years old**\"* lacks the verb *is* (*\"Chloé, who is 7 years old\"*).\n\n#### ❌ Indefinite Article with Age/Number Expressions\n> *\"Emme **1 years** old\"*\n\nThe plural *years* is incorrect for the singular *1*: **\"Emmé, who is **1 year** old\"** (singular agreement). This points to a gap in **noun-number agreement** for low-frequency singular forms.\n\n#### ❌ Preposition of Movement / Holiday Collocation\n> *\"I will go **in** holidays **in** July **at** Saint Tropez\"*\n\nThree prepositional errors in one sentence:\n- **\"go in holidays\"** → **\"go on holiday\"** (fixed collocation in British English)\n- The destination preposition: *\"**at** Saint Tropez\"* → **\"to Saint Tropez\"** (direction/destination requires *to*)\n- Note: *\"in July\"* is correct ✅\n\n#### ❌ Capitalisation Rules\n> *\"hollydays\"*, *\"meurthe and moselle\"*, *\"Chess\"*\n\n- Spelling: *\"hollydays\"* → **\"holidays\"** (double-l error, likely L1 interference from French *vacances* → no, more likely visual confusion)\n- Proper nouns such as **Meurthe-et-Moselle** require capitalisation\n- Common nouns (*chess, fishing*) should not be capitalised mid-sentence\n\n#### ❌ Future Intent — Will vs Going To\n> *\"we **want to** go to Spain, at Barcelona\"*\n\nWhile communicatively acceptable, a more natural and grammatically precise expression of a definite future plan would use **\"we are going to go\"** or **\"we are planning to go.\"** Additionally, the city preposition: *\"**at** Barcelona\"* → **\"to Barcelona\"** (same destination error as above).\n\n#### ❌ Definite Article Omission/Overuse\nThe MCQ data suggests difficulty with **article usage (a/an/the/zero article)**, which is consistent with the written omission of articles in several noun phrases — a predictable gap for French L1 learners where the article system differs significantly.\n\n---\n\n## 4. Reading and Vocabulary Assessment\n\n### 4.1 Evidence Base\nReading comprehension is assessed indirectly through the MCQ performance and the vocabulary deployed in free writing. While no dedicated reading passage is evaluated here, the MCQ score (46%) suggests difficulty with **intermediate-level grammatical and lexical distractors**, pointing to a functional but limited receptive vocabulary range.\n\n### 4.2 Vocabulary Range\n\n**Strengths observed:**\n- Damien successfully deploys basic **personal and biographical vocabulary**: *married, children, hobbies, department, fitness*\n- He uses the professional term **\"supply chain manager\"** correctly — a positive indicator given his stated learning goals around professional vocabulary\n- Basic **time and place expressions** are present: *July, next year, always, since*\n\n**Gaps observed:**\n- **Register**: The writing is uniformly informal; there is no evidence of professional or semi-formal vocabulary, which is a priority given his goals (*participating in professional calls, describing his role*)\n- **Collocations**: Key collocations are incorrect (*go in holidays*, *work to a company*) — these are high-frequency, high-impact items for professional communication\n- **Approximate vocabulary**: The phrase *\"meurthe and moselle department\"* is a direct translation of the French administrative term rather than a naturalised English equivalent (*\"the Meurthe-et-Moselle département, in the Grand Est region\"*) — reflecting a tendency to **calque** from French\n- **Lexical variety**: All three writing responses use a very limited range of structures and words, with no synonyms, connectors of contrast, or discourse markers beyond *\"and\"*\n\n### 4.3 Reading Level Estimate\nBased on the MCQ performance and the vocabulary evident in production: **A2+ (1.5)**. Damien can likely understand **short, clearly written professional messages** on familiar topics (supply, orders, basic logistics vocabulary) but would struggle with longer texts, emails with embedded conditionals, or documents requiring inference.\n\n---\n\n## 5. Writing Assessment\n\n### 5.1 Q39 — Current Life and Work\n\n> *\"My name is Damien, I'm forty one years, i'm married and i have two children (Chloé 7years old and Emme 1 years old). I work to BBraun since 18years old. I'm assistant supply chain manager. My favorite hobbies are : Fishing, Chess and sport (fitness).\"*\n\n**Content & Communication:** ✅ Strong for this level. Damien conveys a complete personal profile — name, age, family, job, and hobbies — within a short, coherent paragraph. The communicative intent is never in doubt.\n\n**Accuracy:** ⚠️ Multiple recurring errors (see Grammar section): preposition of employment (*to* → *for/at*), missing present perfect (*work* → *have worked*), age expression (*forty one years* → *forty-one years old*), number agreement (*1 years* → *1 year*), capitalisation (*i'm* → *I'm*), and spacing (*7years* → *7 years old*).\n\n**Fluency & Cohesion:** The response reads as a list of facts rather than a developed paragraph. There are no discourse connectors beyond commas and *\"and.\"* Sentences are short, simple, and syntactically identical (Subject + Verb + Object). This is characteristic of A2-level production.\n\n**Professional Relevance:** The response is highly relevant to his stated goal of *\"se présenter et présenter son poste dans un contexte professionnel.\"* With targeted coaching on the errors identified, this exact content could form a polished professional self-introduction.\n\n---\n\n### 5.2 Q40 — Hometown\n\n> *\"I always lived in the same town : Dombasle-sur-meurthe in the meurthe and moselle department.\"*\n\n**Content & Communication:** ✅ Clear and direct. The information is easy to understand.\n\n**Accuracy:** ⚠️\n- *\"I always lived\"* → **\"I have always lived\"** — again, the present perfect is required for an action/state that began in the past and continues to the present. This is the **second instance** of this exact error, confirming it as a **systematic gap**, not a one-off slip.\n- Capitalisation: *\"meurthe and moselle\"* → **\"Meurthe-et-Moselle\"**\n- Punctuation: The colon after *\"town\"* is non-standard here; a comma or simple continuation would be more natural: *\"I have always lived in the same town, Dombasle-sur-Meurthe...\"*\n\n**Fluency & Cohesion:** This is the shortest response and offers the least development. There is no additional detail (description of the town, why he stayed, what he likes about it), but this is not penalised at A2 level where basic information transfer is the primary benchmark.\n\n---\n\n### 5.3 Q41 — Future Plans\n\n> *\"I will go in hollydays in July at Saint Tropez. And the next year, we want to go to Spain, at Barcelona.\"*\n\n**Content & Communication:** ✅ Communicatively clear. Both plans (short-term holiday and medium-term trip) are conveyed without ambiguity.\n\n**Accuracy:** ⚠️\n- *\"go in hollydays\"* → **\"go on holiday\"** (fixed collocation + spelling)\n- *\"at Saint Tropez\"* → **\"to Saint Tropez\"** (directional preposition)\n- *\"at Barcelona\"* → **\"to Barcelona\"** (same error repeated — consistent preposition gap for destinations)\n- *\"And the next year\"* → **\"Next year\"** or **\"The following year\"** — starting a sentence with *\"And\"* is stylistically weak in writing; *\"the next year\"* is a false friend from *\"l'année prochaine\"* (→ **\"next year\"**, no article)\n- *\"I will go\"* vs *\"we want to go\"* — inconsistent subject (I → we) without explanation; grammatically valid but worth flagging for clarity\n\n**Fluency & Cohesion:** Slightly more developed than Q40 in that it spans two future time frames, but still lacks connectors of elaboration (*for example, also, in addition*) or hedging (*I'm hoping to, we're planning to*).\n\n---\n\n## 6. Strengths\n\n- ✅ **Communicative clarity**: Despite grammatical inaccuracies, Damien's meaning is never ambiguous. This is a crucial foundation for language learning — ideas exist and are expressible, even if the form needs refinement.\n- ✅ **Consistent engagement**: All three free writing prompts are answered fully and honestly. There is no evidence of avoidance strategies or overly minimalist responses.\n- ✅ **Professional self-awareness**: Correct use of *\"assistant supply chain manager\"* demonstrates that Damien has some exposure to professional English terminology in his field — a strong asset for his stated goals.\n- ✅ **Basic tense control**: Simple present and *will*-future are deployed recognisably, providing a working grammatical base.\n- ✅ **Motivation and specificity of goals**: Damien's stated goals are precise, professional, and achievable at his level with targeted training. This clarity will allow for efficient course design.\n- ✅ **Consistent L1 profile**: The errors observed are **predictable, systematic, and teachable** — they reflect known French L1 transfer patterns (present perfect, prepositions, articles) rather than random instability.\n\n---\n\n## 7. Areas for Improvement\n\n- ❌ **Present perfect tense** (*have + past participle*) — critical for expressing duration, recent events, and professional experience; currently replaced by simple present in all instances\n- ❌ **Prepositions of place and movement** (*at/in/to*) — high-frequency errors that impact professional communication (locations, destinations, company names)\n- ❌ **Professional collocations and fixed expressions** (*go on holiday, work for a company, in charge of, responsible for*)\n- ❌ **Discourse connectors and cohesion devices** — writing relies exclusively on *\"and\"*; needs exposure to *however, therefore, in addition, as a result, although*\n- ❌ **Professional register and vocabulary** — current vocabulary is entirely informal/personal; needs development of supply chain vocabulary (*order, stock, delivery, shortage, supplier, invoice*)\n- ❌ **Spelling and capitalisation conventions** — particularly proper nouns and first-person pronoun *I*\n- ❌ **Complex sentence construction** — move beyond Subject + Verb + Object chains toward **subordination** (*because, although, which, when*) and **relative clauses**\n- ❌ **Article system** (a/an/the/zero) — a known difficulty for French speakers that affects naturalness and accuracy across all written and spoken production\n\n---\n\n## 8. Recommendations\n\n### 8.1 Target Level and Training Volume\n\n| Parameter | Recommendation |\n|---|---|\n| **Current Level** | A2+ (1.5) |\n| **Target Level** | B1 (2.0) — sufficient for professional communication in familiar contexts |\n| **Recommended Hours** | 30–40 guided hours + independent practice |\n| **Session Format** | 1:1 or small group (≤4), professionally focused |\n| **Preferred Availability** | Friday mornings and afternoons |\n\n### 8.2 Course Focus Areas (Priority Order)\n\n1. **Professional self-presentation** — refining Q39-type content into polished spoken and written introductions (*Je veux me présenter et présenter mon poste*)\n2. **Present perfect and past simple** — distinguishing duration (*I have worked here for 18 years*) from completed events (*I started in 2008*)\n3. **Supply chain vocabulary** — orders, stock management, suppliers, delays, shortages; aligned directly with his role as *assistant gestionnaire approvisionnement*\n4. **Professional telephone English** — openings, closings, clarification phrases, spelling out references (*Can you repeat that? How do you spell that?*)\n5. **Simple problem-solution communication** — *\"There is a problem with... / I suggest... / Could you please...\"*\n\n### 8.3 Learning Objectives (Bloom's Taxonomy)\n\n> The following three objectives are sequenced from foundational recall to productive application, following Bloom's revised taxonomy.\n\n---\n\n**Objective 1 — Remember / Understand (Knowledge & Comprehension)**\n> *By the end of the course, Damien will be able to **identify and recall** at least 40 core supply chain vocabulary items (e.g. delivery, shortage, purchase order, stock level, supplier) and their correct collocations in English, achieving ≥80% accuracy on a vocabulary recognition task.*\n\n---\n\n**Objective 2 — Apply (Application)**\n> *By the end of the course, Damien will be able to **apply** present perfect, present simple, and will-future structures correctly in a written professional self-introduction (minimum 80 words), with no more than 2 grammatical errors relating to tense or preposition use.*\n\n---\n\n**Objective 3 — Produce / Create (Synthesis)**\n> *By the end of the course, Damien will be able to **conduct a structured professional telephone call** of 3–5 minutes in English, including: greeting and self-identification, stating the purpose of the call (e.g. a supply issue), proposing a simple solution, and closing the call — demonstrating communicative success as assessed by a rubric measuring fluency, vocabulary range, and task completion.*\n\n---\n\n*Report prepared by Linguaid France Language Assessment Team — 22 June 2026*\n*This report is confidential and intended solely for internal training planning purposes.*\n\n---",
@@ -2551,7 +2557,8 @@
         "Discourse connectors and cohesion beyond 'and' (however, therefore, although)",
         "Core supply chain and professional register vocabulary (order, stock, delivery, supplier)"
       ]
-    }
+    },
+    "oralBookedAt": "2026-06-27T16:01:27.111Z"
   },
   {
     "id": "26f929ce80ab",
@@ -3022,6 +3029,149 @@
         "Future tense forms — will/going to/would like to not evidenced in production",
         "Discourse connectors and paragraph organisation — no connectors, qualifiers or multi-sentence discourse produced"
       ]
+    }
+  },
+  {
+    "id": "753a863ae443",
+    "name": "Françoise DAUVERGNE",
+    "email": "dauvergne@hec.fr",
+    "company": "HEC Paris",
+    "dept": "DOCTORAT",
+    "jobtitle": "Responsable de scolarité",
+    "testdate": "2026-06-25",
+    "scores": {
+      "total": 28,
+      "max": 30
+    },
+    "freewriting": {
+      "q39": "I work in the PhD Program at HEC as academic manager. I enjoy interacting with the PhD students and feeling useful to them. We are a small team (4 people) and the atmosphere is quite pleasant.",
+      "q40": "I grew up in a town in the southern suburbs of Paris. I lived there for 19 years and completed my schooling there through high school.",
+      "q41": "I am planning to visit South Korea at the beginning of next year. It will be a two-week tour during which we will visit several places. I am very excited about the trip and look forward to discovering a culture that is completely new to me."
+    },
+    "goals": [
+      "Engager une conversation informelle dans un contexte professionnel",
+      "Comprendre et donner des consignes ou procédures simples",
+      "Participer efficacement à un appel téléphonique professionnel",
+      "Se présenter et présenter son poste dans un contexte professionnel"
+    ],
+    "avail": {
+      "Mercredi": "Après-midi, Matin",
+      "Vendredi": "Matin, Après-midi"
+    },
+    "otherNeeds": "Conversation informelle",
+    "status": "oral_booked",
+    "writtenReport": "# Initial English Language Evaluation Report\n**Linguaid France**\n\n---\n\n| | |\n|---|---|\n| **Candidate** | Françoise DAUVERGNE |\n| **Email** | dauvergne@hec.fr |\n| **Department** | DOCTORAT |\n| **Job Title** | Responsable de scolarité |\n| **Test Date** | 25 June 2026 |\n| **Evaluator** | Linguaid France Assessment Team |\n\n---\n\n## 1. Overall CEFR Level\n\n**MCQ Score: 28/30 (93%)**\n\nBased on the MCQ scoring rubric, a score of 93% places Françoise firmly within the **B2 (3)** band. This is corroborated by the quality of her free writing responses, which demonstrate a high degree of fluency, accuracy, and natural register for a non-native speaker. Her written production is coherent, contextually appropriate, and largely error-free, supporting the placement at **B2 (3)** as her initial assessed level.\n\n---\n\n## 2. Skill Assessment Overview\n\n| Skill Area | Assessed Level | Notes |\n|---|---|---|\n| **Grammar (MCQ)** | B2 (3) | 93% — near-perfect performance across grammar structures |\n| **Writing (Free Production)** | B2 (3) | Fluent, natural, well-organised responses with minimal errors |\n| **Reading / Vocabulary** | B2 (3) | Rich, precise vocabulary; strong command of register |\n| **Overall** | **B2 (3)** | Consistent high performance across all assessed dimensions |\n\nFrançoise presents as a **highly competent B2 (3)** candidate across all skill areas. Her performance is remarkably consistent, with no significant skill imbalances. The small number of MCQ errors (2/30) and the natural quality of her free writing suggest she may be approaching the upper boundary of B2 (3), though the written sample is too brief to confirm a C1 placement without further oral or extended writing assessment.\n\n---\n\n## 3. Detailed Grammar Analysis\n\n### What Françoise Demonstrates Correctly\n\nBased on her free writing responses and near-perfect MCQ performance, Françoise shows confident and accurate control of the following structures:\n\n- **Present simple** for habitual and professional facts: *\"I work in the PhD Program at HEC as academic manager\"* — correct use of the bare present for ongoing roles.\n- **Present continuous** vs. present simple distinction: implicitly handled correctly — she does not confuse the two.\n- **Going to / present continuous for future plans**: *\"I am planning to visit South Korea\"* — accurate use of the present continuous to express a personal, decided future intention.\n- **Will + look forward to + -ing**: *\"I look forward to discovering a culture\"* — correct idiomatic construction, including the gerund after *look forward to*, a common stumbling block for French speakers.\n- **Relative clauses**: *\"a culture that is completely new to me\"* — well-formed defining relative clause.\n- **Time expressions and sequencing**: *\"at the beginning of next year\"*, *\"during which\"* — precise and natural.\n- **Quantifiers and articles**: generally accurate throughout all three responses, with only one minor omission noted (see below).\n- **Adjective order and intensifiers**: *\"completely new\"*, *\"quite pleasant\"* — appropriate register and natural word order.\n\n### Specific Gaps and Areas of Uncertainty\n\nDespite her strong overall performance, two minor points emerge from the free writing:\n\n- **Article omission — generic roles**: In *\"I work in the PhD Program at HEC as academic manager\"*, the article **\"an\"** is missing before *academic manager* (*\"as **an** academic manager\"*). This is a very subtle but recurring gap for French speakers, as French does not use an article in equivalent constructions (*\"en tant que responsable\"*). This suggests a residual L1 interference pattern at the level of article use with professional titles following *as*.\n\n- **Sentence-level complexity and subordination**: While all sentences are accurate, the syntactic structures remain relatively paratactic (short, parallel, additive clauses). There is limited use of complex subordination, concessive clauses (*although, whereas, despite*), or nominal clauses (*\"The fact that…\"*). This is consistent with B2 (3) written production but represents the primary structural ceiling before C1.\n\n- **Potential unseen gaps** (inferred from the 2 missed MCQ items, though specific questions are not available): Given the profile of French-educated high-level speakers, the two missed items likely involved one or more of the following:\n  - **Advanced passive constructions** in complex tenses\n  - **Conditionals** — third conditional or mixed conditional nuance\n  - **Inversion or cleft structures** for emphasis\n\n---\n\n## 4. Reading and Vocabulary Assessment\n\nFrançoise's free writing responses serve as a reliable proxy for her receptive and productive vocabulary range. The following observations are drawn from lexical analysis of her three responses:\n\n### Vocabulary Range and Precision\n\n- Her lexical choices are **precise and contextually appropriate**: *\"interacting with\"*, *\"atmosphere\"*, *\"completed my schooling\"*, *\"two-week tour\"*, *\"look forward to discovering\"* all reflect a B2 (3) or above productive vocabulary.\n- She uses **mid-register collocations** naturally: *\"quite pleasant\"*, *\"completely new to me\"*, *\"very excited about\"* — these are not calques from French and suggest genuine internalisation of English phrasing.\n- The phrase *\"through high school\"* is a confident and idiomatic use of *through* in a temporal/educational context, which many B1-level learners would struggle to produce spontaneously.\n- She demonstrates awareness of **register consistency**: all three responses maintain a neutral-to-formal register appropriate for a written placement test, without mixing informal or overly academic styles inappropriately.\n\n### Potential Lexical Ceiling\n\n- Vocabulary is functional and effective but does not yet show the **density of abstract or technical lexis** typical of C1 production.\n- There is limited use of **discourse markers** that signal logical relationships (*consequently, nevertheless, in contrast, given that*), which would elevate her writing to C1.\n- No instances of **idiomatic or figurative language** (metaphor, idiom, collocation clusters) beyond standard B2 expressions, which is entirely appropriate but marks the current ceiling.\n\n---\n\n## 5. Writing Assessment — Detailed Analysis by Response\n\n### Q39 — Current Life and Work\n\n> *\"I work in the PhD Program at HEC as academic manager. I enjoy interacting with the PhD students and feeling useful to them. We are a small team (4 people) and the atmosphere is quite pleasant.\"*\n\n**Accuracy:** Very high. One article omission (*\"as **an** academic manager\"*) is the only identifiable error.\n\n**Fluency and naturalness:** Excellent. The response reads as natural, unforced English. The phrase *\"feeling useful to them\"* is particularly noteworthy — this is a nuanced gerund construction that accurately conveys personal motivation without sounding mechanical.\n\n**Organisation:** Clear three-sentence structure: role → personal satisfaction → team context. Logical and coherent.\n\n**Lexical quality:** *\"Interacting with\"* and *\"atmosphere\"* demonstrate B2-level productive vocabulary. The parenthetical *(4 people)* shows pragmatic writing awareness.\n\n**Register:** Appropriately professional-neutral. Well-suited to the context.\n\n---\n\n### Q40 — Hometown\n\n> *\"I grew up in a town in the southern suburbs of Paris. I lived there for 19 years and completed my schooling there through high school.\"*\n\n**Accuracy:** Flawless. Past simple used correctly and consistently for biographical narrative.\n\n**Fluency and naturalness:** Very natural. *\"Completed my schooling… through high school\"* is an idiomatic and precise expression. Many learners at B1 level would produce less precise alternatives such as *\"finished my studies until the baccalauréat\"*.\n\n**Organisation:** Compact but clear. Two sentences efficiently convey geography, duration, and educational trajectory.\n\n**Lexical quality:** *\"Southern suburbs\"*, *\"completed my schooling\"*, *\"through high school\"* — all precise, natural, and non-translated.\n\n**Potential development area:** The response, while accurate, is brief. At C1 level, a candidate might elaborate with a subordinate clause offering contrast or nuance (*\"Although I grew up in the suburbs, I spent most of my weekends in central Paris\"*). This is a minor observation, not a weakness.\n\n---\n\n### Q41 — Future Plans\n\n> *\"I am planning to visit South Korea at the beginning of next year. It will be a two-week tour during which we will visit several places. I am very excited about the trip and look forward to discovering a culture that is completely new to me.\"*\n\n**Accuracy:** Excellent. Future structures are handled with precision and variety: *\"am planning to\"* (decided personal plan), *\"will be\"* (factual future description), *\"will visit\"* (scheduled event), *\"look forward to discovering\"* (anticipation with gerund). This **variety of future forms within a single short paragraph** is a strong indicator of B2 (3) grammatical competence.\n\n**Fluency and naturalness:** The highest of the three responses. The sentence *\"I look forward to discovering a culture that is completely new to me\"* is idiomatic, emotionally expressive, and structurally sophisticated.\n\n**Organisation:** Excellent — logical progression from plan → itinerary detail → emotional response. This mirrors natural English narrative structure.\n\n**Lexical quality:** *\"Two-week tour\"*, *\"completely new to me\"*, *\"discovering a culture\"* — rich and natural. No false cognates or gallicisms detected.\n\n**Standout feature:** The correct use of *\"during which\"* as a relative pronoun with a time expression is a genuine marker of B2+ written competence. Many learners avoid this construction and would write *\"during this tour we will\"* instead.\n\n---\n\n## 6. Strengths\n\n- **Grammatical accuracy**: Françoise's writing is remarkably clean. Across three responses totalling approximately 110 words, only one grammatical error (article omission) was identified.\n- **Variety of tenses and structures**: She naturally deploys past simple, present simple, present continuous, *will*-future, and gerundial structures without apparent effort or overcorrection.\n- **Idiomatic expression**: Phrases such as *\"look forward to discovering\"*, *\"through high school\"*, and *\"during which\"* demonstrate internalised English phrasing rather than translated French.\n- **Register awareness**: Consistently appropriate register across all three writing tasks — professional without being stiff, personal without being informal.\n- **Fluency and confidence**: Her responses read as those of someone who is **comfortable in written English**, suggesting regular exposure to and use of the language in her professional context.\n- **MCQ performance**: A score of 93% (28/30) reflects strong analytical command of English grammar at the B2 (3) level.\n\n---\n\n## 7. Areas for Improvement\n\n- **Article use with professional titles**: The omission of *an* in *\"as academic manager\"* points to a residual L1 interference pattern. Systematic review of articles in professional and nominal contexts would be beneficial.\n- **Syntactic complexity**: Moving toward C1 requires producing more complex, multi-clause sentences with concessive, causal, and contrastive relationships (*despite, whereas, given that, not only… but also*).\n- **Discourse markers and text cohesion**: Françoise's writing is clear but additive in structure. Developing a richer repertoire of **logical connectors** (*consequently, nonetheless, in contrast, it is worth noting that*) would bring her writing to C1 standard.\n- **Spoken fluency and interaction**: Her self-reported goals focus heavily on **oral professional communication** — informal conversation, telephone calls, giving instructions, self-presentation. These are distinct from the written skills assessed here, and oral production in real-time contexts may reveal additional gaps not visible in written work.\n- **Extended discourse production**: The writing samples are short. Sustained writing over longer passages may reveal issues with paragraph organisation, argument development, or maintaining accuracy under pressure.\n\n---\n\n## 8. Recommendations\n\n### Target Level\n**From B2 (3) → C1 (3.5)**\nGiven Françoise's strong baseline, the recommended learning trajectory is to consolidate B2 (3) oral production (which may lag behind her written competence) and begin developing the structural and discoursal features of C1, with a primary focus on spoken professional communication aligned to her stated goals.\n\n### Recommended Hours\n**30–40 guided learning hours**, weighted toward oral interaction and professional communication practice, supplemented by targeted written exercises on syntactic complexity and discourse cohesion.\n\n### Proposed Format\n- Individual or small-group sessions (aligned with availability: **Wednesday mornings/afternoons, Friday mornings/afternoons**)\n- Emphasis on **conversation and role-play** (telephone calls, professional introductions, informal interaction)\n- Periodic written tasks for structural development\n\n---\n\n### Learning Objectives (Bloom's Taxonomy)\n\n**Objective 1 — Apply (Application)**\nFrançoise will be able to **apply a range of spoken professional communication strategies** — including self-introduction, telephone protocols, and giving instructions — in simulated workplace scenarios, using varied grammatical structures accurately and with appropriate register.\n\n**Objective 2 — Analyse (Analysis)**\nFrançoise will be able to **analyse authentic professional interactions** (recorded calls, workplace dialogues, presentations) to identify the discourse strategies, vocabulary choices, and structural features used by proficient speakers, and articulate how these differ from her current production.\n\n**Objective 3 — Produce (Synthesis/Create)**\nFrançoise will be able to **construct extended spoken and written discourse** — including professional self-presentation, explanatory sequences, and informal conversational turns — that incorporates complex subordination, discourse markers, and C1-level cohesive devices to communicate with clarity, precision, and natural fluency.\n\n---\n\n*Report prepared by the Linguaid France Assessment Team — 25 June 2026*\n*This report is confidential and intended for internal placement purposes only.*\n\n---",
+    "oralData": null,
+    "finalReport": null,
+    "oralToken": "20de3eb0ff87b63c",
+    "createdAt": "2026-06-25T16:04:38.588Z",
+    "reportSummary": {
+      "grammarLevel": "B2 (3)",
+      "writingLevel": "B2 (3)",
+      "readingLevel": "B2 (3)",
+      "overallLevel": "B2 (3)",
+      "keyGaps": [
+        "Article omission with professional titles following 'as' (as an academic manager)",
+        "Complex syntactic subordination — concessive and contrastive clauses (although, whereas, despite)",
+        "Discourse markers for logical cohesion (consequently, nevertheless, in contrast)",
+        "Oral real-time fluency — spoken production likely below written competence level",
+        "Extended discourse production — sustained paragraph-level organisation under real conditions"
+      ]
+    },
+    "oralBookedAt": "2026-06-26T09:15:49.323Z",
+    "oralEmailSentTo": "Anna"
+  },
+  {
+    "id": "1a3da05ae07d",
+    "name": "Marie JEUNEHOMME",
+    "email": "marie.jeunehomme@bbraun.com",
+    "company": "B BRAUN",
+    "dept": "",
+    "jobtitle": "Regional Legal Director",
+    "testdate": "2026-06-26",
+    "scores": {
+      "total": 0,
+      "max": 0
+    },
+    "freewriting": {
+      "q39": "",
+      "q40": "",
+      "q41": ""
+    },
+    "goals": [
+      "Communiquer à l'oral avec une aisance plus fluide et spontanée avec ses clients en interne, collèges et homologues à l'international",
+      "Préparer et adapter les écrits et contrats juridiques",
+      "Utiliser un vocabulaire juridique correct et élargie",
+      "Utiliser les bonnes tournures de phrases lors des communications orales",
+      "Préparer et animer des réunions, des présentations et des négociations avec efficacité et confiance"
+    ],
+    "avail": {},
+    "otherNeeds": "",
+    "status": "programme_done",
+    "isRenewal": true,
+    "oralToken": "7e81abb15a9dc526",
+    "oralData": {
+      "evaluator": "Renewal",
+      "sessionDate": "2026-06-26",
+      "listeningLevel": "B2+ (3.5)",
+      "speakingLevel": "B2+ (3.5)",
+      "targetLevel": "C1 (4)",
+      "totalHours": 30,
+      "coachingHours": 20,
+      "homeworkHours": 10,
+      "dateStart": "2026-06-26",
+      "dateEnd": "2027-06-30",
+      "validatedGoals": [],
+      "validatedAvail": [],
+      "criteria": {},
+      "strengths": "Very quick and able in general and business English; written contract exercises are uniformly excellent demonstrating regular exposure to contracts in English; fast thinker and talker; strong oral communication and meeting/presentation skills attained.",
+      "gaps": "Intonation could use some fine-tuning; nuance in writing and orally needs further development; slower, targeted attention to nuance recommended as a future target.",
+      "profile": "Learner has concentrated on speaking practice in coaching sessions, discussing management situations and her role as regional director of legal for a number of countries. She averages two sessions a month, which is an acceptable pace for her overall level. She has reached B2++/C1- by end of course. Some slower, targeted attention to nuance would be an excellent target for a future contract at her current maintenance pace.",
+      "additionalNotes": "Renewal candidate - previous course data used",
+      "topics": [
+        "Se présenter",
+        "Small talk",
+        "Téléphoner",
+        "Emails professionnels",
+        "Réunions et visioconférences",
+        "Présentations orales",
+        "Négociation",
+        "Anglais juridique"
+      ],
+      "objectiveSuffixes": [],
+      "trainingTitle": "Formation en Anglais Juridique"
+    },
+    "reportSummary": {
+      "overallLevel": "B2+ (3.5)",
+      "grammarLevel": "B2+ (3.5)",
+      "writingLevel": "B2+ (3.5)",
+      "readingLevel": "B2+ (3.5)",
+      "listeningLevel": "B2+ (3.5)",
+      "speakingLevel": "B2+ (3.5)",
+      "keyGaps": "Intonation could use some fine-tuning; nuance in writing and orally needs further development; slower, targeted attention to nuance recommended as a future target."
+    },
+    "finalReport": "## Renewal — Previous Course Summary\n\n### Candidate Profile\nLearner has concentrated on speaking practice in coaching sessions, discussing management situations and her role as regional director of legal for a number of countries. She averages two sessions a month, which is an acceptable pace for her overall level. She has reached B2++/C1- by end of course. Some slower, targeted attention to nuance would be an excellent target for a future contract at her current maintenance pace.\n\n### Strengths\nVery quick and able in general and business English; written contract exercises are uniformly excellent demonstrating regular exposure to contracts in English; fast thinker and talker; strong oral communication and meeting/presentation skills attained.\n\n### Areas for Improvement\nIntonation could use some fine-tuning; nuance in writing and orally needs further development; slower, targeted attention to nuance recommended as a future target.\n\n## Learning Objectives\n1. Communiquer à l'oral avec une aisance plus fluide et spontanée avec ses clients en interne, collèges et homologues à l'international\n2. Préparer et adapter les écrits et contrats juridiques\n3. Utiliser un vocabulaire juridique correct et élargie\n4. Utiliser les bonnes tournures de phrases lors des communications orales\n5. Préparer et animer des réunions, des présentations et des négociations avec efficacité et confiance\n\n## Training Recommendation\nRenewal course based on previous training. Starting level: B2+ (3.5). Target level: C1 (4).",
+    "createdAt": "2026-06-26T11:58:17.020Z",
+    "programmePdfPath": "/var/www/vhosts/linguaid.net/eval.linguaid.net/app/data/programmes/1a3da05ae07d.pdf",
+    "conventionData": {
+      "proposalAcceptedAt": "2026-06-26T11:58:51.809Z",
+      "siret": "",
+      "civility": "Madame",
+      "signatory": "Marie JEUNEHOMME",
+      "price": "",
+      "dateStart": "2026-06-26",
+      "dateEnd": "2027-06-30",
+      "isCPF": false,
+      "signatoryEmail": "",
+      "notes": "Déjà planifié avec Stephanie",
+      "learnerTel": "06 08 66 57 32",
+      "orderNumber": "",
+      "companyAddress": "",
+      "pdfPath": "/var/www/vhosts/linguaid.net/eval.linguaid.net/app/data/conventions/convention_847376b917014e0a4a56094a6b5a9f01d9788ff7.pdf",
+      "signingToken": "847376b917014e0a4a56094a6b5a9f01d9788ff7",
+      "generatedAt": "2026-06-26T11:59:12.719Z",
+      "availabilities": "Déjà planifié avec Stephanie",
+      "sentToCatherineAt": "2026-06-26T12:00:15.242Z"
     }
   }
 ]

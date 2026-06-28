@@ -3,23 +3,25 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Générer une attestation — Linguaid</title>
+  <title>Attestation de réalisation — LangExpert</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: "Segoe UI", Arial, sans-serif; background: #f5f6fa; color: #222; min-height: 100vh; }
-    .header { background: #1F4E79; color: white; padding: 18px 32px; }
+    .header { background: #2E4057; color: white; padding: 18px 32px; }
     .header h1 { font-size: 1.1rem; font-weight: 600; }
     .header p { font-size: 0.85rem; opacity: 0.8; margin-top: 2px; }
     .container { max-width: 620px; margin: 40px auto; padding: 0 20px 60px; }
     .card { background: white; border-radius: 10px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); padding: 28px 32px; }
-    h2 { font-size: 1rem; font-weight: 600; color: #1F4E79; margin-bottom: 20px; }
+    h2 { font-size: 1rem; font-weight: 600; color: #2E4057; margin-bottom: 20px; }
     .field { margin-bottom: 16px; }
     label { display: block; font-size: 0.85rem; font-weight: 500; margin-bottom: 5px; color: #444; }
     input, select { width: 100%; padding: 9px 12px; border: 1.5px solid #ddd; border-radius: 6px; font-size: 0.95rem; }
-    input:focus, select:focus { outline: none; border-color: #1F4E79; }
+    input:focus, select:focus { outline: none; border-color: #2E4057; }
     .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .btn { width: 100%; padding: 13px; background: #1F4E79; color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; margin-top: 8px; }
-    .btn:hover { background: #163d61; }
+    .info-box { background: #f0f4fa; border-left: 4px solid #2E4057; border-radius: 6px; padding: 12px 16px; margin-bottom: 20px; font-size: 0.88rem; color: #333; }
+    .info-box strong { color: #2E4057; }
+    .btn { width: 100%; padding: 13px; background: #2E4057; color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; margin-top: 8px; }
+    .btn:hover { background: #243347; }
     .btn:disabled { opacity: 0.5; cursor: not-allowed; }
     #result { margin-top: 20px; padding: 16px; border-radius: 8px; font-size: 0.9rem; display: none; }
     #result.ok { background: #f0fff4; color: #065f46; border: 1px solid #6ee7b7; }
@@ -30,10 +32,14 @@
 <body>
 <div class="header">
   <h1>Linguaid — Attestation de réalisation</h1>
-  <p>Générer et envoyer une attestation pour signature électronique</p>
+  <p>Former de Manière Innovante en Langues Vivantes</p>
 </div>
 <div class="container">
   <div class="card">
+    <div class="info-box">
+      <strong>Formation :</strong> Former de Manière Innovante en Langues Vivantes<br>
+      <strong>Module :</strong> Travaux personnels — formation certifiante (travaux personnels uniquement)
+    </div>
     <h2>📋 Informations du stagiaire</h2>
     <div class="field">
       <label>Nom complet *</label>
@@ -41,25 +47,17 @@
     </div>
     <div class="row">
       <div class="field">
-        <label>Entreprise</label>
-        <input id="company" type="text" placeholder="ex. Cabinet Martin" />
+        <label>Entreprise / Établissement</label>
+        <input id="company" type="text" placeholder="ex. Lycée Jean Jaurès" />
       </div>
       <div class="field">
-        <label>Poste</label>
-        <input id="jobtitle" type="text" placeholder="ex. Avocat associé" />
+        <label>Poste / Fonction</label>
+        <input id="jobtitle" type="text" placeholder="ex. Professeur d'anglais" />
       </div>
     </div>
     <div class="field">
       <label>Email *</label>
-      <input id="email" type="email" placeholder="ex. marie.dupont@cabinet.fr" />
-    </div>
-    <div class="field">
-      <label>Intitulé de la formation *</label>
-      <select id="trainingTitle" style="width:100%;padding:9px 12px;border:1.5px solid #ddd;border-radius:6px;font-size:0.95rem">
-      <option value="Communiquer en anglais professionnel – English 360 – Niveau B2">English 360 – Niveau B2</option>
-      <option value="Communiquer en anglais juridique des affaires – CAJA – Niveau B2">CAJA – Anglais Juridique des Affaires</option>
-      <option value="Formation en Anglais Juridique">Formation en Anglais Juridique</option>
-    </select>
+      <input id="email" type="email" placeholder="ex. marie.dupont@education.fr" />
     </div>
     <div class="row">
       <div class="field">
@@ -73,19 +71,9 @@
     </div>
     <div class="row">
       <div class="field">
-        <label>Score quiz *</label>
-        <input id="score" type="number" min="0" max="10" value="8" />
-        <p class="hint">Score obtenu (sur 10)</p>
-      </div>
-      <div class="field">
-        <label>Module</label>
-        <input id="moduleName" type="text" value="Travaux personnels - Yes You Ken English" />
-      </div>
-    </div>
-    <div class="row">
-      <div class="field">
         <label>Durée du module (heures) *</label>
-        <input id="durationHours" type="number" min="1" max="100" value="10" />
+        <input id="durationHours" type="number" min="1" max="200" value="20" />
+        <p class="hint">Heures de travaux personnels réalisées</p>
       </div>
     </div>
     <button class="btn" id="btnGenerate" onclick="generate()">✉️ Générer et envoyer pour signature</button>
@@ -98,12 +86,10 @@ async function generate() {
   const res = document.getElementById('result');
   const name = document.getElementById('name').value.trim();
   const email = document.getElementById('email').value.trim();
-  const trainingTitle = document.getElementById('trainingTitle').value.trim();
   const dateStart = document.getElementById('dateStart').value;
   const dateEnd = document.getElementById('dateEnd').value;
-  const score = parseInt(document.getElementById('score').value) || 0;
 
-  if (!name || !email || !trainingTitle || !dateStart || !dateEnd) {
+  if (!name || !email || !dateStart || !dateEnd) {
     res.className = 'err'; res.style.display = 'block';
     res.textContent = 'Veuillez remplir tous les champs obligatoires (*).';
     return;
@@ -117,19 +103,24 @@ async function generate() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        name, email,
+        name,
+        email,
         company: document.getElementById('company').value.trim(),
         jobtitle: document.getElementById('jobtitle').value.trim(),
-        trainingTitle, dateStart, dateEnd, score,
-        moduleName: document.getElementById('moduleName').value.trim(),
-        durationHours: document.getElementById('durationHours').value.trim(),
+        trainingTitle: 'Former de Mani\u00e8re Innovante en Langues Vivantes',
+        dateStart,
+        dateEnd,
+        score: null,
+        total: null,
+        moduleName: 'Travaux personnels',
+        durationHours: parseInt(document.getElementById('durationHours').value) || null,
       })
     });
     const data = await r.json();
     if (data.ok) {
       res.className = 'ok'; res.style.display = 'block';
       res.innerHTML = '✅ Attestation générée et lien de signature envoyé à <strong>' + email + '</strong>.<br><br>'
-        + '<a href="' + data.signingUrl + '" target="_blank" style="color:#1F4E79;font-weight:600">🔗 Lien de signature (à partager si besoin)</a>';
+        + '<a href="' + data.signingUrl + '" target="_blank" style="color:#2E4057;font-weight:600">🔗 Lien de signature (à partager si besoin)</a>';
     } else {
       throw new Error(data.error || 'Erreur inconnue');
     }
