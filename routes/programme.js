@@ -8,6 +8,23 @@ const Anthropic = require('@anthropic-ai/sdk');
 const { execFile } = require('child_process');
 const { assertValidCpfType, getAction, CATALOGUE } = require('../config/catalogue');
 
+
+function calc5SkillLevel(c) {
+  var rs = c.reportSummary || {};
+  var od = c.oralData || {};
+  var cefrMap = {'A1':0,'A1+':0.5,'A2':1,'A2+':1.5,'B1':2,'B1+':2.5,'B2':3,'B2+':3.5,'C1':4,'C1+':4.5,'C2':5};
+  var cefrRev = {0:'A1',0.5:'A1+',1:'A2',1.5:'A2+',2:'B1',2.5:'B1+',3:'B2',3.5:'B2+',4:'C1',4.5:'C1+',5:'C2'};
+  var levels = [rs.grammarLevel, rs.writingLevel, rs.readingLevel, od.listeningLevel, od.speakingLevel]
+    .map(function(l){ return cefrMap[l]; })
+    .filter(function(n){ return typeof n === 'number'; });
+  if (levels.length === 5) {
+    var avg = levels.reduce(function(a,b){return a+b;},0) / 5;
+    var rounded = Math.round(avg * 2) / 2;
+    return cefrRev[rounded] || rs.overallLevel || '';
+  }
+  return rs.overallLevel || '';
+}
+
 const dataDir = path.join(__dirname, '../data');
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 

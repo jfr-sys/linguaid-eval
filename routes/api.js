@@ -2142,31 +2142,51 @@ router.post('/send-convocation/:id', function(req, res) {
           return { h: parseInt(m[0], 10), m: parseInt(m[1] || '0', 10) };
         }
         function icsDate(dateStr, timeObj) {
-          var d = new Date(dateStr + 'T' + String(timeObj.h).padStart(2,'0') + ':' + String(timeObj.m).padStart(2,'0') + ':00');
-          return d.toISOString().replace(/[-:]/g,'').replace(/\.\d{3}Z$/,'Z');
+          // Use floating local time (no Z) so calendar shows entered time regardless of timezone
+          var y = dateStr.slice(0,4), mo = dateStr.slice(5,7), d = dateStr.slice(8,10);
+          var h = String(timeObj.h).padStart(2,'0'), m = String(timeObj.m).padStart(2,'0');
+          return y + mo + d + 'T' + h + m + '00';
         }
         var tStart = parseHhmm(sessionStart);
         var tEnd = sessionEnd ? parseHhmm(sessionEnd) : { h: tStart.h + 1, m: tStart.m };
         var dtStart = icsDate(sessionDate, tStart);
         var dtEnd = icsDate(sessionDate, tEnd);
-        var dtNow = new Date().toISOString().replace(/[-:]/g,'').replace(/\.\d{3}Z$/,'Z');
+        var dtNow = (function(){ var n=new Date(); return n.toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,''); })();
         var icsContent = [
           'BEGIN:VCALENDAR',
           'VERSION:2.0',
           'PRODID:-//Linguaid France//Formation//FR',
           'CALSCALE:GREGORIAN',
           'METHOD:REQUEST',
+          'BEGIN:VTIMEZONE',
+          'TZID:Europe/Paris',
+          'BEGIN:DAYLIGHT',
+          'TZOFFSETFROM:+0100',
+          'TZOFFSETTO:+0200',
+          'TZNAME:CEST',
+          'DTSTART:19700329T020000',
+          'RRULE:FREQ=YEARLY;BYDAY=-1SU;BYMONTH=3',
+          'END:DAYLIGHT',
+          'BEGIN:STANDARD',
+          'TZOFFSETFROM:+0200',
+          'TZOFFSETTO:+0100',
+          'TZNAME:CET',
+          'DTSTART:19701025T030000',
+          'RRULE:FREQ=YEARLY;BYDAY=-1SU;BYMONTH=10',
+          'END:STANDARD',
+          'END:VTIMEZONE',
           'BEGIN:VEVENT',
           'UID:' + c.id + '-session1@linguaid.net',
           'DTSTAMP:' + dtNow,
-          'DTSTART:' + dtStart,
-          'DTEND:' + dtEnd,
-          'SUMMARY:Première séance – ' + trainingTitle,
+          'DTSTART;TZID=Europe/Paris:' + dtStart,
+          'DTEND;TZID=Europe/Paris:' + dtEnd,
+          'SUMMARY:Démarrage formation anglais',
           'DESCRIPTION:Formation avec ' + trainer.name + '\nContact: ' + trainer.email + (trainer.tel ? ' / ' + trainer.tel : '') + '\nModalité: Visioconférence (Zoom ou Teams)',
           'ORGANIZER;CN=Linguaid France:mailto:cfr@linguaid.net',
           'ATTENDEE;ROLE=REQ-PARTICIPANT;CN=' + c.name + ':mailto:' + c.email,
           'END:VEVENT',
-          'END:VCALENDAR'
+          'END:VCALENDAR',
+          ''
         ].join('\r\n');
         attachments.push({
           filename: 'premiere_seance.ics',

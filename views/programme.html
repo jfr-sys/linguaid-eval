@@ -116,8 +116,8 @@
   <!-- CPF TOGGLE -->
   <div class="toggle-row">
     <div>
-      <div class="toggle-label" id="cpfToggleLabel">Formation CPF <span class="cpf-badge" id="cpfBadge">RS6341</span></div>
-      <div class="toggle-sub" id="cpfToggleSub">English 360 — certification incluse</div>
+      <div class="toggle-label" id="cpfToggleLabel">Formation non-CPF</div>
+      <div class="toggle-sub" id="cpfToggleSub">Cliquez pour activer la certification CPF</div>
     </div>
     <label class="toggle">
       <input type="checkbox" id="cpfToggle" onchange="toggleCPF()">
@@ -452,6 +452,8 @@ fetch("/candidates/api/" + id)
 // ── CPF TOGGLE ──────────────────────────────────────────────────────────────
 function toggleCPF() {
   var isCPF = document.getElementById("cpfToggle").checked;
+  document.getElementById("cpfToggleLabel").textContent = isCPF ? "Formation CPF" : "Formation non-CPF";
+  document.getElementById("cpfToggleSub").textContent = isCPF ? "Sélectionnez le type de certification ci-dessous" : "Cliquez pour activer la certification CPF";
   document.getElementById("cpfTypeSelector").classList.toggle("show", isCPF);
   if (!isCPF) {
     // Reset CPF state

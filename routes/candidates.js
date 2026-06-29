@@ -141,6 +141,20 @@ router.get('/:id/programme', (req, res) => {
   res.sendFile(require('path').join(__dirname, '../views/programme.html'));
 });
 
+router.post('/api/:id/identity', (req, res) => {
+  const candidates = getCandidates();
+  const idx = candidates.findIndex(c => c.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: 'Not found' });
+  const allowed = ['name','email','company','jobtitle','dept'];
+  allowed.forEach(k => { if (req.body[k] !== undefined) candidates[idx][k] = req.body[k]; });
+  if (req.body.civility !== undefined) {
+    if (!candidates[idx].conventionData) candidates[idx].conventionData = {};
+    candidates[idx].conventionData.civility = req.body.civility;
+  }
+  saveCandidates(candidates);
+  res.json({ success: true });
+});
+
 router.post('/api/:id/company', (req, res) => {
   const candidates = getCandidates();
   const idx = candidates.findIndex(c => c.id === req.params.id);

@@ -1043,7 +1043,7 @@
       "Vendredi": "Matin"
     },
     "otherNeeds": "avoir une aisance à l'orale et une meilleure compréhension",
-    "status": "oral_booked",
+    "status": "oral_done",
     "oralToken": "3db2e9cfc47c7c40",
     "createdAt": "2026-06-11T14:32:24.046Z",
     "invitedAt": "2026-06-11T14:32:24.046Z",
@@ -1063,7 +1063,82 @@
       ]
     },
     "oralEmailSentTo": "Hannah",
-    "oralBookedAt": "2026-06-25T13:42:24.766Z"
+    "oralBookedAt": "2026-06-25T13:42:24.766Z",
+    "oralData": {
+      "evaluator": "Hannah DURRANT",
+      "sessionDate": "2026-06-29",
+      "format": "Video call (visio)",
+      "listeningLevel": "A2",
+      "speakingLevel": "A1+",
+      "criteria": {
+        "Accuracy (grammar)": "Developing",
+        "Fluency": "Developing",
+        "Vocabulary range": "Developing",
+        "Pronunciation": "Developing",
+        "Interaction": "Weak"
+      },
+      "oralObs": "Nora understood and carried out the role play effectively (a phone call with a colleague who wants a report sent today). However, prompts (in F.) were needed to direct the flow of the conversation.",
+      "listeningObs": "Nora understood and carried out the role play effectively (a phone call with a colleague who wants a report sent today). However, prompts (in F.) were needed to direct the flow of the conversation.",
+      "speakingObs": "Nora understood and carried out the role play effectively (a phone call with a colleague who wants a report sent today). However, prompts (in F.) were needed to direct the flow of the conversation.",
+      "validatedGoals": [
+        {
+          "goal": "Participer efficacement à un appel téléphonique professionnel",
+          "status": "confirmed"
+        },
+        {
+          "goal": "Participer à une discussion ou une réunion courte en exprimant ses idées",
+          "status": "confirmed"
+        },
+        {
+          "goal": "Comprendre et donner des consignes ou procédures simples",
+          "status": "confirmed"
+        },
+        {
+          "goal": "Engager une conversation informelle dans un contexte professionnel",
+          "status": "confirmed"
+        }
+      ],
+      "goalsNotes": "",
+      "validatedAvail": [
+        {
+          "day": "Lundi",
+          "time": "Matin",
+          "status": "confirmed"
+        },
+        {
+          "day": "Mardi",
+          "time": "Matin",
+          "status": "confirmed"
+        },
+        {
+          "day": "Mercredi",
+          "time": "Matin",
+          "status": "not_available"
+        },
+        {
+          "day": "Jeudi",
+          "time": "Matin",
+          "status": "confirmed"
+        },
+        {
+          "day": "Vendredi",
+          "time": "Matin",
+          "status": "not_available"
+        }
+      ],
+      "confirmedFormat": "Video call (visio)",
+      "schedNotes": "",
+      "contextObs": "Needs E. more and more because clients and service providers are moving to other countries. Emails + need to answer them in English.\nNew software, online training in English, this training has been put back to 2027",
+      "prioritiesObs": "Emails - perhaps standard phrases to respond to different types of requests\nBasic conversations for telephone, meetings\nHelp to prepare for software training course",
+      "strengths": "Clarity: despite struggling with vocabulary and grammar, Nora will try to reformulate to ensure the point is clear.",
+      "gaps": "Tenses (inc. regular/irregular verbs)\nWork vocabulary\nDays of the week, months",
+      "profile": "Appreciates slower communication to help with comprehension; role plays",
+      "targetLevel": "A2+",
+      "totalHours": "60",
+      "coachingHours": "40",
+      "homeworkHours": "20",
+      "additionalNotes": ""
+    }
   },
   {
     "id": "aa9d593237b8",
@@ -2022,7 +2097,7 @@
         "Mener un appel téléphonique professionnel de bout en bout en anglais pour gérer les demandes entrantes avec confiance.",
         "Construire des phrases correctes en utilisant les temps essentiels afin de réduire les erreurs grammaticales à l'oral et à l'écrit."
       ],
-      "dateStart": "2026-06-29",
+      "dateStart": "2026-06-30",
       "dateEnd": "2026-12-31",
       "topics": [
         "Se présenter",
@@ -2074,7 +2149,9 @@
       "signingToken": "6bbd224bbc9561579cd398e1bd6bd263af7f3a51",
       "generatedAt": "2026-06-25T14:27:36.161Z",
       "availabilities": "Monday Matin,Après-midi, Tuesday Matin,Après-midi, Wednesday Matin,Après-midi, Thursday Matin,Après-midi, Friday Matin,Après-midi",
-      "sentToCatherineAt": "2026-06-25T14:31:50.582Z"
+      "sentToCatherineAt": "2026-06-25T14:31:50.582Z",
+      "convocationSentAt": "2026-06-29T09:18:12.885Z",
+      "convocTrainer": "leone"
     }
   },
   {
@@ -2516,10 +2593,88 @@
       "Mercredi": "Après-midi, Matin"
     },
     "otherNeeds": "pas forcément, je veux juste améliorer mon anglais professionnel",
-    "status": "oral_booked",
+    "status": "programme_done",
     "writtenReport": "# Initial English Language Evaluation Report\n**Linguaid France**\n\n---\n\n| Field | Details |\n|---|---|\n| **Candidate** | Solène PICOT |\n| **Email** | picots@hec.fr |\n| **Department** | Ressources Humaines |\n| **Job Title** | Chargée de formation |\n| **Test Date** | 22 June 2026 |\n| **Evaluator** | Linguaid France — Language Assessment Unit |\n\n---\n\n## 1. Overall CEFR Level\n\n**MCQ Score: 18/30 (60%)** → Assigned CEFR Level: **B1 (2)**\n\nSolène's multiple-choice score of 60% places her at the **B1 (2)** threshold according to Linguaid's standardised placement scale. This result indicates that she has consolidated foundational English structures and can operate with reasonable autonomy in familiar contexts, but encounters consistent difficulty with more complex grammatical constructions, nuanced vocabulary, and advanced discourse management. This placement is further corroborated by the evidence gathered from her free writing responses, which demonstrate clear communicative intent alongside recurring structural and lexical limitations characteristic of the B1 (2) band.\n\n---\n\n## 2. Skill Assessment Overview\n\n| Skill Area | Estimated Level | Summary |\n|---|---|---|\n| **Grammar (MCQ)** | B1 (2) | Solid grasp of basic tenses; gaps in conditionals, passive, and complex structures |\n| **Writing** | B1 (2) | Clear and coherent; limited range of vocabulary and syntax |\n| **Reading / Vocabulary** | B1 (2) | Functional lexical range; minor but consistent gaps |\n| **Overall** | **B1 (2)** | A confirmed B1 (2) profile across all dimensions |\n\n---\n\n## 3. Detailed Grammar Analysis\n\n### 3.1 What Solène Gets Right\n\nSolène demonstrates a reliable command of the **present simple** for describing routines and facts, which is used accurately and consistently throughout her responses:\n\n- *\"I work at HEC Paris\"*\n- *\"I am a training officer apprentice\"*\n- *\"I like reading books\"*\n\nShe also handles the **present continuous** correctly in context:\n- *\"I am studying the Human Resources\"* — while this sentence contains a lexical error (use of the definite article \"the\"), the tense form itself is grammatically sound.\n\nHer use of the **simple past** is generally accurate and well-deployed across a variety of regular and irregular verb forms:\n- *\"I grew up in France\"*\n- *\"I went to school there\"*\n- *\"I studied in another city\"*\n- *\"I played sports\"*\n\nThe **\"want to + infinitive\"** construction for expressing future intentions is handled correctly:\n- *\"I want to travel to Brazil\"*\n- *\"I want to work in an international organization\"*\n- *\"I want to learn English very well\"*\n\nBasic **negation** is also applied correctly:\n- *\"I don't practice sports\"*\n\n### 3.2 Identified Grammar Gaps\n\n**a) Article usage**\nSolène applies the definite article incorrectly before an uncountable or field-of-study noun:\n- ❌ *\"I am studying the Human Resources\"* → ✅ *\"I am studying Human Resources\"*\n\n**b) Preposition and determiner errors**\nA recurring but subtle gap appears with determiners before consonant-initial vowel sounds:\n- ❌ *\"in an other city\"* → ✅ *\"in another city\"* (*\"another\"* is a single word, not *\"an other\"*)\n\n**c) Missing or incorrect use of the future with \"will\" or \"going to\"**\nWhen discussing future plans, Solène relies heavily on *\"want to\"* without varying her approach to express scheduled events or intentions more precisely. The construction *\"going to\"* (for planned intentions) or *\"will\"* (for decisions and predictions) is absent, which narrows the register and grammatical range of her writing.\n\n**d) Conditional structures**\nBased on both the MCQ score and the writing samples, there is no evidence of Solène's ability to use **second or third conditional** forms. This is a key structural gap at the transition from B1 (2) to B1+ (2.5) and beyond.\n\n**e) Passive voice**\nNo instances of passive constructions appear in any of the three writing samples, which is consistent with a B1 (2) profile. The passive voice — essential for professional and academic writing — appears to be an area of significant underdevelopment.\n\n**f) Tense sequencing and time adverbials**\nIn Q40, Solène shifts between past tense narration and present-context description without explicit temporal markers to guide the reader. While the meaning remains clear, more sophisticated time adverbials (*\"when I was growing up\"*, *\"at the time\"*, *\"once I had finished secondary school\"*) would reflect greater grammatical control.\n\n**g) Complex clause construction**\nSolène's sentences are predominantly simple or loosely coordinated with *\"but\"* and *\"and\"*. Subordinate clauses (e.g., *\"although,\" \"which,\" \"where,\" \"as soon as\"*) are not used, which limits grammatical complexity and is a distinguishing marker between B1 (2) and higher levels.\n\n---\n\n## 4. Reading and Vocabulary Assessment\n\nAlthough a dedicated reading comprehension section was not part of the evaluated written output, Solène's **lexical choices in free writing** provide a reliable proxy for her productive vocabulary range and, by extension, her receptive capacity.\n\n### 4.1 Vocabulary Range\n\nSolène's lexis is **functional and generally appropriate**, covering everyday topics (work, study, leisure, future plans) with adequate precision. She correctly uses domain-relevant terms such as:\n- *\"training officer\"*, *\"master's degree\"*, *\"international organization\"*, *\"business school\"*\n\nThis reflects a solid B1 (2) lexical base with some exposure to professional register vocabulary, which aligns with her role in HR and training.\n\n### 4.2 Lexical Gaps and Errors\n\n- **False cognate / register error**: *\"I don't practice sports\"* — while comprehensible, this is influenced by the French *\"pratiquer un sport\"*. The idiomatic English expression is *\"I don't do sport\"* or *\"I don't play sports.\"*\n- **Limited use of collocations**: Vocabulary choices are often basic and do not reflect awareness of common English collocations (e.g., *\"improve my English\"* is used correctly in goals, but more nuanced collocations such as *\"build fluency,\" \"expand my vocabulary,\" \"enhance communication skills\"* are absent from productive output).\n- **Spelling**: *\"Ressources\"* (French spelling) appears instead of *\"Resources\"* — a minor but telling influence of L1 interference.\n\n### 4.3 Vocabulary Breadth Relative to Goals\n\nGiven that Solène's stated goals include **professional telephone calls, email writing, meetings, and domain-specific vocabulary**, her current lexical range is sufficient as a foundation but will require deliberate expansion in professional and HR-specific registers (e.g., performance review language, recruitment vocabulary, inter-departmental communication).\n\n---\n\n## 5. Writing Assessment\n\n### 5.1 Q39 — Current Life and Work\n\n> *\"I work at HEC Paris, a business school. I am a training officer apprentice. I am studying the Human Ressources, it is my first year of a master's degree. I like reading books (romance, fantasy). I don't practice sports but I like watching gymnastics.\"*\n\n**Coherence and Organisation:** The response is logically sequenced and easy to follow. Ideas are presented in a sensible order (professional role → studies → personal interests). However, transitions between ideas are abrupt, linked only by full stops or the basic conjunction *\"but.\"*\n\n**Grammar:** As noted above, *\"the Human Ressources\"* contains both an article error and a spelling interference. The comma splice in *\"I am studying the Human Ressources, it is my first year\"* is a structural weakness — two independent clauses should be separated by a conjunction or a full stop.\n\n**Register:** The tone is appropriately neutral and readable. The use of parentheses *(romance, fantasy)* is a natural stylistic choice and adds clarity.\n\n**Length and Task Completion:** The response is brief but covers the prompt adequately. A B1+ (2.5) candidate would typically offer slightly more elaboration and syntactic variety.\n\n---\n\n### 5.2 Q40 — Hometown\n\n> *\"I grew up in France in a small town. There were a lot of fields. I went to school there, but for university, I studied in an other city. During my free time, I played sports : dance and tennis.\"*\n\n**Coherence and Organisation:** The response flows naturally from one idea to the next and creates a coherent picture of childhood and student life. The contrast introduced by *\"but\"* is well-placed and meaningful.\n\n**Grammar:** The error *\"an other city\"* (rather than *\"another city\"*) is the most notable mistake. The colon after *\"sports\"* is used correctly and demonstrates some awareness of punctuation for lists.\n\n**Descriptive Detail:** This response is notably sparse. *\"There were a lot of fields\"* is the only descriptive detail about the town. A richer response would include what made the town distinctive, how she felt about it, or what she misses — elements that would push the writing toward B1+ (2.5).\n\n**Verb Tense:** Past tense usage is consistent and accurate throughout, which is a genuine strength.\n\n---\n\n### 5.3 Q41 — Future Plans\n\n> *\"I want to travel to Brazil for New year's eve with my friends. After my master's degree, I want to work in an international organization. But my plan for this year and the next year is to learn english very well.\"*\n\n**Coherence and Organisation:** This is arguably the strongest of the three responses in terms of communicative clarity. Solène presents a short-term plan (travel), a medium-term professional ambition, and an immediate learning goal in a logical sequence.\n\n**Grammar:** The sentence *\"But my plan for this year and the next year\"* — beginning with *\"But\"* — is acceptable in informal writing but stylistically weak for a professional or academic context. *\"However\"* or a restructured clause would be more appropriate. *\"The next year\"* should read *\"next year\"* (no definite article). *\"English\"* requires capitalisation as a proper noun.\n\n**Expressing Future:** As noted earlier, the exclusive use of *\"want to\"* for all future-oriented statements limits grammatical range. This prompt particularly called for *\"I'm going to travel\"* or *\"I'm planning to work\"* to demonstrate awareness of distinct future forms.\n\n**Ambition and Motivation:** This response reveals a candidate who is genuinely motivated and has a clear professional vision. Her goal of working in an international organisation makes the development of professional English not merely desirable but strategically important.\n\n---\n\n## 6. Strengths\n\n- **Communicative clarity**: Solène's writing is consistently easy to understand. She conveys her meaning without ambiguity, which is the primary function of language at this level.\n- **Accurate simple past usage**: Irregular and regular past tense verbs are deployed with high accuracy across multiple contexts.\n- **Basic tense control**: Present simple, present continuous, and simple past are all used appropriately and without significant error.\n- **Professional vocabulary awareness**: Solène already uses relevant professional terminology (*\"training officer,\" \"master's degree,\" \"international organization\"*), which aligns well with her stated goals.\n- **Motivation and goal clarity**: Her self-reported goals are specific, realistic, and professionally oriented — a strong predictor of learning success.\n- **Logical text organisation**: Even in brief responses, ideas are sequenced logically and the reader is never lost.\n\n---\n\n## 7. Areas for Improvement\n\n- **Grammatical range and complexity**: Solène needs to move beyond simple and compound sentences toward the use of subordinate clauses, relative clauses, and more varied conjunctions.\n- **Future tense variety**: Developing control of *\"going to,\" \"will,\" \"present continuous for arrangements,\"* and *\"future perfect\"* is essential for professional communication.\n- **Passive voice**: Fundamental for professional writing, reports, and formal emails in HR contexts (e.g., *\"the decision was made,\" \"training sessions are scheduled\"*).\n- **Conditional structures**: Second conditional for hypothetical professional situations (*\"If I were in your position, I would...\"*) and third conditional for reviewing past decisions are critical at B1+ (2.5) and above.\n- **Lexical breadth and collocation**: Expanding professional vocabulary, particularly within the HR domain, and learning natural English collocations to reduce L1 interference.\n- **Discourse connectors and cohesion**: Developing a wider repertoire beyond *\"but\"* and *\"and\"* — including *\"however,\" \"although,\" \"as a result,\" \"furthermore,\" \"in contrast\"* — to improve the flow and sophistication of both written and spoken output.\n- **Register awareness**: Understanding the distinction between informal and formal register, especially for professional emails and meeting contributions.\n- **Article and preposition accuracy**: Addressing recurring issues with articles (*\"the,\" \"a/an,\" \"Ø\"*) and prepositions, which are often sites of persistent L1 interference.\n\n---\n\n## 8. Recommendations\n\n### 8.1 Target Level and Timeline\n\n| Parameter | Detail |\n|---|---|\n| **Current Level** | B1 (2) |\n| **Target Level** | B1+ (2.5) → B2 (3) |\n| **Recommended Duration** | 40–60 guided hours + autonomous practice |\n| **Suggested Format** | Individual or small-group professional English sessions |\n| **Availability** | Monday (morning & afternoon), Wednesday (morning & afternoon) |\n\n### 8.2 Priority Focus Areas\n\nGiven Solène's professional context (HR, training coordination, international ambitions) and her stated goals, the following areas should be prioritised:\n\n- **Professional email writing** (structure, register, opening/closing formulas)\n- **Telephone and meeting English** (clarifying, asking for repetition, expressing opinions)\n- **Grammatical range** (conditionals, passive voice, complex sentences)\n- **HR-specific vocabulary** (appraisals, onboarding, recruitment, reporting)\n\n### 8.3 Learning Objectives (Bloom's Taxonomy)\n\n**Objective 1 — Knowledge & Comprehension (Remember / Understand)**\n> Solène will be able to **identify and explain** the key structural differences between the present simple, present continuous, *\"going to\"* future, and *\"will\"* future, and correctly select the appropriate form when completing guided exercises with at least 80% accuracy.\n\n**Objective 2 — Application (Apply)**\n> Solène will be able to **produce** a structured professional email of 120–150 words — including a formal greeting, a clear statement of purpose, two supporting details using passive voice or conditional forms, and an appropriate closing — with no more than three grammatical errors.\n\n**Objective 3 — Analysis & Evaluation (Analyse / Evaluate)**\n> Solène will be able to **compare and assess** two written versions of the same professional email (one formal, one informal) and **justify in spoken English** — during a simulated team meeting scenario — which version is more appropriate for a given HR communication context, using relevant discourse connectors and professional vocabulary from her domain.\n\n---\n\n*Report prepared by the Linguaid France Assessment Unit — June 2026*\n*This document is confidential and intended solely for internal training planning purposes.*\n\n---",
-    "oralData": null,
-    "finalReport": null,
+    "oralData": {
+      "evaluator": "Hannah DURRANT",
+      "sessionDate": "2026-06-29",
+      "format": "Video call (visio)",
+      "listeningLevel": "A2+",
+      "speakingLevel": "A2",
+      "criteria": {
+        "Fluency": "Developing",
+        "Accuracy (grammar)": "Developing",
+        "Vocabulary range": "Developing",
+        "Pronunciation": "Developing",
+        "Interaction": "Developing"
+      },
+      "oralObs": "",
+      "listeningObs": "",
+      "speakingObs": "",
+      "validatedGoals": [
+        {
+          "goal": "Participer efficacement à un appel téléphonique professionnel",
+          "status": "confirmed"
+        },
+        {
+          "goal": "Rédiger des courriels professionnels clairs et structurés",
+          "status": "confirmed"
+        },
+        {
+          "goal": "Participer à une discussion ou une réunion courte en exprimant ses idées",
+          "status": "confirmed"
+        },
+        {
+          "goal": "Comprendre et utiliser le vocabulaire essentiel de son domaine professionnel",
+          "status": "confirmed"
+        }
+      ],
+      "goalsNotes": "",
+      "validatedAvail": [
+        {
+          "day": "Lundi",
+          "time": "Matin, Après-midi",
+          "status": "confirmed"
+        },
+        {
+          "day": "Mercredi",
+          "time": "Après-midi, Matin",
+          "status": "confirmed"
+        }
+      ],
+      "confirmedFormat": "Video call (visio)",
+      "schedNotes": "START IN SEPTEMBER",
+      "contextObs": "Has many English colleagues and collaborators, mostly communicates in writing to give information on training programmes. They could also call, so she needs to be able to speak on phone. Often sends emails to avoid a telephone call.\nBrochure has to be done in English as well as in F. Solène coordinates this with her manager.\nSolène is doing a Masters in HR and is an apprentice at HEC.\n",
+      "prioritiesObs": "Emails, perhaps standard language for different types of queries\nRole play phone calls and listening activities\nTenses (simple past, future, present simple and continuous)",
+      "strengths": "Motivated and always willing to try to get her point across\nWill ask questions if shed oes not understand",
+      "gaps": "Vocabulary \nSentence construction\nComprehension (struggled to understand role-play situation)\nTenses ",
+      "profile": "Motivated",
+      "targetLevel": "B1 (2)",
+      "totalHours": 10,
+      "coachingHours": "10",
+      "homeworkHours": "",
+      "additionalNotes": "",
+      "objectives": [
+        "Utiliser des formules standard pour rédiger des emails professionnels variés afin de gérer les échanges écrits de façon autonome.",
+        "Comprendre et employer le vocabulaire RH essentiel à l'écrit et à l'oral pour communiquer efficacement dans son environnement professionnel.",
+        "Participer à un appel téléphonique professionnel simple en anglais afin de réduire sa dépendance à la communication écrite."
+      ],
+      "dateStart": "2026-09-07",
+      "dateEnd": "2026-12-31",
+      "topics": [
+        "Se présenter",
+        "Small talk",
+        "Téléphoner",
+        "Emails professionnels",
+        "Réunions et visioconférences",
+        "Anglais RH",
+        "Gestion de projet",
+        "Rapports et comptes rendus"
+      ],
+      "objectiveSuffixes": [],
+      "trainingTitle": "Formation en Anglais Professionnel"
+    },
+    "finalReport": "# Final English Language Evaluation Report\n**Linguaid France**\n\n---\n\n| Field | Details |\n|---|---|\n| **Candidate** | Solène PICOT |\n| **Email** | picots@hec.fr |\n| **Department** | Ressources Humaines |\n| **Job Title** | Chargée de formation |\n| **Written Test Date** | 22 June 2026 |\n| **Oral Assessment Date** | 29 June 2026 |\n| **Evaluator** | Hannah DURRANT |\n\n---\n\n## 1. Executive Summary\n\nSolène PICOT completed both a written placement test and an oral assessment with Linguaid France in June 2026. The combined evaluation paints a consistent picture of a motivated candidate with a solid but developing foundation in English, operating at the **B1 (2)** level in written skills and at a lower **A2–A2+ (1–1.5)** level in oral production and comprehension.\n\nHer written profile demonstrates reliable control of basic tenses, clear communicative intent, and growing exposure to professional vocabulary. Her oral profile, however, reveals a more significant gap: comprehension in live interaction is effortful, spoken production is hesitant, and her current level of spoken English limits her ability to participate confidently in the professional telephone calls and meetings that her role increasingly requires.\n\n### Overall CEFR Profile\n\n| Skill | CEFR Level | Linguaid Band |\n|---|---|---|\n| **Grammar** | B1 | 2 |\n| **Writing** | B1 | 2 |\n| **Reading / Vocabulary** | B1 | 2 |\n| **Listening** | A2+ | 1.5 |\n| **Speaking** | A2 | 1 |\n| **Overall Combined Level** | **A2+–B1** | **1.5–2** |\n\nThe gap between Solène's written and oral skills is notable and should be a primary driver of her training programme. She is well placed to make meaningful progress, particularly given her strong intrinsic motivation and the highly concrete professional context that will anchor her learning throughout.\n\n---\n\n## 2. Skill-by-Skill Assessment\n\n---\n\n### 2.1 Grammar\n\n**Level: B1 (2)**\n\n#### Strengths\n- Consistent and accurate use of the **present simple** for facts, routines, and professional descriptions\n- Reliable control of the **simple past** across both regular and irregular verb forms\n- Correct application of the **present continuous** as a tense form (structural accuracy, even where lexical errors occur around it)\n- Functional use of the **\"want to + infinitive\"** construction for expressing future intentions\n- Accurate basic negation\n\n#### Development Areas\n- **Passive voice**: entirely absent from written and spoken output; essential for professional and HR writing (e.g. *\"training sessions are scheduled,\" \"the decision was made\"*)\n- **Conditional structures**: no evidence of second conditional (*\"If I were..., I would...\"*) or third conditional; a critical gap for professional hypothetical and reflective communication\n- **Future tense variety**: over-reliance on *\"want to\"*; needs to develop control of *\"going to,\" \"will,\"* and present continuous for arrangements\n- **Article usage**: recurring omission and incorrect insertion (e.g. *\"the Human Resources,\" \"the next year\"*)\n- **Complex clause construction**: sentences are predominantly simple or loosely coordinated; subordinate and relative clauses are not yet used\n- **Discourse connectors**: limited to *\"but\"* and *\"and\"*; needs to develop *\"however,\" \"although,\" \"as a result,\" \"furthermore\"*\n\n---\n\n### 2.2 Writing\n\n**Level: B1 (2)**\n\n#### Strengths\n- Consistently **clear and easy to understand**; communicative intent is never lost\n- Ideas are **sequenced logically** across all three free-writing responses\n- Demonstrates emerging awareness of **professional register** and domain-relevant vocabulary (*\"training officer,\" \"master's degree,\" \"international organization\"*)\n- Shows **genuine voice and motivation** in written responses, particularly when discussing professional ambitions\n\n#### Development Areas\n- **Syntactic variety**: sentences are short and predominantly simple; greater use of subordination would strengthen overall quality\n- **Discourse cohesion**: transitions between ideas rely on full stops and basic conjunctions; a broader range of connectors is needed\n- **Register control**: informal constructions (e.g. sentences beginning with *\"But\"*) appear where a more formal alternative would be appropriate\n- **Descriptive and argumentative depth**: responses are functional but brief; elaboration and justification are limited\n- **L1 interference**: French spelling (*\"Ressources\"*), false cognates (*\"practice sports\"*), and direct translation structures are present\n- **Professional writing genres**: email structure, formal requests, and report-style writing are not yet developed\n\n---\n\n### 2.3 Reading and Vocabulary\n\n**Level: B1 (2)**\n\n#### Strengths\n- **Functional lexical range** sufficient for everyday and introductory professional communication\n- Accurate use of key professional terms relevant to her role: *\"training officer,\" \"master's degree,\" \"international organization,\" \"business school\"*\n- Receptive vocabulary appears adequate for general written professional content at this level\n\n#### Development Areas\n- **HR-specific vocabulary**: language for performance reviews, recruitment, onboarding, inter-departmental communication, and training coordination requires deliberate development\n- **Collocations**: basic vocabulary choices dominate; natural professional collocations (*\"build fluency,\" \"enhance communication skills,\" \"conduct an appraisal\"*) are not yet present in productive output\n- **False cognates and L1 interference**: e.g. *\"practice sports\"* (from French *pratiquer*); these patterns will require explicit attention\n- **Reading range**: exposure to authentic English professional documents — HR brochures, emails, meeting minutes — will be essential given the bilingual nature of her responsibilities at HEC\n\n---\n\n### 2.4 Listening\n\n**Level: A2+ (1.5)**\n\n#### Strengths\n- Demonstrates a basic ability to follow **simple, clear spoken input** in familiar contexts\n- Willingness to **seek clarification actively** when she does not understand — a valuable metacognitive habit that will support her development\n- Responds appropriately when input is simplified or repeated\n\n#### Development Areas\n- **Comprehension in live interaction**: Solène struggled to follow the role-play scenario during the oral assessment; understanding spoken English at natural pace in an unfamiliar professional context is a significant current challenge\n- **Telephone comprehension**: the absence of visual cues makes telephone interaction particularly demanding at this level; this is a high-priority area given her professional context\n- **Extended listening**: following a meeting, a multi-turn exchange, or a set of spoken instructions without support is not yet reliably achievable\n- **Processing speed**: there is a visible gap between hearing and understanding in real time, which places pressure on both interaction and spoken production\n\n---\n\n### 2.5 Speaking\n\n**Level: A2 (1)**\n\n#### Strengths\n- **Motivated and willing to attempt communication** even under pressure; does not shut down when faced with difficulty\n- Conveys basic personal and professional information when given sufficient time and support\n- **Asks questions and signals non-understanding** — a genuine strength that reflects communicative confidence at this stage\n- Shows awareness of what she wants to say, even when she cannot yet say it fluently\n\n#### Development Areas\n- **Fluency**: spoken production is hesitant and effortful; pauses are frequent and extended\n- **Accuracy in speech**: grammatical structures available in writing are not yet reliably transferred to spoken production\n- **Vocabulary activation**: receptive vocabulary is not yet accessible under the real-time pressures of live conversation\n- **Pronunciation**: requires development for clarity and intelligibility in professional contexts, particularly on the telephone\n- **Interaction management**: managing turn-taking, asking for clarification politely, and maintaining a conversation across multiple exchanges are all areas for development\n- **Telephone communication**: currently the most vulnerable professional skill; Solène has indicated she sends emails specifically to avoid telephone calls — a pattern that reflects the real gap and that training should seek to address\n\n---\n\n## 3. Learning Objectives\n\nThe following three objectives have been defined in alignment with Solène's professional context, her validated goals, and the priority areas identified across both assessments.\n\n- **Utiliser des formules standard pour rédiger des emails professionnels variés** afin de gérer les échanges écrits de façon autonome.\n\n- **Comprendre et employer le vocabulaire RH essentiel à l'écrit et à l'oral** pour communiquer efficacement dans son environnement professionnel.\n\n- **Participer à un appel téléphonique professionnel simple en anglais** afin de réduire sa dépendance à la communication écrite.\n\n---\n\n## 4. Training Plan\n\n---\n\n### 4.1 Programme Overview\n\n| Parameter | Detail |\n|---|---|\n| **Current Level** | A2+ (1.5) – B1 (2) |\n| **Target Level** | B1 (2) consolidated across all skills |\n| **Total Hours** | 10 coaching hours |\n| **Format** | Video call (visio) |\n| **Start Date** | September 2026 |\n| **Availability** | Monday (morning & afternoon) / Wednesday (morning & afternoon) |\n\n---\n\n### 4.2 Priority Content Areas\n\nGiven Solène's professional responsibilities — writing bilingual training brochures, sending emails to colleagues and external partners, managing occasional telephone queries, and coordinating with her manager at HEC — the following content areas are prioritised for the 10-hour programme:\n\n**Written Communication (approx. 4 hours)**\n- Professional email structure: opening formulas, stating purpose, providing information, closing\n- Standard language for routine query types: information requests, confirmations, follow-ups, apologies\n- Register awareness: formal vs. informal; appropriate tone for internal and external communication\n- Bilingual brochure writing: clarity, precision, and professional vocabulary in context\n\n**Telephone and Spoken Interaction (approx. 3 hours)**\n- Telephone-specific language: greetings, identifying yourself, stating purpose, asking for repetition\n- Clarification strategies: *\"Could you repeat that?\" \"I'm sorry, I didn't catch that.\" \"Could you spell that for me?\"*\n- Role-play practice: simulated calls based on real professional scenarios from Solène's context\n- Listening tasks: short recorded telephone exchanges at A2+–B1 level\n\n**Grammar and Tense Development (approx. 2 hours)**\n- Future forms in context: *\"going to,\" \"will,\"* present continuous for arrangements\n- Simple past consolidation and extension: time adverbials, sequencing\n- Present simple and continuous: professional descriptions, ongoing projects\n- Introduction to passive voice: common professional contexts (*\"training sessions are held,\" \"emails are sent\"*)\n\n**Vocabulary and Domain Knowledge (approx. 1 hour)**\n- Core HR vocabulary: training, onboarding, appraisal, recruitment, scheduling\n- Professional collocations relevant to Solène's written and spoken output\n- False cognate and L1 interference awareness\n\n---\n\n### 4.3 Scheduling Notes\n\n- Programme to **begin in September 2026**\n- Sessions to be held via **video call (visio)**\n- Preferred slots: **Monday morning or afternoon / Wednesday morning or afternoon**\n- Session length and frequency to be confirmed with the candidate and her manager at programme launch\n\n---\n\n## 5. Evaluator Narrative Summary\n\nSolène PICOT presents as a thoughtful and professionally engaged candidate whose English profile reflects the specific demands and constraints of her academic and work context. She is currently completing a Master's degree in Human Resources as an apprentice at HEC Paris, a demanding dual commitment that shapes both her exposure to English and the urgency of her learning goals.\n\nHer written profile is the more developed of the two. Across her free-writing responses, Solène demonstrates clear communicative intent, logical organisation, and the beginnings of a professional lexical range. She writes with purpose and without ambiguity, which is a meaningful achievement at this level. The structural limitations — absent passive voice, undeveloped future forms, no conditional structures, and limited discourse connectors — are entirely consistent with the B1 (2) placement and represent a coherent and addressable developmental roadmap rather than fragmented or unpredictable gaps.\n\nHer oral profile tells a different story. During the oral assessment, Solène found the role-play scenario genuinely challenging to follow, and her spoken production under real-time pressure was hesitant and limited. This gap between written and spoken English is not uncommon among candidates whose primary professional exposure to English is through written channels — and Solène herself acknowledged that she often chooses to send an email rather than make a telephone call precisely because the spoken channel is more demanding. This is an honest and self-aware position, and it directly informs the priorities of her training programme.\n\nWhat is notable — and what makes Solène a strong candidate for meaningful progress — is her attitude. She is visibly motivated, she asks questions when she does not understand, and she persists in attempting to communicate even when she is not certain. These are not trivial qualities. At A2–B1, the willingness to engage and to take communicative risks is one of the strongest predictors of progression, and Solène demonstrates both consistently.\n\nHer professional context provides an unusually concrete and motivating anchor for her training. She works daily with English-speaking colleagues and collaborators, contributes to bilingual training brochures, and operates within an international academic environment. The gap between her current oral level and the communicative demands of her role is real — but it is also bridgeable within a well-structured 10-hour programme that keeps her actual professional tasks at the centre of every session.\n\nThe recommended focus on professional email writing, telephone interaction, core HR vocabulary, and tense development reflects both the evidence of the assessment and the practical priorities that Solène and her evaluator identified together. With consistent engagement and targeted practice, consolidation at B1 (2) across all skills — including a meaningful uplift in spoken confidence — is a realistic and achievable outcome.\n\n---\n\n## 6. Sign-Off\n\n---\n\n| | |\n|---|---|\n| **Evaluator** | Hannah DURRANT |\n| **Organisation** | Linguaid France |\n| **Written Test Date** | 22 June 2026 |\n| **Oral Assessment Date** | 29 June 2026 |\n| **Report Issued** | June 2026 |\n\n---\n\n*This report has been prepared by Linguaid France following the completion of both written and oral assessments. It is strictly confidential and intended solely for internal training planning and HR purposes. It should not be reproduced or shared outside of the relevant training coordination team without the consent of the candidate.*\n\n---\n\n*© Linguaid France — Language Assessment and Training Division*",
     "oralToken": "64a6147da5327905",
     "createdAt": "2026-06-22T09:59:13.230Z",
     "reportSummary": {
@@ -2537,7 +2692,28 @@
       ]
     },
     "oralBookedAt": "2026-06-22T19:32:46.185Z",
-    "oralEmailSentTo": "Hannah"
+    "oralEmailSentTo": "Hannah",
+    "programmePdfPath": "/var/www/vhosts/linguaid.net/eval.linguaid.net/app/data/programmes/c270935ec6f6.pdf",
+    "conventionData": {
+      "proposalAcceptedAt": "2026-06-29T17:32:13.678Z",
+      "siret": "",
+      "civility": "Madame",
+      "signatory": "Solène PICOT",
+      "price": "1340",
+      "dateStart": "2026-09-07",
+      "dateEnd": "2026-12-31",
+      "isCPF": false,
+      "signatoryEmail": "",
+      "notes": "Créneaux idéaux : START IN SEPTEMBER",
+      "learnerTel": "33139677686",
+      "orderNumber": "",
+      "companyAddress": "",
+      "pdfPath": "/var/www/vhosts/linguaid.net/eval.linguaid.net/app/data/conventions/convention_0e1b8ce7b8dcd2d3888053b56f157401a54f3f0e.pdf",
+      "signingToken": "0e1b8ce7b8dcd2d3888053b56f157401a54f3f0e",
+      "generatedAt": "2026-06-29T17:33:31.279Z",
+      "availabilities": "Lundi Matin, Après-midi, Mercredi Après-midi, Matin",
+      "sentToCatherineAt": "2026-06-29T17:33:39.574Z"
+    }
   },
   {
     "id": "716a0445bcc6",
@@ -3200,5 +3376,464 @@
       "availabilities": "Déjà planifié avec Stephanie",
       "sentToCatherineAt": "2026-06-26T12:00:15.242Z"
     }
+  },
+  {
+    "id": "7ffa7ab23ec6",
+    "name": "Alexandre COMMERGNAT",
+    "email": "commergnat@hec.fr",
+    "company": "HEC",
+    "dept": "",
+    "jobtitle": "Directeur associé",
+    "testdate": "2026-06-29",
+    "scores": {
+      "total": 0,
+      "max": 0
+    },
+    "freewriting": {
+      "q39": "",
+      "q40": "",
+      "q41": ""
+    },
+    "goals": [
+      "Se présenter et valoriser son rôle professionnel avec clarté et assurance dans différents contextes de communication.",
+      "Préparer et délivrer une prise de parole stratégique ou un pitch professionnel de manière structurée, fluide et adaptée à l'auditoire.",
+      "Renforcer son aisance à l'oral par la pratique régulière de situations variées : appels téléphoniques, échanges informels, réponses spontanées."
+    ],
+    "avail": {},
+    "otherNeeds": "",
+    "status": "programme_done",
+    "isRenewal": true,
+    "oralToken": "7406e8445caed103",
+    "oralData": {
+      "evaluator": "Renewal",
+      "sessionDate": "2026-06-29",
+      "listeningLevel": "B2 (3)",
+      "speakingLevel": "B2 (3)",
+      "targetLevel": "B2 (3)",
+      "totalHours": 10,
+      "coachingHours": 10,
+      "homeworkHours": "",
+      "dateStart": "2026-07-03",
+      "dateEnd": "2026-12-31",
+      "validatedGoals": [],
+      "validatedAvail": [],
+      "criteria": {},
+      "strengths": "Sa maîtrise de la langue s'est nettement améliorée, reflétant son engagement envers l'excellence et l'ouverture internationale. Confiance grandissante se reflétant dans un ton plus assuré.",
+      "gaps": "Prise de parole stratégique ou pitch professionnel structuré, fluide et adapté à l'auditoire (objectif en cours d'acquisition).",
+      "profile": "Alexandre montre des signes d'amélioration, sa confiance grandissante se reflétant dans un ton plus assuré. Sa maîtrise de la langue s'est nettement améliorée, ce qui reflète son engagement envers l'excellence et l'ouverture internationale.",
+      "additionalNotes": "Renewal candidate - previous course data used",
+      "topics": [
+        "Se présenter",
+        "Small talk",
+        "Téléphoner",
+        "Emails professionnels",
+        "Réunions et visioconférences",
+        "Présentations orales"
+      ],
+      "objectiveSuffixes": [],
+      "trainingTitle": "Formation en Anglais Professionnel"
+    },
+    "reportSummary": {
+      "overallLevel": "B2 (3)",
+      "grammarLevel": "B2 (3)",
+      "writingLevel": "B2 (3)",
+      "readingLevel": "B2 (3)",
+      "listeningLevel": "B2 (3)",
+      "speakingLevel": "B2 (3)",
+      "keyGaps": "Prise de parole stratégique ou pitch professionnel structuré, fluide et adapté à l'auditoire (objectif en cours d'acquisition)."
+    },
+    "finalReport": "## Renewal — Previous Course Summary\n\n### Candidate Profile\nAlexandre montre des signes d'amélioration, sa confiance grandissante se reflétant dans un ton plus assuré. Sa maîtrise de la langue s'est nettement améliorée, ce qui reflète son engagement envers l'excellence et l'ouverture internationale.\n\n### Strengths\nSa maîtrise de la langue s'est nettement améliorée, reflétant son engagement envers l'excellence et l'ouverture internationale. Confiance grandissante se reflétant dans un ton plus assuré.\n\n### Areas for Improvement\nPrise de parole stratégique ou pitch professionnel structuré, fluide et adapté à l'auditoire (objectif en cours d'acquisition).\n\n## Learning Objectives\n1. Se présenter et valoriser son rôle professionnel avec clarté et assurance dans différents contextes de communication.\n2. Préparer et délivrer une prise de parole stratégique ou un pitch professionnel de manière structurée, fluide et adaptée à l'auditoire.\n3. Renforcer son aisance à l'oral par la pratique régulière de situations variées : appels téléphoniques, échanges informels, réponses spontanées.\n\n## Training Recommendation\nRenewal course based on previous training. Starting level: B2 (3). Target level: B2 (3).",
+    "createdAt": "2026-06-29T08:39:15.467Z",
+    "programmePdfPath": "/var/www/vhosts/linguaid.net/eval.linguaid.net/app/data/programmes/7ffa7ab23ec6.pdf",
+    "conventionData": {
+      "proposalAcceptedAt": "2026-06-29T08:40:22.633Z",
+      "siret": "",
+      "civility": "Monsieur",
+      "signatory": "Alexandre COMMERGNAT",
+      "price": "",
+      "dateStart": "2026-07-03",
+      "dateEnd": "2026-12-31",
+      "isCPF": false,
+      "signatoryEmail": "",
+      "notes": "Leone renouvellement",
+      "learnerTel": "33139679932",
+      "orderNumber": "",
+      "companyAddress": "",
+      "pdfPath": "/var/www/vhosts/linguaid.net/eval.linguaid.net/app/data/conventions/convention_5722cefc0e45eb1cc69bb3efe6601373dddadd0b.pdf",
+      "signingToken": "5722cefc0e45eb1cc69bb3efe6601373dddadd0b",
+      "generatedAt": "2026-06-29T08:40:30.592Z",
+      "availabilities": "le vendredi 3 juillet 2026 de 10h00 à 11h00",
+      "sentToCatherineAt": "2026-06-29T08:41:16.048Z",
+      "convocationSentAt": "2026-06-29T09:16:36.369Z",
+      "convocTrainer": "leone"
+    }
+  },
+  {
+    "id": "40b7f9ccb378",
+    "name": "Amel Aouni",
+    "email": "amelaouni00@gmail.com",
+    "company": "",
+    "jobtitle": "",
+    "dept": "",
+    "testdate": "",
+    "scores": {
+      "total": 0,
+      "max": 26
+    },
+    "freewriting": {
+      "q39": "",
+      "q40": "",
+      "q41": ""
+    },
+    "goals": [],
+    "avail": {},
+    "otherNeeds": "",
+    "status": "invited",
+    "oralToken": "1810fc069970237a",
+    "createdAt": "2026-06-29T08:57:15.378Z",
+    "invitedAt": "2026-06-29T08:57:15.378Z",
+    "lastReminderAt": "2026-06-29T08:57:15.378Z"
+  },
+  {
+    "id": "0d4e80c7e119",
+    "name": "Vincent FERUGLIO",
+    "email": "feruglio@hec.fr",
+    "company": "HEC Paris",
+    "dept": "",
+    "jobtitle": "Responsable de Domaine Applicatif Ventes et Marketing",
+    "testdate": "2026-06-29",
+    "scores": {
+      "total": 0,
+      "max": 0
+    },
+    "freewriting": {
+      "q39": "",
+      "q40": "",
+      "q41": ""
+    },
+    "goals": [
+      "Renforcer sa compréhension orale, notamment face à différents accents, et fluidifier son expression orale en contexte professionnel.",
+      "S'entraîner à participer à des réunions, appels téléphoniques ou discussions de travail, en utilisant un vocabulaire adapté et des structures claires.",
+      "Maîtriser les formulations utiles pour expliquer des problèmes simples, donner des consignes et proposer des solutions dans son domaine professionnel."
+    ],
+    "avail": {},
+    "otherNeeds": "",
+    "status": "programme_done",
+    "isRenewal": true,
+    "oralToken": "afb7d240ee44cd8b",
+    "oralData": {
+      "evaluator": "Renewal",
+      "sessionDate": "2026-06-29",
+      "listeningLevel": "B2 (3)",
+      "speakingLevel": "B2 (3)",
+      "targetLevel": "B2 (3)",
+      "totalHours": 10,
+      "coachingHours": 10,
+      "homeworkHours": "",
+      "dateStart": "2026-07-03",
+      "dateEnd": "2026-12-31",
+      "validatedGoals": [],
+      "validatedAvail": [],
+      "criteria": {},
+      "strengths": "Bonne prononciation, bonne intonation, bases grammaticales solides, bonne compréhension orale, met à profit ses déplacements à l'étranger pour pratiquer la langue.",
+      "gaps": "Connaissance des structures grammaticales évoluées, connaissance des termes usuels du domaine professionnel, palette des structures grammaticales utilisées, précision dans le choix des structures grammaticales, suppression des erreurs dans l'utilisation des structures grammaticales.",
+      "profile": "Il est devenu plus motivé au fil du cours et il possède un bon vocabulaire général. Pour les prochains cours : vocabulaire professionnel et grammaire avancée.",
+      "additionalNotes": "Renewal candidate - previous course data used",
+      "topics": [
+        "Se présenter",
+        "Small talk",
+        "Téléphoner",
+        "Emails professionnels",
+        "Réunions et visioconférences",
+        "Présentations orales"
+      ],
+      "objectiveSuffixes": [],
+      "trainingTitle": "Formation en Anglais Professionnel"
+    },
+    "reportSummary": {
+      "overallLevel": "B2 (3)",
+      "grammarLevel": "B2 (3)",
+      "writingLevel": "B2 (3)",
+      "readingLevel": "B2 (3)",
+      "listeningLevel": "B2 (3)",
+      "speakingLevel": "B2 (3)",
+      "keyGaps": "Connaissance des structures grammaticales évoluées, connaissance des termes usuels du domaine professionnel, palette des structures grammaticales utilisées, précision dans le choix des structures grammaticales, suppression des erreurs dans l'utilisation des structures grammaticales."
+    },
+    "finalReport": "## Renewal — Previous Course Summary\n\n### Candidate Profile\nIl est devenu plus motivé au fil du cours et il possède un bon vocabulaire général. Pour les prochains cours : vocabulaire professionnel et grammaire avancée.\n\n### Strengths\nBonne prononciation, bonne intonation, bases grammaticales solides, bonne compréhension orale, met à profit ses déplacements à l'étranger pour pratiquer la langue.\n\n### Areas for Improvement\nConnaissance des structures grammaticales évoluées, connaissance des termes usuels du domaine professionnel, palette des structures grammaticales utilisées, précision dans le choix des structures grammaticales, suppression des erreurs dans l'utilisation des structures grammaticales.\n\n## Learning Objectives\n1. Renforcer sa compréhension orale, notamment face à différents accents, et fluidifier son expression orale en contexte professionnel.\n2. S'entraîner à participer à des réunions, appels téléphoniques ou discussions de travail, en utilisant un vocabulaire adapté et des structures claires.\n3. Maîtriser les formulations utiles pour expliquer des problèmes simples, donner des consignes et proposer des solutions dans son domaine professionnel.\n\n## Training Recommendation\nRenewal course based on previous training. Starting level: B2 (3). Target level: .",
+    "createdAt": "2026-06-29T09:24:09.949Z",
+    "programmePdfPath": "/var/www/vhosts/linguaid.net/eval.linguaid.net/app/data/programmes/0d4e80c7e119.pdf",
+    "conventionData": {
+      "proposalAcceptedAt": "2026-06-29T09:25:03.434Z",
+      "siret": "",
+      "civility": "Monsieur",
+      "signatory": "Vincent FERUGLIO",
+      "price": "",
+      "dateStart": "2026-07-03",
+      "dateEnd": "2026-12-31",
+      "isCPF": false,
+      "signatoryEmail": "",
+      "notes": "Renouvellement Anna MALZY avec un démarrage par visioconférence le vendredi 3 juillet 2026 de 14h00 à 15h00",
+      "learnerTel": "33139677655",
+      "orderNumber": "",
+      "companyAddress": "",
+      "pdfPath": "/var/www/vhosts/linguaid.net/eval.linguaid.net/app/data/conventions/convention_f01335ac458eb34ede5cc8df14f4914804e3951f.pdf",
+      "signingToken": "f01335ac458eb34ede5cc8df14f4914804e3951f",
+      "generatedAt": "2026-06-29T09:25:09.872Z",
+      "availabilities": "Anna MALZY avec un démarrage par visioconférence le vendredi 3 juillet 2026 de 14h00 à 15h00",
+      "sentToCatherineAt": "2026-06-29T09:25:37.970Z",
+      "convocationSentAt": "2026-06-29T09:27:17.604Z",
+      "convocTrainer": "anna"
+    }
+  },
+  {
+    "id": "f79f0cfac850",
+    "name": "Geraldine MATHERON",
+    "email": "matheron@hec.fr",
+    "company": "HEC",
+    "dept": "",
+    "jobtitle": "Chargée de projet",
+    "testdate": "2026-06-29",
+    "scores": {
+      "total": 0,
+      "max": 0
+    },
+    "freewriting": {
+      "q39": "",
+      "q40": "",
+      "q41": ""
+    },
+    "goals": [
+      "Se présenter, décrire son poste et interagir à l'oral avec aisance dans des situations professionnelles variées, formelles ou informelles.",
+      "Exprimer clairement ses idées lors de discussions ou réunions courtes, en étant capable d'expliquer un problème simple et de proposer une solution.",
+      "Développer sa fluidité et sa confiance à l'oral grâce à une pratique régulière de la conversation en anglais, adaptée aux besoins du poste."
+    ],
+    "avail": {},
+    "otherNeeds": "",
+    "status": "programme_done",
+    "isRenewal": true,
+    "oralToken": "89d996c2cc746d4d",
+    "oralData": {
+      "evaluator": "Renewal",
+      "sessionDate": "2026-06-29",
+      "listeningLevel": "B2 (3)",
+      "speakingLevel": "B2 (3)",
+      "targetLevel": "B2 (3)",
+      "totalHours": 10,
+      "coachingHours": 10,
+      "homeworkHours": "",
+      "dateStart": "2026-07-01",
+      "dateEnd": "2026-12-31",
+      "validatedGoals": [],
+      "validatedAvail": [],
+      "criteria": {},
+      "strengths": "Sa pratique orale l'aide à atteindre un niveau avancé de fluidité. Un effort considérable a été fait pour préparer les sujets de discussion, permettant l'utilisation d'un vocabulaire plus spécialisé.",
+      "gaps": "",
+      "profile": "Un effort considérable a été fait pour préparer les sujets de discussion, et cela a permis d'utiliser un vocabulaire plus spécialisé. Bravo Géraldine !",
+      "additionalNotes": "Renewal candidate - previous course data used",
+      "topics": [
+        "Se présenter",
+        "Small talk",
+        "Téléphoner",
+        "Emails professionnels",
+        "Réunions et visioconférences",
+        "Présentations orales"
+      ],
+      "objectiveSuffixes": [],
+      "trainingTitle": "Formation en Anglais Professionnel"
+    },
+    "reportSummary": {
+      "overallLevel": "B2 (3)",
+      "grammarLevel": "B2 (3)",
+      "writingLevel": "B2 (3)",
+      "readingLevel": "B2 (3)",
+      "listeningLevel": "B2 (3)",
+      "speakingLevel": "B2 (3)",
+      "keyGaps": ""
+    },
+    "finalReport": "## Renewal — Previous Course Summary\n\n### Candidate Profile\nUn effort considérable a été fait pour préparer les sujets de discussion, et cela a permis d'utiliser un vocabulaire plus spécialisé. Bravo Géraldine !\n\n### Strengths\nSa pratique orale l'aide à atteindre un niveau avancé de fluidité. Un effort considérable a été fait pour préparer les sujets de discussion, permettant l'utilisation d'un vocabulaire plus spécialisé.\n\n### Areas for Improvement\n\n\n## Learning Objectives\n1. Se présenter, décrire son poste et interagir à l'oral avec aisance dans des situations professionnelles variées, formelles ou informelles.\n2. Exprimer clairement ses idées lors de discussions ou réunions courtes, en étant capable d'expliquer un problème simple et de proposer une solution.\n3. Développer sa fluidité et sa confiance à l'oral grâce à une pratique régulière de la conversation en anglais, adaptée aux besoins du poste.\n\n## Training Recommendation\nRenewal course based on previous training. Starting level: B2 (3). Target level: B2 (3).",
+    "createdAt": "2026-06-29T09:29:53.790Z",
+    "programmePdfPath": "/var/www/vhosts/linguaid.net/eval.linguaid.net/app/data/programmes/f79f0cfac850.pdf",
+    "conventionData": {
+      "proposalAcceptedAt": "2026-06-29T09:32:53.726Z",
+      "siret": "",
+      "civility": "Madame",
+      "signatory": "Geraldine MATHERON",
+      "price": "1340",
+      "dateStart": "2026-07-01",
+      "dateEnd": "2026-12-31",
+      "isCPF": false,
+      "signatoryEmail": "",
+      "notes": "Renouvellement - Leone Crinnion avec un démarrage par visioconférence le mercredi 1 juillet 2026 de 15h00 à 16h00.",
+      "learnerTel": "33139677292",
+      "orderNumber": "",
+      "companyAddress": "",
+      "pdfPath": "/var/www/vhosts/linguaid.net/eval.linguaid.net/app/data/conventions/convention_2541339e530552c7b0f37910978500fc336d24e1.pdf",
+      "signingToken": "2541339e530552c7b0f37910978500fc336d24e1",
+      "generatedAt": "2026-06-29T09:33:04.184Z",
+      "availabilities": "Leone Crinnion avec un démarrage par visioconférence le mercredi 1 juillet 2026 de 15h00 à 16h00.",
+      "sentToCatherineAt": "2026-06-29T09:36:40.563Z",
+      "convocationSentAt": "2026-06-29T09:48:12.199Z",
+      "convocTrainer": "leone"
+    }
+  },
+  {
+    "id": "61e62d5d471d",
+    "name": "Lamy Emmanuel",
+    "email": "emmanuel.lamy@bbraun.com",
+    "company": "B. Braun Medical",
+    "dept": "Commercial",
+    "jobtitle": "Directeur Commercial",
+    "testdate": "2026-06-29",
+    "scores": {
+      "total": 20,
+      "max": 26
+    },
+    "freewriting": {
+      "q39": "I'm Commercial Director in a company which specialized in a medical field. I'm married, two children and I practice road cycling",
+      "q40": "I grew in Versailles near Paris. My parent was divorced and after 7 years in the north of France Mu mum decided to leave Versailles and to go in the south of France",
+      "q41": "My objective is to live in moutain area because, I love moutain. We have schedule a Trip this summer in the West of the Canada"
+    },
+    "goals": [
+      "Participer efficacement à un appel téléphonique professionnel",
+      "Comprendre et utiliser le vocabulaire essentiel de son domaine professionnel",
+      "Répondre avec aisance à des questions déstabilisantes lors d’une présentation orale",
+      "Préparer et présenter efficacement une prise de parole stratégique ou un pitch professionnel (mission, équipe, institution)",
+      "Mener une négociation simple ou intermédiaire en défendant ses intérêts tout en trouvant un compromis professionnel"
+    ],
+    "avail": {
+      "Lundi": "Matin, Après-midi",
+      "Vendredi": "Matin, Après-midi"
+    },
+    "otherNeeds": "",
+    "status": "written_report_done",
+    "oralToken": "058d4baf600e141f",
+    "createdAt": "2026-06-29T11:10:52.474Z",
+    "writtenReport": "# Initial English Language Evaluation Report\n**Linguaid France**\n\n---\n\n| | |\n|---|---|\n| **Candidate** | Lamy Emmanuel |\n| **Email** | emmanuel.lamy@bbraun.com |\n| **Department** | Commercial |\n| **Job Title** | Directeur Commercial |\n| **Test Date** | 29 June 2026 |\n| **Evaluator** | Linguaid France Assessment Team |\n\n---\n\n## 1. Overall CEFR Level\n\n**MCQ Score: 20/26 (77%)**\n\nBased on the scoring matrix applied to the MCQ result (73%+ = B1+), Emmanuel's **structural/grammatical knowledge** as measured by the multiple-choice component places him at **B1+ (2.5)**. However, the free writing responses introduce meaningful nuance: they reveal a candidate who can communicate with reasonable fluency and personal authenticity, but whose written accuracy falls somewhat short of a consolidated B1+ performance. Taking all components into account (see Section 2), the **overall placement is B1+ (2.5)**, with targeted work needed before he can operate reliably at B2 (3) in professional oral and written contexts — which is clearly the trajectory his stated goals require.\n\n---\n\n## 2. Skill Assessment Overview\n\n| Skill Area | Level | Notes |\n|---|---|---|\n| **Grammar (MCQ)** | B1+ (2.5) | 77% — solid grasp of core structures; some gaps at upper B1/B2 boundary |\n| **Writing (Free responses)** | B1 (2) | Communicates clearly but with recurring accuracy issues and limited complexity |\n| **Reading / Vocabulary** | B1+ (2.5) | Functional domain vocabulary; appropriate register awareness; some lexical gaps |\n| **Overall Placement** | B1+ (2.5) | A motivated, operational communicator with clear room to grow toward B2 (3) |\n\n---\n\n## 3. Detailed Grammar Analysis\n\n### 3.1 What Emmanuel Gets Right\n\n- **Basic sentence construction**: Emmanuel consistently produces grammatically recognisable sentences. Subject-verb-object order is well controlled (e.g., *\"I'm married, two children and I practice road cycling\"*).\n- **Present simple and continuous**: The use of *\"I'm Commercial Director\"* and *\"I practice\"* shows reliable command of basic tense forms.\n- **Coordinating conjunctions**: Basic linking with *\"and\"* is handled naturally throughout.\n- **Infinitive structures**: The construction *\"decided to leave\"* and *\"decided to go\"* is correctly formed, demonstrating sound knowledge of verb + infinitive patterns.\n- **MCQ performance (77%)**: A score of 20/26 confirms that Emmanuel has internalised most B1-level grammar rules — question forms, modal verbs, standard conditional patterns, and likely basic passive voice — at a recognition level, even if production lags behind.\n\n---\n\n### 3.2 Specific Grammar Gaps — Evidence from Free Writing\n\n#### ❌ Gap 1: Relative Clause Construction (Restrictive Clauses)\n\n> *\"a company which specialized in a medical field\"*\n\nThe relative clause requires a passive or present-tense form here. The intended meaning is either:\n- ✅ *\"a company **which specialises** in a medical field\"* (habitual/defining present simple), or\n- ✅ *\"a company **which is specialised** in a medical field\"* (passive state)\n\nUsing the simple past *\"specialized\"* is incorrect in this context and suggests uncertainty about when to use passive constructions vs. active tense forms in defining relative clauses.\n\n---\n\n#### ❌ Gap 2: Subject–Verb Agreement / Noun Plurality\n\n> *\"My parent was divorced\"*\n\nIn English, *\"parents\"* (plural) is the expected noun when referring to both father and mother in the context of divorce. The singular *\"parent\"* followed by *\"was\"* creates ambiguity — it reads as one parent being divorced, rather than the parents divorcing each other. Correct forms:\n- ✅ *\"My **parents** were divorced\"*, or\n- ✅ *\"My parents got divorced\"*\n\nThis reflects a common French-speaker interference pattern, where number agreement receives less overt marking.\n\n---\n\n#### ❌ Gap 3: Verb Tense — Past Simple vs. Past Perfect / Sequence Marking\n\n> *\"I grew in Versailles\"*\n\nThe correct verb here is **grew up**, not simply *\"grew\"*. This is not merely a phrasal verb omission (see Gap 5) — it also points to a broader difficulty in selecting the precise lexicogrammatical chunk appropriate to life-narrative discourse.\n\n> *\"after 7 years in the north of France Mu mum decided to leave Versailles\"*\n\nThe sequence is logically correct, but there is no grammatical marking of the temporal relationship. A more accurate B1+ form would be:\n- ✅ *\"After **spending** 7 years in the north of France, my mum decided to leave Versailles\"*\n\n---\n\n#### ❌ Gap 4: Preposition of Direction vs. Location\n\n> *\"to go in the south of France\"*\n\n> *\"to live in mountain area\"*\n\n> *\"a Trip this summer in the West of Canada\"*\n\nThis is a persistent and significant pattern. Emmanuel consistently uses **\"in\"** where English requires **\"to\"** for movement/direction:\n- ✅ *\"to go **to** the south of France\"*\n- ✅ *\"to live in **a** mountain area\"* (also missing article — see Gap 6)\n- ✅ *\"a trip **to** the west of Canada\"*\n\nThis is a classic French-language transfer error (*aller en* → incorrectly mapped to English *\"go in\"*).\n\n---\n\n#### ❌ Gap 5: Phrasal Verb — *Grow Up*\n\n> *\"I grew in Versailles\"*\n\nThe standard English expression is:\n- ✅ *\"I **grew up** in Versailles\"*\n\nOmitting the particle *\"up\"* changes the meaning entirely (*\"I grew\"* = I increased in size, which is unidiomatic here). This suggests limited active command of common English phrasal verbs in narrative contexts.\n\n---\n\n#### ❌ Gap 6: Article Use — Definite vs. Indefinite vs. Zero Article\n\n> *\"in moutain area\"* → missing indefinite article: ✅ *\"in **a** mountain area\"*\n> *\"in the West of the Canada\"* → incorrect definite article: ✅ *\"in the west of **Canada**\"* (no article before country names)\n\nArticle misuse is one of the most persistent challenges for French-speaking learners, and Emmanuel's writing confirms this pattern is active and requires systematic attention.\n\n---\n\n#### ❌ Gap 7: Future Forms — *Have Scheduled* vs. *Have Scheduled*\n\n> *\"We have schedule a Trip this summer\"*\n\nTwo errors are present:\n1. **Missing past participle**: *\"schedule\"* should be *\"scheduled\"* → ✅ *\"We **have scheduled** a trip\"*\n2. **Capitalisation**: *\"Trip\"* should not be capitalised mid-sentence.\n\nThe present perfect is the correct tense here (a completed arrangement with present relevance), and Emmanuel appears to be attempting it, which is a positive sign — but the form breaks down at the morphological level (failure to add *-ed* to form the past participle).\n\n---\n\n#### ❌ Gap 8: Spelling\n\nSeveral spelling errors are present:\n- *\"moutain\"* → ✅ **mountain** (appears twice — a fossilised error)\n- *\"Mu mum\"* → likely a typographical error, but worth noting\n- *\"moutain\"* recurrence suggests this is not a typo but a stored misspelling\n\n---\n\n## 4. Reading and Vocabulary Assessment\n\n### 4.1 Evidence from Free Writing\n\nEmmanuel's free writing responses, though brief, reveal a **functional B1+ vocabulary range** adequate for general communication and introductory professional exchanges. Key observations:\n\n- **Domain vocabulary**: He correctly uses *\"medical field\"* and *\"Commercial Director\"* — appropriate professional register.\n- **Everyday vocabulary**: *\"cycling,\" \"mountain area,\" \"south of France,\" \"scheduled a trip\"* — these are all correctly chosen lexical items at the conceptual level, even if grammar around them falters.\n- **Lexical range**: The vocabulary is functional but not rich. There are no idiomatic expressions, no professional collocations (*\"manage a portfolio,\" \"drive revenue,\" \"lead negotiations\"*), and no discourse markers beyond *\"because\"* and *\"and.\"*\n- **Register consistency**: Emmanuel writes in an appropriately informal-but-clear register throughout, suggesting he understands audience and context at a basic level.\n\n### 4.2 Inferred Reading Level\n\nGiven the MCQ score of 77% — which presupposes comprehension of the test instructions, contextualised sentences, and multiple distractors — Emmanuel's **receptive reading ability** likely exceeds his productive writing ability, as is typical at this level. His reading level is assessed at **B1+ (2.5)**, consistent with someone who can follow professional documents, standard emails, and structured presentations, but who may struggle with nuanced or dense written English (legal contracts, complex reports, idiomatic business writing).\n\n---\n\n## 5. Writing Assessment — Detailed Analysis by Response\n\n### 5.1 Q39 — Current Life and Work\n\n> *\"I'm Commercial Director in a company which specialized in a medical field. I'm married, two children and I practice road cycling.\"*\n\n**Strengths:**\n- Successfully conveys key personal and professional information\n- Present simple used correctly for job description and habits\n- Natural phrasing in *\"I practice road cycling\"* (though *\"I go road cycling\"* or *\"I cycle\"* would be more idiomatic)\n\n**Weaknesses:**\n- *\"which specialized\"* — incorrect tense/voice in relative clause (see Grammar Gap 1)\n- *\"I'm married, two children\"* — structurally incomplete; should be *\"I'm married with two children\"* or *\"I have two children\"*\n- No discourse markers or sentence variety; the text reads as a list rather than coherent prose\n\n**Writing Level for this response: B1 (2)**\n\n---\n\n### 5.2 Q40 — Hometown\n\n> *\"I grew in Versailles near Paris. My parent was divorced and after 7 years in the north of France Mu mum decided to leave Versailles and to go in the south of France.\"*\n\n**Strengths:**\n- Chronological narrative is logically ordered and comprehensible\n- Correctly uses *\"decided to leave\"* and *\"decided to go\"* (verb + infinitive)\n- Geographic references are clear and contextually appropriate\n\n**Weaknesses:**\n- *\"I grew\"* — missing phrasal verb particle *\"up\"* (see Gap 5)\n- *\"My parent was divorced\"* — number agreement error (see Gap 2)\n- *\"to go in the south of France\"* — directional preposition error (see Gap 4)\n- *\"Mu mum\"* — typographical error\n- No conjunctions of contrast or cause beyond *\"and\"*; the narrative lacks connective richness\n\n**Writing Level for this response: B1 (2)**\n\n---\n\n### 5.3 Q41 — Future Plans\n\n> *\"My objective is to live in moutain area because, I love moutain. We have schedule a Trip this summer in the West of the Canada.\"*\n\n**Strengths:**\n- Uses *\"because\"* to justify a personal preference — a sign of basic causal reasoning in writing\n- Attempts the present perfect (*\"have schedule\"*), showing awareness of the target form\n- The communicative intention is entirely clear\n\n**Weaknesses:**\n- *\"moutain\"* misspelled twice — fossilised error (see Gap 8)\n- Missing article: *\"in **a** mountain area\"* (see Gap 6)\n- Comma placement after *\"because\"* is incorrect\n- *\"We have schedule\"* — missing *-ed* past participle (see Gap 7)\n- *\"in the West of **the** Canada\"* — incorrect article use before country name (see Gap 6)\n- *\"a Trip\"* — unnecessary capitalisation\n\n**Writing Level for this response: B1 (2)**\n\n---\n\n## 6. Strengths\n\n- ✅ **Communicative clarity**: Despite grammatical gaps, all three responses are fully comprehensible. Emmanuel never loses the reader.\n- ✅ **Professional self-awareness**: He correctly identifies his role, context, and field in appropriate vocabulary.\n- ✅ **Solid MCQ performance (77%)**: His recognition-level grammar knowledge is substantially stronger than his production, which is an excellent foundation for rapid progress.\n- ✅ **Motivation and goal clarity**: His five stated learning goals are specific, professional, and highly actionable — suggesting a learner who knows what he needs and is likely to engage actively.\n- ✅ **Narrative logic**: Even when grammatically imperfect, Emmanuel's writing follows logical, temporal, and causal sequences effectively.\n- ✅ **Willingness to attempt complex forms**: His use of the present perfect (*\"have schedule\"*) and relative clauses (*\"which specialized\"*) shows ambition beyond his current accuracy level — a very positive indicator.\n\n---\n\n## 7. Areas for Improvement\n\n- ❗ **Prepositions of movement vs. location** (*in/to*): A high-frequency, high-impact gap that affects professional communication immediately.\n- ❗ **Article system** (a/an/the/zero): Pervasive and requires sustained, contextualised practice.\n- ❗ **Past participle morphology**: Essential for perfect tenses, passive constructions, and reporting — all critical in professional English.\n- ❗ **Passive voice in professional contexts**: Emmanuel will need passive structures constantly as Commercial Director (*\"It was decided that…,\" \"The budget has been approved…\"*).\n- ❗ **Phrasal verbs for professional and everyday use**: *grow up, set up, follow up, take on, roll out* — absence of these limits fluency and naturalness significantly.\n- ❗ **Spelling of high-frequency words**: *mountain* (and others) must be consolidated before C-suite-level presentations.\n- ❗ **Discourse connectors and cohesion**: Moving beyond *\"and\"* to use *however, therefore, as a result, whereas, despite this* will be essential for the negotiation and presentation goals Emmanuel has identified.\n- ❗ **Oral fluency and spontaneous response strategies**: His goals (phone calls, destabilising questions, pitches, negotiations) are all oral — writing accuracy must be complemented by intensive speaking practice.\n\n---\n\n## 8. Recommendations\n\n### 8.1 Target Level and Training Duration\n\n| Parameter | Recommendation |\n|---|---|\n| **Current Level** | B1+ (2.5) |\n| **Target Level** | B2 (3) |\n| **Recommended Format** | Individual coaching (given seniority and specific professional goals) |\n| **Estimated Hours** | **40–50 hours** of guided instruction + autonomous practice |\n| **Suggested Pace** | 2 × 1h sessions per week (available Mon/Fri AM or PM) |\n| **Estimated Duration** | 5–6 months at recommended pace |\n\n---\n\n### 8.2 Priority Focus Areas (Aligned with Stated Goals)\n\nGiven that **all five of Emmanuel's stated goals are oral and professional**, the training programme must prioritise **speaking and listening** while systematically addressing the grammar and vocabulary gaps identified above. Recommended thematic modules include:\n\n- Professional telephone calls and conference calls in medical/commercial contexts\n- Presenting strategy, team, and institutional pitch (Board level)\n- Handling challenging questions under pressure (role-play scenarios)\n- Commercial negotiation language and compromise-building phrases\n- Essential medical device and commercial vocabulary in English\n\n---\n\n### 8.3 Learning Objectives (Bloom's Taxonomy)\n\n#### 🔵 Objective 1 — *Remember / Understand* (Knowledge Foundation)\n**\"By the end of the programme, Emmanuel will be able to identify and accurately use core professional grammar structures — including passive voice, present perfect, and prepositions of direction — in written and spoken sentences related to his commercial role.\"**\n*(Targets: Gap 1 relative clauses, Gap 4 prepositions, Gap 7 present perfect)*\n\n---\n\n#### 🟡 Objective 2 — *Apply / Analyse* (Skill in Context)\n**\"By the end of the programme, Emmanuel will be able to construct and deliver a structured professional pitch of 3–5 minutes in English, presenting his company's mission, commercial team, and value proposition, using appropriate discourse connectors, register, and domain-specific vocabulary.\"**\n*(Targets: stated goal — pitch/strategic presentation; cohesion and vocabulary gaps)*\n\n---\n\n#### 🔴 Objective 3 — *Evaluate / Create* (Professional Autonomy)\n**\"By the end of the programme, Emmanuel will be able to conduct a simulated commercial negotiation in English — defending his position, managing objections, proposing compromise, and adapting his language in real time in response to unexpected questions or counterarguments.\"**\n*(Targets: stated goals — negotiation, phone calls, destabilising questions; oral fluency and strategic communication)*\n\n---\n\n*Report prepared by Linguaid France Assessment Team | Based on written placement test data | Date: 29 June 2026*\n\n---",
+    "reportSummary": {
+      "grammarLevel": "B1+",
+      "writingLevel": "B1",
+      "readingLevel": "B1+",
+      "overallLevel": "B1+",
+      "keyGaps": [
+        "Prepositions of movement vs. location — directional 'to' vs. locative 'in' (go to the south / live in an area)",
+        "Article system — missing indefinite article, incorrect definite article before country names",
+        "Past participle morphology — 'have schedule' instead of 'have scheduled'; impacts all perfect tenses and passives",
+        "Passive voice in relative clauses and professional reporting ('a company which is specialised in…')",
+        "Phrasal verbs for narrative and professional use — 'grow up', 'set up', 'follow up', 'take on'",
+        "Subject-verb number agreement — 'My parent was' instead of 'My parents were'",
+        "Spelling of high-frequency words — 'mountain' misspelled consistently as 'moutain'"
+      ]
+    },
+    "oralLinkSentAt": "2026-06-29T17:29:08.367Z",
+    "oralLastReminderAt": "2026-06-29T17:29:08.367Z",
+    "oralEvaluator": "Hannah",
+    "oralEmailSentTo": "Hannah"
+  },
+  {
+    "id": "mqzhznhxu549n",
+    "courseType": "legal",
+    "name": "Cyril BLANCHOT",
+    "email": "cyril.blanchot@avocat.fr",
+    "phone": "0678913503",
+    "region": "Rhône (Autre en France)",
+    "lawyerType": "Avocat",
+    "jobtitle": "Associé",
+    "company": "Cabinet Cyril BLANCHOT",
+    "dept": "Cabinet Cyril BLANCHOT",
+    "experience": "14",
+    "legalDomains": "Private Equity / M&A",
+    "legalDocs": "Share Purchase Agreement / Shareholder's Agreement",
+    "selfLevelOral": "oui",
+    "selfLevelWriting": "oui",
+    "currentUsage": "Travaille en anglais cette année, surtout à l'oral ; de plus en plus de dossiers en anglais avec des visioconférences en anglais",
+    "mediaVO": "parfois",
+    "goalType": "oral",
+    "mainGoal": "De moins appréhender les échanges oraux en anglais / être plus confiant",
+    "goals": [
+      "Améliorer l’anglais juridique oral",
+      "De moins appréhender les échanges oraux en anglais / être plus confiant"
+    ],
+    "upcomingEvent": "",
+    "otherNeeds": "Degré de familiarité avec la terminologie technique anglaise dans son domaine : 2 = Assez familier. Importance de la maîtrise du domaine juridique par le formateur : moyennement important. Pratique du conseil. Bonne maîtrise du planning. Hobbies : IA / Sport. Accepte de travailler avec un spécialiste de l'équipe si le formateur principal n'est pas disponible.",
+    "financingMode": "CPF",
+    "cpfCreated": true,
+    "source": "LinkedIn",
+    "testdate": "",
+    "avail": {},
+    "freewriting": {
+      "q39": "",
+      "q40": "",
+      "q41": ""
+    },
+    "scores": {
+      "total": 0,
+      "max": 0
+    },
+    "status": "programme_done",
+    "isRenewal": false,
+    "writtenReport": null,
+    "reportSummary": null,
+    "oralData": {
+      "interviewDate": "2026-06-29",
+      "lawyerType": "Avocat",
+      "usagePct": "10% en croissance",
+      "otherLangs": "",
+      "legalDomains": "Droit des affaires / M&A",
+      "dominantSkills": "Calls en solo, Réunions clients, Présentations",
+      "blockers": "De plus en plus – mais pas énorme. Grand dossier en anglais l’année dernière – a travaillé bcp la lecture, la rédaction. 2 visios – mots de peur. J’ai plus envie – je suis relativement jeune – 42 ans – je suis tout seul en cabinet. Pas exclus qu’un jour je serai retenu dans un grand cabinet où la maitrise en anglais deviendrait essentiel. Je me debrouille, je me fais comprendre. La peur de m’exprimer – je comprenais 90% de ce qui se disait – même jargon ca allait – j’ai eu peur de faire des fautes de bases – je traduisait dans ma tête. Je parlais bien jeune mais je pratiquais pas assez. \nActuellement j’ai un dossier de joint venture – mais essentiellement écrit. Je le fais pas dans une démarche d’urgence",
+      "approxLevel": "B1+",
+      "priorityGaps": "Expression orale, Compréhension orale, Confiance / aisance",
+      "notes": "De plus en plus – mais pas énorme. Grand dossier en anglais l’année dernière – a travaillé bcp la lecture, la rédaction. 2 visios – mots de peur. J’ai plus envie – je suis relativement jeune – 42 ans – je suis tout seul en cabinet. Pas exclus qu’un jour je serai retenu dans un grand cabinet où la maitrise en anglais deviendrait essentiel. Je me debrouille, je me fais comprendre. La peur de m’exprimer – je comprenais 90% de ce qui se disait – même jargon ca allait – j’ai eu peur de faire des fautes de bases – je traduisait dans ma tête. Je parlais bien jeune mais je pratiquais pas assez. \nActuellement j’ai un dossier de joint venture – mais essentiellement écrit. Je le fais pas dans une démarche d’urgence",
+      "recommendedProgramme": "CAJA",
+      "targetLevel": "C1 (4)",
+      "totalHours": 20,
+      "dateStart": "2026-06-29",
+      "financing": "CPF",
+      "intakeType": "legal_intake",
+      "cpfType": "CAJA",
+      "edofActionId": "CAJA-20H",
+      "coachingHours": 10,
+      "homeworkHours": 10,
+      "edofPrice": 2150,
+      "edofMCFLink": "https://www.moncompteformation.gouv.fr/espace-prive/html/#/formation/recherche/53968218700015_CAJA/53968218700015_CAJA-20H",
+      "objectiveSuffixes": [
+        "notamment lors de premiers contacts avec des clients ou confrères internationaux au cabinet.",
+        "en particulier lors d'entretiens clients dans le cadre de votre activité d'associé.",
+        "pour accompagner vos clients dans leurs décisions au sein du cabinet Cyril BLANCHOT.",
+        "dans le cadre de votre pratique quotidienne de la correspondance professionnelle en anglais.",
+        "notamment lors de la rédaction ou relecture de contrats dans vos dossiers clients.",
+        "pour défendre efficacement les intérêts de vos clients lors de négociations en anglais."
+      ],
+      "dateEnd": "2026-12-31",
+      "trainingTitle": "Communiquer en anglais juridique des affaires – CAJA – Niveau C1 (4)",
+      "isCPF": true
+    },
+    "finalReport": "## Final Evaluation Report — Legal English Needs Analysis\n\n**Candidate:** Cyril BLANCHOT\n**Job Title:** Associé — Cabinet Cyril BLANCHOT\n**Profile:** Avocat\n**Interview Date:** 29 June 2026\n**Interviewer:** Joss Frimond, Linguaid France\n\n---\n\n## Professional Context\n\nCyril BLANCHOT is a partner and sole practitioner at his own firm, specialising in **business law and M&A**. Although English currently represents approximately **10% of his professional activity**, this figure is growing. He has handled at least one significant cross-border matter in the past year and is currently working on a **joint venture file with an English-language dimension**, primarily written at this stage.\n\nCyril is strategic about his career trajectory. At 42, he runs his practice independently but does not exclude the possibility of joining a larger firm in the future — an environment in which **full professional command of English would become a core requirement**. His motivation is therefore both immediate and forward-looking, though he approaches the process without urgency.\n\n---\n\n## Needs Identified\n\nBased on the needs-analysis interview, Cyril's primary English usage in practice centres on the following professional situations:\n\n- **Solo client calls** — handling negotiations and client dialogue without support\n- **Client meetings and video conferences** — including multi-party discussions in an M&A context\n- **Presentations** — structuring and delivering legal positions clearly and convincingly in English\n\nHis written skills — reading and drafting — have been actively developed through recent casework and are notably stronger. The priority need is therefore **spoken communication**: the ability to interact fluently, accurately, and with authority in live professional situations.\n\n---\n\n## Current Level & Key Gaps\n\nCyril's approximate level, assessed through interview, is **B1+**.\n\nHis receptive skills are relatively solid — he reports understanding approximately 90% of spoken content in professional exchanges, including domain-specific legal vocabulary. His difficulties are concentrated in **active, spontaneous spoken production**.\n\nKey gaps identified are as follows:\n\n- **Spoken fluency and spontaneity** — Cyril reports mentally translating from French before speaking, which creates hesitation and slows his responses in real-time exchanges\n- **Confidence in spoken interaction** — despite understanding the conversation and knowing the subject matter, he experiences anxiety around making basic grammatical errors, which inhibits his participation\n- **Active oral participation** — two recent video conferences highlighted this gap directly; he understood the content but held back from contributing as fully as he would in French\n- **Oral accuracy under pressure** — the gap between his passive comprehension and his active spoken output is the defining challenge to address\n\nHis written English (reading and drafting of legal documents) is a relative strength and requires less immediate attention.\n\n---\n\n## Learning Objectives\n\nBy the end of the programme, Cyril should be able to:\n\n- **Conduct client calls and video conferences independently and confidently** in English, without relying on mental translation as a primary processing strategy\n- **Participate actively in multi-party meetings**, including M&A and joint venture discussions, with appropriate legal register and vocabulary\n- **Structure and deliver clear oral presentations** of legal positions, due diligence findings, and deal terms to English-speaking counterparts\n- **Manage interaction dynamically** — asking for clarification, buying processing time, and holding the floor with professional ease\n- **Reduce performance anxiety** by building strong spoken habits through repeated, contextualised legal practice\n\n---\n\n## Recommendation\n\n| Parameter | Detail |\n|---|---|\n| **Recommended Programme** | CAJA (Coaching Anglais Juridique Avancé) |\n| **Target Level** | C1 |\n| **Recommended Hours** | 20 hours |\n| **Proposed Start Date** | 29 June 2026 |\n| **Financing** | CPF |\n\nThe **CAJA programme** is recommended as it is specifically designed for legal professionals operating at an intermediate-advanced level who need to close the gap between strong passive competence and confident active production. The focus on **spoken legal English in realistic professional scenarios** — calls, negotiations, meetings, and presentations — directly addresses Cyril's identified needs.\n\nGiven that his written skills are already functional and that his current joint venture file provides a live working context, coaching sessions should draw on **real materials and situations from his practice** wherever possible. This will maximise relevance, efficiency, and engagement.\n\nTwenty hours is considered appropriate to achieve meaningful, durable progress toward C1 oral performance, in line with Cyril's professional ambitions.\n\n---\n\n## Sign-off\n\nThis report reflects the findings of a qualitative needs-analysis interview and does not constitute a formal CEFR-certified language assessment. Level indications are approximate and intended to guide programme design.\n\n**Prepared by:** Joss Frimond\n**Organisation:** Linguaid France\n**Date:** 29 June 2026",
+    "conventionData": {
+      "civility": "Monsieur",
+      "proposalAcceptedAt": "2026-06-29T17:41:51.751Z",
+      "siret": "",
+      "signatory": "Cyril BLANCHOT",
+      "price": "2150",
+      "dateStart": "2026-06-29",
+      "dateEnd": "2026-12-31",
+      "isCPF": true,
+      "signatoryEmail": "",
+      "notes": "Module 2 CAJA Avec Caja",
+      "learnerTel": "0678913503",
+      "orderNumber": "",
+      "companyAddress": "58 RUE Servient 69003 LYON",
+      "pdfPath": "/var/www/vhosts/linguaid.net/eval.linguaid.net/app/data/conventions/convention_62ccc109ae4b4d558d0dadc2fd36a8ac6e181cd9.pdf",
+      "signingToken": "62ccc109ae4b4d558d0dadc2fd36a8ac6e181cd9",
+      "generatedAt": "2026-06-29T17:56:04.392Z",
+      "availabilities": "Déjà avec Natasha",
+      "sentToCatherineAt": "2026-06-29T18:01:07.724Z",
+      "convocationSentAt": "2026-06-29T18:35:33.843Z",
+      "convocTrainer": "joss"
+    },
+    "oralToken": "mqzhznhx9lkd1",
+    "createdAt": "2026-06-29T17:34:43.893Z",
+    "intakeToken": "d191e4717d4f99e7",
+    "programmePdfPath": "/var/www/vhosts/linguaid.net/eval.linguaid.net/app/data/programmes/mqzhznhxu549n.pdf"
   }
 ]

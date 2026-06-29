@@ -542,7 +542,48 @@
   </div><!-- /tab-formation -->
 
   <div class="tab-pane" id="tab-data">
-  <div class="two-col">
+
+  <div class="step-box" style="max-width:560px">
+    <div class="step-label">DONNÉES CANDIDAT</div>
+    <h3 style="margin-top:4px;margin-bottom:6px">Identité</h3>
+    <p style="color:#64748b;font-size:13px;margin-bottom:20px">Source de vérité — toute modification se répercute sur la proposition, la convention et la convocation.</p>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+      <div style="grid-column:1/-1">
+        <label style="font-size:12px;color:#64748b;display:block;margin-bottom:4px">Civilité</label>
+        <select id="idCivility" style="width:180px;font-size:13px;padding:7px 10px;border:1px solid #e2e8f0;border-radius:6px;background:#fff">
+          <option value="Monsieur">Monsieur</option>
+          <option value="Madame">Madame</option>
+          <option value="Maître">Maître</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:12px;color:#64748b;display:block;margin-bottom:4px">Prénom</label>
+        <input id="idFirstName" type="text" style="width:100%;font-size:13px;padding:7px 10px;border:1px solid #e2e8f0;border-radius:6px;box-sizing:border-box">
+      </div>
+      <div>
+        <label style="font-size:12px;color:#64748b;display:block;margin-bottom:4px">Nom</label>
+        <input id="idLastName" type="text" style="width:100%;font-size:13px;padding:7px 10px;border:1px solid #e2e8f0;border-radius:6px;box-sizing:border-box">
+      </div>
+      <div style="grid-column:1/-1">
+        <label style="font-size:12px;color:#64748b;display:block;margin-bottom:4px">Email</label>
+        <input id="idEmail" type="email" style="width:100%;font-size:13px;padding:7px 10px;border:1px solid #e2e8f0;border-radius:6px;box-sizing:border-box">
+      </div>
+      <div>
+        <label style="font-size:12px;color:#64748b;display:block;margin-bottom:4px">Société</label>
+        <input id="idCompany" type="text" style="width:100%;font-size:13px;padding:7px 10px;border:1px solid #e2e8f0;border-radius:6px;box-sizing:border-box">
+      </div>
+      <div>
+        <label style="font-size:12px;color:#64748b;display:block;margin-bottom:4px">Poste</label>
+        <input id="idJobtitle" type="text" style="width:100%;font-size:13px;padding:7px 10px;border:1px solid #e2e8f0;border-radius:6px;box-sizing:border-box">
+      </div>
+    </div>
+
+    <button onclick="saveIdentity()" style="background:#1e3a5f;color:#fff;border:none;padding:10px 24px;border-radius:6px;font-size:14px;cursor:pointer">✓ Enregistrer</button>
+    <span id="identitySaveStatus" style="margin-left:12px;font-size:13px;color:#10b981"></span>
+  </div>
+
+  <div class="two-col" style="margin-top:24px">
     <div class="report-box">
       <h3>Test Data</h3>
       <div id="testDataBlock"></div>
@@ -552,10 +593,7 @@
       <div id="goalsBlock"></div>
     </div>
   </div>
-
-  <!-- Written report box removed -->
-    <div class="report-rendered" id="writtenReportContent"></div>
-  </div>
+  <div class="report-rendered" id="writtenReportContent"></div>
   </div><!-- /tab-data -->
 
 </div>
@@ -627,6 +665,17 @@
     companyEl.value = c.company || '';
     companyEl.dataset.id = c.id;
     document.getElementById('profileMeta').textContent = c.email + (c.testdate ? ' · Test: ' + c.testdate : '');
+    if (document.getElementById('idFirstName')) {
+      var parts = (c.name || '').split(' ');
+      // Convention: stored as "PRÉNOM NOM" — first word is prénom, rest is nom
+      document.getElementById('idFirstName').value = parts[0] || '';
+      document.getElementById('idLastName').value = parts.slice(1).join(' ') || '';
+      document.getElementById('idEmail').value = c.email || '';
+      document.getElementById('idCompany').value = c.company || '';
+      document.getElementById('idJobtitle').value = c.jobtitle || '';
+      var civ = (c.conventionData && c.conventionData.civility) || 'Monsieur';
+      document.getElementById('idCivility').value = civ;
+    }
     document.getElementById('profileBadge').innerHTML = c.isRenewal ? '<span class="badge" style="background:#ede9fe;color:#5b21b6">Renouvellement</span>' : statusBadge(c.status);
     updateProgressBar(c.status, !!(c.conventionData && c.conventionData.proposalSentAt), !!(c.conventionData && c.conventionData.price), !!(c.conventionData && c.conventionData.signedAt), !!(c.conventionData && c.conventionData.sentToCatherineAt), !!(c.conventionData && c.conventionData.convocationSentAt));
     if (c.status === 'invited') { var ra = document.getElementById('resendInviteArea'); if (ra) ra.style.display = 'block'; }
@@ -1501,6 +1550,40 @@ function markBooked(id){
 </script>
 
 <script>
+async function saveIdentity() {
+    var status = document.getElementById('identitySaveStatus');
+    var prenom = document.getElementById('idFirstName').value.trim();
+    var nom = document.getElementById('idLastName').value.trim();
+    var fullName = (prenom + ' ' + nom).trim();
+    var payload = {
+      name: fullName,
+      email: document.getElementById('idEmail').value.trim(),
+      company: document.getElementById('idCompany').value.trim(),
+      jobtitle: document.getElementById('idJobtitle').value.trim(),
+      civility: document.getElementById('idCivility').value
+    };
+    status.textContent = 'Enregistrement…';
+    try {
+      var r = await fetch('/candidates/api/' + candidateId + '/identity', {
+        method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload)
+      });
+      var d = await r.json();
+      if (d.success) {
+        Object.assign(candidate, payload);
+        document.getElementById('profileName').textContent = fullName;
+        document.getElementById('profileSub').textContent = [payload.jobtitle, candidate.dept].filter(Boolean).join(' — ');
+        document.getElementById('profileMeta').textContent = payload.email + (candidate.testdate ? ' · Test: ' + candidate.testdate : '');
+        var ce = document.getElementById('profileCompany');
+        if (ce) ce.value = payload.company;
+        var pc = document.getElementById('propCivility');
+        if (pc) pc.value = payload.civility;
+        status.style.color = '#10b981';
+        status.textContent = '✅ Enregistré';
+        setTimeout(() => status.textContent = '', 2500);
+      } else { status.style.color='#ef4444'; status.textContent='Erreur'; }
+    } catch(e) { status.style.color='#ef4444'; status.textContent='Erreur réseau'; }
+  }
+
 function switchTab(name, btn) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   if (btn) btn.classList.add('active');
