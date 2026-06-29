@@ -1617,10 +1617,13 @@ function sendConvocation() {
   var cc = document.getElementById('convocCC').value;
   if (!trainer) { alert('Veuillez sélectionner un formateur.'); return; }
   btn.disabled = true; btn.textContent = 'Envoi en cours...';
+  var sessionDate = document.getElementById('convocSessionDate').value;
+  var sessionStart = document.getElementById('convocSessionStart').value;
+  var sessionEnd = document.getElementById('convocSessionEnd').value;
   fetch('/api/send-convocation/' + id, {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({ trainer: trainer, firstSession: firstSession, cc: cc })
+    body: JSON.stringify({ trainer: trainer, firstSession: firstSession, cc: cc, sessionDate: sessionDate, sessionStart: sessionStart, sessionEnd: sessionEnd })
   }).then(r => r.json()).then(d => {
     btn.disabled = false;
     if (d.ok || d.success) {

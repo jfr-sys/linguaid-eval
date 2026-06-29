@@ -2017,6 +2017,9 @@ router.post('/send-convocation/:id', function(req, res) {
     var od = c.oralData || {};
     var trainerKey = (req.body && req.body.trainer) || '';
     var firstSession = (req.body && req.body.firstSession) || '';
+    var sessionDate = (req.body && req.body.sessionDate) || '';
+    var sessionStart = (req.body && req.body.sessionStart) || '';
+    var sessionEnd = (req.body && req.body.sessionEnd) || '';
     var ccExtra = (req.body && req.body.cc) || '';
 
     var trainer = CONVOC_TRAINERS[trainerKey];
@@ -2129,6 +2132,52 @@ router.post('/send-convocation/:id', function(req, res) {
 
     var ccList = [trainer.email, 'jfr@linguaid.net'];
     if (ccExtra) ccList.push(ccExtra);
+
+    // Generate ICS calendar attachment if session date+time provided
+    if (sessionDate && sessionStart) {
+      try {
+        // Parse date: sessionDate = "YYYY-MM-DD", sessionStart/End = "10h00"
+        function parseHhmm(str) {
+          var m = str.replace('h', ':').split(':');
+          return { h: parseInt(m[0], 10), m: parseInt(m[1] || '0', 10) };
+        }
+        function icsDate(dateStr, timeObj) {
+          var d = new Date(dateStr + 'T' + String(timeObj.h).padStart(2,'0') + ':' + String(timeObj.m).padStart(2,'0') + ':00');
+          return d.toISOString().replace(/[-:]/g,'').replace(/\.\d{3}Z$/,'Z');
+        }
+        var tStart = parseHhmm(sessionStart);
+        var tEnd = sessionEnd ? parseHhmm(sessionEnd) : { h: tStart.h + 1, m: tStart.m };
+        var dtStart = icsDate(sessionDate, tStart);
+        var dtEnd = icsDate(sessionDate, tEnd);
+        var dtNow = new Date().toISOString().replace(/[-:]/g,'').replace(/\.\d{3}Z$/,'Z');
+        var icsContent = [
+          'BEGIN:VCALENDAR',
+          'VERSION:2.0',
+          'PRODID:-//Linguaid France//Formation//FR',
+          'CALSCALE:GREGORIAN',
+          'METHOD:REQUEST',
+          'BEGIN:VEVENT',
+          'UID:' + c.id + '-session1@linguaid.net',
+          'DTSTAMP:' + dtNow,
+          'DTSTART:' + dtStart,
+          'DTEND:' + dtEnd,
+          'SUMMARY:Première séance – ' + trainingTitle,
+          'DESCRIPTION:Formation avec ' + trainer.name + '\nContact: ' + trainer.email + (trainer.tel ? ' / ' + trainer.tel : '') + '\nModalité: Visioconférence (Zoom ou Teams)',
+          'ORGANIZER;CN=Linguaid France:mailto:cfr@linguaid.net',
+          'ATTENDEE;ROLE=REQ-PARTICIPANT;CN=' + c.name + ':mailto:' + c.email,
+          'END:VEVENT',
+          'END:VCALENDAR'
+        ].join('\r\n');
+        attachments.push({
+          filename: 'premiere_seance.ics',
+          content: icsContent,
+          contentType: 'text/calendar; charset=utf-8; method=REQUEST'
+        });
+        console.log('ICS attachment generated for ' + c.name);
+      } catch(icsErr) {
+        console.error('ICS generation error:', icsErr);
+      }
+    }
 
     var nodemailer = require('nodemailer');
     var transporter = nodemailer.createTransport({ host: 'localhost', port: 25, secure: false, tls: { rejectUnauthorized: false } });
