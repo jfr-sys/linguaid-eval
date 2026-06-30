@@ -9,3 +9,11 @@ data/programmes/
 drive_credentials.json
 drive_token.json
 authorize_drive.js
+data/propositions/
+data/convocations/
+data/finalReports/
+data/attestations/
+drive_token_2.json
+drive_token*.json
+authorize_drive_user.js
+authorize_drive*.js

@@ -366,22 +366,31 @@
         <div style="grid-column:1/-1"><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Lien CPF (si applicable)</label><input id="propCpfLien" type="text" placeholder="https://www.moncompteformation.gouv.fr/..." style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
       </div>
       <div style="font-size:12px;font-weight:500;color:#666;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">Email</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem">
-        <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Destinataire</label><input id="propRecipient" type="email" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
-        <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Objet</label><input id="propSubject" type="text" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
-      </div>
       <div style="margin-bottom:0.75rem">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-          <input type="checkbox" id="propThirdParty" onchange="toggleThirdParty()" style="width:14px;height:14px;cursor:pointer">
-          <label style="font-size:12px;color:#666;cursor:pointer" for="propThirdParty">Envoyer à un tiers (DRH, responsable)</label>
-        </div>
-        <div id="thirdPartyFields" style="display:none;grid-template-columns:1fr 1fr 1fr;gap:0.75rem;margin-bottom:0.75rem">
-          <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Civilité</label><select id="propThirdCivility" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"><option>Madame</option><option>Monsieur</option></select></div>
-          <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Prénom</label><input id="propThirdPrenom" type="text" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
-          <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Nom</label><input id="propThirdNom" type="text" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
-          <div style="grid-column:1/-1"><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Adresse email tiers</label><input id="propThirdEmail" type="email" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
-        </div>
+        <label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Objet</label>
+        <input id="propSubject" type="text" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px">
       </div>
+      <div style="font-size:12px;color:#666;margin-bottom:8px">Destinataire</div>
+      <div style="display:flex;gap:1.5rem;margin-bottom:0.75rem">
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+          <input type="radio" name="propRecipientMode" id="propModeLearner" checked onchange="onRecipientModeChange()" style="cursor:pointer">
+          L'apprenant
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+          <input type="radio" name="propRecipientMode" id="propModeThird" onchange="onRecipientModeChange()" style="cursor:pointer">
+          Un tiers (DRH, responsable)
+        </label>
+      </div>
+      <div id="learnerRecipientFields" style="margin-bottom:0.75rem">
+        <input id="propRecipient" type="email" oninput="updateRecipientBanner()" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px">
+      </div>
+      <div id="thirdPartyFields" style="display:none;grid-template-columns:1fr 1fr 1fr;gap:0.75rem;margin-bottom:0.75rem">
+        <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Civilité</label><select id="propThirdCivility" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"><option>Madame</option><option>Monsieur</option></select></div>
+        <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Prénom</label><input id="propThirdPrenom" type="text" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
+        <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Nom</label><input id="propThirdNom" type="text" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
+        <div style="grid-column:1/-1"><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Adresse email tiers</label><input id="propThirdEmail" type="email" oninput="updateRecipientBanner()" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
+      </div>
+      <div id="recipientConfirmBanner" style="padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:0.75rem;font-weight:500"></div>
       <div style="margin-bottom:0.75rem">
         <textarea id="propBody" style="display:none"></textarea>
       </div>
@@ -1157,7 +1166,7 @@
       else if (cpfType === 'E360_LEGAL') propSubject = 'Votre formation en anglais professionnel – parcours adapté aux professionnels du droit (CPF)';
       else propSubject = 'Votre formation en anglais professionnel avec la certification English 360 (CPF)';
     } else {
-      var thirdParty = document.getElementById('propThirdParty') && document.getElementById('propThirdParty').checked;
+      var thirdParty = document.getElementById('propModeThird') && document.getElementById('propModeThird').checked;
       if (thirdParty) propSubject = 'Proposition de formation en anglais ' + (isLegal ? 'juridique' : 'professionnel') + ' – ' + (c.name || '');
       else propSubject = 'Votre proposition de formation en anglais ' + (isLegal ? 'juridique' : 'professionnel');
     }
@@ -1169,6 +1178,10 @@
       var prenom2 = (c.name || '').split(' ')[0];
       document.getElementById('propBody').value = civ2 + ' ' + prenom2 + ',\n\n[Cliquez sur « ✨ Générer l’email » pour générer le message personnalisé]\n\nBien cordialement';
     }
+
+    // Sync recipient picker (field visibility + confirmation banner) with
+    // whatever radio is actually checked - covers page reload / bfcache.
+    if (typeof onRecipientModeChange === 'function') onRecipientModeChange();
 
     if (cd.proposalSentAt || cd.proposalAcceptedAt) {
       document.getElementById('propositionSentBar').style.display = 'block';
@@ -1299,19 +1312,49 @@
 
 </div>
 <script>
-  function toggleThirdParty() {
-    var show = document.getElementById('propThirdParty').checked;
-    document.getElementById('thirdPartyFields').style.display = show ? 'grid' : 'none';
+function onRecipientModeChange() {
+    var isThird = document.getElementById('propModeThird').checked;
+    document.getElementById('learnerRecipientFields').style.display = isThird ? 'none' : 'block';
+    document.getElementById('thirdPartyFields').style.display = isThird ? 'grid' : 'none';
+    updateRecipientBanner();
+  }
+  function getActiveRecipientEmail() {
+    var isThird = document.getElementById('propModeThird') && document.getElementById('propModeThird').checked;
+    return isThird
+      ? (document.getElementById('propThirdEmail').value || '')
+      : (document.getElementById('propRecipient').value || '');
+  }
+  function updateRecipientBanner() {
+    var isThird = document.getElementById('propModeThird') && document.getElementById('propModeThird').checked;
+    var email = getActiveRecipientEmail();
+    var banner = document.getElementById('recipientConfirmBanner');
+    if (!banner) return;
+    if (!email) {
+      banner.style.background = '#fef2f2';
+      banner.style.color = '#991b1b';
+      banner.textContent = '\u26a0\ufe0f Aucune adresse email renseign\u00e9e pour ce destinataire';
+      return;
+    }
+    if (isThird) {
+      banner.style.background = '#fffbeb';
+      banner.style.color = '#92400e';
+      banner.textContent = '\ud83d\udce7 Cet email sera envoy\u00e9 \u00e0\u00a0: ' + email + ' (tiers \u2014 l\u2019apprenant ne recevra rien)';
+    } else {
+      banner.style.background = '#ecfdf5';
+      banner.style.color = '#065f46';
+      banner.textContent = '\ud83d\udce7 Cet email sera envoy\u00e9 \u00e0\u00a0: ' + email + ' (apprenant)';
+    }
   }
   function buildPropositionPayload() {
-    var thirdParty = document.getElementById('propThirdParty') && document.getElementById('propThirdParty').checked;
+    var thirdParty = document.getElementById('propModeThird') && document.getElementById('propModeThird').checked;
     return {
       civility: document.getElementById('propCivility').value,
       price: document.getElementById('propPrice').value,
       dateStart: document.getElementById('propDateStart').value,
       dateEnd: document.getElementById('propDateEnd').value,
       cpfLien: document.getElementById('propCpfLien').value,
-      recipientEmail: document.getElementById('propRecipient').value,
+      recipientEmail: getActiveRecipientEmail(),
+      recipientType: thirdParty ? 'hr' : 'learner',
       emailSubject: document.getElementById('propSubject').value,
       emailBody: document.getElementById('propBody').value,
       thirdPartyEmail: thirdParty ? document.getElementById('propThirdEmail').value : '',
@@ -1381,7 +1424,7 @@
     var isCPF = !!(oral.isCPF);
     var cpfType = oral.cpfType || '';
     var isLegal = cand.courseType === 'legal' || cpfType === 'E360_LEGAL' || cpfType === 'CAJA';
-    var thirdParty = document.getElementById('propThirdParty') && document.getElementById('propThirdParty').checked;
+    var thirdParty = document.getElementById('propModeThird') && document.getElementById('propModeThird').checked;
     var civility = conv.civility || (isLegal ? 'Ma\xeetre' : 'Madame');
     var civ = civility === 'Monsieur' ? 'Cher' : civility === 'Ma\xeetre' ? 'Cher Ma\xeetre' : 'Ch\xe8re';
     var prenom = (cand.name || '').split(' ')[0];

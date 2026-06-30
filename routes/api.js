@@ -2224,29 +2224,43 @@ router.post('/send-convocation/:id', function(req, res) {
         saveCandidates(cands5);
 
         // Generate convocation PDF for Qualiopi/DREETS record-keeping
-        // Converts the EXACT email HTML body to PDF via LibreOffice (matches what was sent)
+        // Uses fpdf2 (generate_convocation_pdf.py) for faithful, styled rendering
         try {
           var convocDir = path2.join(__dirname, '../data/convocations');
           if (!fs2.existsSync(convocDir)) fs2.mkdirSync(convocDir, { recursive: true });
           var convocPdfPath = path2.join(convocDir, c.id + '_convocation.pdf');
-          var convocHtmlPath = path2.join(convocDir, c.id + '_convocation_tmp.html');
-          var fullHtmlDoc = '<!DOCTYPE html><html><head><meta charset="utf-8"></head><body>' + html + '</body></html>';
-          fs2.writeFileSync(convocHtmlPath, fullHtmlDoc, 'utf8');
 
-          require('child_process').execFile('soffice', ['--headless', '--convert-to', 'pdf', '--outdir', convocDir, convocHtmlPath], { timeout: 30000 }, function(pdfErr, pdfOut, pdfErrOut) {
+          var certNameForPdf = '';
+          if (isCPF) {
+            certNameForPdf = cpfType === 'CAJA'
+              ? 'Certification en Anglais Juridique des Affaires (CAJA – RS6810)'
+              : trainingTitle;
+          }
+          var docsListForPdf = ['Programme de formation', 'Livret d’accueil (dont règlement intérieur)'];
+          if (isCPF && (cpfType === 'E360' || cpfType === 'E360_LEGAL')) docsListForPdf.push('Kit bienvenue English 360');
+          if (isCPF && cpfType === 'CAJA') docsListForPdf.push('Aperçu de la certification CAJA');
+
+          var convocPdfPayload = JSON.stringify({
+            candidateName: c.name,
+            greeting: greeting,
+            trainingTitle: trainingTitle,
+            isCPF: isCPF,
+            totalHours: totalHours,
+            coachingHours: coachingHours,
+            homeworkHours: homeworkHours,
+            trainerName: trainer.name,
+            trainerEmail: trainer.email,
+            trainerTel: trainer.tel || '',
+            firstSession: firstSession,
+            certName: certNameForPdf,
+            documentsList: docsListForPdf,
+            pdfPath: convocPdfPath
+          });
+
+          require('child_process').execFile('python3', ['/home/debian/generate_convocation_pdf.py', convocPdfPayload], function(pdfErr, pdfOut, pdfErrOut) {
             if (pdfErr) {
               console.error('convocation PDF generation error:', pdfErrOut || pdfErr);
-              try { fs2.unlinkSync(convocHtmlPath); } catch(e) {}
               return;
-            }
-            var generatedPath = path2.join(convocDir, c.id + '_convocation_tmp.pdf');
-            try {
-              if (fs2.existsSync(generatedPath)) {
-                fs2.renameSync(generatedPath, convocPdfPath);
-              }
-              fs2.unlinkSync(convocHtmlPath);
-            } catch(renameErr) {
-              console.error('convocation PDF rename error:', renameErr);
             }
             var cands6 = getCandidates();
             var ci6 = cands6.findIndex(function(x){ return x.id === c.id; });
@@ -2780,10 +2794,12 @@ router.post('/push-to-drive/:id', async function(req, res) {
     }
 
     var driveUpload = require('../lib/drive_upload');
+    var sessionUserId = (req.session && req.session.user) ? req.session.user.id : null;
     var result = await driveUpload.pushCandidateDocs({
       trainerKey: trainerKey,
       learnerName: c.name,
-      files: files
+      files: files,
+      userId: sessionUserId
     });
 
     res.json({ success: true, folderUrl: result.learnerFolderUrl, uploadedCount: result.uploaded.length });
