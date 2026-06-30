@@ -615,4 +615,33 @@ router.post('/api/send-proposition-email/:id', async function(req, res) {
   });
 });
 
+
+router.post('/api/save-programme-data/:id', function(req, res) {
+  try {
+    var candidates = getCandidates();
+    var idx = candidates.findIndex(function(x){ return x.id === req.params.id; });
+    if (idx === -1) return res.status(404).json({ error: 'Not found' });
+    var body = req.body || {};
+    var oral = candidates[idx].oralData || {};
+    candidates[idx].oralData = Object.assign(oral, {
+      objectives: body.objectives !== undefined ? body.objectives : oral.objectives,
+      objectiveSuffixes: body.objectiveSuffixes !== undefined ? body.objectiveSuffixes : oral.objectiveSuffixes,
+      topics: body.topics !== undefined ? body.topics : oral.topics,
+      customTopics: body.customTopics !== undefined ? body.customTopics : oral.customTopics,
+      trainingTitle: body.trainingTitle !== undefined ? body.trainingTitle : oral.trainingTitle,
+      coachingHours: body.coachingHours !== undefined ? body.coachingHours : oral.coachingHours,
+      homeworkHours: body.homeworkHours !== undefined ? body.homeworkHours : oral.homeworkHours,
+      totalHours: body.totalHours !== undefined ? body.totalHours : oral.totalHours,
+      dateStart: body.dateStart !== undefined ? body.dateStart : oral.dateStart,
+      dateEnd: body.dateEnd !== undefined ? body.dateEnd : oral.dateEnd,
+      additionalNotes: body.additionalNotes !== undefined ? body.additionalNotes : oral.additionalNotes
+    });
+    saveCandidates(candidates);
+    res.json({ success: true });
+  } catch(err) {
+    console.error('save-programme-data error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

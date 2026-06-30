@@ -282,6 +282,8 @@
       <p style="font-size:13px;color:#64748b;margin-bottom:1rem">Pré-remplis depuis le rapport final. Vous pouvez les modifier.</p>
       <div id="objectivesContainer"></div>
       <button onclick="addObjective()" style="margin-top:8px;font-size:12px;padding:6px 14px;border-radius:6px;border:1px solid #cbd5e1;background:white;cursor:pointer;font-family:inherit">+ Ajouter un objectif</button>
+      <button onclick="saveDraftObjectives()" id="btnSaveDraft" style="margin-top:8px;margin-left:8px;font-size:12px;padding:6px 14px;border-radius:6px;border:1px solid #93c5fd;background:#eff6ff;color:#1d4ed8;cursor:pointer;font-family:inherit">\u{1F4BE} Enregistrer brouillon</button>
+      <span id="draftSavedFlash" style="margin-left:8px;font-size:12px;color:#16a34a;opacity:0;transition:opacity 0.3s">\u2713 Enregistr\u00e9</span>
     </div>
   </div>
 
@@ -628,6 +630,20 @@ function addObjective() {
   renderObjectives();
 }
 
+function saveDraftObjectives() {
+  var btn = document.getElementById('btnSaveDraft');
+  var flash = document.getElementById('draftSavedFlash');
+  btn.disabled = true;
+  fetch('/api/save-programme-data/' + id, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ objectives: objectives, objectiveSuffixes: objectiveSuffixes })
+  }).then(function() {
+    flash.style.opacity = 1;
+    setTimeout(function() { flash.style.opacity = 0; }, 2000);
+  }).finally(function() { btn.disabled = false; });
+}
+
 // ── TOPICS ───────────────────────────────────────────────────────────────────
 function renderTopics() {
   var savedTopics = (candData && candData.oralData && candData.oralData.topics) ? candData.oralData.topics : [];
@@ -729,11 +745,18 @@ function generateProgramme() {
     confirmedFormat: oral.confirmedFormat || "A distance"
   };
 
-  window.location.href = "/api/generate-programme/" + id + "?" + new URLSearchParams({data: JSON.stringify(payload)});
-  setTimeout(function() {
-    btn.disabled = false;
-    btn.innerHTML = "G\u00e9n\u00e9rer le programme \u2b07";
-  }, 8000);
+  // Persist payload to server BEFORE triggering download, so edits are never lost
+  fetch('/api/save-programme-data/' + id, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  }).finally(function() {
+    window.location.href = "/api/generate-programme/" + id + "?" + new URLSearchParams({data: JSON.stringify(payload)});
+    setTimeout(function() {
+      btn.disabled = false;
+      btn.innerHTML = "G\u00e9n\u00e9rer le programme \u2b07";
+    }, 8000);
+  });
 }
 
 // ── AI SUGGESTION ─────────────────────────────────────────────────────────────

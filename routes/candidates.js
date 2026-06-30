@@ -26,6 +26,10 @@ router.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../views/candidates.html'));
 });
 
+router.get('/suivi', (req, res) => {
+  res.sendFile(path.join(__dirname, '../views/suivi.html'));
+});
+
 router.get('/new', (req, res) => {
   res.sendFile(path.join(__dirname, '../views/upload.html'));
 });

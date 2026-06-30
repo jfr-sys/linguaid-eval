@@ -4,7 +4,7 @@ const bcrypt = require('bcryptjs');
 
 const USERS = [
   { id: 1, name: 'Joss', username: 'joss', password: bcrypt.hashSync('linguaid2026', 10), role: 'admin' },
-  { id: 2, name: 'Evaluator 2', username: 'eval2', password: bcrypt.hashSync('linguaid2026', 10), role: 'evaluator' },
+  { id: 2, name: 'Caz', username: 'caz', password: bcrypt.hashSync('linguaid2026', 10), role: 'evaluator' },
   { id: 3, name: 'Evaluator 3', username: 'eval3', password: bcrypt.hashSync('linguaid2026', 10), role: 'evaluator' },
 ];
 

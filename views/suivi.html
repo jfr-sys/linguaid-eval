@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Suivi convocations & commandes — Linguaid</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: "Segoe UI", Arial, sans-serif; background: #f5f6fa; color: #222; }
+    .header { background: #1F4E79; color: white; padding: 18px 32px; display: flex; justify-content: space-between; align-items: center; }
+    .header h1 { font-size: 1.1rem; font-weight: 600; }
+    .header a { color: white; text-decoration: none; font-size: 0.9rem; opacity: 0.85; }
+    .container { max-width: 1400px; margin: 28px auto; padding: 0 20px 60px; }
+    .summary { display: flex; gap: 16px; margin-bottom: 20px; }
+    .stat { background: white; border-radius: 8px; padding: 14px 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+    .stat .num { font-size: 1.4rem; font-weight: 700; color: #1F4E79; }
+    .stat .label { font-size: 0.78rem; color: #888; }
+    table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 6px rgba(0,0,0,0.07); }
+    th { background: #1F4E79; color: white; text-align: left; padding: 10px 12px; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.03em; }
+    td { padding: 10px 12px; border-bottom: 1px solid #eee; font-size: 0.88rem; vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover { background: #fafbfc; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.72rem; font-weight: 600; }
+    .badge.cpf { background: #fef3c7; color: #92400e; }
+    .badge.non-cpf { background: #e0e7ff; color: #3730a3; }
+    .date-cell { font-size: 0.8rem; color: #555; }
+    .date-cell.missing { color: #bbb; font-style: italic; }
+    .check-cell { text-align: center; }
+    input[type=checkbox] { width: 18px; height: 18px; cursor: pointer; }
+    .notes-input { width: 100%; border: 1px solid #ddd; border-radius: 4px; padding: 4px 6px; font-size: 0.82rem; }
+    .notes-input:focus { outline: none; border-color: #1F4E79; }
+    .name-cell { font-weight: 600; color: #1F4E79; }
+    .company-cell { font-size: 0.78rem; color: #888; }
+    .docs-cell { display: flex; flex-direction: column; gap: 3px; min-width: 160px; }
+    .doc-link { font-size: 0.78rem; font-weight: 600; text-decoration: none; padding: 3px 7px; border-radius: 4px; display: inline-block; }
+    .doc-link.doc-ok { color: #16a34a; background: #f0fdf4; }
+    .doc-link.doc-pending { color: #d97706; background: #fffbeb; }
+    .doc-link.doc-missing { color: #aaa; background: transparent; }
+    .doc-link.doc-upload { color: #1F4E79; background: #eef2f7; cursor: pointer; }
+    .doc-link.doc-upload:hover { background: #dde6f0; }
+    .doc-link.doc-drive-btn { color: white; background: #1F4E79; border: none; cursor: pointer; font-family: inherit; margin-top: 4px; }
+    .doc-link.doc-drive-btn:hover { background: #163d61; }
+    .doc-link.doc-drive-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .empty { text-align: center; padding: 60px 20px; color: #999; }
+    .saved-flash { font-size: 0.7rem; color: #16a34a; margin-left: 6px; opacity: 0; transition: opacity 0.3s; }
+    .saved-flash.show { opacity: 1; }
+  </style>
+</head>
+<body>
+<div class="header">
+  <h1>Linguaid — Suivi convocations & commandes</h1>
+  <a href="/candidates">← Retour aux candidats</a>
+</div>
+<div class="container">
+  <div class="summary" id="summary"></div>
+  <table>
+    <thead>
+      <tr>
+        <th>Apprenant</th>
+        <th>Formation</th>
+        <th>CPF</th>
+        <th>Commande envoyée à Catherine</th>
+        <th>Convocation envoyée</th>
+        <th>N° commande</th>
+        <th>ManageAll créé</th>
+        <th>Dossier Drive ouvert</th>
+        <th>Notes</th>
+        <th>Documents</th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+  <div id="emptyState" class="empty" style="display:none">Aucune convocation ou commande envoyée pour le moment.</div>
+</div>
+<script>
+function fmtDate(iso) {
+  if (!iso) return null;
+  var d = new Date(iso);
+  return d.toLocaleDateString('fr-FR') + ' ' + d.toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'});
+}
+
+async function load() {
+  const res = await fetch('/api/tracker-data');
+  const data = await res.json();
+  const rows = data.rows || [];
+
+  const summary = document.getElementById('summary');
+  const convocCount = rows.filter(r => r.convocationSentAt).length;
+  const orderCount = rows.filter(r => r.orderSentAt).length;
+  const pendingManageAll = rows.filter(r => r.orderSentAt && !r.manageAllDone).length;
+  const pendingDrive = rows.filter(r => r.orderSentAt && !r.driveFolderDone).length;
+  summary.innerHTML = `
+    <div class="stat"><div class="num">${convocCount}</div><div class="label">Convocations envoyées</div></div>
+    <div class="stat"><div class="num">${orderCount}</div><div class="label">Commandes envoyées</div></div>
+    <div class="stat"><div class="num">${pendingManageAll}</div><div class="label">ManageAll en attente</div></div>
+    <div class="stat"><div class="num">${pendingDrive}</div><div class="label">Dossier Drive en attente</div></div>
+  `;
+
+  const tbody = document.getElementById('tbody');
+  if (rows.length === 0) {
+    document.getElementById('emptyState').style.display = 'block';
+    return;
+  }
+  tbody.innerHTML = rows.map(r => `
+    <tr data-id="${r.id}">
+      <td>
+        <div class="name-cell">${r.name}</div>
+        <div class="company-cell">${r.company || ''}</div>
+      </td>
+      <td>${r.trainingTitle}</td>
+      <td><span class="badge ${r.isCPF ? 'cpf' : 'non-cpf'}">${r.isCPF ? 'CPF' : 'Non-CPF'}</span></td>
+      <td class="date-cell ${r.orderSentAt ? '' : 'missing'}">${fmtDate(r.orderSentAt) || '—'}</td>
+      <td class="date-cell ${r.convocationSentAt ? '' : 'missing'}">${fmtDate(r.convocationSentAt) || '—'}</td>
+      <td>${r.orderNumber || '—'}</td>
+      <td class="check-cell"><input type="checkbox" class="cb-manageall" ${r.manageAllDone ? 'checked' : ''}></td>
+      <td class="check-cell"><input type="checkbox" class="cb-drive" ${r.driveFolderDone ? 'checked' : ''}></td>
+      <td><input type="text" class="notes-input" value="${(r.notes || '').replace(/"/g,'&quot;')}" placeholder="Note..."><span class="saved-flash">✓</span></td>
+      <td class="docs-cell">
+        ${r.conventionSignedUrl
+          ? `<a href="${r.conventionSignedUrl}" target="_blank" class="doc-link doc-ok">0 - Convention signée</a>`
+          : (r.conventionSigningUrl
+              ? `<a href="${r.conventionSigningUrl}" target="_blank" class="doc-link doc-pending">0 - Renvoyer pour signature</a>`
+              : `<span class="doc-link doc-missing">0 - Convention —</span>`)
+        }
+        ${r.reportUrl ? `<a href="${r.reportUrl}" target="_blank" class="doc-link doc-ok">1 - Rapport final</a>` : `<span class="doc-link doc-missing">1 - Rapport —</span>`}
+        ${r.programmeUrl ? `<a href="${r.programmeUrl}" target="_blank" class="doc-link doc-ok">2 - Programme</a>` : `<span class="doc-link doc-missing">2 - Programme —</span>`}
+        ${r.convocationPdfUrl
+          ? `<a href="${r.convocationPdfUrl}" target="_blank" class="doc-link doc-ok">3 - Convocation</a>`
+          : `<label class="doc-link doc-upload">3 - Importer PDF<input type="file" accept="application/pdf" class="upload-convoc-input" data-id="${r.id}" style="display:none"></label>`
+        }
+        <button class="doc-link doc-drive-btn" data-id="${r.id}">📁 Pousser vers Drive</button>
+      </td>
+    </tr>
+  `).join('');
+
+  // Wire up checkboxes and notes
+  tbody.querySelectorAll('tr').forEach(tr => {
+    const id = tr.dataset.id;
+    const cbManageAll = tr.querySelector('.cb-manageall');
+    const cbDrive = tr.querySelector('.cb-drive');
+    const notesInput = tr.querySelector('.notes-input');
+    const flash = tr.querySelector('.saved-flash');
+
+    function save(payload) {
+      fetch('/api/tracker-checklist/' + id, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload)
+      }).then(() => {
+        flash.classList.add('show');
+        setTimeout(() => flash.classList.remove('show'), 1200);
+      });
+    }
+
+    cbManageAll.addEventListener('change', () => save({ manageAllDone: cbManageAll.checked }));
+    cbDrive.addEventListener('change', () => save({ driveFolderDone: cbDrive.checked }));
+    let notesTimeout;
+    notesInput.addEventListener('input', () => {
+      clearTimeout(notesTimeout);
+      notesTimeout = setTimeout(() => save({ notes: notesInput.value }), 600);
+    });
+
+    const driveBtn = tr.querySelector('.doc-drive-btn');
+    if (driveBtn) {
+      driveBtn.addEventListener('click', async () => {
+        driveBtn.disabled = true;
+        const originalText = driveBtn.textContent;
+        driveBtn.textContent = '⏳ Envoi...';
+        try {
+          const res3 = await fetch('/api/push-to-drive/' + id, { method: 'POST' });
+          const data3 = await res3.json();
+          if (res3.ok) {
+            driveBtn.textContent = '✓ Envoyé (' + data3.uploadedCount + ')';
+            setTimeout(() => { driveBtn.textContent = originalText; driveBtn.disabled = false; }, 3000);
+          } else {
+            alert('Erreur: ' + (data3.error || 'inconnue'));
+            driveBtn.textContent = originalText;
+            driveBtn.disabled = false;
+          }
+        } catch(e) {
+          alert('Erreur reseau');
+          driveBtn.textContent = originalText;
+          driveBtn.disabled = false;
+        }
+      });
+    }
+
+    const uploadInput = tr.querySelector('.upload-convoc-input');
+    if (uploadInput) {
+      uploadInput.addEventListener('change', async () => {
+        const file = uploadInput.files[0];
+        if (!file) return;
+        const formData = new FormData();
+        formData.append('file', file);
+        const res2 = await fetch('/api/upload-convocation-pdf/' + id, { method: 'POST', body: formData });
+        if (res2.ok) {
+          load(); // refresh table to show the new link
+        } else {
+          alert('Erreur lors de l\'import du PDF');
+        }
+      });
+    }
+  });
+}
+
+load();
+</script>
+</body>
+</html>

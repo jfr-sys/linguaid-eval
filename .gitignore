@@ -4,3 +4,8 @@ data/candidates.json
 data/conventions/
 data/programmes/
 .env
+
+# Google Drive OAuth secrets - never commit
+drive_credentials.json
+drive_token.json
+authorize_drive.js

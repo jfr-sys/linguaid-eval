@@ -2130,7 +2130,7 @@ router.post('/send-convocation/:id', function(req, res) {
       attachments.push({ filename: 'signature_catherine.png', path: sigPath, cid: sigCid });
     }
 
-    var ccList = [trainer.email, 'jfr@linguaid.net'];
+    var ccList = [trainer.email, 'jfr@linguaid.net', 'cfr@linguaid.net'];
     if (ccExtra) ccList.push(ccExtra);
 
     // Generate ICS calendar attachment if session date+time provided
@@ -2222,6 +2222,43 @@ router.post('/send-convocation/:id', function(req, res) {
           convocTrainer: trainerKey
         });
         saveCandidates(cands5);
+
+        // Generate convocation PDF for Qualiopi/DREETS record-keeping
+        // Converts the EXACT email HTML body to PDF via LibreOffice (matches what was sent)
+        try {
+          var convocDir = path2.join(__dirname, '../data/convocations');
+          if (!fs2.existsSync(convocDir)) fs2.mkdirSync(convocDir, { recursive: true });
+          var convocPdfPath = path2.join(convocDir, c.id + '_convocation.pdf');
+          var convocHtmlPath = path2.join(convocDir, c.id + '_convocation_tmp.html');
+          var fullHtmlDoc = '<!DOCTYPE html><html><head><meta charset="utf-8"></head><body>' + html + '</body></html>';
+          fs2.writeFileSync(convocHtmlPath, fullHtmlDoc, 'utf8');
+
+          require('child_process').execFile('soffice', ['--headless', '--convert-to', 'pdf', '--outdir', convocDir, convocHtmlPath], { timeout: 30000 }, function(pdfErr, pdfOut, pdfErrOut) {
+            if (pdfErr) {
+              console.error('convocation PDF generation error:', pdfErrOut || pdfErr);
+              try { fs2.unlinkSync(convocHtmlPath); } catch(e) {}
+              return;
+            }
+            var generatedPath = path2.join(convocDir, c.id + '_convocation_tmp.pdf');
+            try {
+              if (fs2.existsSync(generatedPath)) {
+                fs2.renameSync(generatedPath, convocPdfPath);
+              }
+              fs2.unlinkSync(convocHtmlPath);
+            } catch(renameErr) {
+              console.error('convocation PDF rename error:', renameErr);
+            }
+            var cands6 = getCandidates();
+            var ci6 = cands6.findIndex(function(x){ return x.id === c.id; });
+            if (ci6 > -1 && fs2.existsSync(convocPdfPath)) {
+              cands6[ci6].conventionData = Object.assign(cands6[ci6].conventionData || {}, { convocationPdfPath: convocPdfPath });
+              saveCandidates(cands6);
+              console.log('Convocation PDF saved for ' + c.name);
+            }
+          });
+        } catch(pdfGenErr) {
+          console.error('convocation PDF setup error:', pdfGenErr);
+        }
       }
       res.json({ ok: true });
     });
@@ -2586,6 +2623,173 @@ router.post('/calendly-webhook', express.json(), function(req, res) {
   } catch(e) {
     console.error('calendly-webhook error:', e);
     res.status(500).json({ error: e.message });
+  }
+});
+
+
+router.get('/tracker-data', function(req, res) {
+  try {
+    var candidates = getCandidates();
+    var rows = candidates.filter(function(c) {
+      var od = c.oralData || {};
+      var cd = c.conventionData || {};
+      return cd.convocationSentAt || cd.sentToCatherineAt;
+    }).map(function(c) {
+      var od = c.oralData || {};
+      var cd = c.conventionData || {};
+      var ct = c.catherineTracker || {};
+      return {
+        id: c.id,
+        name: c.name,
+        company: c.company || c.dept || '',
+        trainingTitle: od.trainingTitle || (c.courseType === 'legal' ? 'Formation en Anglais Juridique' : 'Formation en Anglais Professionnel'),
+        isCPF: !!cd.isCPF,
+        price: cd.price || null,
+        convocationSentAt: cd.convocationSentAt || null,
+        orderSentAt: cd.sentToCatherineAt || null,
+        orderNumber: cd.orderNumber || '',
+        manageAllDone: !!ct.manageAllDone,
+        driveFolderDone: !!ct.driveFolderDone,
+        notes: ct.notes || '',
+        conventionSignedUrl: cd.signedPdfPath ? ('/api/download-convention-signed/' + c.id) : null,
+        conventionSigningUrl: (!cd.signedPdfPath && cd.signingToken) ? ('https://eval.linguaid.net/sign/' + cd.signingToken) : null,
+        reportUrl: require('fs').existsSync(require('path').join(__dirname, '../data/finalReports/' + c.id + '_en.pdf')) ? ('/api/download-report-pdf/' + c.id) : null,
+        programmeUrl: require('fs').existsSync(require('path').join(__dirname, '../data/programmes/' + c.id + '.pdf')) ? ('/api/download-programme-pdf/' + c.id) : null,
+        convocationPdfUrl: cd.convocationPdfPath ? ('/api/download-convocation/' + c.id) : null
+      };
+    }).sort(function(a, b) {
+      var da = a.orderSentAt || a.convocationSentAt || '';
+      var db = b.orderSentAt || b.convocationSentAt || '';
+      return db.localeCompare(da);
+    });
+    res.json({ rows: rows });
+  } catch(err) {
+    console.error('tracker-data error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/tracker-checklist/:id', function(req, res) {
+  try {
+    var candidates = getCandidates();
+    var idx = candidates.findIndex(function(x){ return x.id === req.params.id; });
+    if (idx === -1) return res.status(404).json({ error: 'Not found' });
+    var body = req.body || {};
+    candidates[idx].catherineTracker = Object.assign(candidates[idx].catherineTracker || {}, {
+      manageAllDone: body.manageAllDone !== undefined ? !!body.manageAllDone : (candidates[idx].catherineTracker || {}).manageAllDone,
+      driveFolderDone: body.driveFolderDone !== undefined ? !!body.driveFolderDone : (candidates[idx].catherineTracker || {}).driveFolderDone,
+      notes: body.notes !== undefined ? body.notes : (candidates[idx].catherineTracker || {}).notes
+    });
+    saveCandidates(candidates);
+    res.json({ success: true });
+  } catch(err) {
+    console.error('tracker-checklist error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+router.get('/download-convocation/:id', function(req, res) {
+  var candidates = getCandidates();
+  var c = candidates.find(function(x){ return x.id === req.params.id; });
+  if (!c) return res.status(404).json({ error: 'Not found' });
+  var p = c.conventionData && c.conventionData.convocationPdfPath;
+  if (!p || !require('fs').existsSync(p)) return res.status(404).json({ error: 'Convocation PDF not found' });
+  res.download(p, 'convocation_' + c.name.replace(/\s+/g,'_') + '.pdf');
+});
+
+
+router.get('/download-report-pdf/:id', function(req, res) {
+  var fs = require('fs');
+  var path = require('path');
+  var p = path.join(__dirname, '../data/finalReports/' + req.params.id + '_en.pdf');
+  if (!fs.existsSync(p)) return res.status(404).json({ error: 'Report PDF not found' });
+  var candidates = getCandidates();
+  var c = candidates.find(function(x){ return x.id === req.params.id; });
+  var name = c ? c.name.replace(/\s+/g,'_') : req.params.id;
+  res.download(p, 'rapport_final_' + name + '.pdf');
+});
+
+router.get('/download-programme-pdf/:id', function(req, res) {
+  var fs = require('fs');
+  var path = require('path');
+  var p = path.join(__dirname, '../data/programmes/' + req.params.id + '.pdf');
+  if (!fs.existsSync(p)) return res.status(404).json({ error: 'Programme PDF not found' });
+  var candidates = getCandidates();
+  var c = candidates.find(function(x){ return x.id === req.params.id; });
+  var name = c ? c.name.replace(/\s+/g,'_') : req.params.id;
+  res.download(p, 'programme_' + name + '.pdf');
+});
+
+
+var multerUpload = require('multer')({ dest: '/tmp/' });
+router.post('/upload-convocation-pdf/:id', multerUpload.single('file'), function(req, res) {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+    var fs = require('fs');
+    var path = require('path');
+    var candidates = getCandidates();
+    var idx = candidates.findIndex(function(x){ return x.id === req.params.id; });
+    if (idx === -1) return res.status(404).json({ error: 'Not found' });
+    var convocDir = path.join(__dirname, '../data/convocations');
+    if (!fs.existsSync(convocDir)) fs.mkdirSync(convocDir, { recursive: true });
+    var destPath = path.join(convocDir, req.params.id + '_convocation.pdf');
+    fs.copyFileSync(req.file.path, destPath);
+    fs.unlinkSync(req.file.path);
+    candidates[idx].conventionData = Object.assign(candidates[idx].conventionData || {}, { convocationPdfPath: destPath });
+    saveCandidates(candidates);
+    res.json({ success: true });
+  } catch(err) {
+    console.error('upload-convocation-pdf error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+router.post('/push-to-drive/:id', async function(req, res) {
+  try {
+    var fs = require('fs');
+    var path = require('path');
+    var candidates = getCandidates();
+    var c = candidates.find(function(x){ return x.id === req.params.id; });
+    if (!c) return res.status(404).json({ error: 'Not found' });
+    var cd = c.conventionData || {};
+
+    var trainerKey = cd.convocTrainer;
+    if (!trainerKey) return res.status(400).json({ error: 'No trainer assigned for this candidate yet (send convocation first)' });
+
+    var files = [];
+    var conventionPath = cd.signedPdfPath || cd.pdfPath;
+    if (conventionPath && fs.existsSync(conventionPath)) {
+      files.push({ path: conventionPath, name: '0 - Convention signee.pdf' });
+    }
+    var reportPath = path.join(__dirname, '../data/finalReports/' + c.id + '_en.pdf');
+    if (fs.existsSync(reportPath)) {
+      files.push({ path: reportPath, name: '1 - Rapport final.pdf' });
+    }
+    var progPath = path.join(__dirname, '../data/programmes/' + c.id + '.pdf');
+    if (fs.existsSync(progPath)) {
+      files.push({ path: progPath, name: '2 - Programme.pdf' });
+    }
+    if (cd.convocationPdfPath && fs.existsSync(cd.convocationPdfPath)) {
+      files.push({ path: cd.convocationPdfPath, name: '3 - Convocation.pdf' });
+    }
+
+    if (files.length === 0) {
+      return res.status(400).json({ error: 'No documents available to push yet' });
+    }
+
+    var driveUpload = require('../lib/drive_upload');
+    var result = await driveUpload.pushCandidateDocs({
+      trainerKey: trainerKey,
+      learnerName: c.name,
+      files: files
+    });
+
+    res.json({ success: true, folderUrl: result.learnerFolderUrl, uploadedCount: result.uploaded.length });
+  } catch(err) {
+    console.error('push-to-drive error:', err);
+    res.status(500).json({ error: err.message });
   }
 });
 
