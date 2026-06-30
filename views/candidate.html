@@ -1378,6 +1378,18 @@ function onRecipientModeChange() {
   function sendProposition() {
     var btn = document.getElementById('btnSendProposition');
     var status = document.getElementById('propSendStatus');
+    // HARD BLOCK: never let a send proceed without a valid, non-empty
+    // recipient email - especially critical in tiers mode, where an empty
+    // field must NEVER silently fall through to the learner.
+    var activeEmail = (typeof getActiveRecipientEmail === 'function') ? getActiveRecipientEmail() : '';
+    var emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!activeEmail || !emailRe.test(activeEmail)) {
+      var isThirdNow = document.getElementById('propModeThird') && document.getElementById('propModeThird').checked;
+      alert(isThirdNow
+        ? 'Veuillez renseigner une adresse email valide pour le tiers avant d\u2019envoyer.'
+        : 'Veuillez renseigner une adresse email valide pour l\u2019apprenant avant d\u2019envoyer.');
+      return;
+    }
     // Check FR report is cached before sending
     // If body not yet confirmed, open modal first
     if (!document.getElementById('propBody').value) {

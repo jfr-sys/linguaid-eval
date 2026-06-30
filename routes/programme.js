@@ -526,11 +526,25 @@ router.post('/api/send-proposition-email/:id', async function(req, res) {
   const cpfType = od.cpfType || '';
   const isLegal = c.courseType === 'legal' || cpfType === 'E360_LEGAL' || cpfType === 'CAJA';
 
-  const recipientEmail = req.body.recipientEmail || c.email;
   const recipientType  = req.body.recipientType || 'learner';  // 'learner' | 'hr'
+  // CRITICAL: never fall back to the learner's email when sending to a
+  // third party. Fallback to c.email is learner-mode-only.
+  const recipientEmail = recipientType === 'hr'
+    ? (req.body.recipientEmail || '')
+    : (req.body.recipientEmail || c.email);
   const emailBody      = req.body.emailBody || '';             // pre-edited HTML body from UI
 
-  if (!recipientEmail) return res.status(400).json({ error: 'No recipient email' });
+  if (!recipientEmail) {
+    return res.status(400).json({
+      error: recipientType === 'hr'
+        ? 'Adresse email du tiers manquante - aucun email ne peut \u00eatre envoy\u00e9'
+        : 'No recipient email'
+    });
+  }
+  // Basic sanity check - reject obviously malformed addresses outright
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipientEmail)) {
+    return res.status(400).json({ error: 'Adresse email invalide: ' + recipientEmail });
+  }
   if (!emailBody) return res.status(400).json({ error: 'No email body' });
 
   // ── Subject line by template type ──────────────────────────────────────
