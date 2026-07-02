@@ -419,7 +419,18 @@ fetch("/candidates/api/" + id)
         wishBits.push('<strong>' + (pd.length === 3 ? pd[2] + '/' + pd[1] + '/' + pd[0] : oral.preferredStart) + '</strong>');
       }
       if (oral.preferredStartNotes) wishBits.push('\u00ab\u00a0' + String(oral.preferredStartNotes).replace(/&/g,'&amp;').replace(/</g,'&lt;') + '\u00a0\u00bb');
-      if (!wishBits.length && oral.schedNotes) wishBits.push('notes de planification\u00a0: \u00ab\u00a0' + String(oral.schedNotes).replace(/&/g,'&amp;').replace(/</g,'&lt;') + '\u00a0\u00bb');
+      if (!wishBits.length) {
+        var datePat = /(d\u00e9but|debut|commence|start|rentr\u00e9e|rentree|asap|d\u00e8s que|des que|janvier|f\u00e9vrier|fevrier|mars|avril|mai|juin|juillet|ao\u00fbt|aout|septembre|octobre|novembre|d\u00e9cembre|decembre|january|february|march|april|may|june|july|august|september|october|november|december|\d{1,2}[\/.]\d{1,2})/i;
+        [['notes additionnelles','additionalNotes'],['notes de planification','schedNotes'],['notes objectifs','goalsNotes']].forEach(function(f){
+          var v = oral[f[1]];
+          if (!v || typeof v !== 'string') return;
+          var m = datePat.exec(v);
+          if (!m) return;
+          var i0 = Math.max(0, m.index - 45), j0 = Math.min(v.length, m.index + m[0].length + 45);
+          var snip = (i0 > 0 ? '\u2026' : '') + v.slice(i0, j0).replace(/\s+/g, ' ').trim() + (j0 < v.length ? '\u2026' : '');
+          wishBits.push(f[0] + '\u00a0: \u00ab\u00a0' + snip.replace(/&/g,'&amp;').replace(/</g,'&lt;') + '\u00a0\u00bb');
+        });
+      }
       if (wishBits.length) {
         var wb = document.getElementById('startWishBanner');
         wb.innerHTML = '\ud83d\udcac Souhait du candidat pour le d\u00e9but de formation\u00a0: ' + wishBits.join(' \u2014 ');
@@ -685,7 +696,7 @@ function renderTopics() {
       '<label>' + t + '</label></div>';
   }).join("");
   var cg = document.getElementById("cpfTopicsGrid");
-  cg.innerHTML = CPF_TOPICS.map(function(t) {
+  if (cg) cg.innerHTML = CPF_TOPICS.map(function(t) {
     var sel = savedTopics.indexOf(t) !== -1 ? ' selected' : '';
     var chk = sel ? ' checked' : '';
     return '<div class="topic-item' + sel + '" onclick="toggleTopic(this)">' +
