@@ -360,9 +360,9 @@
       <div style="font-size:12px;font-weight:500;color:#666;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">Proposition de formation</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem">
         <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Civilité</label><select id="propCivility" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"><option>Madame</option><option>Monsieur</option></select></div>
-        <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Prix (euros HT)</label><input id="propPrice" type="text" placeholder="3800" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
-        <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Date début</label><input id="propDateStart" type="date" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
-        <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Date fin</label><input id="propDateEnd" type="date" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
+        <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Prix (euros HT)</label><input id="propPrice" type="text" placeholder="3800" onblur="autoSaveConventionField('propPrice','price')" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
+        <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Date début</label><input id="propDateStart" type="date" onchange="autoSaveConventionField('propDateStart','dateStart')" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
+        <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Date fin</label><input id="propDateEnd" type="date" onchange="autoSaveConventionField('propDateEnd','dateEnd')" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
         <div style="grid-column:1/-1"><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Lien CPF (si applicable)</label><input id="propCpfLien" type="text" placeholder="https://www.moncompteformation.gouv.fr/..." style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
       </div>
       <div style="font-size:12px;font-weight:500;color:#666;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">Email</div>
@@ -974,6 +974,30 @@
     }).then(r => r.json()).then(d => {
       if (d.success) { candidate.company = company; input.style.borderColor = '#10b981'; setTimeout(() => input.style.borderColor = '#e2e8f0', 1500); }
     });
+  }
+
+  // Auto-save Step 6 fields (price, dates) the instant they're left, so
+  // typing a value and navigating away never silently loses it. Mirrors
+  // saveCompany() above. Writes via the existing /api/save-convention/:id
+  // endpoint, which safely merges into conventionData.
+  function autoSaveConventionField(inputId, dataKey) {
+    var input = document.getElementById(inputId);
+    if (!input) return;
+    var value = input.value;
+    var payload = {};
+    payload[dataKey] = value;
+    fetch('/api/save-convention/' + id, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).then(function(r) { return r.json(); }).then(function(d) {
+      if (d.success) {
+        if (!candidate.conventionData) candidate.conventionData = {};
+        candidate.conventionData[dataKey] = value;
+        input.style.borderColor = '#10b981';
+        setTimeout(function() { input.style.borderColor = '#e2e8f0'; }, 1500);
+      }
+    }).catch(function() {});
   }
 
   function resendInvite() {
