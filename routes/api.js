@@ -2829,10 +2829,14 @@ function crBuildRows(company) {
   var fsx = require('fs');
   var pathx = require('path');
   var candidates = getCandidates();
+  // Keep this array's ORDER and STAGE_COUNT in sync with the client-side
+  // copy of this same logic in views/candidates.html (computeStage()) —
+  // both must always agree on what a given stage number means.
   var STAGE_LABELS = ['', 'Questionnaire reçu', 'Rapport écrit généré', 'Oral réservé',
-    'Oral effectué', 'Rapport final généré', 'Programme créé', 'Convention envoyée',
-    'Convention signée', 'Formation en cours', 'Formation terminée', 'Attestation signée'];
-  var STAGE_COUNT = 11;
+    'Oral effectué', 'Rapport final généré', 'Programme créé', 'Proposition envoyée',
+    'Proposition acceptée', 'Convention envoyée', 'Convention signée',
+    'Formation en cours', 'Formation terminée', 'Attestation signée'];
+  var STAGE_COUNT = 13;
   var STATUS_ORDER = { csv_uploaded: 1, written_report_done: 2, oral_done: 4, final_report_done: 5, programme_done: 6 };
   var today = new Date().toISOString().slice(0, 10);
 
@@ -2843,11 +2847,13 @@ function crBuildRows(company) {
     var cd = c.conventionData || {};
     var idx = STATUS_ORDER[c.status] || 1;
     if (idx === 2 && (c.oralBookedAt || c.oralBookedDate)) idx = 3;
-    if (cd.pdfPath || cd.signingToken) idx = Math.max(idx, 7);
-    if (cd.signedPdfPath) idx = Math.max(idx, 8);
-    if (idx >= 8 && od.dateStart && today >= od.dateStart) idx = Math.max(idx, 9);
-    if (idx >= 8 && od.dateEnd && today > od.dateEnd) idx = Math.max(idx, 10);
-    if (c.attestationSignedAt) idx = 11;
+    if (cd.proposalSentAt) idx = Math.max(idx, 7);
+    if (cd.proposalAcceptedAt) idx = Math.max(idx, 8);
+    if (cd.pdfPath || cd.signingToken) idx = Math.max(idx, 9);
+    if (cd.signedPdfPath) idx = Math.max(idx, 10);
+    if (idx >= 10 && od.dateStart && today >= od.dateStart) idx = Math.max(idx, 11);
+    if (idx >= 10 && od.dateEnd && today > od.dateEnd) idx = Math.max(idx, 12);
+    if (c.attestationSignedAt) idx = 13;
 
     var names = crSplitName(c.name);
     var reportEn = pathx.join(__dirname, '../data/finalReports/' + c.id + '_en.pdf');
@@ -2867,7 +2873,7 @@ function crBuildRows(company) {
       isLegal: c.courseType === 'legal',
       stageIndex: idx,
       stageCount: STAGE_COUNT,
-      stageLabel: STAGE_LABELS[idx],
+      stageLabel: 'Étape ' + idx + '/' + STAGE_COUNT + ' — ' + STAGE_LABELS[idx],
       budget: (cd.price != null && cd.price !== '') ? cd.price : (od.edofPrice || null),
       conventionSigned: !!cd.signedPdfPath,
       conventionUrl: (cd.signedPdfPath || cd.pdfPath) ? ('/api/download-convention/' + c.id) : null,
