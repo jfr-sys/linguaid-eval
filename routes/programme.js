@@ -408,6 +408,18 @@ router.post('/api/generate-proposition/:id', async function(req, res) {
     priceInt = isLegal ? (ch * 132 + (hw > 0 ? 200 : 0)) : (ch * 90 + hw * 30);
   }
 
+  // ── Persist the confirmed price NOW — this is the earliest point in the
+  //    pipeline it is known, and the only reliable write point (see patch
+  //    header). Never write a zero/blank over an existing saved price.
+  if (priceInt > 0) {
+    const priceIdx = candidates.findIndex(x => x.id === req.params.id);
+    if (priceIdx > -1) {
+      candidates[priceIdx].conventionData = candidates[priceIdx].conventionData || {};
+      candidates[priceIdx].conventionData.price = String(priceInt);
+      saveCandidates(candidates);
+    }
+  }
+
   // AI-generated needs summary
   let resumeSituation = '';
   try {
