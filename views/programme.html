@@ -204,6 +204,7 @@
 
   <div class="card">
     <div class="section-label">Dates et lieu</div>
+    <div id="startWishBanner" style="display:none;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px 14px;font-size:13px;color:#1e40af;margin-bottom:12px"></div>
     <div class="two-col">
       <div>
         <label>Date de début</label>
@@ -409,6 +410,23 @@ fetch("/candidates/api/" + id)
     document.getElementById("coachingHours").value = coaching;
     document.getElementById("homeworkHours").value = homework;
     if (oral.dateStart) document.getElementById("dateStart").value = oral.dateStart;
+    // Candidate's start-date wish from the oral questionnaire:
+    // explicit field first, legacy free-text scheduling notes as fallback.
+    (function(){
+      var wishBits = [];
+      if (oral.preferredStart) {
+        var pd = oral.preferredStart.split('-');
+        wishBits.push('<strong>' + (pd.length === 3 ? pd[2] + '/' + pd[1] + '/' + pd[0] : oral.preferredStart) + '</strong>');
+      }
+      if (oral.preferredStartNotes) wishBits.push('\u00ab\u00a0' + String(oral.preferredStartNotes).replace(/&/g,'&amp;').replace(/</g,'&lt;') + '\u00a0\u00bb');
+      if (!wishBits.length && oral.schedNotes) wishBits.push('notes de planification\u00a0: \u00ab\u00a0' + String(oral.schedNotes).replace(/&/g,'&amp;').replace(/</g,'&lt;') + '\u00a0\u00bb');
+      if (wishBits.length) {
+        var wb = document.getElementById('startWishBanner');
+        wb.innerHTML = '\ud83d\udcac Souhait du candidat pour le d\u00e9but de formation\u00a0: ' + wishBits.join(' \u2014 ');
+        wb.style.display = 'block';
+        if (oral.preferredStart && !oral.dateStart) document.getElementById('dateStart').value = oral.preferredStart;
+      }
+    })();
     if (oral.dateEnd) document.getElementById("dateEnd").value = oral.dateEnd;
     document.getElementById("deliveryMode").value = parseInt(homework) > 0 ? "Visio blended individuel" : "Visio individuel";
     document.getElementById("deliveryMode").addEventListener("change", function() {

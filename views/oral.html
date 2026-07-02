@@ -273,6 +273,10 @@
       </select>
       <label>Scheduling notes</label>
       <textarea id="schedNotes" placeholder="e.g. Prefers end-of-day; recurring meeting Wednesday mornings…" style="min-height:60px"></textarea>
+      <label style="margin-top:1rem">Preferred training start date <span style="font-weight:400;color:#94a3b8">(ask the candidate)</span></label>
+      <input type="date" id="preferredStart">
+      <label>Start date notes <span style="font-weight:400;color:#94a3b8">(if no exact date — e.g. “after the summer break”, “early September”)</span></label>
+      <textarea id="preferredStartNotes" placeholder="e.g. As soon as possible; after 15 September; once budget approved…" style="min-height:50px"></textarea>
     </div>
     <div class="btn-row">
       <button class="btn btn-secondary" onclick="goSec(2)">← Back</button>
@@ -542,6 +546,8 @@
       validatedAvail,
       confirmedFormat: document.getElementById('confirmedFormat').value,
       schedNotes: document.getElementById('schedNotes').value,
+      preferredStart: document.getElementById('preferredStart').value,
+      preferredStartNotes: document.getElementById('preferredStartNotes').value,
       contextObs: document.getElementById('contextObs').value,
       prioritiesObs: document.getElementById('prioritiesObs').value,
       strengths: document.getElementById('strengths').value,
