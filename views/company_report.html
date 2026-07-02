@@ -127,8 +127,11 @@ function renderRows(rows) {
   table.style.display = 'table';
   summary.style.display = 'flex';
 
-  var inTraining = rows.filter(function(r){ return r.stageIndex === 9; }).length;
-  var finished = rows.filter(function(r){ return r.stageIndex >= 10; }).length;
+  // Stage numbers below MUST match STAGE_LABELS in crBuildRows() (routes/api.js)
+  // and computeStage() (views/candidates.html) — 11 = "Formation en cours",
+  // 12 = "Formation terminée" onward (13 = Attestation signée also counts as finished).
+  var inTraining = rows.filter(function(r){ return r.stageIndex === 11; }).length;
+  var finished = rows.filter(function(r){ return r.stageIndex >= 12; }).length;
   var signed = rows.filter(function(r){ return r.conventionSigned; }).length;
   summary.innerHTML =
     '<div class="stat"><div class="num">' + rows.length + '</div><div class="label">Apprenants</div></div>' +
