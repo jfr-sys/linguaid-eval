@@ -454,6 +454,15 @@ fetch("/candidates/api/" + id)
 // ── CPF TOGGLE ──────────────────────────────────────────────────────────────
 function toggleCPF() {
   var isCPF = document.getElementById("cpfToggle").checked;
+  if (isCPF) {
+    var coG = ((typeof candData !== 'undefined' && candData && candData.company) || '').trim();
+    if (coG && coG.toLowerCase() !== 'particulier') {
+      if (!window.confirm('L\u2019entreprise \u00ab ' + coG + ' \u00bb est renseign\u00e9e pour ce candidat.\nPar d\u00e9faut, un financement entreprise n\u2019est pas CPF.\n\nConfirmer malgr\u00e9 tout le passage en CPF ?')) {
+        document.getElementById('cpfToggle').checked = false;
+        return;
+      }
+    }
+  }
   document.getElementById("cpfToggleLabel").textContent = isCPF ? "Formation CPF" : "Formation non-CPF";
   document.getElementById("cpfToggleSub").textContent = isCPF ? "Sélectionnez le type de certification ci-dessous" : "Cliquez pour activer la certification CPF";
   document.getElementById("cpfTypeSelector").classList.toggle("show", isCPF);

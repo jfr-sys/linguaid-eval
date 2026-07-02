@@ -2915,6 +2915,85 @@ function crRegisterFail(token) {
 }
 function crClearFails(token) { delete crCodeAttempts[token]; }
 
+// == Candidate progress page (mon parcours) ==================================
+var MP_LABELS = ['', 'Questionnaire re\u00e7u', '\u00c9valuation \u00e9crite analys\u00e9e', '\u00c9valuation orale',
+  'Rapport d\u2019\u00e9valuation finalis\u00e9', 'Programme de formation cr\u00e9\u00e9', 'Proposition envoy\u00e9e',
+  'Convention pr\u00e9par\u00e9e', 'Convention sign\u00e9e', 'Dossier transmis \u00e0 l\u2019administration', 'Convocation envoy\u00e9e'];
+var MP_CALENDLY = {
+  Hannah: 'https://calendly.com/coursdanglais24/english-oral-test',
+  Anna: 'https://calendly.com/ajmalzy/30min',
+  Louise: 'https://calendly.com/linguaid/formation-anglais',
+  Joss: 'https://calendly.com/coursdanglais24/english-oral-test'
+};
+// KEEP IN SYNC with crBuildRows() below and computeStage() in views/candidates.html.
+function mpComputeStage(c) {
+  var cd = c.conventionData || {};
+  var order = { csv_uploaded: 1, written_report_done: 2, oral_booked: 3, oral_done: 3, final_report_done: 4, programme_done: 5 };
+  var idx = order[c.status] || 1;
+  if (cd.proposalSentAt) idx = Math.max(idx, 6);
+  if (cd.price) idx = Math.max(idx, 7);
+  if (cd.signedAt) idx = Math.max(idx, 8);
+  if (cd.sentToCatherineAt) idx = Math.max(idx, 9);
+  if (cd.convocationSentAt) idx = Math.max(idx, 10);
+  return idx;
+}
+
+// Internal: get or create a candidate's progress link (session required).
+router.get('/progress-link/:id', function(req, res) {
+  try {
+    if (!crRequireSession(req, res)) return;
+    var crypto = require('crypto');
+    var candidates = getCandidates();
+    var idx = candidates.findIndex(function(x) { return x.id === req.params.id; });
+    if (idx === -1) return res.status(404).json({ error: 'Not found' });
+    if (!candidates[idx].progressToken) {
+      candidates[idx].progressToken = crypto.randomBytes(16).toString('hex');
+      saveCandidates(candidates);
+    }
+    res.json({ url: 'https://eval.linguaid.net/mon-parcours/' + candidates[idx].progressToken });
+  } catch (err) {
+    console.error('progress-link error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Public: candidate-facing progress data. Deliberately NO price, NO internal fields.
+router.get('/mon-parcours/:token', function(req, res) {
+  try {
+    var candidates = getCandidates();
+    var c = candidates.find(function(x) { return x.progressToken === req.params.token; });
+    if (!c) return res.status(404).json({ error: 'Not found' });
+    var cd = c.conventionData || {};
+    var od = c.oralData || {};
+    var idx = mpComputeStage(c);
+    var oralDone = (c.status === 'oral_done') || idx >= 4;
+    var actions = {};
+    if (idx <= 3 && !oralDone && !c.oralBookedAt && c.oralLinkSentAt) {
+      actions.calendly = MP_CALENDLY[c.oralEvaluator || 'Hannah'] || MP_CALENDLY.Hannah;
+    }
+    if (cd.signingToken && !cd.signedAt) {
+      actions.sign = 'https://eval.linguaid.net/sign/' + cd.signingToken;
+    }
+    if (c.quizToken && !c.quizCompletedAt) {
+      actions.quiz = 'https://eval.linguaid.net/quiz/' + c.quizToken;
+    }
+    var isLegal = c.courseType === 'legal' || od.cpfType === 'E360_LEGAL' || od.cpfType === 'CAJA';
+    res.json({
+      firstName: (c.name || '').split(' ')[0],
+      trainingTitle: od.trainingTitle || (isLegal ? 'Formation en Anglais Juridique' : 'Formation en Anglais Professionnel'),
+      stageIndex: idx,
+      stageCount: 10,
+      labels: MP_LABELS,
+      oralDone: oralDone,
+      oralBooked: !!c.oralBookedAt,
+      actions: actions
+    });
+  } catch (err) {
+    console.error('mon-parcours error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.get('/company-report-data', function(req, res) {
   try {
     if (!crRequireSession(req, res)) return;

@@ -17,6 +17,7 @@
       civility: document.getElementById("propCivility").value,
       signatory: document.getElementById("convSignatory").value,
       signatoryEmail: document.getElementById("convSignatoryEmail") ? document.getElementById("convSignatoryEmail").value : '',
+      isThirdParty: !!(document.getElementById("propModeThird") && document.getElementById("propModeThird").checked),
       price: document.getElementById("propPrice").value,
       dateStart: document.getElementById("propDateStart").value,
       dateEnd: document.getElementById("propDateEnd").value,
@@ -62,6 +63,7 @@
       dateEnd: document.getElementById("propDateEnd").value,
       isCPF: document.getElementById("convIsCPF") ? document.getElementById("convIsCPF").checked : false,
       signatoryEmail: document.getElementById("convSignatoryEmail") ? document.getElementById("convSignatoryEmail").value : '',
+      isThirdParty: !!(document.getElementById("propModeThird") && document.getElementById("propModeThird").checked),
       notes: document.getElementById("convNotes") ? document.getElementById("convNotes").value : '',
       learnerTel: document.getElementById("convLearnerTel") ? document.getElementById("convLearnerTel").value : '',
       orderNumber: document.getElementById("convOrderNumber") ? document.getElementById("convOrderNumber").value : '',
@@ -1212,6 +1214,18 @@
       document.getElementById('propBody').value = civ2 + ' ' + prenom2 + ',\n\n[Cliquez sur « ✨ Générer l’email » pour générer le message personnalisé]\n\nBien cordialement';
     }
 
+    // Recipient defaults: restore saved choice; otherwise derive from company
+    // (real company -> tiers; Particulier/vide -> apprenant). Radios stay a manual override.
+    var mThird = document.getElementById('propModeThird');
+    var mLearner = document.getElementById('propModeLearner');
+    if (mThird && mLearner) {
+      if (cd.recipientType === 'hr') { mThird.checked = true; mLearner.checked = false; }
+      else if (cd.recipientType === 'learner') { mLearner.checked = true; mThird.checked = false; }
+      else {
+        var co0 = (c.company || '').trim();
+        if (co0 && co0.toLowerCase() !== 'particulier') { mThird.checked = true; mLearner.checked = false; }
+      }
+    }
     // Sync recipient picker (field visibility + confirmation banner) with
     // whatever radio is actually checked - covers page reload / bfcache.
     if (typeof onRecipientModeChange === 'function') onRecipientModeChange();
@@ -1901,6 +1915,8 @@ function updateTabDots(c) {
     list.sort(function(a, b){ return a.toLowerCase().localeCompare(b.toLowerCase()); });
 
     var html = '<option value="">' + String.fromCharCode(8212) + ' Choisir ' + String.fromCharCode(8212) + '</option>';
+    list = list.filter(function(x){ return x.toLowerCase() !== 'particulier'; });
+    html += '<option value="Particulier"' + (current === 'Particulier' ? ' selected' : '') + '>\ud83d\udc64 Particulier (individuel)</option>';
     list.forEach(function(c){
       var escd = c.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
       html += '<option value="' + escd + '"' + (c === current ? ' selected' : '') + '>' + escd + '</option>';

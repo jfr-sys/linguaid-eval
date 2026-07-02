@@ -28,7 +28,7 @@ if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
 
 // Auth middleware
 app.use((req, res, next) => {
-  const publicPaths = ["/login", "/oral/", "/sign/", "/api/", "/quiz/", "/attest-form", "/form-languexpert", "/company-report/"];
+  const publicPaths = ["/login", "/oral/", "/sign/", "/api/", "/quiz/", "/attest-form", "/form-languexpert", "/company-report/", "/mon-parcours/"];
   const isPublic = publicPaths.some(p => req.path.startsWith(p));
   if (!req.session.user && !isPublic) {
     return res.redirect('/login');
@@ -48,6 +48,7 @@ app.use('/sign', require('./routes/sign'));
 app.get('/form-languexpert', function(req, res) { res.sendFile(require('path').join(__dirname, 'views/form-languexpert.html')); });
 app.get('/attest-form', function(req, res) { res.sendFile(require('path').join(__dirname, 'views/attest-form.html')); });
 app.get('/company-report/:token', function(req, res) { res.sendFile(require('path').join(__dirname, 'views/company_report.html')); });
+app.get('/mon-parcours/:token', function(req, res) { res.sendFile(require('path').join(__dirname, 'views/mon_parcours.html')); });
 
 
 // ── Daily oral reminder cron ──────────────────────────────────────────────────
@@ -211,12 +212,15 @@ cron.schedule('45 8 * * *', function() {
     dueConventionNudges(candidates, now).forEach(function(c) {
       const cd = c.conventionData;
       const url = 'https://eval.linguaid.net/sign/' + cd.signingToken;
+      if (!c.progressToken) { c.progressToken = require('crypto').randomBytes(16).toString('hex'); updated = true; }
+      const progressUrl = 'https://eval.linguaid.net/mon-parcours/' + c.progressToken;
       const who = cd.isThirdParty ? ((cd.civility || 'Madame') + ' ' + (cd.signatory || '')) : ((cd.civility || '') + ' ' + (c.name || ''));
       const html = '<div style="font-family:Arial,sans-serif;font-size:14px;color:#222;line-height:1.6">'
         + '<p>Bonjour ' + digestEsc(who).trim() + ',</p>'
         + '<p>Petit rappel : la convention de formation' + (cd.isThirdParty ? ' de ' + digestEsc(c.name) : '') + ' reste \u00e0 signer. Cela ne prend qu\u2019une minute :</p>'
         + '<p><a href="' + url + '" style="background:#1F4E79;color:white;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:600">Signer la convention</a></p>'
         + '<p style="font-size:12px;color:#666">Lien direct : <a href="' + url + '">' + url + '</a></p>'
+        + '<p style="font-size:12px"><a href="' + progressUrl + '">Suivre l\u2019avancement de mon dossier</a></p>'
         + '<p>Bien cordialement,</p>'
         + '<img src="https://eval.linguaid.net/signature_joss.png" style="max-width:400px;display:block;margin-top:8px">'
         + '</div>';
@@ -229,12 +233,15 @@ cron.schedule('45 8 * * *', function() {
 
     dueQuizNudges(candidates, now).forEach(function(c) {
       const url = 'https://eval.linguaid.net/quiz/' + c.quizToken;
+      if (!c.progressToken) { c.progressToken = require('crypto').randomBytes(16).toString('hex'); updated = true; }
+      const progressUrl = 'https://eval.linguaid.net/mon-parcours/' + c.progressToken;
       const firstName = (c.name || '').split(' ')[0];
       const html = '<div style="font-family:Arial,sans-serif;font-size:14px;color:#222;line-height:1.6">'
         + '<p>Bonjour ' + digestEsc(firstName) + ',</p>'
         + '<p>Petit rappel : votre questionnaire de fin de module reste \u00e0 compl\u00e9ter. Vos r\u00e9ponses d\u00e9clenchent l\u2019\u00e9dition de votre attestation :</p>'
         + '<p><a href="' + url + '" style="background:#1F4E79;color:white;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:600">Acc\u00e9der au questionnaire</a></p>'
         + '<p style="font-size:12px;color:#666">Lien direct : <a href="' + url + '">' + url + '</a></p>'
+        + '<p style="font-size:12px"><a href="' + progressUrl + '">Suivre l\u2019avancement de mon dossier</a></p>'
         + '<p>Bien cordialement,</p>'
         + '<p><strong>Catherine Frimond-Laubi\u00e8s</strong><br>Responsable suivi<br>cfr@linguaid.net</p>'
         + '</div>';
