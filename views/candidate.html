@@ -9,6 +9,13 @@
   function sendForSignature() {
     var btn = document.getElementById('btnSendSign');
     var status = document.getElementById('signStatus');
+    var coC = ((document.getElementById('profileCompany')||{}).value || '').trim();
+    var thirdC = document.getElementById('propModeThird') && document.getElementById('propModeThird').checked;
+    var convLearnerOverride = false;
+    if (!thirdC && coC && coC.toLowerCase() !== 'particulier') {
+      if (!window.confirm('\u26a0\ufe0f Ce candidat est rattach\u00e9 \u00e0 \u00ab ' + coC + ' \u00bb.\nLa convention (avec tarif) va \u00eatre envoy\u00e9e \u00e0 L\u2019APPRENANT et non au signataire entreprise.\n\nConfirmer cet envoi ?')) return;
+      convLearnerOverride = true;
+    }
     btn.disabled = true;
     btn.textContent = 'Envoi en cours...';
     // Save form data first including signatoryEmail
@@ -30,7 +37,7 @@
     fetch("/api/save-convention/" + id, {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(saveData)})
       .then(function(r){ return r.json(); })
       .then(function() {
-        return fetch('/api/generate-convention/' + id, { method: 'POST' });
+        return fetch('/api/generate-convention/' + id, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ learnerOverride: convLearnerOverride }) });
       })
       .then(function(r) { return r.json(); })
       .then(function(d) {
@@ -1437,6 +1444,13 @@ function onRecipientModeChange() {
         : 'Veuillez renseigner une adresse email valide pour l\u2019apprenant avant d\u2019envoyer.');
       return;
     }
+    var coP = ((document.getElementById('profileCompany')||{}).value || '').trim();
+    var isThirdP = document.getElementById('propModeThird') && document.getElementById('propModeThird').checked;
+    var propLearnerOverride = false;
+    if (!isThirdP && coP && coP.toLowerCase() !== 'particulier') {
+      if (!window.confirm('\u26a0\ufe0f Ce candidat est rattach\u00e9 \u00e0 \u00ab ' + coP + ' \u00bb.\nLa proposition FINANCI\u00c8RE va \u00eatre envoy\u00e9e \u00e0 L\u2019APPRENANT (' + activeEmail + ') et non au tiers.\n\nConfirmer cet envoi ?')) return;
+      propLearnerOverride = true;
+    }
     // Check FR report is cached before sending
     // If body not yet confirmed, open modal first
     if (!document.getElementById('propBody').value) {
@@ -1453,6 +1467,7 @@ function onRecipientModeChange() {
       btn.disabled = true; btn.textContent = 'Envoi en cours...';
       status.textContent = 'Génération et envoi...';
       var p = buildPropositionPayload();
+      p.learnerOverride = propLearnerOverride;
     fetch('/api/send-proposition-email/'+id, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(p)})
     .then(function(r){return r.json();}).then(function(d){
       btn.disabled=false; btn.textContent='Envoyer la proposition'; status.textContent='';

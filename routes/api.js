@@ -826,6 +826,20 @@ router.post('/generate-convention/:id', function(req, res) {
   var cd = c.conventionData || {};
   var od = c.oralData || {};
   var sendEmail = !(req.body && req.body.sendEmail === false);
+  // FINANCIAL PRIVACY GUARD (convention): third-party mode never falls back
+  // to the learner; company-attached learner-mode sends need explicit override.
+  var guardCompany = ((c.company || '')).trim();
+  var guardRealCo = guardCompany && guardCompany.toLowerCase() !== 'particulier';
+  var guardThird = (cd.isThirdParty === true) || (cd.isThirdParty === undefined && guardRealCo);
+  if (sendEmail && guardThird) {
+    var guardSe = (cd.signatoryEmail || '').trim();
+    if (!guardSe || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guardSe)) {
+      return res.status(400).json({ error: 'Mode tiers : adresse email du signataire manquante ou invalide \u2014 aucun email ne sera envoy\u00e9 \u00e0 l\u2019apprenant \u00e0 la place.' });
+    }
+  }
+  if (sendEmail && !guardThird && guardRealCo && !(req.body && req.body.learnerOverride === true)) {
+    return res.status(400).json({ error: 'Ce candidat est rattach\u00e9 \u00e0 \u00ab ' + guardCompany + ' \u00bb : la convention part au tiers par d\u00e9faut. Confirmez explicitement l\u2019envoi \u00e0 l\u2019apprenant.' });
+  }
   var execFile = require('child_process').execFile;
   var crypto = require('crypto');
   var signingToken = cd.signingToken || crypto.randomBytes(20).toString('hex');
@@ -879,14 +893,14 @@ router.post('/generate-convention/:id', function(req, res) {
     var signingUrl = 'https://eval.linguaid.net/sign/' + signingToken;
     var nodemailer = require('nodemailer');
     var transporter = nodemailer.createTransport({ host: 'localhost', port: 25, secure: false, tls: { rejectUnauthorized: false } });
-    var isThirdParty = !!(cd.isThirdParty);
+    var isThirdParty = guardThird;
     var convTitle = od.trainingTitle || (isCPF ? 'Communiquer en anglais professionnel – English 360 – Niveau ' + (od.targetLevel || 'B2') : (c.courseType === 'legal' ? 'Formation en Anglais Juridique' : 'Formation en Anglais Professionnel'));
     var convGreeting = isThirdParty
       ? '<p>Bonjour ' + (cd.civility || 'Madame') + ' ' + (cd.signatory || '') + ',</p><p>Suite à l’évaluation linguistique de ' + c.name + ', nous avons le plaisir de vous adresser la convention de formation suivante :</p>'
       : '<p>Bonjour ' + (cd.civility || 'Madame') + ' ' + (c.name || '') + ',</p><p>Suite à notre échange, nous avons le plaisir de vous adresser la convention de formation suivante :</p>';
     transporter.sendMail({
       from: 'jfr@linguaid.net',
-      to: cd.signatoryEmail || c.email,
+      to: isThirdParty ? cd.signatoryEmail : (cd.signatoryEmail || c.email),
       subject: 'Convention de formation - ' + c.name + ' - Linguaid France',
       html: '<div style="font-family:Arial,sans-serif;font-size:14px;color:#222;line-height:1.6">' + convGreeting + '<ul><li><strong>Formation :</strong> ' + convTitle + '</li><li><strong>Durée :</strong> ' + (od.totalHours || '—') + 'h</li><li><strong>Dates :</strong> du ' + (dateStart ? fmtDateFr(dateStart) : '—') + ' au ' + (dateEnd ? fmtDateFr(dateEnd) : '—') + '</li><li><strong>Tarif HT :</strong> ' + (cd.price || '—') + ' €</li></ul><p>Pour valider cette convention, veuillez cliquer sur le lien ci-dessous et signer électroniquement :</p><p><a href="' + signingUrl + '" style="background:#1F4E79;color:white;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:bold">Signer la convention</a></p><p>Ou copiez ce lien dans votre navigateur : <a href="' + signingUrl + '">' + signingUrl + '</a></p><p>N’hésitez pas à nous contacter pour toute question.</p><p>Bien cordialement,</p><img src="https://eval.linguaid.net/signature_joss.png" style="max-width:400px"></div>'
     }, function(mailErr) {

@@ -557,6 +557,14 @@ router.post('/api/send-proposition-email/:id', async function(req, res) {
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipientEmail)) {
     return res.status(400).json({ error: 'Adresse email invalide: ' + recipientEmail });
   }
+  // FINANCIAL PRIVACY GUARD: a company-attached candidate's proposition goes
+  // to the third party by default. Learner-mode sends require an explicit,
+  // user-confirmed override flag - never a silent default.
+  const guardCompany = ((c.company || '')).trim();
+  const guardRealCo = guardCompany && guardCompany.toLowerCase() !== 'particulier';
+  if (recipientType === 'learner' && guardRealCo && req.body.learnerOverride !== true) {
+    return res.status(400).json({ error: 'Ce candidat est rattach\u00e9 \u00e0 \u00ab ' + guardCompany + ' \u00bb : la proposition financi\u00e8re part au tiers par d\u00e9faut. Confirmez explicitement l\u2019envoi \u00e0 l\u2019apprenant.' });
+  }
   if (!emailBody) return res.status(400).json({ error: 'No email body' });
 
   // ── Subject line by template type ──────────────────────────────────────
