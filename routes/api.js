@@ -2829,15 +2829,19 @@ function crBuildRows(company) {
   var fsx = require('fs');
   var pathx = require('path');
   var candidates = getCandidates();
-  // Keep this array's ORDER and STAGE_COUNT in sync with the client-side
-  // copy of this same logic in views/candidates.html (computeStage()) —
-  // both must always agree on what a given stage number means.
-  var STAGE_LABELS = ['', 'Questionnaire reçu', 'Rapport écrit généré', 'Oral réservé',
-    'Oral effectué', 'Rapport final généré', 'Programme créé', 'Proposition envoyée',
-    'Proposition acceptée', 'Convention envoyée', 'Convention signée',
-    'Formation en cours', 'Formation terminée', 'Attestation signée'];
-  var STAGE_COUNT = 13;
-  var STATUS_ORDER = { csv_uploaded: 1, written_report_done: 2, oral_booked: 3, oral_done: 4, final_report_done: 5, programme_done: 6 };
+  // Keep this EXACTLY in sync with the candidate detail page's own
+  // updateProgressBar() (views/candidate.html) — that page is the source
+  // of truth. Same 10 steps, same field checks, same order:
+  //   1 csv_uploaded  2 written_report_done  3 oral_booked OR oral_done
+  //   4 final_report_done  5 programme_done  6 cd.proposalSentAt
+  //   7 cd.price  8 cd.signedAt  9 cd.sentToCatherineAt  10 cd.convocationSentAt
+  // Also keep in sync with the client-side copy in views/candidates.html
+  // (computeStage()) — both must always agree.
+  var STAGE_LABELS = ['', 'Questionnaire reçu', 'Rapport écrit généré', 'Évaluation orale',
+    'Rapport final généré', 'Programme créé', 'Proposition envoyée', 'Convention créée',
+    'Convention signée', 'Envoyé à Catherine', 'Convocation envoyée'];
+  var STAGE_COUNT = 10;
+  var STATUS_ORDER = { csv_uploaded: 1, written_report_done: 2, oral_booked: 3, oral_done: 3, final_report_done: 4, programme_done: 5 };
   var today = new Date().toISOString().slice(0, 10);
 
   return candidates.filter(function(c) {
@@ -2846,14 +2850,13 @@ function crBuildRows(company) {
     var od = c.oralData || {};
     var cd = c.conventionData || {};
     var idx = STATUS_ORDER[c.status] || 1;
-    if (idx === 2 && (c.oralBookedAt || c.oralBookedDate)) idx = 3;
-    if (cd.proposalSentAt) idx = Math.max(idx, 7);
-    if (cd.proposalAcceptedAt) idx = Math.max(idx, 8);
-    if (cd.pdfPath || cd.signingToken) idx = Math.max(idx, 9);
-    if (cd.signedPdfPath) idx = Math.max(idx, 10);
-    if (idx >= 10 && od.dateStart && today >= od.dateStart) idx = Math.max(idx, 11);
-    if (idx >= 10 && od.dateEnd && today > od.dateEnd) idx = Math.max(idx, 12);
-    if (c.attestationSignedAt) idx = 13;
+    if (cd.proposalSentAt) idx = Math.max(idx, 6);
+    if (cd.price) idx = Math.max(idx, 7);
+    if (cd.signedAt) idx = Math.max(idx, 8);
+    if (cd.sentToCatherineAt) idx = Math.max(idx, 9);
+    if (cd.convocationSentAt) idx = Math.max(idx, 10);
+    var inTraining = idx >= 10 && od.dateStart && today >= od.dateStart && (!od.dateEnd || today <= od.dateEnd);
+    var trainingFinished = idx >= 10 && od.dateEnd && today > od.dateEnd;
 
     var names = crSplitName(c.name);
     var reportEn = pathx.join(__dirname, '../data/finalReports/' + c.id + '_en.pdf');
@@ -2874,6 +2877,8 @@ function crBuildRows(company) {
       stageIndex: idx,
       stageCount: STAGE_COUNT,
       stageLabel: 'Étape ' + idx + '/' + STAGE_COUNT + ' — ' + STAGE_LABELS[idx],
+      inTraining: inTraining,
+      trainingFinished: trainingFinished,
       budget: (cd.price != null && cd.price !== '') ? cd.price : (od.edofPrice || null),
       conventionSigned: !!cd.signedPdfPath,
       conventionUrl: (cd.signedPdfPath || cd.pdfPath) ? ('/api/download-convention/' + c.id) : null,

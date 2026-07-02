@@ -208,25 +208,22 @@
   // Same 13 stages, same thresholds, same French wording, so a candidate
   // shows the identical stage number and label here as on the company
   // report page and matches the numbered steps on the candidate detail page.
-  var STAGE_LABELS = ['', 'Questionnaire reçu', 'Rapport écrit généré', 'Oral réservé',
-    'Oral effectué', 'Rapport final généré', 'Programme créé', 'Proposition envoyée',
-    'Proposition acceptée', 'Convention envoyée', 'Convention signée',
-    'Formation en cours', 'Formation terminée', 'Attestation signée'];
-  var STAGE_COUNT = 13;
-  var STATUS_ORDER = { csv_uploaded: 1, written_report_done: 2, oral_booked: 3, oral_done: 4, final_report_done: 5, programme_done: 6 };
+  // Keep EXACTLY in sync with candidate.html's own updateProgressBar() —
+  // that page is the source of truth. Also keep in sync with the server
+  // copy in crBuildRows() (routes/api.js).
+  var STAGE_LABELS = ['', 'Questionnaire reçu', 'Rapport écrit généré', 'Évaluation orale',
+    'Rapport final généré', 'Programme créé', 'Proposition envoyée', 'Convention créée',
+    'Convention signée', 'Envoyé à Catherine', 'Convocation envoyée'];
+  var STAGE_COUNT = 10;
+  var STATUS_ORDER = { csv_uploaded: 1, written_report_done: 2, oral_booked: 3, oral_done: 3, final_report_done: 4, programme_done: 5 };
   function computeStage(x) {
-    var od = x.oralData || {};
     var cd = x.conventionData || {};
-    var today = new Date().toISOString().slice(0, 10);
     var idx = STATUS_ORDER[x.status] || 1;
-    if (idx === 2 && (x.oralBookedAt || x.oralBookedDate)) idx = 3;
-    if (cd.proposalSentAt) idx = Math.max(idx, 7);
-    if (cd.proposalAcceptedAt) idx = Math.max(idx, 8);
-    if (cd.pdfPath || cd.signingToken) idx = Math.max(idx, 9);
-    if (cd.signedPdfPath) idx = Math.max(idx, 10);
-    if (idx >= 10 && od.dateStart && today >= od.dateStart) idx = Math.max(idx, 11);
-    if (idx >= 10 && od.dateEnd && today > od.dateEnd) idx = Math.max(idx, 12);
-    if (x.attestationSignedAt) idx = 13;
+    if (cd.proposalSentAt) idx = Math.max(idx, 6);
+    if (cd.price) idx = Math.max(idx, 7);
+    if (cd.signedAt) idx = Math.max(idx, 8);
+    if (cd.sentToCatherineAt) idx = Math.max(idx, 9);
+    if (cd.convocationSentAt) idx = Math.max(idx, 10);
     var cls = (idx / STAGE_COUNT < 0.4) ? 'stage-early' : (idx / STAGE_COUNT < 0.75) ? 'stage-mid' : 'stage-late';
     return { idx: idx, count: STAGE_COUNT, label: STAGE_LABELS[idx], cls: cls };
   }
