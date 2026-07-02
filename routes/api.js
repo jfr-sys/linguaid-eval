@@ -2837,7 +2837,7 @@ function crBuildRows(company) {
     'Proposition acceptée', 'Convention envoyée', 'Convention signée',
     'Formation en cours', 'Formation terminée', 'Attestation signée'];
   var STAGE_COUNT = 13;
-  var STATUS_ORDER = { csv_uploaded: 1, written_report_done: 2, oral_done: 4, final_report_done: 5, programme_done: 6 };
+  var STATUS_ORDER = { csv_uploaded: 1, written_report_done: 2, oral_booked: 3, oral_done: 4, final_report_done: 5, programme_done: 6 };
   var today = new Date().toISOString().slice(0, 10);
 
   return candidates.filter(function(c) {
