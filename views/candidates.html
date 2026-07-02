@@ -193,11 +193,16 @@
     render();
   }
 
-  document.addEventListener('click', function() {
+  document.addEventListener('click', function(e) {
     if (openFilter) {
       var dd = document.getElementById('cfd-' + openFilter);
-      if (dd) dd.classList.remove('open');
-      openFilter = null;
+      var btn = document.getElementById('cfb-' + openFilter);
+      var clickedInsideDropdown = dd && dd.contains(e.target);
+      var clickedTriggerButton = btn && btn.contains(e.target);
+      if (dd && !clickedInsideDropdown && !clickedTriggerButton) {
+        dd.classList.remove('open');
+        openFilter = null;
+      }
     }
   });
   var SL={csv_uploaded:['CSV uploaded','badge-csv'],written_report_done:['Written done','badge-written'],oral_booked:['Oral booked','badge-oral'],oral_done:['Oral done','badge-oral'],final_report_done:['Final done','badge-final'],programme_done:['Programme done','badge-programme']};
