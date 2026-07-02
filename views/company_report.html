@@ -186,10 +186,29 @@ function renderRows(rows) {
 }
 
 // ── Public mode ──────────────────────────────────────────────────────────────
+function askCode(msg) {
+  var entered = prompt(msg || 'Veuillez saisir le code d\u2019acc\u00e8s \u00e0 6 chiffres qui vous a \u00e9t\u00e9 communiqu\u00e9 :');
+  if (entered) sessionStorage.setItem('crCode_' + PUBLIC_TOKEN, entered.trim());
+  return entered;
+}
 async function loadPublic() {
-  var res = await fetch('/api/company-report-public/' + encodeURIComponent(PUBLIC_TOKEN));
+  var code = sessionStorage.getItem('crCode_' + PUBLIC_TOKEN) || '';
+  if (!code) { if (!askCode()) { document.getElementById('emptyState').textContent = 'Code d\u2019acc\u00e8s requis.'; return; } code = sessionStorage.getItem('crCode_' + PUBLIC_TOKEN); }
+  var res = await fetch('/api/company-report-public/' + encodeURIComponent(PUBLIC_TOKEN), {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: code })
+  });
+  if (res.status === 401) {
+    sessionStorage.removeItem('crCode_' + PUBLIC_TOKEN);
+    var body = {}; try { body = await res.json(); } catch (e) {}
+    if (body.noCode) { document.getElementById('emptyState').textContent = 'Ce lien doit \u00eatre r\u00e9activ\u00e9 par Linguaid. Merci de contacter votre interlocuteur.'; return; }
+    if (askCode('Code incorrect ou requis. Veuillez saisir le code d\u2019acc\u00e8s :')) return loadPublic();
+    document.getElementById('emptyState').textContent = 'Code d\u2019acc\u00e8s requis.';
+    return;
+  }
   if (!res.ok) {
-    document.getElementById('emptyState').textContent = 'Lien invalide ou expiré.';
+    var msg = 'Lien invalide ou expir\u00e9.';
+    if (res.status === 429) msg = 'Trop de tentatives. R\u00e9essayez dans 15 minutes.';
+    document.getElementById('emptyState').textContent = msg;
     return;
   }
   var data = await res.json();
@@ -251,6 +270,14 @@ if (IS_PUBLIC) {
       var data = await res.json();
       if (res.ok && data.url) {
         document.getElementById('shareUrl').value = data.url;
+        var codeEl = document.getElementById('shareCode');
+        if (!codeEl) {
+          codeEl = document.createElement('span');
+          codeEl.id = 'shareCode';
+          codeEl.style.cssText = 'font-size:0.8rem;font-weight:700;color:#1F4E79;white-space:nowrap;';
+          document.getElementById('shareBox').appendChild(codeEl);
+        }
+        codeEl.textContent = 'Code d\u2019acc\u00e8s : ' + (data.code || '\u2014') + ' (\u00e0 transmettre s\u00e9par\u00e9ment)';
         document.getElementById('shareBox').style.display = 'flex';
       } else {
         alert('Erreur : ' + (data.error || 'inconnue'));

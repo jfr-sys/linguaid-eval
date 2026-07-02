@@ -2896,8 +2896,28 @@ function crBuildRows(company) {
   });
 }
 
+// \u2500\u2500 Company report security \u2500\u2500
+function crRequireSession(req, res) {
+  if (req.session && req.session.user) return true;
+  res.status(401).json({ error: 'Authentification requise' });
+  return false;
+}
+var crCodeAttempts = {}; // token -> { fails, lockUntil }
+function crCheckLock(token) {
+  var a = crCodeAttempts[token];
+  if (a && a.lockUntil && Date.now() < a.lockUntil) return false;
+  return true;
+}
+function crRegisterFail(token) {
+  var a = crCodeAttempts[token] = crCodeAttempts[token] || { fails: 0, lockUntil: 0 };
+  a.fails += 1;
+  if (a.fails >= 8) { a.lockUntil = Date.now() + 15 * 60 * 1000; a.fails = 0; }
+}
+function crClearFails(token) { delete crCodeAttempts[token]; }
+
 router.get('/company-report-data', function(req, res) {
   try {
+    if (!crRequireSession(req, res)) return;
     var candidates = getCandidates();
     var companies = {};
     candidates.forEach(function(c) {
@@ -2918,6 +2938,7 @@ router.get('/company-report-data', function(req, res) {
 
 router.post('/company-report-share', function(req, res) {
   try {
+    if (!crRequireSession(req, res)) return;
     var fsx = require('fs');
     var pathx = require('path');
     var crypto = require('crypto');
@@ -2931,11 +2952,13 @@ router.post('/company-report-share', function(req, res) {
     }
     var existing = Object.keys(store).find(function(t) { return store[t].company === company; });
     var token = existing || crypto.randomBytes(16).toString('hex');
-    if (!existing) {
-      store[token] = { company: company, createdAt: new Date().toISOString() };
-      fsx.writeFileSync(storePath, JSON.stringify(store, null, 2));
+    var entry = store[token] || { company: company, createdAt: new Date().toISOString() };
+    if (!entry.code) {
+      entry.code = ('' + (crypto.randomBytes(4).readUInt32BE(0) % 900000 + 100000));
     }
-    res.json({ url: 'https://eval.linguaid.net/company-report/' + token, token: token });
+    store[token] = entry;
+    fsx.writeFileSync(storePath, JSON.stringify(store, null, 2));
+    res.json({ url: 'https://eval.linguaid.net/company-report/' + token, token: token, code: entry.code });
   } catch (err) {
     console.error('company-report-share error:', err);
     res.status(500).json({ error: err.message });
@@ -2943,6 +2966,11 @@ router.post('/company-report-share', function(req, res) {
 });
 
 router.get('/company-report-public/:token', function(req, res) {
+  // Legacy open endpoint: now always requires the access code via POST.
+  res.status(401).json({ codeRequired: true });
+});
+
+router.post('/company-report-public/:token', function(req, res) {
   try {
     var fsx = require('fs');
     var pathx = require('path');
@@ -2951,6 +2979,19 @@ router.get('/company-report-public/:token', function(req, res) {
     var store = JSON.parse(fsx.readFileSync(storePath, 'utf8'));
     var entry = store[req.params.token];
     if (!entry) return res.status(404).json({ error: 'Not found' });
+    if (!crCheckLock(req.params.token)) {
+      return res.status(429).json({ error: 'Trop de tentatives. R\u00e9essayez dans 15 minutes.' });
+    }
+    if (!entry.code) {
+      // Pre-security token never re-shared: no code yet, keep it gated.
+      return res.status(401).json({ codeRequired: true, noCode: true });
+    }
+    var supplied = ('' + ((req.body || {}).code || '')).trim();
+    if (supplied !== entry.code) {
+      crRegisterFail(req.params.token);
+      return res.status(401).json({ codeRequired: true, error: 'Code incorrect' });
+    }
+    crClearFails(req.params.token);
     res.json({ company: entry.company, rows: crBuildRows(entry.company) });
   } catch (err) {
     console.error('company-report-public error:', err);
