@@ -738,7 +738,9 @@
 
     if (c.oralData) {
       // Assessment/intake done — show compact resend
-      if (isLegalIntake) {
+      // Key on the data: only a legal INTAKE submission shows the intake resend;
+      // a legal candidate tested via the classic form gets the standard resend.
+      if (c.oralData.intakeType === 'legal_intake') {
         document.getElementById('oralLinkArea').innerHTML = `
           <div style="font-size:12px;color:#5b21b6;margin-top:2px;">\u2713 Entretien de positionnement enregistré</div>
           <button class="btn btn-primary" onclick="sendIntakeLink('${c.id}')" style="font-size:11px;padding:3px 8px;margin-top:6px;background:#7c3aed;border:none;">↩ Renvoyer le lien</button>
@@ -763,7 +765,7 @@
       if (isLegalIntake) {
         document.getElementById('oralLinkArea').innerHTML = `
           <div class="oral-link-box" style="border-color:#c4b5fd;background:#faf5ff;">
-            <label style="color:#5b21b6;">Entretien de positionnement — Anglais juridique</label>
+            <label style="color:#5b21b6;">Entretien de positionnement — Anglais juridique (par Joss)</label>
             <p style="font-size:12px;color:#6b7280;margin-bottom:10px;line-height:1.5;">
               Envoyez-vous le lien de l’entretien pour remplir le formulaire après votre appel.
             </p>
@@ -771,6 +773,25 @@
               📋 Envoyer le lien entretien
             </button>
             ${intakeSent}
+          </div>
+          <div style="text-align:center;font-size:11px;color:#94a3b8;margin:10px 0;text-transform:uppercase;letter-spacing:0.06em">ou — évaluation classique par un évaluateur</div>
+          <div class="oral-link-box">
+            <label>Send classic oral assessment link to evaluator</label>
+            <select id="evaluatorSelect" style="width:100%;padding:8px 10px;border:1px solid #bfdbfe;border-radius:6px;font-size:13px;margin-bottom:8px;background:white;color:#1e3a8a;">
+              <option value="">— Choose evaluator —</option>
+              <option value="Louise">Louise</option>
+              <option value="Hannah">Hannah</option>
+              <option value="Anna">Anna</option>
+            </select>
+            <div style="display:flex;gap:8px;">
+              <input type="text" id="oralLinkInput" value="${oralUrl}" readonly style="flex:1;font-size:12px;padding:8px 10px;border:1px solid #bfdbfe;border-radius:6px;background:white;color:#1e3a8a;">
+              <button class="btn btn-secondary copy-btn" onclick="copyLink()" style="white-space:nowrap;">Copy</button>
+            </div>
+            <button class="btn btn-primary" style="width:100%;margin-top:8px;" onclick="sendOralLink('${c.id}')">Send link by email</button>
+            <button class="btn" style="width:100%;margin-top:8px;background:#7c3aed;color:white;" onclick="sendCalendlyLink('${c.id}')">📅 Send Calendly link to candidate</button>
+            <button class="btn" style="width:100%;margin-top:8px;background:#dcfce7;color:#166534;border:1px solid #86efac;" onclick="markBooked('${c.id}')">\u2705 Mark as booked</button>
+            <div id="calendlyStatus_${c.id}" style="font-size:12px;color:#166534;margin-top:6px;display:none"></div>
+            ${sentTo}
           </div>
         `;
       } else {

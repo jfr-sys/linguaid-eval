@@ -44,9 +44,9 @@ router.get('/:token', (req, res) => {
   const candidates = getCandidates();
   const candidate = candidates.find(c => c.oralToken === req.params.token);
   if (!candidate) return res.status(404).send('Assessment link not found or expired.');
-  // Serve legal English form for legal English candidates
-  const isLegal = candidate.courseType === 'legal' || candidate.company === 'legal';
-  const formFile = isLegal ? 'oral_legal.html' : 'oral.html';
+  // Classic oral form for ALL candidates - the specialised legal flow lives
+  // exclusively at /oral/intake/:token (Joss's needs-analysis intake).
+  const formFile = 'oral.html';
   res.sendFile(path.join(__dirname, '../views', formFile));
 });
 
