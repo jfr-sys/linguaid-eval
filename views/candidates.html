@@ -230,8 +230,19 @@
   function stageHtml(x) {
     var s = computeStage(x);
     var pct = Math.round(100 * s.idx / s.count);
+    var oralNote = '';
+    if (s.idx === 3) { // stage 3 is ambiguous: booked vs questionnaire submitted
+      if (x.status === 'oral_done') {
+        oralNote = '<div style="font-size:11px;font-weight:600;color:#16a34a;margin-bottom:3px">\u2713 Oral effectu\u00e9 \u2014 rapport final possible</div>';
+      } else if (x.oralBookedAt) {
+        oralNote = '<div style="font-size:11px;font-weight:600;color:#d97706;margin-bottom:3px">\ud83d\udcc5 Cr\u00e9neau r\u00e9serv\u00e9 \u2014 oral \u00e0 venir</div>';
+      } else {
+        oralNote = '<div style="font-size:11px;color:#94a3b8;margin-bottom:3px">En attente de r\u00e9servation</div>';
+      }
+    }
     return '<span class="stage-badge ' + s.cls + '">Étape ' + s.idx + '/' + s.count + '</span>'
       + '<div style="font-size:11px;color:#475569;margin-bottom:3px">' + s.label + '</div>'
+      + oralNote
       + '<div class="stage-progress-track"><div class="stage-progress-fill" style="width:' + pct + '%"></div></div>';
   }
   function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
