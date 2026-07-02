@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Suivi de formation — Linguaid</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: "Segoe UI", Arial, sans-serif; background: #f5f6fa; color: #222; }
+    .header { background: #1F4E79; color: white; padding: 18px 32px; display: flex; justify-content: space-between; align-items: center; }
+    .header h1 { font-size: 1.1rem; font-weight: 600; }
+    .header a { color: white; text-decoration: none; font-size: 0.9rem; opacity: 0.85; }
+    .container { max-width: 1600px; margin: 28px auto; padding: 0 20px 60px; }
+    .toolbar { display: flex; gap: 12px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+    .toolbar label { font-size: 0.85rem; font-weight: 600; color: #1F4E79; }
+    select#companySelect { padding: 8px 12px; border-radius: 6px; border: 1px solid #ccc; font-size: 0.9rem; min-width: 260px; background: white; }
+    .btn { padding: 8px 14px; border-radius: 6px; border: none; background: #1F4E79; color: white; font-size: 0.85rem; font-weight: 600; cursor: pointer; }
+    .btn:hover { background: #163d61; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .share-box { display: none; align-items: center; gap: 8px; background: #eef2f7; border-radius: 6px; padding: 6px 10px; }
+    .share-box input { border: 1px solid #ccc; border-radius: 4px; padding: 6px 8px; font-size: 0.8rem; width: 420px; }
+    .refresh-note { font-size: 0.75rem; color: #999; margin-left: auto; }
+    .summary { display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
+    .stat { background: white; border-radius: 8px; padding: 14px 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+    .stat .num { font-size: 1.4rem; font-weight: 700; color: #1F4E79; }
+    .stat .label { font-size: 0.78rem; color: #888; }
+    table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 6px rgba(0,0,0,0.07); }
+    th { background: #1F4E79; color: white; text-align: left; padding: 10px 12px; font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.03em; }
+    td { padding: 10px 12px; border-bottom: 1px solid #eee; font-size: 0.85rem; vertical-align: top; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover { background: #fafbfc; }
+    .name-cell { font-weight: 600; color: #1F4E79; }
+    .name-cell a { color: #1F4E79; text-decoration: none; }
+    .name-cell a:hover { text-decoration: underline; }
+    .sub-cell { font-size: 0.76rem; color: #888; }
+    .missing { color: #bbb; font-style: italic; }
+    .stage-badge { display: inline-block; padding: 3px 10px; border-radius: 10px; font-size: 0.74rem; font-weight: 600; margin-bottom: 6px; white-space: nowrap; }
+    .stage-early { background: #e0e7ff; color: #3730a3; }
+    .stage-mid { background: #fef3c7; color: #92400e; }
+    .stage-late { background: #dcfce7; color: #166534; }
+    .progress-track { width: 130px; height: 6px; background: #eee; border-radius: 3px; overflow: hidden; }
+    .progress-fill { height: 100%; background: #1F4E79; border-radius: 3px; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.72rem; font-weight: 600; white-space: nowrap; }
+    .badge.legal { background: #fce7f3; color: #9d174d; }
+    .badge.business { background: #e0e7ff; color: #3730a3; }
+    .docs-cell { display: flex; flex-direction: column; gap: 3px; min-width: 170px; }
+    .doc-link { font-size: 0.76rem; font-weight: 600; text-decoration: none; padding: 3px 7px; border-radius: 4px; display: inline-block; }
+    .doc-link.doc-ok { color: #16a34a; background: #f0fdf4; }
+    .doc-link.doc-pending { color: #d97706; background: #fffbeb; }
+    .doc-link.doc-missing { color: #aaa; background: transparent; }
+    .budget-cell { font-weight: 600; white-space: nowrap; }
+    .empty { text-align: center; padding: 60px 20px; color: #999; }
+  </style>
+</head>
+<body>
+<div class="header">
+  <h1 id="pageTitle">Linguaid — Suivi par entreprise</h1>
+  <a href="/candidates" id="backLink">&larr; Retour aux candidats</a>
+</div>
+<div class="container">
+  <div class="toolbar" id="toolbar">
+    <label for="companySelect">Entreprise :</label>
+    <select id="companySelect"><option value="">— Choisir une entreprise —</option></select>
+    <button class="btn" id="shareBtn" style="display:none">&#128279; Créer un lien partageable</button>
+    <div class="share-box" id="shareBox">
+      <input type="text" id="shareUrl" readonly>
+      <button class="btn" id="copyBtn">Copier</button>
+    </div>
+    <span class="refresh-note" id="refreshNote"></span>
+  </div>
+  <div class="summary" id="summary" style="display:none"></div>
+  <table id="reportTable" style="display:none">
+    <thead>
+      <tr>
+        <th>Prénom</th>
+        <th>Nom</th>
+        <th>Email</th>
+        <th>Téléphone</th>
+        <th>Entreprise</th>
+        <th>Poste</th>
+        <th>Type</th>
+        <th>Phase actuelle</th>
+        <th>Documents</th>
+        <th>Budget</th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+  <div id="emptyState" class="empty">Choisissez une entreprise pour afficher le suivi de ses apprenants.</div>
+</div>
+<script>
+var IS_PUBLIC = location.pathname.indexOf('/company-report/') === 0;
+var PUBLIC_TOKEN = IS_PUBLIC ? location.pathname.split('/').filter(Boolean).pop() : null;
+var currentCompany = '';
+
+function esc(s) {
+  return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function fmtBudget(n) {
+  if (!n && n !== 0) return '<span class="missing">—</span>';
+  return Number(n).toLocaleString('fr-FR') + '&nbsp;&euro;';
+}
+function stageClass(idx, total) {
+  var pct = idx / total;
+  if (pct < 0.4) return 'stage-early';
+  if (pct < 0.75) return 'stage-mid';
+  return 'stage-late';
+}
+function docLink(url, label) {
+  if (url) return '<a href="' + url + '" target="_blank" class="doc-link doc-ok">' + label + '</a>';
+  return '<span class="doc-link doc-missing">' + label + ' —</span>';
+}
+
+function renderRows(rows) {
+  var table = document.getElementById('reportTable');
+  var emptyState = document.getElementById('emptyState');
+  var summary = document.getElementById('summary');
+
+  if (!rows || rows.length === 0) {
+    table.style.display = 'none';
+    summary.style.display = 'none';
+    emptyState.style.display = 'block';
+    emptyState.textContent = 'Aucun apprenant pour cette entreprise.';
+    return;
+  }
+  emptyState.style.display = 'none';
+  table.style.display = 'table';
+  summary.style.display = 'flex';
+
+  var inTraining = rows.filter(function(r){ return r.stageIndex === 9; }).length;
+  var finished = rows.filter(function(r){ return r.stageIndex >= 10; }).length;
+  var signed = rows.filter(function(r){ return r.conventionSigned; }).length;
+  summary.innerHTML =
+    '<div class="stat"><div class="num">' + rows.length + '</div><div class="label">Apprenants</div></div>' +
+    '<div class="stat"><div class="num">' + inTraining + '</div><div class="label">Formations en cours</div></div>' +
+    '<div class="stat"><div class="num">' + finished + '</div><div class="label">Formations terminées</div></div>' +
+    '<div class="stat"><div class="num">' + signed + '</div><div class="label">Conventions signées</div></div>';
+
+  var tbody = document.getElementById('tbody');
+  tbody.innerHTML = rows.map(function(r) {
+    var pct = Math.round(100 * r.stageIndex / r.stageCount);
+    var conventionDoc;
+    if (r.conventionSigned) {
+      conventionDoc = '<a href="' + r.conventionUrl + '" target="_blank" class="doc-link doc-ok">Convention signée</a>';
+    } else if (r.conventionSigningUrl) {
+      conventionDoc = '<a href="' + r.conventionSigningUrl + '" target="_blank" class="doc-link doc-pending">Convention — à signer</a>';
+    } else if (r.conventionUrl) {
+      conventionDoc = '<a href="' + r.conventionUrl + '" target="_blank" class="doc-link doc-pending">Convention (non signée)</a>';
+    } else {
+      conventionDoc = '<span class="doc-link doc-missing">Convention —</span>';
+    }
+    var nameHtml = IS_PUBLIC
+      ? esc(r.firstName)
+      : '<a href="/candidates/' + r.id + '">' + esc(r.firstName) + '</a>';
+    return '<tr>' +
+      '<td class="name-cell">' + nameHtml + '</td>' +
+      '<td class="name-cell">' + esc(r.lastName) + '</td>' +
+      '<td>' + (r.email ? '<a href="mailto:' + esc(r.email) + '">' + esc(r.email) + '</a>' : '<span class="missing">—</span>') + '</td>' +
+      '<td>' + (r.phone ? esc(r.phone) : '<span class="missing">—</span>') + '</td>' +
+      '<td>' + esc(r.company) + (r.dept ? '<div class="sub-cell">' + esc(r.dept) + '</div>' : '') + '</td>' +
+      '<td>' + (r.jobtitle ? esc(r.jobtitle) : '<span class="missing">—</span>') + '</td>' +
+      '<td><span class="badge ' + (r.isLegal ? 'legal' : 'business') + '">' + (r.isLegal ? 'Anglais juridique' : 'Anglais business') + '</span></td>' +
+      '<td><span class="stage-badge ' + stageClass(r.stageIndex, r.stageCount) + '">' + esc(r.stageLabel) + '</span>' +
+      '<div class="progress-track"><div class="progress-fill" style="width:' + pct + '%"></div></div></td>' +
+      '<td class="docs-cell">' +
+      docLink(r.reportEnUrl, 'Rapport final (EN)') +
+      docLink(r.reportFrUrl, 'Rapport final (FR)') +
+      docLink(r.propositionUrl, 'Proposition') +
+      docLink(r.programmeUrl, 'Programme') +
+      conventionDoc +
+      docLink(r.convocationUrl, 'Convocation') +
+      docLink(r.attestationUrl, 'Attestation signée') +
+      '</td>' +
+      '<td class="budget-cell">' + fmtBudget(r.budget) + '</td>' +
+      '</tr>';
+  }).join('');
+
+  document.getElementById('refreshNote').textContent =
+    'Actualisé à ' + new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit', second:'2-digit'}) + ' · rafraîchissement auto (30 s)';
+}
+
+// ── Public mode ──────────────────────────────────────────────────────────────
+async function loadPublic() {
+  var res = await fetch('/api/company-report-public/' + encodeURIComponent(PUBLIC_TOKEN));
+  if (!res.ok) {
+    document.getElementById('emptyState').textContent = 'Lien invalide ou expiré.';
+    return;
+  }
+  var data = await res.json();
+  document.getElementById('pageTitle').textContent = 'Suivi de formation — ' + data.company;
+  document.title = 'Suivi de formation — ' + data.company;
+  renderRows(data.rows);
+}
+
+// ── Internal mode ────────────────────────────────────────────────────────────
+async function loadCompanies() {
+  var res = await fetch('/api/company-report-data');
+  var data = await res.json();
+  var sel = document.getElementById('companySelect');
+  var prev = currentCompany || new URLSearchParams(location.search).get('company') || '';
+  sel.innerHTML = '<option value="">— Choisir une entreprise —</option>' +
+    (data.companies || []).map(function(c) {
+      return '<option value="' + esc(c) + '"' + (c === prev ? ' selected' : '') + '>' + esc(c) + '</option>';
+    }).join('');
+  if (prev && (data.companies || []).indexOf(prev) !== -1) {
+    currentCompany = prev;
+    document.getElementById('shareBtn').style.display = 'inline-block';
+    loadRows();
+  }
+}
+
+async function loadRows() {
+  if (!currentCompany) return;
+  var res = await fetch('/api/company-report-data?company=' + encodeURIComponent(currentCompany));
+  var data = await res.json();
+  renderRows(data.rows || []);
+}
+
+if (IS_PUBLIC) {
+  document.getElementById('toolbar').style.display = 'none';
+  document.getElementById('backLink').style.display = 'none';
+  loadPublic();
+  setInterval(loadPublic, 30000);
+} else {
+  document.getElementById('companySelect').addEventListener('change', function() {
+    currentCompany = this.value;
+    var url = new URL(location.href);
+    if (currentCompany) url.searchParams.set('company', currentCompany);
+    else url.searchParams.delete('company');
+    history.replaceState(null, '', url);
+    document.getElementById('shareBox').style.display = 'none';
+    document.getElementById('shareBtn').style.display = currentCompany ? 'inline-block' : 'none';
+    if (currentCompany) loadRows();
+  });
+
+  document.getElementById('shareBtn').addEventListener('click', async function() {
+    if (!currentCompany) return;
+    this.disabled = true;
+    try {
+      var res = await fetch('/api/company-report-share', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ company: currentCompany })
+      });
+      var data = await res.json();
+      if (res.ok && data.url) {
+        document.getElementById('shareUrl').value = data.url;
+        document.getElementById('shareBox').style.display = 'flex';
+      } else {
+        alert('Erreur : ' + (data.error || 'inconnue'));
+      }
+    } catch (e) {
+      alert('Erreur réseau');
+    }
+    this.disabled = false;
+  });
+
+  document.getElementById('copyBtn').addEventListener('click', function() {
+    var input = document.getElementById('shareUrl');
+    input.select();
+    navigator.clipboard.writeText(input.value).then(function() {
+      document.getElementById('copyBtn').textContent = '✓ Copié';
+      setTimeout(function() { document.getElementById('copyBtn').textContent = 'Copier'; }, 1500);
+    });
+  });
+
+  loadCompanies();
+  setInterval(function() { if (currentCompany) loadRows(); }, 30000);
+}
+</script>
+</body>
+</html>

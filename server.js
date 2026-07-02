@@ -28,7 +28,7 @@ if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
 
 // Auth middleware
 app.use((req, res, next) => {
-  const publicPaths = ["/login", "/oral/", "/sign/", "/api/", "/quiz/", "/attest-form", "/form-languexpert"];
+  const publicPaths = ["/login", "/oral/", "/sign/", "/api/", "/quiz/", "/attest-form", "/form-languexpert", "/company-report/"];
   const isPublic = publicPaths.some(p => req.path.startsWith(p));
   if (!req.session.user && !isPublic) {
     return res.redirect('/login');
@@ -47,6 +47,7 @@ app.get('/quiz/:token', function(req, res) { res.sendFile(require('path').join(_
 app.use('/sign', require('./routes/sign'));
 app.get('/form-languexpert', function(req, res) { res.sendFile(require('path').join(__dirname, 'views/form-languexpert.html')); });
 app.get('/attest-form', function(req, res) { res.sendFile(require('path').join(__dirname, 'views/attest-form.html')); });
+app.get('/company-report/:token', function(req, res) { res.sendFile(require('path').join(__dirname, 'views/company_report.html')); });
 
 
 // ── Daily oral reminder cron ──────────────────────────────────────────────────

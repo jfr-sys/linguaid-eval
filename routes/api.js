@@ -2809,4 +2809,155 @@ router.post('/push-to-drive/:id', async function(req, res) {
   }
 });
 
+
+
+// ── Company report: live per-company status with shareable link ─────────────
+
+function crSplitName(full) {
+  var parts = String(full || '').trim().split(/\s+/).filter(Boolean);
+  if (parts.length < 2) return { first: parts[0] || '', last: '' };
+  var caps = parts.filter(function(w) { return w.length > 1 && w === w.toUpperCase() && /[A-ZÀ-Ý]/.test(w); });
+  if (caps.length && caps.length < parts.length) {
+    var firsts = parts.filter(function(w) { return caps.indexOf(w) === -1; });
+    return { first: firsts.join(' '), last: caps.join(' ') };
+  }
+  return { first: parts[0], last: parts.slice(1).join(' ') };
+}
+
+function crBuildRows(company) {
+  var fsx = require('fs');
+  var pathx = require('path');
+  var candidates = getCandidates();
+  var STAGE_LABELS = ['', 'Questionnaire reçu', 'Rapport écrit généré', 'Oral réservé',
+    'Oral effectué', 'Rapport final généré', 'Programme créé', 'Convention envoyée',
+    'Convention signée', 'Formation en cours', 'Formation terminée', 'Attestation signée'];
+  var STAGE_COUNT = 11;
+  var STATUS_ORDER = { csv_uploaded: 1, written_report_done: 2, oral_done: 4, final_report_done: 5, programme_done: 6 };
+  var today = new Date().toISOString().slice(0, 10);
+
+  return candidates.filter(function(c) {
+    return (c.company || '').trim() === company;
+  }).map(function(c) {
+    var od = c.oralData || {};
+    var cd = c.conventionData || {};
+    var idx = STATUS_ORDER[c.status] || 1;
+    if (idx === 2 && (c.oralBookedAt || c.oralBookedDate)) idx = 3;
+    if (cd.pdfPath || cd.signingToken) idx = Math.max(idx, 7);
+    if (cd.signedPdfPath) idx = Math.max(idx, 8);
+    if (idx >= 8 && od.dateStart && today >= od.dateStart) idx = Math.max(idx, 9);
+    if (idx >= 8 && od.dateEnd && today > od.dateEnd) idx = Math.max(idx, 10);
+    if (c.attestationSignedAt) idx = 11;
+
+    var names = crSplitName(c.name);
+    var reportEn = pathx.join(__dirname, '../data/finalReports/' + c.id + '_en.pdf');
+    var reportFr = pathx.join(__dirname, '../data/finalReports/' + c.id + '_fr.pdf');
+    var progPdf = pathx.join(__dirname, '../data/programmes/' + c.id + '.pdf');
+    var propPdf = pathx.join(__dirname, '../data/propositions/' + c.id + '.pdf');
+
+    return {
+      id: c.id,
+      firstName: names.first,
+      lastName: names.last,
+      email: c.email || '',
+      phone: c.phone || '',
+      company: c.company || '',
+      dept: c.dept || '',
+      jobtitle: c.jobtitle || '',
+      isLegal: c.courseType === 'legal',
+      stageIndex: idx,
+      stageCount: STAGE_COUNT,
+      stageLabel: STAGE_LABELS[idx],
+      budget: (cd.price != null && cd.price !== '') ? cd.price : (od.edofPrice || null),
+      conventionSigned: !!cd.signedPdfPath,
+      conventionUrl: (cd.signedPdfPath || cd.pdfPath) ? ('/api/download-convention/' + c.id) : null,
+      conventionSigningUrl: (!cd.signedPdfPath && cd.signingToken) ? ('https://eval.linguaid.net/sign/' + cd.signingToken) : null,
+      reportEnUrl: fsx.existsSync(reportEn) ? ('/api/download-report-pdf/' + c.id) : null,
+      reportFrUrl: fsx.existsSync(reportFr) ? ('/api/download-report-pdf-fr/' + c.id) : null,
+      programmeUrl: fsx.existsSync(progPdf) ? ('/api/download-programme-pdf/' + c.id) : null,
+      propositionUrl: fsx.existsSync(propPdf) ? ('/api/download-proposition/' + c.id) : null,
+      convocationUrl: cd.convocationPdfPath ? ('/api/download-convocation/' + c.id) : null,
+      attestationUrl: c.attestationSignedPdfPath ? ('/api/download-attestation-signed/' + c.id) : null
+    };
+  }).sort(function(a, b) {
+    if (b.stageIndex !== a.stageIndex) return b.stageIndex - a.stageIndex;
+    return a.lastName.localeCompare(b.lastName);
+  });
+}
+
+router.get('/company-report-data', function(req, res) {
+  try {
+    var candidates = getCandidates();
+    var companies = {};
+    candidates.forEach(function(c) {
+      var co = (c.company || '').trim();
+      if (co) companies[co] = true;
+    });
+    var companyList = Object.keys(companies).sort(function(a, b) {
+      return a.toLowerCase().localeCompare(b.toLowerCase());
+    });
+    var company = (req.query.company || '').trim();
+    if (!company) return res.json({ companies: companyList, rows: [] });
+    res.json({ companies: companyList, rows: crBuildRows(company) });
+  } catch (err) {
+    console.error('company-report-data error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/company-report-share', function(req, res) {
+  try {
+    var fsx = require('fs');
+    var pathx = require('path');
+    var crypto = require('crypto');
+    var company = ((req.body || {}).company || '').trim();
+    if (!company) return res.status(400).json({ error: 'company required' });
+
+    var storePath = pathx.join(__dirname, '../data/companyReportTokens.json');
+    var store = {};
+    if (fsx.existsSync(storePath)) {
+      try { store = JSON.parse(fsx.readFileSync(storePath, 'utf8')); } catch (e) { store = {}; }
+    }
+    var existing = Object.keys(store).find(function(t) { return store[t].company === company; });
+    var token = existing || crypto.randomBytes(16).toString('hex');
+    if (!existing) {
+      store[token] = { company: company, createdAt: new Date().toISOString() };
+      fsx.writeFileSync(storePath, JSON.stringify(store, null, 2));
+    }
+    res.json({ url: 'https://eval.linguaid.net/company-report/' + token, token: token });
+  } catch (err) {
+    console.error('company-report-share error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/company-report-public/:token', function(req, res) {
+  try {
+    var fsx = require('fs');
+    var pathx = require('path');
+    var storePath = pathx.join(__dirname, '../data/companyReportTokens.json');
+    if (!fsx.existsSync(storePath)) return res.status(404).json({ error: 'Not found' });
+    var store = JSON.parse(fsx.readFileSync(storePath, 'utf8'));
+    var entry = store[req.params.token];
+    if (!entry) return res.status(404).json({ error: 'Not found' });
+    res.json({ company: entry.company, rows: crBuildRows(entry.company) });
+  } catch (err) {
+    console.error('company-report-public error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/download-report-pdf-fr/:id', function(req, res) {
+  var fs = require('fs');
+  var path = require('path');
+  var p = path.join(__dirname, '../data/finalReports/' + req.params.id + '_fr.pdf');
+  if (!fs.existsSync(p)) return res.status(404).json({ error: 'FR report PDF not found' });
+  var candidates = getCandidates();
+  var c = candidates.find(function(x) { return x.id === req.params.id; });
+  var name = c ? c.name.replace(/\s+/g, '_') : req.params.id;
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', 'attachment; filename="rapport_final_fr_' + name + '.pdf"');
+  res.sendFile(p);
+});
+
+
 module.exports = router;

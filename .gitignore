@@ -17,3 +17,4 @@ drive_token_2.json
 drive_token*.json
 authorize_drive_user.js
 authorize_drive*.js
+data/companyReportTokens.json
