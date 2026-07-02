@@ -220,7 +220,7 @@
     var cd = x.conventionData || {};
     var idx = STATUS_ORDER[x.status] || 1;
     if (cd.proposalSentAt) idx = Math.max(idx, 6);
-    if (cd.price) idx = Math.max(idx, 7);
+    if (cd.generatedAt || cd.pdfPath || cd.signingToken) idx = Math.max(idx, 7);
     if (cd.signedAt) idx = Math.max(idx, 8);
     if (cd.sentToCatherineAt) idx = Math.max(idx, 9);
     if (cd.convocationSentAt) idx = Math.max(idx, 10);

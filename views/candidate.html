@@ -704,7 +704,7 @@
       document.getElementById('idCivility').value = civ;
     }
     document.getElementById('profileBadge').innerHTML = c.isRenewal ? '<span class="badge" style="background:#ede9fe;color:#5b21b6">Renouvellement</span>' : statusBadge(c.status);
-    updateProgressBar(c.status, !!(c.conventionData && c.conventionData.proposalSentAt), !!(c.conventionData && c.conventionData.price), !!(c.conventionData && c.conventionData.signedAt), !!(c.conventionData && c.conventionData.sentToCatherineAt), !!(c.conventionData && c.conventionData.convocationSentAt));
+    updateProgressBar(c.status, !!(c.conventionData && c.conventionData.proposalSentAt), !!(c.conventionData && (c.conventionData.generatedAt || c.conventionData.pdfPath || c.conventionData.signingToken)), !!(c.conventionData && c.conventionData.signedAt), !!(c.conventionData && c.conventionData.sentToCatherineAt), !!(c.conventionData && c.conventionData.convocationSentAt));
     if (c.status === 'invited') { var ra = document.getElementById('resendInviteArea'); if (ra) ra.style.display = 'block'; }
 
     const p = Math.round(100 * c.scores.total / (c.scores.max || 30));

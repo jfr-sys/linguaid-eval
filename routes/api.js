@@ -2865,7 +2865,7 @@ function crBuildRows(company) {
     var cd = c.conventionData || {};
     var idx = STATUS_ORDER[c.status] || 1;
     if (cd.proposalSentAt) idx = Math.max(idx, 6);
-    if (cd.price) idx = Math.max(idx, 7);
+    if (cd.generatedAt || cd.pdfPath || cd.signingToken) idx = Math.max(idx, 7);
     if (cd.signedAt) idx = Math.max(idx, 8);
     if (cd.sentToCatherineAt) idx = Math.max(idx, 9);
     if (cd.convocationSentAt) idx = Math.max(idx, 10);
@@ -2945,7 +2945,7 @@ function mpComputeStage(c) {
   var order = { csv_uploaded: 1, written_report_done: 2, oral_booked: 3, oral_done: 3, final_report_done: 4, programme_done: 5 };
   var idx = order[c.status] || 1;
   if (cd.proposalSentAt) idx = Math.max(idx, 6);
-  if (cd.price) idx = Math.max(idx, 7);
+  if (cd.generatedAt || cd.pdfPath || cd.signingToken) idx = Math.max(idx, 7);
   if (cd.signedAt) idx = Math.max(idx, 8);
   if (cd.sentToCatherineAt) idx = Math.max(idx, 9);
   if (cd.convocationSentAt) idx = Math.max(idx, 10);
