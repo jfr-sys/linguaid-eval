@@ -719,22 +719,68 @@ R\u00e9ponds UNIQUEMENT en JSON valide, sans markdown ni backticks, avec exactem
   setMode('paste');
 </script>
 <script>
-/* company-datalist */
+/* company-picker */
 (function(){
-  fetch('/api/companies').then(function(r){ return r.json(); }).then(function(d){
-    var dl = document.createElement('datalist');
-    dl.id = 'companyDatalist';
-    (d.companies || []).forEach(function(c){
-      var o = document.createElement('option');
-      o.value = c;
-      dl.appendChild(o);
+  var COMPANIES = [];
+  function initAll(){ ['profileCompany','idCompany','f_company'].forEach(enhance); }
+  fetch('/api/companies')
+    .then(function(r){ return r.json(); })
+    .then(function(d){ COMPANIES = d.companies || []; initAll(); })
+    .catch(function(){ initAll(); });
+
+  function esc(s){ return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  function enhance(elId){
+    var input = document.getElementById(elId);
+    if (!input || input.dataset.cpReady) return;
+    input.dataset.cpReady = '1';
+    input.removeAttribute('list');           // disable flaky native datalist
+    input.setAttribute('autocomplete', 'off');
+
+    var box = document.createElement('div');
+    box.style.cssText = 'position:absolute;z-index:99999;background:#fff;border:1px solid #cbd5e1;'
+      + 'border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,0.12);max-height:260px;overflow-y:auto;'
+      + 'display:none;min-width:220px;font-size:13px;color:#334155;';
+    document.body.appendChild(box);
+
+    function position(){
+      var r = input.getBoundingClientRect();
+      box.style.left  = (r.left + window.scrollX) + 'px';
+      box.style.top   = (r.bottom + window.scrollY + 2) + 'px';
+      box.style.width = Math.max(r.width, 220) + 'px';
+    }
+    function choose(val){
+      input.value = val;
+      box.style.display = 'none';
+      input.dispatchEvent(new Event('input',  { bubbles: true }));
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+      if (typeof input.onblur === 'function') { try { input.onblur(); } catch(e){} }
+    }
+    function render(){
+      var q = (input.value || '').trim().toLowerCase();
+      var list = COMPANIES.filter(function(c){ return !q || c.toLowerCase().indexOf(q) !== -1; });
+      if (list.length === 0){ box.style.display = 'none'; return; }
+      box.innerHTML = list.map(function(c){
+        return '<div class="cp-item" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid #f1f5f9;">' + esc(c) + '</div>';
+      }).join('');
+      Array.prototype.forEach.call(box.querySelectorAll('.cp-item'), function(item, i){
+        item.addEventListener('mousedown', function(e){ e.preventDefault(); choose(list[i]); });
+        item.addEventListener('mouseover', function(){ item.style.background = '#eff6ff'; });
+        item.addEventListener('mouseout',  function(){ item.style.background = '#fff'; });
+      });
+      position();
+      box.style.display = 'block';
+    }
+
+    input.addEventListener('focus', render);
+    input.addEventListener('click', render);
+    input.addEventListener('input', render);
+    input.addEventListener('keydown', function(e){ if (e.key === 'Escape') box.style.display = 'none'; });
+    document.addEventListener('click', function(e){
+      if (e.target !== input && !box.contains(e.target)) box.style.display = 'none';
     });
-    document.body.appendChild(dl);
-    ['profileCompany', 'idCompany', 'f_company'].forEach(function(id){
-      var el = document.getElementById(id);
-      if (el) el.setAttribute('list', 'companyDatalist');
-    });
-  }).catch(function(){});
+    window.addEventListener('scroll', function(){ if (box.style.display === 'block') position(); }, true);
+  }
 })();
 </script>
 </body>
