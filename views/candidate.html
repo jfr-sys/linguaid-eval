@@ -586,7 +586,15 @@
         <label style="font-size:12px;color:#64748b;display:block;margin-bottom:4px">Poste</label>
         <input id="idJobtitle" type="text" style="width:100%;font-size:13px;padding:7px 10px;border:1px solid #e2e8f0;border-radius:6px;box-sizing:border-box">
       </div>
+      <div>
+        <label style="font-size:12px;color:#64748b;display:block;margin-bottom:4px">Type de formation</label>
+        <select id="idCourseType" style="width:100%;font-size:13px;padding:7px 10px;border:1px solid #e2e8f0;border-radius:6px;background:#fff;box-sizing:border-box">
+          <option value="business">Business</option>
+          <option value="legal">Juridique</option>
+        </select>
+      </div>
     </div>
+    <p style="color:#94a3b8;font-size:11px;margin:-10px 0 16px">Ne modifie que la classification. Les documents déjà générés (programme, rapport, convention) ne sont pas régénérés automatiquement.</p>
 
     <button onclick="saveIdentity()" style="background:#1e3a5f;color:#fff;border:none;padding:10px 24px;border-radius:6px;font-size:14px;cursor:pointer">✓ Enregistrer</button>
     <span id="identitySaveStatus" style="margin-left:12px;font-size:13px;color:#10b981"></span>
@@ -682,6 +690,7 @@
       document.getElementById('idEmail').value = c.email || '';
       document.getElementById('idCompany').value = c.company || '';
       document.getElementById('idJobtitle').value = c.jobtitle || '';
+      document.getElementById('idCourseType').value = (c.courseType === 'legal') ? 'legal' : 'business';
       var civ = (c.conventionData && c.conventionData.civility) || 'Monsieur';
       document.getElementById('idCivility').value = civ;
     }
@@ -1639,7 +1648,8 @@ async function saveIdentity() {
       email: document.getElementById('idEmail').value.trim(),
       company: document.getElementById('idCompany').value.trim(),
       jobtitle: document.getElementById('idJobtitle').value.trim(),
-      civility: document.getElementById('idCivility').value
+      civility: document.getElementById('idCivility').value,
+      courseType: document.getElementById('idCourseType').value
     };
     status.textContent = 'Enregistrement…';
     try {

@@ -154,7 +154,7 @@ router.post('/api/:id/identity', (req, res) => {
   const candidates = getCandidates();
   const idx = candidates.findIndex(c => c.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: 'Not found' });
-  const allowed = ['name','email','company','jobtitle','dept'];
+  const allowed = ['name','email','company','jobtitle','dept','courseType'];
   allowed.forEach(k => { if (req.body[k] !== undefined) candidates[idx][k] = (k === 'company') ? canonicalCompany(req.body[k]) : req.body[k]; });
   if (req.body.civility !== undefined) {
     if (!candidates[idx].conventionData) candidates[idx].conventionData = {};
