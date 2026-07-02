@@ -4,6 +4,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const { parse } = require('csv-parse/sync');
+const { canonicalCompany } = require('../lib/companies');
 
 const dataDir = path.join(__dirname, '../data');
 const upload = multer({ dest: path.join(__dirname, '../uploads/') });
@@ -154,7 +155,7 @@ router.post('/api/:id/identity', (req, res) => {
   const idx = candidates.findIndex(c => c.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: 'Not found' });
   const allowed = ['name','email','company','jobtitle','dept'];
-  allowed.forEach(k => { if (req.body[k] !== undefined) candidates[idx][k] = req.body[k]; });
+  allowed.forEach(k => { if (req.body[k] !== undefined) candidates[idx][k] = (k === 'company') ? canonicalCompany(req.body[k]) : req.body[k]; });
   if (req.body.civility !== undefined) {
     if (!candidates[idx].conventionData) candidates[idx].conventionData = {};
     candidates[idx].conventionData.civility = req.body.civility;
@@ -167,7 +168,7 @@ router.post('/api/:id/company', (req, res) => {
   const candidates = getCandidates();
   const idx = candidates.findIndex(c => c.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: 'Not found' });
-  candidates[idx].company = req.body.company || '';
+  candidates[idx].company = canonicalCompany(req.body.company || '');
   saveCandidates(candidates);
   res.json({ success: true });
 });
@@ -195,8 +196,8 @@ router.post('/api/new-legal', (req, res) => {
       region:          d.region || '',
       lawyerType:      d.lawyerType || '',
       jobtitle:        d.jobtitle || '',
-      company:         d.company || '',
-      dept:            d.company || '',
+      company:         canonicalCompany(d.company || ''),
+      dept:            canonicalCompany(d.company || ''),
       experience:      d.experience || '',
       legalDomains:    d.legalDomains || '',
       legalDocs:       d.legalDocs || '',

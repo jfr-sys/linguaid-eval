@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const { canonicalCompany, listCompanies } = require('../lib/companies');
 
 // Helper: 5-skill CEFR average
 function calc5SkillLevel(c) {
@@ -1003,7 +1004,7 @@ router.post('/typeform-webhook', function(req, res) {
 
   var name = getAnswer('9oDCQhgIKUCa') || 'Unknown';
   var email = getAnswer('ewBvfryvLC6C') || '';
-  var company = getAnswer('nHNnnVsELnI1') || '';
+  var company = canonicalCompany(getAnswer('nHNnnVsELnI1') || '');
   var dept = getAnswer('REMkImqUgjz6') || '';
   var jobtitle = getAnswer('71SDBs9cYd2p') || '';
   var otherNeeds = getAnswer('tBwFQiTenYCQ') || '';
@@ -1093,7 +1094,7 @@ router.post('/typeform-webhook', function(req, res) {
 router.post('/invite-candidate', function(req, res) {
   var name = (req.body.name || '').trim();
   var email = (req.body.email || '').trim();
-  var company = (req.body.company || '').trim();
+  var company = canonicalCompany((req.body.company || '').trim());
   var jobtitle = (req.body.jobtitle || '').trim();
   if (!name || !email) return res.status(400).json({ error: 'Name and email required' });
 
@@ -1293,7 +1294,7 @@ router.post('/new-renewal', function(req, res) {
     id: newId,
     name: d.name,
     email: d.email || '',
-    company: d.company || '',
+    company: canonicalCompany(d.company || ''),
     dept: d.dept || '',
     jobtitle: d.jobtitle || '',
     testdate: now.slice(0,10),
@@ -2959,5 +2960,16 @@ router.get('/download-report-pdf-fr/:id', function(req, res) {
   res.sendFile(p);
 });
 
+
+
+// ── Company registry: list canonical company names ──────────────────────────
+router.get('/companies', function(req, res) {
+  try {
+    res.json({ companies: listCompanies() });
+  } catch (err) {
+    console.error('companies error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 module.exports = router;

@@ -718,5 +718,24 @@ R\u00e9ponds UNIQUEMENT en JSON valide, sans markdown ni backticks, avec exactem
 
   setMode('paste');
 </script>
+<script>
+/* company-datalist */
+(function(){
+  fetch('/api/companies').then(function(r){ return r.json(); }).then(function(d){
+    var dl = document.createElement('datalist');
+    dl.id = 'companyDatalist';
+    (d.companies || []).forEach(function(c){
+      var o = document.createElement('option');
+      o.value = c;
+      dl.appendChild(o);
+    });
+    document.body.appendChild(dl);
+    ['profileCompany', 'idCompany', 'f_company'].forEach(function(id){
+      var el = document.getElementById(id);
+      if (el) el.setAttribute('list', 'companyDatalist');
+    });
+  }).catch(function(){});
+})();
+</script>
 </body>
 </html>
