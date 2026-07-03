@@ -481,7 +481,12 @@ router.post('/api/generate-proposition/:id', async function(req, res) {
     objectives,
     resumeSituation,
     price: priceInt ? String(priceInt) : String(price),
-    edofMCFLink: od.edofMCFLink || ''
+    edofMCFLink: od.edofMCFLink || '',
+    // TIERS_WORDING_FIX (2026-07-03): client already sends this on every
+    // generate-proposition call - forward it so the generator can write
+    // third-person prose for non-CPF proposals addressed to a third party.
+    // (firstName/lastName are already sent above - not duplicated here.)
+    recipientType: req.body.recipientType || 'learner'
   };
 
   // Paths
