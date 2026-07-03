@@ -3131,4 +3131,54 @@ router.get('/companies', function(req, res) {
   }
 });
 
+// == REMINDER_APPROVAL_ROUTES (2026-07-03) ====================================
+// Deliberately public (email links). A token only ever triggers the exact
+// stored reminder; candidate state is re-verified at click time.
+function approveReminders(req, res, match) {
+  try {
+    var pPath = path.join(dataDir, 'pendingReminders.json');
+    var pending; try { pending = JSON.parse(fs.readFileSync(pPath, 'utf8')); } catch (e2) { pending = { reminders: {} }; }
+    var cPath = path.join(dataDir, 'candidates.json');
+    var cands = JSON.parse(fs.readFileSync(cPath, 'utf8'));
+    var nodemailer = require('nodemailer');
+    var t = nodemailer.createTransport({ host: 'localhost', port: 25, secure: false, tls: { rejectUnauthorized: false } });
+    var sent = [], skipped = [];
+    var list = Object.keys(pending.reminders).map(function(k) { return pending.reminders[k]; })
+      .filter(function(e) { return !e.sentAt && !e.skippedAt && match(e); });
+    if (!list.length) return res.status(404).send('<div style="font-family:Arial,sans-serif;max-width:600px;margin:40px auto"><h2 style="color:#1F4E79">Rien \u00e0 envoyer</h2><p>Aucun rappel en attente pour ce lien (d\u00e9j\u00e0 valid\u00e9 ou expir\u00e9).</p></div>');
+    list.forEach(function(e) {
+      var idx = cands.findIndex(function(x) { return x.id === e.candidateId; });
+      var c = idx > -1 ? cands[idx] : null;
+      var reason = null;
+      if (!c) reason = 'candidat introuvable';
+      else if (isContratCadre(c.company)) reason = 'contrat cadre';
+      else if (e.type === 'convention') { var cd = c.conventionData || {}; if (cd.signedAt) reason = 'convention d\u00e9j\u00e0 sign\u00e9e'; else if (!cd.signingToken) reason = 'plus de lien de signature actif'; }
+      else if (e.type === 'quiz') { if (c.quizCompletedAt || c.attestationSignedAt) reason = 'questionnaire d\u00e9j\u00e0 compl\u00e9t\u00e9'; }
+      else if (e.type === 'oral') { if (c.oralBookedAt || ['oral_done','final_report_done','programme_done'].indexOf(c.status) !== -1) reason = 'entretien d\u00e9j\u00e0 r\u00e9serv\u00e9/effectu\u00e9'; }
+      if (reason) { e.skippedAt = new Date().toISOString(); e.skipReason = reason; skipped.push((e.candidateName || '?') + ' (' + reason + ')'); return; }
+      t.sendMail({ from: e.from, to: e.to, subject: e.subject, html: e.html }, function(err) {
+        if (err) console.error('Approved reminder mail error', e.to, err); else console.log('Approved reminder sent to', e.to, 'for', e.candidateName);
+      });
+      e.sentAt = new Date().toISOString();
+      if (e.type === 'convention') { c.conventionData = c.conventionData || {}; c.conventionData.conventionLastReminderAt = e.sentAt; }
+      else if (e.type === 'quiz') { c.quizLastReminderAt = e.sentAt; }
+      else if (e.type === 'oral') { c.oralLastReminderAt = e.sentAt; }
+      sent.push((e.candidateName || '?') + ' \u2192 ' + e.to);
+    });
+    fs.writeFileSync(cPath, JSON.stringify(cands, null, 2));
+    fs.writeFileSync(pPath, JSON.stringify(pending, null, 2));
+    res.send('<div style="font-family:Arial,sans-serif;max-width:600px;margin:40px auto"><h2 style="color:#1F4E79">Validation trait\u00e9e</h2>'
+      + '<p><strong>' + sent.length + '</strong> rappel(s) envoy\u00e9(s) :</p><ul>' + sent.map(function(s) { return '<li>' + s + '</li>'; }).join('') + '</ul>'
+      + (skipped.length ? '<p><strong>' + skipped.length + '</strong> ignor\u00e9(s) (situation d\u00e9j\u00e0 r\u00e9solue) :</p><ul>' + skipped.map(function(s) { return '<li>' + s + '</li>'; }).join('') + '</ul>' : '')
+      + '</div>');
+  } catch (err) { console.error('approve-reminders error:', err); res.status(500).send('Erreur: ' + err.message); }
+}
+router.get('/approve-reminder/:token', function(req, res) {
+  approveReminders(req, res, function(e) { return e.token === req.params.token; });
+});
+router.get('/approve-reminders/:batchToken', function(req, res) {
+  approveReminders(req, res, function(e) { return e.batchToken === req.params.batchToken; });
+});
+// == END REMINDER_APPROVAL_ROUTES =============================================
+
 module.exports = router;

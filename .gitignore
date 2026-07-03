@@ -20,3 +20,5 @@ authorize_drive*.js
 data/companyReportTokens.json
 data/companies.json
 data/candidates.json.bak*
+
+data/pendingReminders.json

@@ -58,6 +58,61 @@ const cron = require('node-cron');
 const { isContratCadre } = require('./lib/contratCadre');
 const nodemailerCron = require('nodemailer');
 const transporterCron = nodemailerCron.createTransport({ host: 'localhost', port: 25, secure: false, tls: { rejectUnauthorized: false } });
+// == REMINDER_APPROVAL_HOLD (2026-07-03) ======================================
+// No candidate-facing reminder is ever sent automatically. Due reminders are
+// queued to data/pendingReminders.json and Joss receives one approval email
+// per cron run with the full content and confirmation links.
+const PENDING_REMINDERS_PATH = path.join(__dirname, 'data/pendingReminders.json');
+function loadPendingReminders() {
+  try { return JSON.parse(fs.readFileSync(PENDING_REMINDERS_PATH, 'utf8')); }
+  catch (e) { return { reminders: {} }; }
+}
+const REMINDER_TYPE_LABELS = { oral: 'Entretien oral \u00e0 r\u00e9server', convention: 'Convention \u00e0 signer', quiz: 'Questionnaire Volet 2' };
+function queueRemindersAndNotify(dueList) {
+  if (!dueList.length) return;
+  const crypto2 = require('crypto');
+  const pending = loadPendingReminders();
+  const batchToken = crypto2.randomBytes(16).toString('hex');
+  const entries = [];
+  dueList.forEach(function(d) {
+    let existing = null;
+    Object.keys(pending.reminders).forEach(function(k) {
+      const e = pending.reminders[k];
+      if (!e.sentAt && !e.skippedAt && e.candidateId === d.candidateId && e.type === d.type) existing = e;
+    });
+    if (existing) {
+      Object.assign(existing, d, { token: existing.token, batchToken: batchToken, refreshedAt: new Date().toISOString() });
+      entries.push(existing);
+    } else {
+      const token = crypto2.randomBytes(20).toString('hex');
+      const e = Object.assign({ token: token, batchToken: batchToken, createdAt: new Date().toISOString(), sentAt: null, skippedAt: null }, d);
+      pending.reminders[token] = e;
+      entries.push(e);
+    }
+  });
+  fs.writeFileSync(PENDING_REMINDERS_PATH, JSON.stringify(pending, null, 2));
+  const base = 'https://eval.linguaid.net/api';
+  const cards = entries.map(function(e) {
+    return '<div style="border:1px solid #e2e8f0;border-radius:10px;margin:14px 0;overflow:hidden">'
+      + '<div style="background:#f8fafc;padding:10px 14px;font-size:13px">'
+      + '<strong>' + digestEsc(e.candidateName) + '</strong> (' + digestEsc(e.company || 'particulier') + ') \u2014 ' + (REMINDER_TYPE_LABELS[e.type] || e.type)
+      + '<br>Destinataire : <strong>' + digestEsc(e.to) + '</strong> &nbsp;|&nbsp; Objet : ' + digestEsc(e.subject) + '</div>'
+      + '<div style="padding:12px 14px;background:white;border-top:1px dashed #e2e8f0">' + e.html + '</div>'
+      + '<div style="padding:10px 14px;background:#f8fafc;border-top:1px solid #e2e8f0"><a href="' + base + '/approve-reminder/' + e.token + '" style="background:#059669;color:white;padding:8px 16px;border-radius:6px;text-decoration:none;font-weight:600;font-size:13px">\u2705 Valider et envoyer ce rappel</a></div>'
+      + '</div>';
+  }).join('');
+  const html = '<div style="font-family:Arial,sans-serif;color:#222;max-width:680px">'
+    + '<p>Bonjour Joss,</p>'
+    + '<p><strong>' + entries.length + '</strong> rappel(s) en attente de votre validation. Aucun email ne partira sans votre accord.</p>'
+    + '<p><a href="' + base + '/approve-reminders/' + batchToken + '" style="background:#1F4E79;color:white;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:600">\u2705 Tout valider et envoyer (' + entries.length + ')</a></p>'
+    + cards
+    + '<p style="font-size:12px;color:#666">Chaque lien ne fonctionne qu\u2019une fois. Au clic, l\u2019\u00e9tat du candidat est re-v\u00e9rifi\u00e9 (sign\u00e9 entre-temps, contrat cadre\u2026) avant tout envoi.</p>'
+    + '</div>';
+  transporterCron.sendMail({ from: 'eval@linguaid.net', to: 'jfr@linguaid.net',
+    subject: 'ACTION \u2014 ' + entries.length + ' rappel(s) en attente de validation', html: html },
+    function(err) { if (err) console.error('Approval email error', err); else console.log('Approval email sent (' + entries.length + ' pending)'); });
+}
+// == END REMINDER_APPROVAL_HOLD ===============================================
 const CALENDLY_LINKS = {
   Hannah: 'https://calendly.com/coursdanglais24/english-oral-test',
   Anna:   'https://calendly.com/ajmalzy/30min',
@@ -72,6 +127,7 @@ cron.schedule('0 9 * * *', function() {
     const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000;
     const now = Date.now();
     let updated = false;
+    const oralPending = [];
 
     candidates.forEach(function(c) {
       // Only chase candidates who: have a link sent, haven't booked, and aren't oral_done+
@@ -95,19 +151,12 @@ cron.schedule('0 9 * * *', function() {
         + '<img src="https://eval.linguaid.net/signature_joss.png" alt="Joss Frimond" style="max-width:400px;display:block;margin-top:8px">'
         + '</div>';
 
-      transporterCron.sendMail({
-        from: 'eval@linguaid.net',
-        to: c.email,
-        subject: 'Rappel : r\u00e9servez votre entretien oral',
-        html: html,
-      }, function(err) {
-        if (err) { console.error('Reminder cron mail error', c.email, err); return; }
-        console.log('Reminder sent to', c.name, c.email);
-      });
-
-      c.oralLastReminderAt = new Date().toISOString();
-      updated = true;
+      // REMINDER_APPROVAL_HOLD: queue for Joss's approval, never auto-send.
+      oralPending.push({ type: 'oral', candidateId: c.id, candidateName: c.name || '', company: c.company || '',
+        from: 'eval@linguaid.net', to: c.email,
+        subject: 'Rappel : r\u00e9servez votre entretien oral', html: html });
     });
+    queueRemindersAndNotify(oralPending);
 
     if (updated) {
       fs.writeFileSync(dataPath, JSON.stringify(candidates, null, 2));
@@ -211,6 +260,7 @@ cron.schedule('45 8 * * *', function() {
     const candidates = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
     const now = Date.now();
     let updated = false;
+    const holdPending = [];
 
     dueConventionNudges(candidates, now).forEach(function(c) {
       const cd = c.conventionData;
@@ -227,11 +277,10 @@ cron.schedule('45 8 * * *', function() {
         + '<p>Bien cordialement,</p>'
         + '<img src="https://eval.linguaid.net/signature_joss.png" style="max-width:400px;display:block;margin-top:8px">'
         + '</div>';
-      transporterCron.sendMail({ from: 'jfr@linguaid.net', to: cd.signatoryEmail || c.email,
-        subject: 'Rappel : convention de formation \u00e0 signer \u2014 ' + c.name, html: html },
-        function(err) { if (err) console.error('Convention nudge mail error', c.email, err); else console.log('Convention nudge sent for', c.name); });
-      cd.conventionLastReminderAt = new Date().toISOString();
-      updated = true;
+      // REMINDER_APPROVAL_HOLD: queue for Joss's approval, never auto-send.
+      holdPending.push({ type: 'convention', candidateId: c.id, candidateName: c.name || '', company: c.company || '',
+        from: 'jfr@linguaid.net', to: cd.signatoryEmail || c.email,
+        subject: 'Rappel : convention de formation \u00e0 signer \u2014 ' + c.name, html: html });
     });
 
     dueQuizNudges(candidates, now).forEach(function(c) {
@@ -248,13 +297,13 @@ cron.schedule('45 8 * * *', function() {
         + '<p>Bien cordialement,</p>'
         + '<p><strong>Catherine Frimond-Laubi\u00e8s</strong><br>Responsable suivi<br>cfr@linguaid.net</p>'
         + '</div>';
-      transporterCron.sendMail({ from: 'cfr@linguaid.net', to: c.email,
-        subject: 'Rappel : questionnaire de fin de module', html: html },
-        function(err) { if (err) console.error('Quiz nudge mail error', c.email, err); else console.log('Quiz nudge sent for', c.name); });
-      c.quizLastReminderAt = new Date().toISOString();
-      updated = true;
+      // REMINDER_APPROVAL_HOLD: queue for Joss's approval, never auto-send.
+      holdPending.push({ type: 'quiz', candidateId: c.id, candidateName: c.name || '', company: c.company || '',
+        from: 'cfr@linguaid.net', to: c.email,
+        subject: 'Rappel : questionnaire de fin de module', html: html });
     });
 
+    queueRemindersAndNotify(holdPending);
     if (updated) fs.writeFileSync(dataPath, JSON.stringify(candidates, null, 2));
   } catch (e) { console.error('Nudge cron error:', e); }
 });
