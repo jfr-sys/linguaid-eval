@@ -1680,7 +1680,7 @@ function onRecipientModeChange() {
     var status = document.getElementById('propSendStatus');
     status.textContent = 'G\xe9n\xe9ration de la proposition et du message...';
 
-    fetch('/api/generate-proposition/' + id, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ price: document.getElementById('propPrice').value, dateStart: document.getElementById('propDateStart').value, dateEnd: document.getElementById('propDateEnd').value, civility: document.getElementById('propCivility').value }) })
+    fetch('/api/generate-proposition/' + id, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ price: document.getElementById('propPrice').value, dateStart: document.getElementById('propDateStart').value, dateEnd: document.getElementById('propDateEnd').value, civility: document.getElementById('propCivility').value, /* TIERS_WORDING_FIX_V2 (2026-07-03): this second button into the same route was missing recipientType entirely - always fell back to server default 'learner', so tiers candidates kept getting learner-directed wording regardless of the picker. */ recipientType: (document.getElementById('propModeThird') && document.getElementById('propModeThird').checked) ? 'hr' : 'learner' }) })
       .then(function(r) { return r.json(); })
       .then(function(d) {
         btn.disabled = false;
