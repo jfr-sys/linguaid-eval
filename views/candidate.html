@@ -6,6 +6,11 @@
 <title>Linguaid Eval — Candidate</title>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script>
+  // CONTRAT CADRE (2026-07-03) — KEEP IN SYNC with lib/contratCadre.js
+  var CONTRAT_CADRE_COMPANIES = ['B. Braun Medical', 'HEC Paris', 'Groupe Reference'];
+  function ccNormKey(s) { return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,''); }
+  var CONTRAT_CADRE_KEYS = CONTRAT_CADRE_COMPANIES.map(ccNormKey);
+  function isContratCadre(companyRaw) { return CONTRAT_CADRE_KEYS.indexOf(ccNormKey(companyRaw)) !== -1; }
   function sendForSignature() {
     var btn = document.getElementById('btnSendSign');
     var status = document.getElementById('signStatus');
@@ -151,6 +156,10 @@
   .step-label { font-size: 12px; font-weight: 500; margin-top: 8px; color: #94a3b8; text-align: center; }
   .progress-step.done .step-label { color: #10b981; }
   .progress-step.active .step-label { color: #1F4E79; font-weight: 600; }
+  /* CONTRAT CADRE (2026-07-03) */
+  .progress-step.na .step-circle { background: #f1f5f9; border-color: #cbd5e1; color: #94a3b8; }
+  .progress-step.na .step-label, .progress-step.na .step-sublabel { color: #94a3b8; }
+  .progress-step.na:not(:last-child)::after { background: #e5e7eb; }
   .step-sublabel { font-size: 11px; color: #94a3b8; margin-top: 2px; text-align: center; }
   .progress-step.done .step-sublabel { color: #10b981; }
   .pipeline { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
@@ -631,7 +640,7 @@
 
   marked.setOptions({ breaks: true, gfm: true });
 
-  function updateProgressBar(status, hasProposal, hasConvention, hasSigned, hasSentCatherine, hasConvocation) {
+  function updateProgressBar(status, hasProposal, hasConvention, hasSigned, hasSentCatherine, hasConvocation, isCadre) {
     const stepIndex = STATUS_ORDER.indexOf(status);
     for (let i = 0; i < 5; i++) {
       const step = document.getElementById('pstep' + i);
@@ -650,16 +659,18 @@
     }
     var s5 = document.getElementById('pstep5');
     var c5 = document.getElementById('pc5');
-    if (s5 && hasProposal) { s5.classList.remove('pending','active'); s5.classList.add('done'); c5.innerHTML = '✓'; }
+    if (s5 && isCadre) { s5.classList.remove('pending','active','done'); s5.classList.add('na'); c5.innerHTML = '—'; }
+    else if (s5 && hasProposal) { s5.classList.remove('pending','active'); s5.classList.add('done'); c5.innerHTML = '✓'; }
     else if (s5 && status === 'programme_done') { s5.classList.remove('pending','done'); s5.classList.add('active'); c5.innerHTML = '6'; }
     var s6 = document.getElementById('pstep6');
     var c6 = document.getElementById('pc6');
     if (s6 && hasConvention) { s6.classList.remove('pending','active'); s6.classList.add('done'); c6.innerHTML = '✓'; }
-    else if (s6 && hasProposal) { s6.classList.remove('pending','done'); s6.classList.add('active'); }
+    else if (s6 && (hasProposal || isCadre)) { s6.classList.remove('pending','done'); s6.classList.add('active'); }
     var s7 = document.getElementById('pstep7');
     var c7 = document.getElementById('pc7');
-    if (s7 && hasSigned) { s7.classList.remove('pending','active'); s7.classList.add('done'); c7.innerHTML = '✓'; }
-    else if (s7 && hasConvention) { s7.classList.remove('pending','done'); s7.classList.add('active'); }
+    if (s7 && isCadre && !hasSigned) { s7.classList.remove('pending','active','done'); s7.classList.add('na'); c7.innerHTML = '—'; }
+    else if (s7 && hasSigned) { s7.classList.remove('pending','active','na'); s7.classList.add('done'); c7.innerHTML = '✓'; }
+    else if (s7 && hasConvention) { s7.classList.remove('pending','done','na'); s7.classList.add('active'); }
     var s8 = document.getElementById('pstep8');
     var c8 = document.getElementById('pc8');
     if (s8 && hasSentCatherine) { s8.classList.remove('pending','active'); s8.classList.add('done'); c8.innerHTML = '✓'; }
@@ -684,6 +695,8 @@
 
   function render(c) {
     candidate = c;
+    // CONTRAT CADRE (2026-07-03)
+    var isCadre = isContratCadre(c.company);
     window.candidateId = c.id;
     document.getElementById('profileName').textContent = c.name;
     document.getElementById('profileSub').textContent = [c.jobtitle, c.dept].filter(Boolean).join(' — ');
@@ -704,7 +717,7 @@
       document.getElementById('idCivility').value = civ;
     }
     document.getElementById('profileBadge').innerHTML = c.isRenewal ? '<span class="badge" style="background:#ede9fe;color:#5b21b6">Renouvellement</span>' : statusBadge(c.status);
-    updateProgressBar(c.status, !!(c.conventionData && c.conventionData.proposalSentAt), !!(c.conventionData && (c.conventionData.generatedAt || c.conventionData.pdfPath || c.conventionData.signingToken)), !!(c.conventionData && c.conventionData.signedAt), !!(c.conventionData && c.conventionData.sentToCatherineAt), !!(c.conventionData && c.conventionData.convocationSentAt));
+    updateProgressBar(c.status, !!(c.conventionData && c.conventionData.proposalSentAt), !!(c.conventionData && (c.conventionData.generatedAt || c.conventionData.pdfPath || c.conventionData.signingToken)), !!(c.conventionData && c.conventionData.signedAt), !!(c.conventionData && c.conventionData.sentToCatherineAt), !!(c.conventionData && c.conventionData.convocationSentAt), isCadre);
     if (c.status === 'invited') { var ra = document.getElementById('resendInviteArea'); if (ra) ra.style.display = 'block'; }
 
     const p = Math.round(100 * c.scores.total / (c.scores.max || 30));
@@ -1214,6 +1227,13 @@
     s6.style.opacity = '1'; s6.style.pointerEvents = 'auto';
     s6.style.borderTopColor = '#2E75B6';
     document.getElementById('propositionForm').style.display = 'block';
+    var btnSendProp = document.getElementById('btnSendProposition');
+    if (isContratCadre(c.company)) {
+      if (btnSendProp) btnSendProp.style.display = 'none';
+      document.getElementById('stage6status').textContent = 'Non applicable — contrat cadre : accord conclu au niveau entreprise, aucun envoi individuel';
+    } else if (btnSendProp) {
+      btnSendProp.style.display = '';
+    }
     if (cd.civility) document.getElementById('propCivility').value = cd.civility;
     document.getElementById('propPrice').value = cd.price || od.edofPrice || od.price || '';
     document.getElementById('propDateStart').value = cd.dateStart || od.dateStart || '';
@@ -1280,7 +1300,7 @@
 
     // Step 7: unlock if proposition accepted
     var s7 = document.getElementById('stage7');
-    if (cd.proposalAcceptedAt) {
+    if (cd.proposalAcceptedAt || isCadre) {
       s7.style.opacity = '1'; s7.style.pointerEvents = 'auto';
       s7.style.borderTopColor = '#2E75B6';
       document.getElementById('stage7status').textContent = 'Remplissez les détails pour générer la convention';
@@ -1317,6 +1337,13 @@
         var link = document.getElementById('signedPdfLink');
         if (block) block.style.display = 'block';
         if (link) link.href = '/api/download-convention-signed/' + c.id;
+      }
+      var btnSign = document.getElementById('btnSendSign');
+      if (isCadre && !cd.signedAt) {
+        if (btnSign) btnSign.style.display = 'none';
+        document.getElementById('stage7status').textContent = 'Non applicable — contrat cadre : signature hors plateforme, accepté par défaut';
+      } else if (btnSign) {
+        btnSign.style.display = '';
       }
     }
 

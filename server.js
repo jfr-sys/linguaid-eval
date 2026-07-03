@@ -55,6 +55,7 @@ app.get('/mon-parcours/:token', function(req, res) { res.sendFile(require('path'
 // Every day at 09:00, remind candidates who received a Calendly link but haven't
 // booked yet. Sends every 3 days. Stops once oralBookedAt is set or oral is done.
 const cron = require('node-cron');
+const { isContratCadre } = require('./lib/contratCadre');
 const nodemailerCron = require('nodemailer');
 const transporterCron = nodemailerCron.createTransport({ host: 'localhost', port: 25, secure: false, tls: { rejectUnauthorized: false } });
 const CALENDLY_LINKS = {
@@ -154,7 +155,7 @@ function buildJossDigest(candidates) {
     if (c.status === 'oral_done') oralDone.push([c.name, c.company || '\u2014']);
     if (c.status === 'final_report_done') finalDone.push([c.name, c.company || '\u2014']);
     if (cd.proposalSentAt && !c.proposalAcceptedAt && !cd.proposalAcceptedAt && !cd.signedAt && daysSince(cd.proposalSentAt) > 5) propStale.push([c.name, c.company || '\u2014', daysSince(cd.proposalSentAt) + ' j']);
-    if (cd.generatedAt && cd.signingToken && !cd.signedAt && daysSince(cd.generatedAt) > 3) convStale.push([c.name, c.company || '\u2014', daysSince(cd.generatedAt) + ' j']);
+    if (!isContratCadre(c.company) && cd.generatedAt && cd.signingToken && !cd.signedAt && daysSince(cd.generatedAt) > 3) convStale.push([c.name, c.company || '\u2014', daysSince(cd.generatedAt) + ' j']);
     if (c.quizSentAt && !c.quizCompletedAt) quizPending.push([c.name, c.company || '\u2014', daysSince(c.quizSentAt) + ' j']);
   });
   sec('Oraux effectu\u00e9s \u2014 rapport final \u00e0 g\u00e9n\u00e9rer', ['Candidat', 'Entreprise'], oralDone);
@@ -167,9 +168,11 @@ function buildJossDigest(candidates) {
     + '<p style="font-size:12px"><a href="https://eval.linguaid.net/candidates">Ouvrir la liste des candidats</a></p></div>';
 }
 // Nudge selectors: return candidates due a reminder today (3-day rhythm).
+// CONTRAT CADRE (2026-07-03): no reminder ever sent for cadre companies.
 function dueConventionNudges(candidates, now) {
   var T = 3 * 86400000;
   return candidates.filter(function(c) {
+    if (isContratCadre(c.company)) return false;
     var cd = c.conventionData || {};
     if (!cd.signingToken || !cd.generatedAt || cd.signedAt) return false;
     var last = cd.conventionLastReminderAt || cd.generatedAt;

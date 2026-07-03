@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { canonicalCompany, listCompanies } = require('../lib/companies');
+const { isContratCadre } = require('../lib/contratCadre');
 
 // Helper: 5-skill CEFR average
 function calc5SkillLevel(c) {
@@ -829,6 +830,10 @@ router.post('/generate-convention/:id', function(req, res) {
   // FINANCIAL PRIVACY GUARD (convention): third-party mode never falls back
   // to the learner; company-attached learner-mode sends need explicit override.
   var guardCompany = ((c.company || '')).trim();
+  // CONTRAT CADRE (2026-07-03): 100% bulletproof — overrides CPF and
+  // third-party routing. No email is ever sent, no token issued.
+  var isCadre = isContratCadre(guardCompany);
+  if (isCadre) { sendEmail = false; }
   var guardRealCo = guardCompany && guardCompany.toLowerCase() !== 'particulier';
   var guardThird = (cd.isThirdParty === true) || (cd.isThirdParty === undefined && guardRealCo);
   if (sendEmail && guardThird) {
@@ -842,7 +847,7 @@ router.post('/generate-convention/:id', function(req, res) {
   }
   var execFile = require('child_process').execFile;
   var crypto = require('crypto');
-  var signingToken = cd.signingToken || crypto.randomBytes(20).toString('hex');
+  var signingToken = isCadre ? '' : (cd.signingToken || crypto.randomBytes(20).toString('hex'));
   var isCPF = !!(cd.isCPF || od.isCPF);
   var tt = od.legalTrainingType || (isCPF ? 'CPF' : 'NON_CPF');
   var tplKey = tt === 'CAJA' ? 'CAJA' : tt === 'E360' ? 'E360' : tt === 'CPF' ? 'CPF' : 'NON_CPF';
@@ -1686,6 +1691,11 @@ router.post('/send-proposal/:id'
   var cidx = candidates2.findIndex(function(x){ return x.id === req.params.id; });
   if (cidx === -1) return res.status(404).json({ error: 'Not found' });
   var c = candidates2[cidx];
+  // CONTRAT CADRE (2026-07-03): this legacy route is unreferenced by any view
+  // but publicly reachable - same hard block as the live proposition route.
+  if (isContratCadre(c.company)) {
+    return res.json({ ok: true, skipped: 'contrat-cadre', note: 'Aucun email envoy\u00e9 \u2014 contrat cadre.' });
+  }
   var od = c.oralData || {};
   var cd = c.conventionData || {};
   var fs2 = require('fs');
@@ -2942,10 +2952,13 @@ var MP_CALENDLY = {
 // KEEP IN SYNC with crBuildRows() below and computeStage() in views/candidates.html.
 function mpComputeStage(c) {
   var cd = c.conventionData || {};
+  // CONTRAT CADRE (2026-07-03): skip straight past the proposal/signing
+  // milestones — nothing is ever sent or signed for these candidates.
+  var mpIsCadre = isContratCadre(c.company);
   var order = { csv_uploaded: 1, written_report_done: 2, oral_booked: 3, oral_done: 3, final_report_done: 4, programme_done: 5 };
   var idx = order[c.status] || 1;
   if (cd.proposalSentAt) idx = Math.max(idx, 6);
-  if (cd.generatedAt || cd.pdfPath || cd.signingToken) idx = Math.max(idx, 7);
+  if (cd.generatedAt || cd.pdfPath || cd.signingToken) idx = Math.max(idx, mpIsCadre ? 8 : 7);
   if (cd.signedAt) idx = Math.max(idx, 8);
   if (cd.sentToCatherineAt) idx = Math.max(idx, 9);
   if (cd.convocationSentAt) idx = Math.max(idx, 10);
@@ -2985,7 +2998,8 @@ router.get('/mon-parcours/:token', function(req, res) {
     if (idx <= 3 && !oralDone && !c.oralBookedAt && c.oralLinkSentAt) {
       actions.calendly = MP_CALENDLY[c.oralEvaluator || 'Hannah'] || MP_CALENDLY.Hannah;
     }
-    if (cd.signingToken && !cd.signedAt) {
+    var mpIsCadre2 = isContratCadre(c.company);
+    if (cd.signingToken && !cd.signedAt && !mpIsCadre2) {
       actions.sign = 'https://eval.linguaid.net/sign/' + cd.signingToken;
     }
     if (c.quizToken && !c.quizCompletedAt) {
@@ -2997,7 +3011,7 @@ router.get('/mon-parcours/:token', function(req, res) {
       trainingTitle: od.trainingTitle || (isLegal ? 'Formation en Anglais Juridique' : 'Formation en Anglais Professionnel'),
       stageIndex: idx,
       stageCount: 10,
-      labels: MP_LABELS,
+      labels: mpIsCadre2 ? (function(){ var L = MP_LABELS.slice(); L[6] = 'Modalit\u00e9s convenues (contrat cadre)'; L[8] = 'Convention transmise'; return L; })() : MP_LABELS,
       oralDone: oralDone,
       oralBooked: !!c.oralBookedAt,
       actions: actions

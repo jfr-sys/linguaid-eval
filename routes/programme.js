@@ -7,6 +7,7 @@ const path = require('path');
 const Anthropic = require('@anthropic-ai/sdk');
 const { execFile } = require('child_process');
 const { assertValidCpfType, getAction, CATALOGUE } = require('../config/catalogue');
+const { isContratCadre } = require('../lib/contratCadre');
 
 
 function calc5SkillLevel(c) {
@@ -532,6 +533,12 @@ router.post('/api/send-proposition-email/:id', async function(req, res) {
   const candidates = getCandidates();
   const c = candidates.find(x => x.id === req.params.id);
   if (!c) return res.status(404).json({ error: 'Not found' });
+
+  // CONTRAT CADRE (2026-07-03): no proposal is ever sent for cadre
+  // companies — accepted by default, nothing emailed, no attachment.
+  if (isContratCadre(c.company)) {
+    return res.json({ success: true, skipped: 'contrat-cadre', note: 'Aucun email envoy\u00e9 \u2014 contrat cadre.' });
+  }
 
   const od = c.oralData || {};
   const isCPF = !!(od.isCPF);
