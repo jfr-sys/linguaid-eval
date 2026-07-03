@@ -1244,12 +1244,15 @@
     document.getElementById('propRecipient').value = c.email || '';
     if (od.edofMCFLink) document.getElementById('propCpfLien').value = od.edofMCFLink;
     var isLegal = c.courseType === 'legal' || od.cpfType === 'E360_LEGAL' || od.cpfType === 'CAJA';
-    var isCPF = !!(od.isCPF);
+    // CPF_EMAIL_FIX (2026-07-03): cpfType alone is sufficient - a set
+    // cpfType (E360/E360_LEGAL/CAJA) means this IS a CPF proposal even if
+    // the separate isCPF boolean drifted out of sync. Never the other way.
     var cpfType = od.cpfType || '';
+    var isCPF = !!(od.isCPF) || !!cpfType;
     var propSubject = '';
     if (isCPF) {
       if (cpfType === 'CAJA') propSubject = 'Votre formation en anglais juridique des affaires – certification CAJA (CPF)';
-      else if (cpfType === 'E360_LEGAL') propSubject = 'Votre formation en anglais professionnel – parcours adapté aux professionnels du droit (CPF)';
+      else if (cpfType === 'E360_LEGAL') propSubject = 'Votre formation en anglais – approche adaptée aux professionnels du droit (CPF)';
       else propSubject = 'Votre formation en anglais professionnel avec la certification English 360 (CPF)';
     } else {
       var thirdParty = document.getElementById('propModeThird') && document.getElementById('propModeThird').checked;
@@ -1565,8 +1568,10 @@ function onRecipientModeChange() {
 
   // ── Email template builder ─────────────────────────────────────────────
   function buildEmailBody(resumeSituation, cand, oral, conv) {
-    var isCPF = !!(oral.isCPF);
+    // CPF_EMAIL_FIX (2026-07-03): see subject-building comment above - same
+    // desync fix, cpfType presence is sufficient on its own.
     var cpfType = oral.cpfType || '';
+    var isCPF = !!(oral.isCPF) || !!cpfType;
     var isLegal = cand.courseType === 'legal' || cpfType === 'E360_LEGAL' || cpfType === 'CAJA';
     var thirdParty = document.getElementById('propModeThird') && document.getElementById('propModeThird').checked;
     var civility = conv.civility || (isLegal ? 'Ma\xeetre' : 'Madame');
@@ -1625,11 +1630,9 @@ function onRecipientModeChange() {
         + '\u2013 1\u00a0500\u00a0\u20ac finançables via le CPF\n'
         + '\u2013 Reste \xe0 votre charge\u00a0: ' + solde + '\u00a0\u20ac + participation forfaitaire de 150\u00a0\u20ac';
     } else {
-      var coachRate = isLegal ? 132 : 90;
-      var hwCost = isLegal ? 200 : (parseInt(homeworkH, 10) * 30);
-      budgetBlock = '**Budget\u00a0: ' + price + '\u00a0\u20ac TTC**\n'
-        + '\u2013 ' + coachH + ' heures de ' + (isLegal ? 'cours individuels' : 'coaching individuel') + '\u00a0: ' + (parseInt(coachH, 10) * coachRate) + '\u00a0\u20ac'
-        + (hasHomework ? '\n\u2013 ' + homeworkH + ' heures de travaux personnels\u00a0: ' + (isLegal ? '200\u00a0\u20ac (forfait)' : hwCost + '\u00a0\u20ac') : '');
+      // CPF_EMAIL_FIX (2026-07-03): no rate/hours breakdown - it was never
+      // requested and could silently drift from the entered price. Total only.
+      budgetBlock = '**Budget\u00a0: ' + price + '\u00a0\u20ac TTC**';
     }
 
     // CPF inscription block
@@ -1685,7 +1688,25 @@ function onRecipientModeChange() {
           price: document.getElementById('propPrice').value,
           civility: document.getElementById('propCivility').value
         });
-        var body = buildEmailBody(d.resumeSituation || '', candidate, candidate.oralData || {}, formConv);
+        // CPF_EMAIL_FIX (2026-07-03): the visible "Lien CPF" field is
+        // authoritative - if Joss typed/pasted a specific EDOF link there,
+        // that is what goes in the email, never a stale/absent background
+        // value. If a CPF email has no specific link available at all
+        // (field empty AND nothing on file), block and ask for it rather
+        // than silently sending the generic homepage as the "lien suivant".
+        var odRaw = candidate.oralData || {};
+        var cpfLienField = (document.getElementById('propCpfLien') && document.getElementById('propCpfLien').value || '').trim();
+        var effectiveIsCPF = !!(odRaw.isCPF) || !!(odRaw.cpfType);
+        var resolvedLink = cpfLienField || odRaw.edofMCFLink || '';
+        if (effectiveIsCPF && !resolvedLink) {
+          alert('Formation CPF sans lien EDOF specifique : renseignez le champ \u00ab Lien CPF (si applicable) \u00bb avant de generer l\u2019email.');
+          btn.disabled = false;
+          btn.textContent = '\u2728 G\xe9n\xe9rer l\u2019email';
+          status.textContent = '';
+          return;
+        }
+        var effectiveOral = Object.assign({}, odRaw, { edofMCFLink: resolvedLink });
+        var body = buildEmailBody(d.resumeSituation || '', candidate, effectiveOral, formConv);
         document.getElementById('propBody').value = body;
         document.getElementById('propBodyModal').value = body;
         // Open modal for review
