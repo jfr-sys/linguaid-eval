@@ -539,10 +539,15 @@ router.post('/api/send-proposition-email/:id', async function(req, res) {
   const c = candidates.find(x => x.id === req.params.id);
   if (!c) return res.status(404).json({ error: 'Not found' });
 
-  // CONTRAT CADRE (2026-07-03): no proposal is ever sent for cadre
-  // companies — accepted by default, nothing emailed, no attachment.
+  // CADRE_TIERS_REINTRODUCED (2026-07-03): learner-direct is 100%
+  // bulletproof blocked for cadre companies, no override, ever. Third-party
+  // sends ARE allowed - falls through to the normal tiers validation below
+  // (recipientEmail required + format-checked), unchanged.
   if (isContratCadre(c.company)) {
-    return res.json({ success: true, skipped: 'contrat-cadre', note: 'Aucun email envoy\u00e9 \u2014 contrat cadre.' });
+    const cadreRecipientType = req.body.recipientType || 'learner';
+    if (cadreRecipientType !== 'hr') {
+      return res.status(400).json({ error: 'Contrat cadre : aucun envoi direct \u00e0 l\u2019apprenant n\u2019est jamais autoris\u00e9 pour ' + (c.company || '') + '. Utilisez le mode tiers avec un email valide.' });
+    }
   }
 
   const od = c.oralData || {};

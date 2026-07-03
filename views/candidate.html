@@ -16,6 +16,12 @@
     var status = document.getElementById('signStatus');
     var coC = ((document.getElementById('profileCompany')||{}).value || '').trim();
     var thirdC = document.getElementById('propModeThird') && document.getElementById('propModeThird').checked;
+    // CADRE_TIERS_REINTRODUCED (2026-07-03): learner-direct never allowed
+    // for cadre - fail immediately, no confirm-to-override dialog offered.
+    if (isContratCadre(coC) && !thirdC) {
+      alert('Contrat cadre : aucun envoi direct à l\u2019apprenant n\u2019est jamais autorisé pour ' + coC + '. Passez en mode tiers avec un email valide.');
+      return;
+    }
     var convLearnerOverride = false;
     if (!thirdC && coC && coC.toLowerCase() !== 'particulier') {
       if (!window.confirm('\u26a0\ufe0f Ce candidat est rattach\u00e9 \u00e0 \u00ab ' + coC + ' \u00bb.\nLa convention (avec tarif) va \u00eatre envoy\u00e9e \u00e0 L\u2019APPRENANT et non au signataire entreprise.\n\nConfirmer cet envoi ?')) return;
@@ -1231,11 +1237,9 @@
     s6.style.borderTopColor = '#2E75B6';
     document.getElementById('propositionForm').style.display = 'block';
     var btnSendProp = document.getElementById('btnSendProposition');
+    if (btnSendProp) btnSendProp.style.display = '';
     if (isContratCadre(c.company)) {
-      if (btnSendProp) btnSendProp.style.display = 'none';
-      document.getElementById('stage6status').textContent = 'Non applicable — contrat cadre : accord conclu au niveau entreprise, aucun envoi individuel';
-    } else if (btnSendProp) {
-      btnSendProp.style.display = '';
+      document.getElementById('stage6status').textContent = 'Contrat cadre — envoi possible uniquement à un tiers (jamais à l’apprenant)';
     }
     if (cd.civility) document.getElementById('propCivility').value = cd.civility;
     document.getElementById('propPrice').value = cd.price || od.edofPrice || od.price || '';
@@ -1283,21 +1287,20 @@
     // Sync recipient picker (field visibility + confirmation banner) with
     // whatever radio is actually checked - covers page reload / bfcache.
     if (typeof onRecipientModeChange === 'function') onRecipientModeChange();
-    // CADRE_EMAIL_UI_HIDE (2026-07-03): for cadre candidates the whole email
-    // apparatus disappears - no subject, no recipient toggle, no tiers fields,
-    // no warning banner. Runs AFTER onRecipientModeChange so nothing re-shows.
-    // For non-cadre, only the static blocks are restored; the two recipient
-    // field groups stay under the picker's control.
-    var cadreHideUi = isContratCadre(c.company);
-    ['propEmailHeader','propSubjectBlock','propRecipientLabel','propRecipientModes'].forEach(function(eid) {
-      var el = document.getElementById(eid);
-      if (el) el.style.display = cadreHideUi ? 'none' : '';
-    });
-    if (cadreHideUi) {
-      ['learnerRecipientFields','thirdPartyFields','recipientConfirmBanner'].forEach(function(eid) {
-        var el = document.getElementById(eid);
-        if (el) el.style.display = 'none';
-      });
+    // CADRE_TIERS_REINTRODUCED (2026-07-03): email apparatus stays visible
+    // for cadre candidates (subject, recipient toggle, tiers fields) - only
+    // the "L'apprenant" option is removed from the picker, and tiers is
+    // forced checked. Learner-direct remains impossible to select in the
+    // UI, and is hard-blocked server-side regardless.
+    var cadreLockUi = isContratCadre(c.company);
+    if (cadreLockUi) {
+      if (mThird) mThird.checked = true;
+      if (mLearner) {
+        mLearner.checked = false;
+        var learnerLabel = mLearner.closest ? mLearner.closest('label') : mLearner.parentElement;
+        if (learnerLabel) learnerLabel.style.display = 'none';
+      }
+      if (typeof onRecipientModeChange === 'function') onRecipientModeChange();
     }
 
     if (cd.proposalSentAt || cd.proposalAcceptedAt) {
@@ -1361,15 +1364,10 @@
         if (link) link.href = '/api/download-convention-signed/' + c.id;
       }
       var btnSign = document.getElementById('btnSendSign');
+      if (btnSign) btnSign.style.display = '';
       if (isCadre && !cd.signedAt) {
-        if (btnSign) btnSign.style.display = 'none';
-        document.getElementById('stage7status').textContent = 'Non applicable — contrat cadre : signature hors plateforme, accepté par défaut';
-      } else if (btnSign) {
-        btnSign.style.display = '';
+        document.getElementById('stage7status').textContent = 'Contrat cadre — signature possible uniquement par un tiers (jamais par l’apprenant)';
       }
-      // CADRE_EMAIL_UI_HIDE (2026-07-03): no signatory email field for cadre.
-      var seFieldEl = document.getElementById('convSignatoryEmail');
-      if (seFieldEl && seFieldEl.parentElement) seFieldEl.parentElement.style.display = (isCadre && !cd.signedAt) ? 'none' : '';
     }
 
     // Step 8: unlock if signed
@@ -1519,6 +1517,12 @@ function onRecipientModeChange() {
     }
     var coP = ((document.getElementById('profileCompany')||{}).value || '').trim();
     var isThirdP = document.getElementById('propModeThird') && document.getElementById('propModeThird').checked;
+    // CADRE_TIERS_REINTRODUCED (2026-07-03): learner-direct never allowed
+    // for cadre - fail immediately, no confirm-to-override dialog offered.
+    if (isContratCadre(coP) && !isThirdP) {
+      alert('Contrat cadre : aucun envoi direct à l\u2019apprenant n\u2019est jamais autorisé pour ' + coP + '. Passez en mode tiers avec un email valide.');
+      return;
+    }
     var propLearnerOverride = false;
     if (!isThirdP && coP && coP.toLowerCase() !== 'particulier') {
       if (!window.confirm('\u26a0\ufe0f Ce candidat est rattach\u00e9 \u00e0 \u00ab ' + coP + ' \u00bb.\nLa proposition FINANCI\u00c8RE va \u00eatre envoy\u00e9e \u00e0 L\u2019APPRENANT (' + activeEmail + ') et non au tiers.\n\nConfirmer cet envoi ?')) return;

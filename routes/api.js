@@ -830,24 +830,31 @@ router.post('/generate-convention/:id', function(req, res) {
   // FINANCIAL PRIVACY GUARD (convention): third-party mode never falls back
   // to the learner; company-attached learner-mode sends need explicit override.
   var guardCompany = ((c.company || '')).trim();
-  // CONTRAT CADRE (2026-07-03): 100% bulletproof — overrides CPF and
-  // third-party routing. No email is ever sent, no token issued.
   var isCadre = isContratCadre(guardCompany);
-  if (isCadre) { sendEmail = false; }
   var guardRealCo = guardCompany && guardCompany.toLowerCase() !== 'particulier';
   var guardThird = (cd.isThirdParty === true) || (cd.isThirdParty === undefined && guardRealCo);
+  // CADRE_TIERS_REINTRODUCED (2026-07-03): learner-direct is 100%
+  // bulletproof blocked for cadre companies, NO override possible, ever.
+  // Third-party sends ARE allowed - falls through to the normal tiers
+  // validation just below, unchanged.
+  if (isCadre && !guardThird) {
+    if (sendEmail) {
+      return res.status(400).json({ error: 'Contrat cadre : aucun envoi direct \u00e0 l\u2019apprenant n\u2019est jamais autoris\u00e9 pour ' + guardCompany + '. Passez en mode tiers avec un email valide.' });
+    }
+    sendEmail = false;
+  }
   if (sendEmail && guardThird) {
     var guardSe = (cd.signatoryEmail || '').trim();
     if (!guardSe || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guardSe)) {
       return res.status(400).json({ error: 'Mode tiers : adresse email du signataire manquante ou invalide \u2014 aucun email ne sera envoy\u00e9 \u00e0 l\u2019apprenant \u00e0 la place.' });
     }
   }
-  if (sendEmail && !guardThird && guardRealCo && !(req.body && req.body.learnerOverride === true)) {
+  if (sendEmail && !guardThird && guardRealCo && !isCadre && !(req.body && req.body.learnerOverride === true)) {
     return res.status(400).json({ error: 'Ce candidat est rattach\u00e9 \u00e0 \u00ab ' + guardCompany + ' \u00bb : la convention part au tiers par d\u00e9faut. Confirmez explicitement l\u2019envoi \u00e0 l\u2019apprenant.' });
   }
   var execFile = require('child_process').execFile;
   var crypto = require('crypto');
-  var signingToken = isCadre ? '' : (cd.signingToken || crypto.randomBytes(20).toString('hex'));
+  var signingToken = (isCadre && !guardThird) ? '' : (cd.signingToken || crypto.randomBytes(20).toString('hex'));
   var isCPF = !!(cd.isCPF || od.isCPF);
   var tt = od.legalTrainingType || (isCPF ? 'CPF' : 'NON_CPF');
   var tplKey = tt === 'CAJA' ? 'CAJA' : tt === 'E360' ? 'E360' : tt === 'CPF' ? 'CPF' : 'NON_CPF';
