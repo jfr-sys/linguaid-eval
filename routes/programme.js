@@ -161,6 +161,11 @@ router.get('/api/generate-programme/:id', async function(req, res) {
     };
   }
 
+  // NIVEAU_VISE_FIX (2026-07-03): the Python generator needs courseType to
+  // decide whether "Niveau vise" belongs in the document. Neither
+  // payload-building branch above sets it, so backfill unconditionally here.
+  if (!payload.courseType) payload.courseType = c.courseType || '';
+
   // FAILSAFE: block CPF generation if cpfType is missing or unrecognised
   if (payload.isCPF) {
     try {
