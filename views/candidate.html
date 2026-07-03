@@ -1221,6 +1221,9 @@
     if (c.status !== 'programme_done' && c.status !== 'final_report_done') return;
     var cd = c.conventionData || {};
     var od = c.oralData || {};
+    // CONTRAT CADRE (2026-07-03) scope fix: isCadre must be local to this
+    // function - the declaration in render() is not visible here.
+    var isCadre = isContratCadre(c.company);
 
     // Step 6
     var s6 = document.getElementById('stage6');
