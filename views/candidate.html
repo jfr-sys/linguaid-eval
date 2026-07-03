@@ -383,13 +383,13 @@
         <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Date fin</label><input id="propDateEnd" type="date" onchange="autoSaveConventionField('propDateEnd','dateEnd')" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
         <div style="grid-column:1/-1"><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Lien CPF (si applicable)</label><input id="propCpfLien" type="text" placeholder="https://www.moncompteformation.gouv.fr/..." style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
       </div>
-      <div style="font-size:12px;font-weight:500;color:#666;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">Email</div>
-      <div style="margin-bottom:0.75rem">
+      <div id="propEmailHeader" style="font-size:12px;font-weight:500;color:#666;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">Email</div>
+      <div id="propSubjectBlock" style="margin-bottom:0.75rem">
         <label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Objet</label>
         <input id="propSubject" type="text" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px">
       </div>
-      <div style="font-size:12px;color:#666;margin-bottom:8px">Destinataire</div>
-      <div style="display:flex;gap:1.5rem;margin-bottom:0.75rem">
+      <div id="propRecipientLabel" style="font-size:12px;color:#666;margin-bottom:8px">Destinataire</div>
+      <div id="propRecipientModes" style="display:flex;gap:1.5rem;margin-bottom:0.75rem">
         <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
           <input type="radio" name="propRecipientMode" id="propModeLearner" checked onchange="onRecipientModeChange()" style="cursor:pointer">
           L'apprenant
@@ -1280,6 +1280,22 @@
     // Sync recipient picker (field visibility + confirmation banner) with
     // whatever radio is actually checked - covers page reload / bfcache.
     if (typeof onRecipientModeChange === 'function') onRecipientModeChange();
+    // CADRE_EMAIL_UI_HIDE (2026-07-03): for cadre candidates the whole email
+    // apparatus disappears - no subject, no recipient toggle, no tiers fields,
+    // no warning banner. Runs AFTER onRecipientModeChange so nothing re-shows.
+    // For non-cadre, only the static blocks are restored; the two recipient
+    // field groups stay under the picker's control.
+    var cadreHideUi = isContratCadre(c.company);
+    ['propEmailHeader','propSubjectBlock','propRecipientLabel','propRecipientModes'].forEach(function(eid) {
+      var el = document.getElementById(eid);
+      if (el) el.style.display = cadreHideUi ? 'none' : '';
+    });
+    if (cadreHideUi) {
+      ['learnerRecipientFields','thirdPartyFields','recipientConfirmBanner'].forEach(function(eid) {
+        var el = document.getElementById(eid);
+        if (el) el.style.display = 'none';
+      });
+    }
 
     if (cd.proposalSentAt || cd.proposalAcceptedAt) {
       document.getElementById('propositionSentBar').style.display = 'block';
@@ -1348,6 +1364,9 @@
       } else if (btnSign) {
         btnSign.style.display = '';
       }
+      // CADRE_EMAIL_UI_HIDE (2026-07-03): no signatory email field for cadre.
+      var seFieldEl = document.getElementById('convSignatoryEmail');
+      if (seFieldEl && seFieldEl.parentElement) seFieldEl.parentElement.style.display = (isCadre && !cd.signedAt) ? 'none' : '';
     }
 
     // Step 8: unlock if signed
