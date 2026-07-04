@@ -11,6 +11,13 @@
   .nav-logo { font-size: 18px; font-weight: 700; }
   .nav-right { display: flex; align-items: center; gap: 1rem; font-size: 13px; }
   .nav-right a { color: rgba(255,255,255,0.8); text-decoration: none; }
+  /* HEADER_TOOLBAR_REDESIGN (2026-07-04) */
+  .hdr-btn { display: flex; align-items: center; gap: 7px; color: white; background: rgba(255,255,255,0.12); border: 0.5px solid rgba(255,255,255,0.3); border-radius: 8px; padding: 6px 12px; font-size: 13px; font-weight: 500; text-decoration: none; white-space: nowrap; }
+  .hdr-btn:hover { background: rgba(255,255,255,0.22); }
+  .hdr-divider { width: 1px; height: 20px; background: rgba(255,255,255,0.25); }
+  .tb-btn { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 14px; border-radius: 8px; border: 1px solid #e2e8f0; background: white; color: #1a1a1a; font-size: 13px; font-weight: 500; text-decoration: none; white-space: nowrap; cursor: pointer; transition: background 0.15s; }
+  .tb-btn:hover { background: #f8fafc; }
+  .tb-divider { width: 1px; height: 24px; background: #e2e8f0; }
   .container { max-width: 960px; margin: 0 auto; padding: 2rem; }
   .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
   h1 { font-size: 22px; font-weight: 600; color: #1F4E79; }
@@ -60,9 +67,9 @@
 <nav class="nav">
   <a href="/candidates" class="nav-logo" style="display:flex;align-items:center;gap:16px;text-decoration:none;color:white"><div style="background:white;border-radius:6px;padding:4px 10px;display:flex;align-items:center"><img src="/linguaid_logo.png" style="height:32px;display:block" alt="Linguaid"></div><span style="font-size:15px;font-weight:600;letter-spacing:0.01em;color:white">English Evaluation System</span></a>
   <div class="nav-right">
-    <a href="/candidates/suivi" style="color:#1F4E79;background:white;text-decoration:none;margin-right:18px;font-size:13px;font-weight:600;padding:7px 14px;border-radius:6px">📋 Suivi convocations &amp; commandes</a>
-    <!-- SUIVI_CLIENT_BUTTON (2026-07-04) -->
-    <a href="/candidates/company-report" style="color:#1F4E79;background:white;text-decoration:none;margin-right:18px;font-size:13px;font-weight:600;padding:7px 14px;border-radius:6px">🏢 Suivi client</a>
+    <a href="/candidates/suivi" class="hdr-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>Suivi convocations &amp; commandes</a>
+    <a href="/candidates/company-report" class="hdr-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"></path><path d="M5 21V7l8-4v18"></path><path d="M19 21V11l-6-4"></path><path d="M9 9v.01"></path><path d="M9 12v.01"></path><path d="M9 15v.01"></path><path d="M9 18v.01"></path></svg>Suivi client</a>
+    <div class="hdr-divider"></div>
     <span id="userName"></span>
     <a href="/logout">Sign out</a>
   </div>
@@ -72,10 +79,11 @@
     <h1>Candidates</h1>
     <div style="display:flex;gap:0.75rem;align-items:center">
       <input type="text" id="searchBox" placeholder="Search candidates..." oninput="render()" style="font-size:13px;padding:8px 14px;border:1px solid #e2e8f0;border-radius:8px;width:220px;color:#334155;outline:none">
-      <a href="/candidates/new" class="btn" style="background:#475569">+ Business English</a>
-      <a href="/candidates/new-legal" class="btn" style="background:#C00000">+ Legal English</a>
-      <button class="btn" style="background:#166534;color:white;" onclick="showInviteModal()">✉ Invite candidate</button>
-      <a href="/candidates/new-renewal" class="btn" style="background:#7c3aed;color:white;">↩ Renewal</a>
+      <a href="/candidates/new" class="tb-btn"><span style="color:#185FA5;display:flex"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg></span>Business English</a>
+      <a href="/candidates/new-legal" class="tb-btn"><span style="color:#993C1D;display:flex"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"></path><path d="M5 7l-3 6a3 3 0 0 0 6 0l-3-6"></path><path d="M19 7l-3 6a3 3 0 0 0 6 0l-3-6"></path><path d="M5 7h14"></path><path d="M9 21h6"></path></svg></span>Legal English</a>
+      <div class="tb-divider"></div>
+      <button class="tb-btn" onclick="showInviteModal()"><span style="color:#0F6E56;display:flex"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"></rect><path d="M22 6l-10 7L2 6"></path></svg></span>Invite candidate</button>
+      <a href="/candidates/new-renewal" class="tb-btn"><span style="color:#534AB7;display:flex"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg></span>Renewal</a>
     </div>
   </div>
   <div id="statsBar" style="display:flex;gap:1.5rem;align-items:center;margin-bottom:1rem;padding:10px 16px;background:white;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.06);font-size:13px;color:#475569"><span><strong id="statCount">—</strong> candidates</span><span style="color:#e2e8f0">|</span><span>Total budget : <strong id="statBudget" style="color:#1F4E79">—</strong></span></div>
