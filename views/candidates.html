@@ -24,6 +24,9 @@
   .mode-btn:last-child { border-radius: 0 6px 6px 0; border-left: none; }
   .mode-btn.active { background: #1F4E79; color: white; border-color: #1F4E79; }
   .company-cell { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* CANDIDATES_TABS (2026-07-04) */
+  .cand-tab { background: none; border: none; padding: 10px 20px; font-size: 14px; font-weight: 500; color: #94a3b8; cursor: pointer; font-family: inherit; border-bottom: 2px solid transparent; margin-bottom: -2px; }
+  .cand-tab.active { color: #1F4E79; border-bottom-color: #1F4E79; }
   /* WIDEN_CONTAINER (2026-07-04): was 960px, too narrow for 8 real columns - matches company_report.html's 1600px */
   .container { max-width: 1600px; margin: 0 auto; padding: 2rem; }
   .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
@@ -92,6 +95,11 @@
       <button class="tb-btn" onclick="showInviteModal()"><span style="color:#0F6E56;display:flex"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"></rect><path d="M22 6l-10 7L2 6"></path></svg></span>Invite candidate</button>
       <a href="/candidates/new-renewal" class="tb-btn"><span style="color:#534AB7;display:flex"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg></span>Renewal</a>
     </div>
+  </div>
+  <!-- CANDIDATES_TABS (2026-07-04) -->
+  <div style="display:flex;gap:0;border-bottom:2px solid #e2e8f0;margin-bottom:1rem">
+    <button class="cand-tab active" id="tabActiveBtn" onclick="setCandTab('active')">En cours</button>
+    <button class="cand-tab" id="tabDoneBtn" onclick="setCandTab('done')">Terminé</button>
   </div>
   <div id="statsBar" style="display:flex;gap:1.5rem;align-items:center;justify-content:space-between;margin-bottom:0.5rem;padding:10px 16px;background:white;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.06);font-size:13px;color:#475569"><div style="display:flex;gap:1.5rem;align-items:center"><span><strong id="statCount">—</strong> candidates</span><span style="color:#e2e8f0">|</span><span>Total budget : <strong id="statBudget" style="color:#1F4E79">—</strong></span></div><div><button class="mode-btn" id="modeCompactBtn" onclick="setTableMode('compact')">Compact</button><button class="mode-btn" id="modeDetailedBtn" onclick="setTableMode('detailed')">Detailed</button></div></div>
   <div style="margin-bottom:1rem;padding:10px 16px;background:white;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.06)"><div id="stageDistBar" style="display:flex;height:10px;border-radius:5px;overflow:hidden;background:#f1f5f9;margin-bottom:8px"></div><div id="stageDistLegend" style="display:flex;gap:16px;font-size:12px;color:#64748b"></div></div>
@@ -252,6 +260,15 @@
     if (db) db.className = 'mode-btn' + (m === 'detailed' ? ' active' : '');
     render();
   }
+  // CANDIDATES_TABS (2026-07-04)
+  var candTab = 'active';
+  function setCandTab(t) {
+    candTab = t;
+    var ab = document.getElementById('tabActiveBtn'), db = document.getElementById('tabDoneBtn');
+    if (ab) ab.classList.toggle('active', t === 'active');
+    if (db) db.classList.toggle('active', t === 'done');
+    render();
+  }
   function computeStage(x) {
     var cd = x.conventionData || {};
     // STAGE_PROPOSITION_GENERATED_FIX (2026-07-03): mirrors the same fix in
@@ -296,10 +313,19 @@
   function render(){
     var tb=document.getElementById('candidateList');
     var q=((document.getElementById('searchBox')||{}).value||'').toLowerCase();
-    var rows=all.filter(function(x){
+    var preTabRows=all.filter(function(x){
       if (q && ((x.name||'')+(x.jobtitle||'')+(x.company||'')+(x.status||'')).toLowerCase().indexOf(q)===-1) return false;
       for (var f in activeFilters) { if (!activeFilters[f].has(getFieldVal(x,f))) return false; }
       return true;
+    });
+    var tabActiveCount = 0, tabDoneCount = 0;
+    preTabRows.forEach(function(x) { if (computeStage(x).idx >= 10) tabDoneCount++; else tabActiveCount++; });
+    var tabActiveBtnEl = document.getElementById('tabActiveBtn'), tabDoneBtnEl = document.getElementById('tabDoneBtn');
+    if (tabActiveBtnEl) tabActiveBtnEl.textContent = 'En cours \u00b7 ' + tabActiveCount;
+    if (tabDoneBtnEl) tabDoneBtnEl.textContent = 'Termin\u00e9 \u00b7 ' + tabDoneCount;
+    var rows=preTabRows.filter(function(x){
+      var idx = computeStage(x).idx;
+      return candTab === 'done' ? idx >= 10 : idx < 10;
     });
     rows.sort(function(a,b){
       var aPin = a.email==='jossfrimond@hotmail.com'?1:0;
