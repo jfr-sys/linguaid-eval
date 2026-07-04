@@ -18,6 +18,12 @@
   .tb-btn { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 14px; border-radius: 8px; border: 1px solid #e2e8f0; background: white; color: #1a1a1a; font-size: 13px; font-weight: 500; text-decoration: none; white-space: nowrap; cursor: pointer; transition: background 0.15s; }
   .tb-btn:hover { background: #f8fafc; }
   .tb-divider { width: 1px; height: 24px; background: #e2e8f0; }
+  /* TABLE_COMPACT_DETAILED (2026-07-04) */
+  .mode-btn { border: 1px solid #e2e8f0; background: white; color: #475569; font-size: 12px; font-weight: 500; padding: 6px 14px; cursor: pointer; font-family: inherit; }
+  .mode-btn:first-child { border-radius: 6px 0 0 6px; }
+  .mode-btn:last-child { border-radius: 0 6px 6px 0; border-left: none; }
+  .mode-btn.active { background: #1F4E79; color: white; border-color: #1F4E79; }
+  .company-cell { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .container { max-width: 960px; margin: 0 auto; padding: 2rem; }
   .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
   h1 { font-size: 22px; font-weight: 600; color: #1F4E79; }
@@ -86,7 +92,8 @@
       <a href="/candidates/new-renewal" class="tb-btn"><span style="color:#534AB7;display:flex"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg></span>Renewal</a>
     </div>
   </div>
-  <div id="statsBar" style="display:flex;gap:1.5rem;align-items:center;margin-bottom:1rem;padding:10px 16px;background:white;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.06);font-size:13px;color:#475569"><span><strong id="statCount">—</strong> candidates</span><span style="color:#e2e8f0">|</span><span>Total budget : <strong id="statBudget" style="color:#1F4E79">—</strong></span></div>
+  <div id="statsBar" style="display:flex;gap:1.5rem;align-items:center;justify-content:space-between;margin-bottom:0.5rem;padding:10px 16px;background:white;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.06);font-size:13px;color:#475569"><div style="display:flex;gap:1.5rem;align-items:center"><span><strong id="statCount">—</strong> candidates</span><span style="color:#e2e8f0">|</span><span>Total budget : <strong id="statBudget" style="color:#1F4E79">—</strong></span></div><div><button class="mode-btn" id="modeCompactBtn" onclick="setTableMode('compact')">Compact</button><button class="mode-btn" id="modeDetailedBtn" onclick="setTableMode('detailed')">Detailed</button></div></div>
+  <div style="margin-bottom:1rem;padding:10px 16px;background:white;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.06)"><div id="stageDistBar" style="display:flex;height:10px;border-radius:5px;overflow:hidden;background:#f1f5f9;margin-bottom:8px"></div><div id="stageDistLegend" style="display:flex;gap:16px;font-size:12px;color:#64748b"></div></div>
   <div id="bulkBar" style="display:none;align-items:center;gap:1rem;margin-bottom:1rem;padding:10px 16px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;font-size:13px;color:#1e40af">
     <span id="bulkCount" style="font-weight:600"></span>
     <span>Evaluator:</span>
@@ -104,7 +111,7 @@
           <th style="width:32px"><input type="checkbox" id="chkAll" onchange="toggleAll(this)" title="Select all written_done"></th>
           <th onclick="sortBy('name')" style="cursor:pointer;user-select:none">Name <span id="sort-name">↕</span></th>
           <th onclick="sortBy('courseType')" style="cursor:pointer;user-select:none">Type <span id="sort-courseType">↕</span></th>
-          <th><span onclick="sortBy('company')" style="cursor:pointer;user-select:none">Company <span id="sort-company">↕</span></span> <div class="col-filter"><button class="col-filter-btn" id="cfb-company" onclick="toggleFilter('company',event)">▾</button><div class="col-filter-dropdown" id="cfd-company"></div></div></th>
+          <th style="max-width:180px"><span onclick="sortBy('company')" style="cursor:pointer;user-select:none">Company <span id="sort-company">↕</span></span> <div class="col-filter"><button class="col-filter-btn" id="cfb-company" onclick="toggleFilter('company',event)">▾</button><div class="col-filter-dropdown" id="cfd-company"></div></div></th>
           <th onclick="sortBy('createdAt')" style="cursor:pointer;user-select:none">Created <span id="sort-createdAt">↕</span></th>
           <th style="min-width:160px"><span onclick="sortBy('status')" style="cursor:pointer;user-select:none">Status <span id="sort-status">↕</span></span> <div class="col-filter"><button class="col-filter-btn" id="cfb-status" onclick="toggleFilter('status',event)">▾</button><div class="col-filter-dropdown" id="cfd-status"></div></div></th>
           <th onclick="sortBy('budget')" style="cursor:pointer;user-select:none;text-align:right">Budget <span id="sort-budget">⇕</span></th>
@@ -226,6 +233,21 @@
     'Convention signée', 'Envoyé à Catherine', 'Convocation envoyée'];
   var STAGE_COUNT = 10;
   var STATUS_ORDER = { csv_uploaded: 1, written_report_done: 2, oral_booked: 3, oral_done: 3, final_report_done: 4, programme_done: 5 };
+  // TABLE_COMPACT_DETAILED (2026-07-04)
+  var BUCKET_COLORS = ['#378ADD', '#EF9F27', '#639922'];
+  var BUCKET_BG = ['#E6F1FB', '#FAEEDA', '#EAF3DE'];
+  var BUCKET_TEXT = ['#0C447C', '#854F0B', '#3B6D11'];
+  var BUCKET_LABELS = ['\u00c9valuation', 'Proposition et convention', 'Formation'];
+  function stageBucket(idx) { return idx <= 4 ? 0 : (idx <= 8 ? 1 : 2); }
+  var tableMode = (function() { try { return localStorage.getItem('candTableMode') || 'compact'; } catch (e) { return 'compact'; } })();
+  function setTableMode(m) {
+    tableMode = m;
+    try { localStorage.setItem('candTableMode', m); } catch (e) {}
+    var cb = document.getElementById('modeCompactBtn'), db = document.getElementById('modeDetailedBtn');
+    if (cb) cb.className = 'mode-btn' + (m === 'compact' ? ' active' : '');
+    if (db) db.className = 'mode-btn' + (m === 'detailed' ? ' active' : '');
+    render();
+  }
   function computeStage(x) {
     var cd = x.conventionData || {};
     // STAGE_PROPOSITION_GENERATED_FIX (2026-07-03): mirrors the same fix in
@@ -243,23 +265,28 @@
     var label = (idx === 6) ? (cd.proposalSentAt ? 'Proposition envoyée' : 'Proposition créée (non envoyée)') : STAGE_LABELS[idx];
     return { idx: idx, count: STAGE_COUNT, label: label, cls: cls };
   }
-  function stageHtml(x) {
+  function stageHtml(x, mode) {
     var s = computeStage(x);
     var pct = Math.round(100 * s.idx / s.count);
+    var b = stageBucket(s.idx);
     var oralNote = '';
     if (s.idx === 3) { // stage 3 is ambiguous: booked vs questionnaire submitted
       if (x.status === 'oral_done') {
-        oralNote = '<div style="font-size:11px;font-weight:600;color:#16a34a;margin-bottom:3px">\u2713 Oral effectu\u00e9 \u2014 rapport final possible</div>';
+        oralNote = '<div style="font-size:11px;font-weight:600;color:#16a34a;margin-top:3px">\u2713 Oral effectu\u00e9 \u2014 rapport final possible</div>';
       } else if (x.oralBookedAt) {
-        oralNote = '<div style="font-size:11px;font-weight:600;color:#d97706;margin-bottom:3px">\ud83d\udcc5 Cr\u00e9neau r\u00e9serv\u00e9 \u2014 oral \u00e0 venir</div>';
+        oralNote = '<div style="font-size:11px;font-weight:600;color:#d97706;margin-top:3px">\ud83d\udcc5 Cr\u00e9neau r\u00e9serv\u00e9 \u2014 oral \u00e0 venir</div>';
       } else {
-        oralNote = '<div style="font-size:11px;color:#94a3b8;margin-bottom:3px">En attente de r\u00e9servation</div>';
+        oralNote = '<div style="font-size:11px;color:#94a3b8;margin-top:3px">En attente de r\u00e9servation</div>';
       }
     }
-    return '<span class="stage-badge ' + s.cls + '">Étape ' + s.idx + '/' + s.count + '</span>'
-      + '<div style="font-size:11px;color:#475569;margin-bottom:3px">' + s.label + '</div>'
-      + oralNote
-      + '<div class="stage-progress-track"><div class="stage-progress-fill" style="width:' + pct + '%"></div></div>';
+    if (mode === 'compact') {
+      return '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:' + BUCKET_COLORS[b] + ';margin-right:6px"></span>'
+        + '<span style="font-size:12px;color:#334155">' + s.idx + '/' + s.count + ' \u00b7 ' + s.label + '</span>'
+        + oralNote;
+    }
+    return '<span style="display:inline-block;padding:3px 9px;border-radius:12px;font-size:11px;font-weight:600;background:' + BUCKET_BG[b] + ';color:' + BUCKET_TEXT[b] + '">\u00c9tape ' + s.idx + '/' + s.count + ' \u00b7 ' + s.label + '</span>'
+      + '<div style="height:3px;background:#e5e7eb;border-radius:2px;overflow:hidden;margin-top:5px"><div style="height:100%;width:' + pct + '%;background:' + BUCKET_COLORS[b] + '"></div></div>'
+      + oralNote;
   }
   function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
   function render(){
@@ -283,8 +310,16 @@
     });
     if(!rows.length){tb.innerHTML='<tr><td colspan="5" class="empty">'+(q?'No results.':'No candidates yet.')+'</td></tr>';return;}
     tb.innerHTML=rows.map(function(x){
-      return '<tr><td style="text-align:center">'+(x.status==='written_report_done'?'<input type="checkbox" class="row-chk" data-id="'+x.id+'" data-name="'+esc(x.name)+'" onchange="updateBulkBar()">':'')+'</td><td><a href="/candidates/'+x.id+'" class="name-link">'+esc(x.name)+'</a></td><td>'+(x.courseType==='legal'?'<span style="font-size:11px;background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:10px;font-weight:600">Juridique</span>':'<span style="font-size:11px;background:#dbeafe;color:#1e40af;padding:2px 8px;border-radius:10px;font-weight:600">Business</span>')+'</td><td>'+esc(x.company||'')+'</td><td>'+(x.createdAt?(function(d){var p=d.slice(0,10).split('-');return p[2]+'/'+p[1]+'/'+p[0];})(x.createdAt):'')+'</td><td>'+stageHtml(x)+'</td><td style="text-align:right;font-size:13px;color:#1F4E79;font-weight:500">'+((x.conventionData&&x.conventionData.price)?x.conventionData.price+' €':'')+'</td><td style="display:flex;gap:8px"><a href="/candidates/'+x.id+'" class="name-link">View</a>&nbsp;<button data-id="'+x.id+'" data-name="'+esc(x.name)+'" onclick="doDel(this)" style="background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer">Delete</button></td></tr>';
+      return '<tr><td style="text-align:center">'+(x.status==='written_report_done'?'<input type="checkbox" class="row-chk" data-id="'+x.id+'" data-name="'+esc(x.name)+'" onchange="updateBulkBar()">':'')+'</td><td><a href="/candidates/'+x.id+'" class="name-link">'+esc(x.name)+'</a></td><td>'+(x.courseType==='legal'?'<span style="font-size:11px;background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:10px;font-weight:600">Juridique</span>':'<span style="font-size:11px;background:#dbeafe;color:#1e40af;padding:2px 8px;border-radius:10px;font-weight:600">Business</span>')+'</td><td class="company-cell" title="'+esc(x.company||'')+'">'+esc(x.company||'')+'</td><td>'+(x.createdAt?(function(d){var p=d.slice(0,10).split('-');return p[2]+'/'+p[1]+'/'+p[0];})(x.createdAt):'')+'</td><td>'+stageHtml(x, tableMode)+'</td><td style="text-align:right;font-size:13px;color:#1F4E79;font-weight:500">'+((x.conventionData&&x.conventionData.price)?x.conventionData.price+' €':'')+'</td><td style="display:flex;gap:8px"><a href="/candidates/'+x.id+'" class="name-link">View</a>&nbsp;<button data-id="'+x.id+'" data-name="'+esc(x.name)+'" onclick="doDel(this)" style="background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer">Delete</button></td></tr>';
     }).join('');
+    (function() {
+      var buckets = [0, 0, 0];
+      rows.forEach(function(x) { buckets[stageBucket(computeStage(x).idx)]++; });
+      var totalR = rows.length || 1;
+      var barEl = document.getElementById('stageDistBar'), legEl = document.getElementById('stageDistLegend');
+      if (barEl) barEl.innerHTML = buckets.map(function(c, i) { return c ? '<div style="width:' + (100 * c / totalR) + '%;background:' + BUCKET_COLORS[i] + '"></div>' : ''; }).join('');
+      if (legEl) legEl.innerHTML = buckets.map(function(c, i) { return c ? '<span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + BUCKET_COLORS[i] + ';margin-right:5px"></span>' + BUCKET_LABELS[i] + ' \u00b7 ' + c + '</span>' : ''; }).filter(Boolean).join('');
+    })();
     ['name','courseType','company','createdAt','status'].forEach(function(k){var e=document.getElementById('sort-'+k);if(e)e.textContent=k===sk?(sd===1?' ↑':' ↓'):' ⇕';
     var _tot=0,_hasp=false; rows.forEach(function(x){var p=parseInt(((x.conventionData)||{}).price||0,10);if(p){_tot+=p;_hasp=true;}});
     var sc=document.getElementById('statCount'); if(sc) sc.textContent=rows.length;
