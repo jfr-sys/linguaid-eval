@@ -218,14 +218,20 @@
   var STATUS_ORDER = { csv_uploaded: 1, written_report_done: 2, oral_booked: 3, oral_done: 3, final_report_done: 4, programme_done: 5 };
   function computeStage(x) {
     var cd = x.conventionData || {};
+    // STAGE_PROPOSITION_GENERATED_FIX (2026-07-03): mirrors the same fix in
+    // crBuildRows() (routes/api.js) - a generated-but-not-sent proposition
+    // (propositionPdfPath set by /api/generate-proposition) now advances the
+    // stage too, with an honest label distinguishing created vs sent.
+    var propGenerated = !!x.propositionPdfPath;
     var idx = STATUS_ORDER[x.status] || 1;
-    if (cd.proposalSentAt) idx = Math.max(idx, 6);
+    if (cd.proposalSentAt || propGenerated) idx = Math.max(idx, 6);
     if (cd.generatedAt || cd.pdfPath || cd.signingToken) idx = Math.max(idx, 7);
     if (cd.signedAt) idx = Math.max(idx, 8);
     if (cd.sentToCatherineAt) idx = Math.max(idx, 9);
     if (cd.convocationSentAt) idx = Math.max(idx, 10);
     var cls = (idx / STAGE_COUNT < 0.4) ? 'stage-early' : (idx / STAGE_COUNT < 0.75) ? 'stage-mid' : 'stage-late';
-    return { idx: idx, count: STAGE_COUNT, label: STAGE_LABELS[idx], cls: cls };
+    var label = (idx === 6) ? (cd.proposalSentAt ? 'Proposition envoyée' : 'Proposition créée (non envoyée)') : STAGE_LABELS[idx];
+    return { idx: idx, count: STAGE_COUNT, label: label, cls: cls };
   }
   function stageHtml(x) {
     var s = computeStage(x);

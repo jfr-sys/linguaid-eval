@@ -2885,8 +2885,14 @@ function crBuildRows(company) {
   }).map(function(c) {
     var od = c.oralData || {};
     var cd = c.conventionData || {};
+    // STAGE_PROPOSITION_GENERATED_FIX (2026-07-03): the document column
+    // below checks file existence on disk - the stage number must use the
+    // same signal, or a generated-but-not-sent proposition (a normal state
+    // now) leaves the stage frozen behind a document that's already there.
+    var propPdf = pathx.join(__dirname, '../data/propositions/' + c.id + '.pdf');
+    var propGenerated = fsx.existsSync(propPdf);
     var idx = STATUS_ORDER[c.status] || 1;
-    if (cd.proposalSentAt) idx = Math.max(idx, 6);
+    if (cd.proposalSentAt || propGenerated) idx = Math.max(idx, 6);
     if (cd.generatedAt || cd.pdfPath || cd.signingToken) idx = Math.max(idx, 7);
     if (cd.signedAt) idx = Math.max(idx, 8);
     if (cd.sentToCatherineAt) idx = Math.max(idx, 9);
@@ -2898,7 +2904,6 @@ function crBuildRows(company) {
     var reportEn = pathx.join(__dirname, '../data/finalReports/' + c.id + '_en.pdf');
     var reportFr = pathx.join(__dirname, '../data/finalReports/' + c.id + '_fr.pdf');
     var progPdf = pathx.join(__dirname, '../data/programmes/' + c.id + '.pdf');
-    var propPdf = pathx.join(__dirname, '../data/propositions/' + c.id + '.pdf');
 
     return {
       id: c.id,
@@ -2912,7 +2917,8 @@ function crBuildRows(company) {
       isLegal: c.courseType === 'legal',
       stageIndex: idx,
       stageCount: STAGE_COUNT,
-      stageLabel: 'Étape ' + idx + '/' + STAGE_COUNT + ' — ' + STAGE_LABELS[idx],
+      stageLabel: 'Étape ' + idx + '/' + STAGE_COUNT + ' — ' +
+        (idx === 6 ? (cd.proposalSentAt ? 'Proposition envoyée' : 'Proposition créée (non envoyée)') : STAGE_LABELS[idx]),
       inTraining: inTraining,
       trainingFinished: trainingFinished,
       budget: (cd.price != null && cd.price !== '') ? cd.price : (od.edofPrice || null),
@@ -2922,7 +2928,7 @@ function crBuildRows(company) {
       reportEnUrl: fsx.existsSync(reportEn) ? ('/api/download-report-pdf/' + c.id) : null,
       reportFrUrl: fsx.existsSync(reportFr) ? ('/api/download-report-pdf-fr/' + c.id) : null,
       programmeUrl: fsx.existsSync(progPdf) ? ('/api/download-programme-pdf/' + c.id) : null,
-      propositionUrl: fsx.existsSync(propPdf) ? ('/api/download-proposition/' + c.id) : null,
+      propositionUrl: propGenerated ? ('/api/download-proposition/' + c.id) : null,
       convocationUrl: cd.convocationPdfPath ? ('/api/download-convocation/' + c.id) : null,
       attestationUrl: c.attestationSignedPdfPath ? ('/api/download-attestation-signed/' + c.id) : null
     };
