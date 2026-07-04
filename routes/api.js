@@ -1687,6 +1687,11 @@ router.get('/download-proposition/:id', function(req, res) {
   var cands = JSON.parse(require('fs').readFileSync(pp.join(__dirname,'../data/candidates.json'),'utf8'));
   var c = cands.find(function(x){ return x.id === req.params.id; });
   var name = c ? c.name.replace(/\s+/g,'_') : req.params.id;
+  // NO_STORE_FIX (2026-07-03): this file is genuinely overwritten with
+  // fresh content on every regeneration - without explicit no-store, a
+  // browser can serve a cached copy of this exact URL without ever asking
+  // the server, silently hiding real content updates.
+  res.setHeader('Cache-Control', 'no-store');
   res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', 'attachment; filename="proposition_' + name + '.pdf"');
   res.sendFile(propPdf);
