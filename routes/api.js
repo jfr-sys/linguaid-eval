@@ -2875,7 +2875,7 @@ function crBuildRows(company) {
   // (computeStage()) — both must always agree.
   var STAGE_LABELS = ['', 'Questionnaire reçu', 'Rapport écrit généré', 'Évaluation orale',
     'Rapport final généré', 'Programme créé', 'Proposition envoyée', 'Convention créée',
-    'Convention signée', 'Envoyé à Catherine', 'Convocation envoyée'];
+    'Convention signée', 'Ordre confié', 'Convocation envoyée'];
   var STAGE_COUNT = 10;
   var STATUS_ORDER = { csv_uploaded: 1, written_report_done: 2, oral_booked: 3, oral_done: 3, final_report_done: 4, programme_done: 5 };
   var today = new Date().toISOString().slice(0, 10);
