@@ -71,6 +71,16 @@
   .col-filter-actions { display:flex; gap:6px; padding:6px 8px 2px; border-top:1px solid #f1f5f9; }
   .col-filter-actions button { flex:1; font-size:11px; padding:4px 0; border-radius:5px; cursor:pointer; border:1px solid #e2e8f0; background:white; color:#475569; font-family:inherit; }
   .col-filter-actions button.apply { background:#1F4E79; color:white; border-color:#1F4E79; }
+
+  /* responsive-v1 */
+  @media (max-width: 700px) {
+    .container { padding: 1rem 0.75rem; }
+    .header { flex-wrap: wrap; gap: 0.5rem; }
+    /* inline-styled toolbars, stat bars and legends wrap instead of overflowing */
+    .container > div[style*="display:flex"] { flex-wrap: wrap !important; }
+    table { font-size: 12.5px; }
+    th, td { padding: 6px 8px; }
+  }
 </style>
 </head>
 <body>

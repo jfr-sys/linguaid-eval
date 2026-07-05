@@ -226,6 +226,20 @@
   .tab-dot.warn { background: #f59e0b; }
   .tab-pane { display: none; }
   .tab-pane.active { display: block; }
+
+  /* responsive-v1 */
+  @media (max-width: 700px) {
+    .container { padding: 1rem 0.75rem; }
+    .profile { padding: 1.25rem 1rem; }
+    /* 10-step bar scrolls horizontally instead of crushing the circles */
+    .progress-steps { overflow-x: auto; padding-bottom: 6px; -webkit-overflow-scrolling: touch; }
+    .progress-step { min-width: 72px; }
+    .tabs-bar { overflow-x: auto; padding: 0 0.5rem; -webkit-overflow-scrolling: touch; }
+    .tab-btn { white-space: nowrap; padding: 12px 12px; }
+    /* inline-styled 2- and 3-column grids collapse to one column */
+    [style*="grid-template-columns:1fr 1fr"] { grid-template-columns: 1fr !important; }
+    [style*="grid-template-columns: 1fr 1fr"] { grid-template-columns: 1fr !important; }
+  }
 </style>
 </head>
 <body>
