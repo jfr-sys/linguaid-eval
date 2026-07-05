@@ -335,6 +335,9 @@
         var _pa=parseInt((a.conventionData||{}).price||0,10), _pb=parseInt((b.conventionData||{}).price||0,10);
         return (_pa-_pb)*(-sd);
       }
+      if (sk==='status') {
+        return (computeStage(a).idx - computeStage(b).idx)*sd;
+      }
       var x=(a[sk]||'').toLowerCase(),y=(b[sk]||'').toLowerCase();
       return x<y?-sd:x>y?sd:0;
     });
