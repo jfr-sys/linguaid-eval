@@ -2810,10 +2810,8 @@ router.post('/push-to-drive/:id', async function(req, res) {
     if (!trainerKey) return res.status(400).json({ error: 'No trainer assigned for this candidate yet (send convocation first)' });
 
     var files = [];
-    var conventionPath = cd.signedPdfPath || cd.pdfPath;
-    if (conventionPath && fs.existsSync(conventionPath)) {
-      files.push({ path: conventionPath, name: '0 - Convention signee.pdf' });
-    }
+    // Convention deliberately NOT pushed to Drive (removed 2026-07-05):
+    // the signed convention must not land in the learner Drive folder.
     var reportPath = path.join(__dirname, '../data/finalReports/' + c.id + '_en.pdf');
     if (fs.existsSync(reportPath)) {
       files.push({ path: reportPath, name: '1 - Rapport final.pdf' });
