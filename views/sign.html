@@ -147,6 +147,24 @@
     #success-screen .tick { font-size: 3rem; margin-bottom: 16px; }
     #success-screen h2 { color: #1a7a3a; margin-bottom: 10px; }
     #success-screen p  { color: #555; font-size: 0.95rem; }
+
+    /* responsive-v1 */
+    .pdf-open-mobile { display: none; }
+    @media (max-width: 700px) {
+      .header { padding: 14px 16px; }
+      .container { padding: 20px 12px 40px; }
+      .card { padding: 20px 16px; }
+      /* Mobile browsers (iOS Safari in particular) do not render
+         <embed type=application/pdf> - hide it and offer an open link */
+      #pdf-frame { display: none; }
+      .pdf-open-mobile { display: block; margin: 4px 0 12px; }
+      .pdf-open-mobile a {
+        display: block; text-align: center; background: #001691; color: white;
+        padding: 13px 16px; border-radius: 8px; text-decoration: none;
+        font-weight: 600; font-size: 0.95rem;
+      }
+      #sig-canvas { height: 140px; }
+    }
   </style>
 </head>
 <body>
@@ -166,6 +184,7 @@
     <div class="card">
       <h2 id="doc-title">📄 Votre convention de formation</h2>
       <embed id="pdf-frame" src="" type="application/pdf" />
+      <p class="pdf-open-mobile"><a id="pdf-open-link" href="#" target="_blank" rel="noopener">📄 Ouvrir le document</a></p>
       <p class="pdf-note" id="pdf-note">Veuillez lire attentivement votre convention avant de signer.</p>
     </div>
 
@@ -250,6 +269,7 @@
       frame.src = `${baseUrl}/pdf`;
       // Force Chrome to show single-page view
       frame.src = `${baseUrl}/pdf#toolbar=1&navpanes=0&scrollbar=1&view=FitH`;
+      document.getElementById('pdf-open-link').href = `${baseUrl}/pdf`; /* responsive-v1 */
       if (info.signatoryName) {
         var nameInput = document.getElementById('typed-name');
         nameInput.value = info.signatoryName;
