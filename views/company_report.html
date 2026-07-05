@@ -160,8 +160,9 @@ function renderRows(rows) {
       conventionDoc = '<a href="' + r.conventionUrl + '" target="_blank" class="doc-link doc-ok">Convention signée</a>';
     } else if (r.conventionSigningUrl) {
       conventionDoc = '<a href="' + r.conventionSigningUrl + '" target="_blank" class="doc-link doc-pending">Convention — à signer</a>';
-    } else if (r.conventionUrl) {
-      conventionDoc = '<a href="' + r.conventionUrl + '" target="_blank" class="doc-link doc-pending">Convention (non signée)</a>';
+    } else if (r.conventionUrl && !r.conventionSigned) {
+      /* unsigned convention, no signing token: never link to the unsigned PDF */
+      conventionDoc = '<span class="doc-link doc-missing">Convention (non signée)</span>';
     } else {
       conventionDoc = '<span class="doc-link doc-missing">Convention —</span>';
     }
