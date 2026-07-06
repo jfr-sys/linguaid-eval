@@ -2916,7 +2916,10 @@ function crBuildRows(company) {
       stageIndex: idx,
       stageCount: STAGE_COUNT,
       stageLabel: 'Étape ' + idx + '/' + STAGE_COUNT + ' — ' +
-        (idx === 6 ? (cd.proposalSentAt ? 'Proposition envoyée' : 'Proposition créée (non envoyée)') : STAGE_LABELS[idx]),
+        (idx === 6 ? (cd.proposalSentAt ? 'Proposition envoyée' : 'Proposition créée (non envoyée)') : STAGE_LABELS[idx]) +
+        ((idx === STAGE_COUNT && (cd.trainerName || (cd.convocTrainer && CONVOC_TRAINERS[cd.convocTrainer])))
+          ? ' - Formation avec ' + (cd.trainerName || CONVOC_TRAINERS[cd.convocTrainer].name)
+          : ''),
       inTraining: inTraining,
       trainingFinished: trainingFinished,
       budget: (cd.price != null && cd.price !== '') ? cd.price : (od.edofPrice || null),
