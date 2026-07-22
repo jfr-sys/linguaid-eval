@@ -325,7 +325,7 @@
     <button class="tab-btn active" onclick="switchTab('eval',this)">Évaluation <span class="tab-dot" id="tdot-eval"></span></button>
     <button class="tab-btn" onclick="switchTab('dossier',this)">Dossier <span class="tab-dot" id="tdot-dossier" style="display:none"></span></button>
     <button class="tab-btn" onclick="switchTab('formation',this)">Formation <span class="tab-dot warn" id="tdot-formation" style="display:none"></span></button>
-    <button class="tab-btn" onclick="switchTab('suivi2',this)">Suivi Volet 2 <span class="tab-dot warn" id="tdot-suivi2" style="display:none"></span></button>
+    <button class="tab-btn" onclick="switchTab('suivi2',this)">Fin de formation <span class="tab-dot warn" id="tdot-suivi2" style="display:none"></span></button>
     <button class="tab-btn" onclick="switchTab('data',this)">Données</button>
   </div>
   <div class="tab-pane active" id="tab-eval">
@@ -587,12 +587,12 @@
   <div class="tab-pane" id="tab-suivi2">
     <div class="stage" id="stage10" style="background:white;border-radius:12px;padding:1.5rem;box-shadow:0 2px 8px rgba(0,0,0,0.06);border-top:4px solid #e5e7eb;margin-bottom:1.5rem;opacity:0.5;pointer-events:none">
       <div class="stage-num">Step 11</div>
-      <div class="stage-title">Suivi Volet 2</div>
+      <div class="stage-title">Fin de formation</div>
       <div class="stage-status" id="stage10status">Débloqué après convocation envoyée</div>
       <div id="suiviForm" style="display:none;margin-top:1rem">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
           <div>
-            <div style="font-size:12px;font-weight:600;color:#1F4E79;margin-bottom:8px">Quiz Volet 2</div>
+            <div style="font-size:12px;font-weight:600;color:#1F4E79;margin-bottom:8px">Quiz</div>
             <div style="font-size:12px;color:#666;margin-bottom:8px">Génère un lien unique à copier dans un email manuel. Score et date enregistrés automatiquement.</div>
             <button class="btn btn-primary" onclick="generateQuizLink()" id="btnGenQuiz">✨ Générer le lien quiz</button>
             <div id="quizLinkBox" style="display:none;margin-top:10px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px">
