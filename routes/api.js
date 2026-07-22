@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { canonicalCompany, listCompanies } = require('../lib/companies');
 const { isContratCadre } = require('../lib/contratCadre');
+const coherence = require('../lib/coherence'); /* coherence-gate */
 
 // Helper: 5-skill CEFR average
 function calc5SkillLevel(c) {
@@ -855,6 +856,9 @@ router.post('/generate-convention/:id', function(req, res) {
   var execFile = require('child_process').execFile;
   var crypto = require('crypto');
   var signingToken = (isCadre && !guardThird) ? '' : (cd.signingToken || crypto.randomBytes(20).toString('hex'));
+  /* coherence-gate: no convention from incoherent hours/price/dates */
+  var cohConv = coherence.checkCoherence(c, { requirePrice: true });
+  if (!cohConv.ok) return res.status(400).json({ error: cohConv.errors.join(' ') });
   var isCPF = !!(cd.isCPF || od.isCPF);
   var tt = od.legalTrainingType || (isCPF ? 'CPF' : 'NON_CPF');
   var tplKey = tt === 'CAJA' ? 'CAJA' : tt === 'E360' ? 'E360' : tt === 'CPF' ? 'CPF' : 'NON_CPF';
@@ -1712,6 +1716,10 @@ router.post('/send-proposal/:id'
   var cd = c.conventionData || {};
   var fs2 = require('fs');
   var { execFile } = require('child_process');
+
+  /* coherence-gate: no proposition from incoherent hours/price/dates */
+  var cohLeg = coherence.checkCoherence(c, { requirePrice: true });
+  if (!cohLeg.ok) return res.status(400).json({ error: cohLeg.errors.join(' ') });
 
   var recipientEmail = req.body.recipientEmail || c.email;
   var emailBody      = req.body.emailBody || '';

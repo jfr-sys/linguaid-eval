@@ -8,6 +8,7 @@ const Anthropic = require('@anthropic-ai/sdk');
 const { execFile } = require('child_process');
 const { assertValidCpfType, getAction, CATALOGUE } = require('../config/catalogue');
 const { isContratCadre } = require('../lib/contratCadre');
+const coherence = require('../lib/coherence'); /* coherence-gate */
 
 
 function calc5SkillLevel(c) {
@@ -175,6 +176,13 @@ router.get('/api/generate-programme/:id', async function(req, res) {
     }
   }
 
+  /* coherence-gate: block programme generation on incoherent hours/dates */
+  var cohProg = coherence.checkCoherence({ oralData: {
+    totalHours: payload.totalHours, coachingHours: payload.coachingHours,
+    homeworkHours: payload.homeworkHours, dateStart: payload.dateStart, dateEnd: payload.dateEnd
+  } }, {});
+  if (!cohProg.ok) return res.status(400).json({ error: cohProg.errors.join(' ') });
+
   var tmpJson = '/tmp/prog_' + req.params.id + '.json';
   var tmpOut  = '/tmp/prog_' + req.params.id + '.docx';
   var template = path.join(__dirname, '../views/template_programme.docx');
@@ -200,6 +208,10 @@ router.get('/api/generate-programme/:id', async function(req, res) {
     candidates2[cidx].oralData.dateEnd   = payload.dateEnd || payload.dateStart;
     if (payload.targetLevel)  candidates2[cidx].oralData.targetLevel  = payload.targetLevel;
     if (payload.totalHours)   candidates2[cidx].oralData.totalHours   = parseInt(payload.totalHours, 10) || payload.totalHours;
+    /* coherence-derive: persist ALL hour components so downstream documents read the same numbers */
+    if (payload.coachingHours !== undefined && payload.coachingHours !== '') candidates2[cidx].oralData.coachingHours = parseInt(payload.coachingHours, 10) || 0;
+    if (payload.homeworkHours !== undefined && payload.homeworkHours !== '') candidates2[cidx].oralData.homeworkHours = parseInt(payload.homeworkHours, 10) || 0;
+    coherence.deriveTotal(candidates2[cidx].oralData);
     if (payload.topics && payload.topics.length) candidates2[cidx].oralData.topics = payload.topics;
     if (Array.isArray(payload.objectiveSuffixes)) candidates2[cidx].oralData.objectiveSuffixes = payload.objectiveSuffixes;
     if (payload.trainingTitle) candidates2[cidx].oralData.trainingTitle = payload.trainingTitle;
@@ -589,6 +601,10 @@ router.post('/api/send-proposition-email/:id', async function(req, res) {
   }
   if (!emailBody) return res.status(400).json({ error: 'No email body' });
 
+  /* coherence-gate: no proposition from incoherent hours/price/dates */
+  var cohProp = coherence.checkCoherence(c, { requirePrice: true });
+  if (!cohProp.ok) return res.status(400).json({ error: cohProp.errors.join(' ') });
+
   // ── Subject line by template type ──────────────────────────────────────
   let subject;
   if (isCPF) {
@@ -692,6 +708,7 @@ router.post('/api/save-programme-data/:id', function(req, res) {
       dateEnd: body.dateEnd !== undefined ? body.dateEnd : oral.dateEnd,
       additionalNotes: body.additionalNotes !== undefined ? body.additionalNotes : oral.additionalNotes
     });
+    coherence.deriveTotal(candidates[idx].oralData); /* coherence-derive */
     saveCandidates(candidates);
     res.json({ success: true });
   } catch(err) {

@@ -3,6 +3,7 @@ const router = express.Router();
 const fs = require('fs');
 const path = require('path');
 const nodemailer = require('nodemailer');
+const coherence = require('../lib/coherence'); /* coherence-gate */
 
 const dataDir = path.join(__dirname, '../data');
 
@@ -86,7 +87,7 @@ router.post('/submit/:token', async (req, res) => {
   const idx = candidates.findIndex(c => c.oralToken === req.params.token);
   if (idx === -1) return res.status(404).json({ error: 'Not found' });
 
-  candidates[idx].oralData = req.body;
+  candidates[idx].oralData = coherence.deriveTotal(req.body); /* coherence-derive */
   candidates[idx].status = 'oral_done';
   saveCandidates(candidates);
 
@@ -159,7 +160,7 @@ router.post('/submit-intake/:token', express.json(), async (req, res) => {
   const idx = candidates.findIndex(c => c.intakeToken === req.params.token);
   if (idx === -1) return res.status(404).json({ error: 'Not found' });
 
-  candidates[idx].oralData = req.body;
+  candidates[idx].oralData = coherence.deriveTotal(req.body); /* coherence-derive */
   candidates[idx].status = 'oral_done';
   saveCandidates(candidates);
 
