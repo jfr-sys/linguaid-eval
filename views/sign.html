@@ -255,6 +255,13 @@
     if (dt) dt.textContent = '📄 Votre attestation de réalisation';
     var pn = document.getElementById('pdf-note');
     if (pn) pn.textContent = 'Veuillez lire attentivement votre attestation avant de signer.';
+    /* attestation-wording-fix (2026-07-22): the three strings below were still hardcoded to convention */
+    var tnl = document.querySelector('label[for="typed-name"]');
+    if (tnl) tnl.textContent = 'Votre nom et pr\u00e9nom (tel qu\u2019il appara\u00eet sur l\u2019attestation)';
+    var csl = document.querySelector('label[for="consent"]');
+    if (csl) csl.textContent = 'Je reconnais avoir lu et accept\u00e9 les termes de l\u2019attestation de r\u00e9alisation ci-dessus, et je confirme que ma signature \u00e9lectronique a la m\u00eame valeur juridique qu\u2019une signature manuscrite conform\u00e9ment au r\u00e8glement eIDAS.';
+    var sbb = document.getElementById('btn-submit');
+    if (sbb) sbb.textContent = 'Signer l\u2019attestation';
   }
 
   fetch(`${baseUrl}/info`)

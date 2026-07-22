@@ -96,11 +96,19 @@
         <input id="durationHours" type="number" min="1" max="100" value="10" />
       </div>
     </div>
-    <button class="btn" id="btnGenerate" onclick="generate()">✉️ Générer et envoyer pour signature</button>
+    <button class="btn" id="btnGenerate" onclick="generate()">Générer</button>
     <div id="result"></div>
   </div>
 </div>
 <script>
+function copySignLink(btn) {
+  var box = document.getElementById('signLinkBox');
+  if (!box) return;
+  box.select();
+  var done = function(){ btn.textContent = '✅ Copié'; setTimeout(function(){ btn.textContent = '📋 Copier le lien'; }, 2500); };
+  if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(box.value).then(done, function(){ document.execCommand('copy'); done(); }); }
+  else { document.execCommand('copy'); done(); }
+}
 async function generate() {
   const btn = document.getElementById('btnGenerate');
   const res = document.getElementById('result');
@@ -136,8 +144,11 @@ async function generate() {
     const data = await r.json();
     if (data.ok) {
       res.className = 'ok'; res.style.display = 'block';
-      res.innerHTML = '✅ Attestation générée et lien de signature envoyé à <strong>' + email + '</strong>.<br><br>'
-        + '<a href="' + data.signingUrl + '" target="_blank" style="color:#1F4E79;font-weight:600">🔗 Lien de signature (à partager si besoin)</a>';
+      /* manual-link-only */
+      res.innerHTML = '✅ Attestation générée. <strong>Aucun email envoyé</strong> — partagez ce lien manuellement :<br><br>'
+        + '<input id="signLinkBox" type="text" readonly value="' + data.signingUrl + '" onclick="this.select()" style="width:100%;box-sizing:border-box;padding:9px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;background:#fff">'
+        + '<br><br><button type="button" onclick="copySignLink(this)" style="padding:8px 16px;border:none;border-radius:6px;background:#1F4E79;color:#fff;cursor:pointer;font-size:14px">📋 Copier le lien</button> '
+        + '<a href="' + data.signingUrl + '" target="_blank" style="color:#1F4E79;font-weight:600;margin-left:10px">🔗 Ouvrir</a>';
     } else {
       throw new Error(data.error || 'Erreur inconnue');
     }
@@ -145,7 +156,7 @@ async function generate() {
     res.className = 'err'; res.style.display = 'block';
     res.textContent = 'Erreur : ' + e.message;
   }
-  btn.disabled = false; btn.textContent = '✉️ Générer et envoyer pour signature';
+  btn.disabled = false; btn.textContent = 'Générer';
 }
 </script>
 </body>

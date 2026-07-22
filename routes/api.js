@@ -2626,28 +2626,9 @@ router.post('/generate-standalone-attestation', async function(req, res) {
 
     var signingUrl = 'https://eval.linguaid.net/sign/standalone/' + token;
 
-    // Send email
-    var nodemailer3 = require('nodemailer');
-    var t3 = nodemailer3.createTransport({ host: 'localhost', port: 25, secure: false, tls: { rejectUnauthorized: false } });
-    var htmlBody = '<div style="font-family:sans-serif;max-width:600px;margin:0 auto">'
-      + '<p>Bonjour ' + name + ',</p>'
-      + '<p>Veuillez trouver ci-dessous le lien pour signer électroniquement votre attestation de réalisation du module <strong>' + moduleName + '</strong>, dans le cadre de : <em>' + trainingTitle + '</em>.</p>'
-      + '<p style="text-align:center;margin:30px 0">'
-      + '<a href="' + signingUrl + '" style="background:#1e4e79;color:white;padding:14px 28px;border-radius:6px;text-decoration:none;font-size:16px">✍️ Signer mon attestation</a>'
-      + '</p>'
-      + '<p style="color:#666;font-size:12px">Ce lien est personnel. En cas de problème, contactez-nous à <a href="mailto:cfr@linguaid.net">cfr@linguaid.net</a>.</p>'
-      + '<p style="color:#666;font-size:12px">Linguaid France SAS – 2 rue Hergé, 66750 Saint Cyprien</p>'
-      + '</div>';
-
-    await t3.sendMail({
-      from: 'cfr@linguaid.net',
-      to: email,
-      cc: 'jfr@linguaid.net',
-      subject: 'Signature de votre attestation de formation – Linguaid France',
-      html: htmlBody,
-    });
-
-    console.log('Standalone attestation sent to ' + name + ' (' + email + ')');
+    // MANUAL_LINK_ONLY (2026-07-22): no email is ever sent from this route.
+    // The signing link is returned to the form and shared manually.
+    console.log('Standalone attestation generated for ' + name + ' (' + email + ') - link returned, no email sent');
     res.json({ ok: true, signingUrl: signingUrl, uid: uid });
 
   } catch(e) {
