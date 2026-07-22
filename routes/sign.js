@@ -397,7 +397,18 @@ router.get('/mission/:token/info', function(req, res) {
     trainingType: 'Confirmation de mission',
     signatoryName: '',
     isMission: true,
+    devisUrl: (candidate.missionData.devisPath && fs.existsSync(candidate.missionData.devisPath)) ? ('/sign/mission/' + req.params.token + '/devis-pdf') : null,
   });
+});
+
+router.get('/mission/:token/devis-pdf', function(req, res) {
+  var candidate = findByMissionToken(req.params.token);
+  if (!candidate) return res.status(404).send('Not found');
+  var p = candidate.missionData.devisPath;
+  if (!p || !fs.existsSync(p)) return res.status(404).send('Devis not available');
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', 'inline; filename="devis.pdf"');
+  res.sendFile(p);
 });
 
 router.post('/mission/:token/submit', express.json({ limit: '5mb' }), function(req, res) {

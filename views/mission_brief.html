@@ -68,23 +68,32 @@ function render(data) {
       <h2>Bonjour ${data.trainerFirstName}</h2>
       <p class="muted">Voici le récapitulatif de la mission proposée.</p>
       <table class="info-table">${infoRows}</table>
-      <div class="done-box">Votre devis a bien été transmis. Linguaid reviendra vers vous pour la confirmation de mission.</div>`;
+      <div class="done-box">Votre devis a bien été transmis. Linguaid reviendra vers vous pour la confirmation de mission.<br><a href="/mission/${token}/devis-pdf" target="_blank" style="color:#166534;font-weight:600">Consulter mon devis (PDF)</a></div>`;
     return;
   }
+
+  const reviewSection = data.devisDraft ? `
+    <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:14px;margin:12px 0">
+      <div style="font-weight:600;color:#92400e;margin-bottom:6px">Votre devis est prêt — merci de le vérifier avant de l'envoyer</div>
+      <div style="font-size:14px;margin-bottom:8px"><a href="/mission/${token}/devis-pdf" target="_blank" style="color:#1F4E79;font-weight:600;text-decoration:underline">Voir mon devis (PDF)</a> — Total : <strong>${(data.devisTotal || 0).toFixed(2)} € TTC</strong></div>
+      <button onclick="confirmDevis()" id="confirmBtn" style="background:#166534">Confirmer et envoyer mon devis</button>
+      <div style="font-size:12px;color:#92400e;margin-top:8px">Pour le modifier, ajustez vos tarifs ci-dessous et regénérez.</div>
+    </div>` : '';
 
   card.innerHTML = `
     <h2>Bonjour ${data.trainerFirstName}</h2>
     <p class="muted">Nous souhaitons vous proposer la mission suivante. Vous demeurez naturellement libre de l'accepter ou de la décliner selon vos disponibilités.</p>
     <table class="info-table">${infoRows}</table>
     ${docsSection}
+    ${reviewSection}
     <div class="devis-form">
-      <p class="muted" style="margin-top:0">Si cette mission vous intéresse, indiquez votre tarif pour générer votre devis :</p>
+      <p class="muted" style="margin-top:0">${data.devisDraft ? 'Modifier vos tarifs :' : 'Si cette mission vous intéresse, indiquez votre tarif pour générer votre devis :'}</p>
       <label for="coachingRate">Tarif coaching (€/h)</label>
-      <input type="number" id="coachingRate" step="0.01" min="0" placeholder="ex : 45" />
+      <input type="number" id="coachingRate" step="0.01" min="0" placeholder="ex : 45" value="${data.devisRate || ''}" />
       <label for="homeworkRate">Tarif travail personnel (€/h)</label>
-      <input type="number" id="homeworkRate" step="0.01" min="0" placeholder="ex : 11" />
+      <input type="number" id="homeworkRate" step="0.01" min="0" placeholder="ex : 11" value="${data.devisHomeworkRate || ''}" />
       <div class="rate-note">Ces tarifs sont les vôtres — Linguaid ne les préremplit pas.</div>
-      <button id="submitBtn" onclick="submitDevis()">Générer mon devis</button>
+      <button id="submitBtn" onclick="submitDevis()">${data.devisDraft ? 'Regénérer mon devis' : 'Générer mon devis'}</button>
       <div class="status" id="status"></div>
     </div>`;
 }
@@ -115,15 +124,27 @@ function submitDevis() {
         btn.disabled = false; btn.textContent = 'Générer mon devis';
         return;
       }
-      document.getElementById('card').innerHTML = `
-        <h2>Merci !</h2>
-        <div class="done-box">Votre devis (${data.total.toFixed(2)} € TTC) a été transmis à Linguaid. Vous recevrez la confirmation de mission une fois validé.</div>`;
+      window.location.reload();
     })
     .catch(() => {
       status.className = 'status err';
       status.textContent = 'Erreur réseau, merci de réessayer.';
       btn.disabled = false; btn.textContent = 'Générer mon devis';
     });
+}
+
+function confirmDevis() {
+  const btn = document.getElementById('confirmBtn');
+  btn.disabled = true; btn.textContent = 'Envoi en cours…';
+  fetch('/mission/' + token + '/devis-confirm', { method: 'POST', headers: { 'Content-Type': 'application/json' } })
+    .then(r => r.json())
+    .then(data => {
+      if (data.error) { btn.disabled = false; btn.textContent = 'Confirmer et envoyer mon devis'; alert(data.error); return; }
+      document.getElementById('card').innerHTML = `
+        <h2>Merci !</h2>
+        <div class="done-box">Votre devis (${data.total.toFixed(2)} € TTC) a été transmis à Linguaid. Vous recevrez la confirmation de mission une fois validé.<br><a href="/mission/${token}/devis-pdf" target="_blank" style="color:#166534;font-weight:600">Consulter mon devis (PDF)</a></div>`;
+    })
+    .catch(() => { btn.disabled = false; btn.textContent = 'Confirmer et envoyer mon devis'; alert('Erreur réseau'); });
 }
 </script>
 </body>

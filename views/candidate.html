@@ -2017,6 +2017,7 @@ function acceptDevis() {
     if (data.error) { document.getElementById('confirmationStatus').textContent = '❌ ' + data.error; btn.textContent = '✅ Valider le devis'; return; }
     btn.style.display = 'none';
     document.getElementById('confirmationStatus').innerHTML = 'Confirmation générée. Lien de signature : <a href="' + data.signingUrl + '" target="_blank">' + data.signingUrl + '</a>';
+    window.open(data.signingUrl, '_blank');
   }).catch(function(e){ btn.disabled = false; btn.textContent = '✅ Valider le devis'; });
 }
 

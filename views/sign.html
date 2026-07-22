@@ -244,7 +244,8 @@
   const pathParts = window.location.pathname.split('/').filter(Boolean);
   const isStandalone = pathParts.includes('standalone');
   const isAttestation = pathParts.includes('attestation') || isStandalone;
-  const baseUrl = isStandalone ? `/sign/standalone/${token}` : isAttestation ? `/sign/attestation/${token}` : `/sign/${token}`;
+  const isMission = pathParts.includes('mission');
+  const baseUrl = isMission ? `/sign/mission/${token}` : isStandalone ? `/sign/standalone/${token}` : isAttestation ? `/sign/attestation/${token}` : `/sign/${token}`;
 
   // Update page titles for attestation pages
   if (isAttestation || isStandalone) {
@@ -264,9 +265,29 @@
     if (sbb) sbb.textContent = 'Signer l\u2019attestation';
   }
 
+  if (isMission) {
+    document.title = 'Signer votre confirmation de mission \u2014 Linguaid';
+    var ptm = document.getElementById('page-title');
+    if (ptm) ptm.textContent = 'Linguaid \u2014 Confirmation de mission';
+    var dtm = document.getElementById('doc-title');
+    if (dtm) dtm.textContent = '\ud83d\udcc4 Votre confirmation de mission';
+    var pnm = document.getElementById('pdf-note');
+    if (pnm) pnm.textContent = 'Veuillez lire attentivement votre confirmation de mission avant de signer.';
+    var tnlm = document.querySelector('label[for="typed-name"]');
+    if (tnlm) tnlm.textContent = 'Votre nom et pr\u00e9nom';
+    var cslm = document.querySelector('label[for="consent"]');
+    if (cslm) cslm.textContent = 'Je reconnais avoir lu et accept\u00e9 les termes de la confirmation de mission ci-dessus, et je confirme que ma signature \u00e9lectronique a la m\u00eame valeur juridique qu\u2019une signature manuscrite conform\u00e9ment au r\u00e8glement eIDAS.';
+    var sbbm = document.getElementById('btn-submit');
+    if (sbbm) sbbm.textContent = 'Signer la confirmation de mission';
+  }
+
   fetch(`${baseUrl}/info`)
     .then(r => r.json())
     .then(info => {
+      if (isMission && info.devisUrl) {
+        var pnd = document.getElementById('pdf-note');
+        if (pnd) pnd.innerHTML = pnd.textContent + ' <a href="' + info.devisUrl + '" target="_blank" style="color:#1F4E79;font-weight:600;text-decoration:underline">Consulter le devis associ\u00e9</a>';
+      }
       if (info.alreadySigned) {
         document.getElementById('main-form').innerHTML =
           `<div class="card" style="text-align:center;padding:40px"><div style="font-size:2rem">✅</div><h2 style="color:#1a7a3a;margin:12px 0">Déjà signé</h2><p>Ce document a déjà été signé. Vous pouvez fermer cette fenêtre.</p></div>`;

@@ -54,6 +54,10 @@ router.get('/:token/data', (req, res) => {
       || !!(candidate.programmePdfPath && fs.existsSync(candidate.programmePdfPath)),
     hasReportEN: fs.existsSync(path.join(__dirname, '../data/finalReports/' + candidate.id + '_en.pdf')),
     devisAlreadySubmitted: !!md.devisUploadedAt,
+    devisDraft: !!(md.devisDraftAt && !md.devisUploadedAt),
+    devisTotal: md.devisTotal || null,
+    devisRate: md.devisRate || null,
+    devisHomeworkRate: md.devisHomeworkRate || null,
     confirmationSigned: !!md.confirmationSignedAt,
   });
 });
@@ -111,9 +115,29 @@ router.post('/:token/devis', express.json(), (req, res) => {
       devisHomeworkRate: homeworkRate,
       devisTotal: result.total,
       devisPath: result.pdfPath,
-      devisUploadedAt: new Date().toISOString(),
+      devisDraftAt: new Date().toISOString(),
     });
     saveCandidates(candidates);
+
+    return res.json({ success: true, total: result.total, draft: true });
+  });
+});
+
+// Trainer confirms their reviewed devis - only now is it considered issued
+router.post('/:token/devis-confirm', express.json(), (req, res) => {
+  const candidates = loadCandidates();
+  const idx = candidates.findIndex(c => c.missionData && c.missionData.briefToken === req.params.token);
+  if (idx === -1) return res.status(404).json({ error: 'Invalid token' });
+  const c = candidates[idx];
+  const md = c.missionData;
+  if (md.devisUploadedAt) return res.status(409).json({ error: 'Devis already submitted' });
+  if (!md.devisDraftAt || !md.devisPath) return res.status(400).json({ error: 'No draft devis to confirm' });
+  const contract = getTrainerContract(md.trainerKey);
+  if (!contract) return res.status(500).json({ error: 'Trainer business info not on file' });
+
+  md.devisUploadedAt = new Date().toISOString();
+  saveCandidates(candidates);
+  const result = { total: md.devisTotal };
 
     const nodemailer = require('nodemailer');
     const transporter = nodemailer.createTransport({ host: 'localhost', port: 25, secure: false, tls: { rejectUnauthorized: false } });
@@ -126,7 +150,17 @@ router.post('/:token/devis', express.json(), (req, res) => {
     }).catch(e => console.error('Internal notify failed:', e));
 
     res.json({ success: true, total: result.total });
-  });
+});
+
+// Token-gated devis PDF so the trainer can review their own document
+router.get('/:token/devis-pdf', (req, res) => {
+  const candidate = findByBriefToken(req.params.token);
+  if (!candidate) return res.status(404).send('Not found');
+  const md = candidate.missionData || {};
+  if (!md.devisPath || !fs.existsSync(md.devisPath)) return res.status(404).send('Devis not available');
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', 'inline; filename="devis.pdf"');
+  res.sendFile(md.devisPath);
 });
 
 // Token-gated documents for the trainer's decision: programme (FR) + final report (EN)
