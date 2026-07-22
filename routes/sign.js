@@ -519,15 +519,14 @@ router.post('/devis/:token/submit', express.json({ limit: '5mb' }), function(req
   var md0 = candidates[idx].missionData;
   if (md0.devisSignedAt) return res.json({ success: true, alreadySigned: true, trainerSigningUrl: md0.confirmationToken ? ('https://eval.linguaid.net/sign/mission/' + md0.confirmationToken) : null });
 
-  var signatureImg = req.body.signatureImg || req.body.signature;
-  var typedName = req.body.typedName || 'Linguaid France SAS';
+  var typedName = 'Linguaid France SAS';
   var timestamp = new Date().toISOString();
   var signerIp = req.ip || req.connection.remoteAddress;
   var unsignedPdf = md0.devisPath;
   var signedPdf = unsignedPdf.replace('.pdf', '_bpa.pdf');
 
   var embedArgs = JSON.stringify({
-    pdfPath: unsignedPdf, signatureImg: signatureImg, typedName: typedName,
+    pdfPath: unsignedPdf, useCachet: true,
     timestamp: timestamp, signerIp: signerIp, outputPath: signedPdf,
   });
 

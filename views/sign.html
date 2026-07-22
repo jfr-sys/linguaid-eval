@@ -295,7 +295,16 @@
     var csld = document.querySelector('label[for="consent"]');
     if (csld) csld.textContent = 'Bon pour accord : je valide ce devis au nom de Linguaid France SAS et confirme que ma signature \u00e9lectronique a la m\u00eame valeur juridique qu\u2019une signature manuscrite conform\u00e9ment au r\u00e8glement eIDAS.';
     var sbbd = document.getElementById('btn-submit');
-    if (sbbd) sbbd.textContent = 'Signer le bon pour accord';
+    if (sbbd) sbbd.textContent = '\u2705 Accepter le devis (bon pour accord)';
+    // one-click acceptance: no signature pad, no name, no consent box -
+    // the official cachet is applied server-side
+    var sigCard = document.getElementById('sig-canvas');
+    if (sigCard && sigCard.closest('.card')) sigCard.closest('.card').style.display = 'none';
+    var consentRow = document.getElementById('consent');
+    if (consentRow && consentRow.closest('.checkbox-row')) consentRow.closest('.checkbox-row').style.display = 'none';
+    if (sbbd) sbbd.disabled = false;
+    var pnd3 = document.getElementById('pdf-note');
+    if (pnd3) pnd3.textContent = 'V\u00e9rifiez le devis ci-dessus. En cliquant sur Accepter, le cachet Linguaid sera appos\u00e9 en bon pour accord.';
   }
 
   fetch(`${baseUrl}/info`)
@@ -387,8 +396,8 @@
 
   // ── Submit ──
   btnSubmit.addEventListener('click', async () => {
-    const typedName    = typedInput.value.trim();
-    const signatureImg = canvas.toDataURL('image/png');
+    const typedName    = isDevisAccept ? 'Linguaid France SAS' : typedInput.value.trim();
+    const signatureImg = isDevisAccept ? null : canvas.toDataURL('image/png');
     const status       = document.getElementById('status');
 
     btnSubmit.disabled = true;
@@ -419,12 +428,12 @@
         document.getElementById('download-signed').textContent = '⬇ Télécharger votre attestation signée';
       }
       if (isDevisAccept) {
-        document.querySelector('#success-screen h2').textContent = 'Bon pour accord signé';
+        document.querySelector('#success-screen h2').textContent = 'Devis accepté — cachet apposé';
         document.getElementById('download-signed').textContent = '⬇ Télécharger le devis signé';
         if (data.trainerSigningUrl) {
           var cont = document.createElement('p');
           cont.style.marginTop = '18px';
-          cont.innerHTML = 'Confirmation de mission générée — <a href="' + data.trainerSigningUrl + '" style="background:#1F4E79;color:white;padding:10px 20px;border-radius:6px;text-decoration:none;display:inline-block;font-weight:600">Continuer → Confirmation de mission</a><br><span style="font-size:12px;color:#666">Lien de signature formateur : ' + data.trainerSigningUrl + '</span>';
+          cont.innerHTML = 'Confirmation de mission générée avec le cachet Linguaid — <strong>vous n\u2019avez rien \u00e0 signer</strong>.<br>Lien de signature <strong>\u00e0 transmettre au formateur</strong> :<br><a href="' + data.trainerSigningUrl + '" target="_blank" style="color:#1F4E79;font-weight:600;text-decoration:underline;word-break:break-all">' + data.trainerSigningUrl + '</a>';
           document.getElementById('success-screen').appendChild(cont);
         }
       }
