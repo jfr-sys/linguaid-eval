@@ -307,15 +307,15 @@
         <div class="step-label">ManageAll</div>
         <div class="step-sublabel">Envoyé à Catherine</div>
       </div>
-      <div class="progress-step" id="pstep9">
-        <div class="step-circle" id="pc9">10</div>
-        <div class="step-label">Convocation</div>
-        <div class="step-sublabel">Envoyée à l'apprenant</div>
-      </div>
       <div class="progress-step" id="pstep10">
-        <div class="step-circle" id="pc10">11</div>
+        <div class="step-circle" id="pc10">10</div>
         <div class="step-label">Mission</div>
         <div class="step-sublabel">Confirmation formateur</div>
+      </div>
+      <div class="progress-step" id="pstep9">
+        <div class="step-circle" id="pc9">11</div>
+        <div class="step-label">Convocation</div>
+        <div class="step-sublabel">Envoyée à l'apprenant</div>
       </div>
     </div>
   </div>
@@ -507,10 +507,34 @@
   </div><!-- /tab-dossier -->
 
   <div class="tab-pane" id="tab-formation">
-    <div class="stage" id="stage9" style="background:white;border-radius:12px;padding:1.5rem;box-shadow:0 2px 8px rgba(0,0,0,0.06);border-top:4px solid #e5e7eb;margin-bottom:1.5rem;opacity:0.5;pointer-events:none">
+    <div class="stage" id="stage11" style="background:white;border-radius:12px;padding:1.5rem;box-shadow:0 2px 8px rgba(0,0,0,0.06);border-top:4px solid #e5e7eb;margin-bottom:1.5rem;opacity:0.5;pointer-events:none">
       <div class="stage-num">Step 9</div>
+      <div class="stage-title">Mission formateur</div>
+      <div class="stage-status" id="stage11status">Débloqué après envoi de la commande à Catherine</div>
+      <div id="missionForm" style="display:none;margin-top:1rem">
+        <div style="display:flex;gap:8px;align-items:end;margin-bottom:0.9rem;flex-wrap:wrap">
+          <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Formateur</label>
+          <select id="missionTrainer" style="font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px;min-width:220px">
+            <option value="">— Choisir —</option>
+            <option value="anna">Anna Malzy</option>
+            <option value="hannah">Hannah Durrant</option>
+            <option value="leone">Leone Crinnion</option>
+            <option value="stephanie">Stephanie Cooper-Slockyj</option>
+            <option value="natasha">Natasha Costello</option>
+            <option value="louisek">Louise Kulbicki</option>
+            <option value="louiseg">Louise Garavaglia</option>
+            <option value="lynsey">Lynsey Redfern</option>
+          </select></div>
+          <button class="btn btn-primary" onclick="sendMissionBrief()" id="btnSendBrief">📄 Envoyer le brief</button>
+        </div>
+        <div id="briefStatus" style="font-size:12px;color:#666;margin-bottom:8px"></div>
+        <div id="missionTimeline" style="display:flex;flex-direction:column;gap:6px;font-size:13px"></div>
+      </div>
+    </div>
+<div class="stage" id="stage9" style="background:white;border-radius:12px;padding:1.5rem;box-shadow:0 2px 8px rgba(0,0,0,0.06);border-top:4px solid #e5e7eb;margin-bottom:1.5rem;opacity:0.5;pointer-events:none">
+      <div class="stage-num">Step 10</div>
       <div class="stage-title">Convocation</div>
-      <div class="stage-status" id="stage9status">Débloqué une fois la commande envoyée à Catherine</div>
+      <div class="stage-status" id="stage9status">Débloqué après confirmation de mission signée</div>
       <div id="convocationForm" style="display:none;margin-top:1rem">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem">
           <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Formateur</label>
@@ -566,23 +590,7 @@
       </div>
     </div>
 
-    <div class="stage" id="stage11" style="background:white;border-radius:12px;padding:1.5rem;box-shadow:0 2px 8px rgba(0,0,0,0.06);border-top:4px solid #e5e7eb;margin-bottom:1.5rem;opacity:0.5;pointer-events:none">
-      <div class="stage-num">Step 10</div>
-      <div class="stage-title">Mission formateur</div>
-      <div class="stage-status" id="stage11status">Débloqué après convocation envoyée</div>
-      <div id="missionForm" style="display:none;margin-top:1rem">
-        <div style="margin-bottom:0.75rem">
-          <button class="btn btn-primary" onclick="sendMissionBrief()" id="btnSendBrief">📄 Envoyer le brief</button>
-        </div>
-        <div id="briefStatus" style="font-size:12px;color:#666;margin-bottom:10px"></div>
-        <div id="devisSection" style="display:none;background:#f8fafc;border-radius:8px;padding:10px;margin-bottom:10px">
-          <div style="font-size:12px;color:#666" id="devisStatus"></div>
-          <button class="btn btn-primary" onclick="acceptDevis()" id="btnAcceptDevis" style="margin-top:8px">✅ Valider le devis</button>
-        </div>
-        <div id="confirmationStatus" style="font-size:12px;color:#666"></div>
-      </div>
-    </div>
-  </div><!-- /tab-formation -->
+      </div><!-- /tab-formation -->
 
   <div class="tab-pane" id="tab-suivi2">
     <div class="stage" id="stage10" style="background:white;border-radius:12px;padding:1.5rem;box-shadow:0 2px 8px rgba(0,0,0,0.06);border-top:4px solid #e5e7eb;margin-bottom:1.5rem;opacity:0.5;pointer-events:none">
@@ -720,14 +728,14 @@
     var c8 = document.getElementById('pc8');
     if (s8 && hasSentCatherine) { s8.classList.remove('pending','active'); s8.classList.add('done'); c8.innerHTML = '✓'; }
     else if (s8 && (hasSigned || hasConvention)) { s8.classList.remove('pending','done'); s8.classList.add('active'); }
-    var s9 = document.getElementById('pstep9');
-    var c9 = document.getElementById('pc9');
-    if (s9 && hasConvocation) { s9.classList.remove('pending','active'); s9.classList.add('done'); c9.innerHTML = '✓'; }
-    else if (s9 && hasSentCatherine) { s9.classList.remove('pending','done'); s9.classList.add('active'); c9.innerHTML = '10'; }
     var s10 = document.getElementById('pstep10');
     var c10 = document.getElementById('pc10');
     if (s10 && hasMissionConfirmed) { s10.classList.remove('pending','active'); s10.classList.add('done'); c10.innerHTML = '✓'; }
-    else if (s10 && (hasMissionDevis || hasConvocation)) { s10.classList.remove('pending','done'); s10.classList.add('active'); c10.innerHTML = '11'; }
+    else if (s10 && hasSentCatherine) { s10.classList.remove('pending','done'); s10.classList.add('active'); c10.innerHTML = '10'; }
+    var s9 = document.getElementById('pstep9');
+    var c9 = document.getElementById('pc9');
+    if (s9 && hasConvocation) { s9.classList.remove('pending','active'); s9.classList.add('done'); c9.innerHTML = '✓'; }
+    else if (s9 && hasMissionConfirmed) { s9.classList.remove('pending','done'); s9.classList.add('active'); c9.innerHTML = '11'; }
   }
 
   function statusBadge(status) {
@@ -1910,26 +1918,34 @@ function fillTrainerContact(val) {
 function showStep9(c) {
   var s9 = document.getElementById('stage9');
   if (!s9) return;
-  if (c && c.conventionData && (c.conventionData.signedAt || c.conventionData.sentToCatherineAt)) {
-    s9.style.opacity = '1'; s9.style.pointerEvents = 'auto';
-    document.getElementById('convocationForm').style.display = 'block';
-    document.getElementById('stage9status').textContent = 'Envoyez la convocation à l’apprenant';
-    if (c.conventionData && c.conventionData.convocationSentAt) {
-      s9.style.borderTopColor = '#10b981';
-      document.getElementById('stage9status').textContent = 'Convocation envoyée ✓';
-      document.getElementById('btnSendConvoc').textContent = '↩ Renvoyer';
-      var tdot = document.getElementById('tdot-formation');
-      if (tdot) { tdot.style.display='inline-block'; tdot.className='tab-dot'; }
-      showStep10(c);
-      showStep11(c);
+  var cd = (c && c.conventionData) || {};
+  var md = (c && c.missionData) || {};
+  if (cd.signedAt || cd.sentToCatherineAt) {
+    showStep11(c);
+    if (md.confirmationSignedAt) {
+      s9.style.opacity = '1'; s9.style.pointerEvents = 'auto';
+      document.getElementById('convocationForm').style.display = 'block';
+      document.getElementById('stage9status').textContent = 'Envoyez la convocation à l’apprenant';
+      if (cd.convocationSentAt) {
+        s9.style.borderTopColor = '#10b981';
+        document.getElementById('stage9status').textContent = 'Convocation envoyée ✓';
+        document.getElementById('btnSendConvoc').textContent = '↩ Renvoyer';
+        var tdot = document.getElementById('tdot-formation');
+        if (tdot) { tdot.style.display='inline-block'; tdot.className='tab-dot'; }
+        showStep10(c);
+      } else {
+        var tdot = document.getElementById('tdot-formation');
+        if (tdot) { tdot.style.display='inline-block'; }
+      }
     } else {
+      document.getElementById('stage9status').textContent = 'Débloqué après confirmation de mission signée';
       var tdot = document.getElementById('tdot-formation');
       if (tdot) { tdot.style.display='inline-block'; }
     }
-    if (c.conventionData && c.conventionData.convocTrainer) {
+    if (cd.convocTrainer) {
       var sel = document.getElementById('convocTrainer');
-      if (sel) sel.value = c.conventionData.convocTrainer;
-      fillTrainerContact(c.conventionData.convocTrainer);
+      if (sel) sel.value = cd.convocTrainer;
+      fillTrainerContact(cd.convocTrainer);
     }
   }
 }
@@ -1977,37 +1993,35 @@ function showStep11(c) {
   s11.style.opacity = '1'; s11.style.pointerEvents = 'auto';
   document.getElementById('missionForm').style.display = 'block';
   var md = c.missionData || {};
+  var cd = c.conventionData || {};
+  function d(x) { return new Date(x).toLocaleDateString('fr-FR'); }
+  var sel = document.getElementById('missionTrainer');
+  if (sel) sel.value = md.trainerKey || cd.convocTrainer || '';
+  var rows = [];
+  function row(icon, html) { rows.push('<div style="display:flex;align-items:baseline;gap:8px;padding:7px 10px;background:#f8fafc;border:1px solid #eef2f7;border-radius:6px"><span>' + icon + '</span><span>' + html + '</span></div>'); }
   if (md.briefSentAt) {
-    document.getElementById('briefStatus').innerHTML = 'Brief envoyé le ' + new Date(md.briefSentAt).toLocaleDateString('fr-FR') + ' — <a href="/mission/' + md.briefToken + '" target="_blank">voir le lien</a>';
+    row('📄', 'Brief envoyé le ' + d(md.briefSentAt) + ' — <a href="/mission/' + md.briefToken + '" target="_blank">voir</a>');
     document.getElementById('btnSendBrief').textContent = '↩ Renvoyer le brief';
+    if (sel) sel.disabled = true;
   }
-  if (md.devisUploadedAt) {
-    document.getElementById('devisSection').style.display = 'block';
-    document.getElementById('devisStatus').innerHTML = 'Devis reçu : ' + md.devisTotal + ' € TTC — <a href="/api/download-mission-devis/' + c.id + '" target="_blank">télécharger</a>';
-    var bAcc = document.getElementById('btnAcceptDevis');
-    if (md.devisSignToken && !md.devisSignedAt) {
-      bAcc.textContent = '✅ Accepter le devis (bon pour accord)';
-      bAcc.onclick = function(){ window.open('/sign/devis/' + md.devisSignToken, '_blank'); };
-    } else if (md.devisSignedAt) {
-      bAcc.style.display = 'none';
-      document.getElementById('devisStatus').innerHTML += '<br>✅ Bon pour accord signé le ' + new Date(md.devisSignedAt).toLocaleDateString('fr-FR') + ' — <a href="/sign/devis/' + md.devisSignToken + '/signed-pdf" target="_blank">devis signé</a>';
-    }
-  }
-  if (md.acceptedAt) {
-    document.getElementById('btnAcceptDevis').style.display = 'none';
-    document.getElementById('confirmationStatus').innerHTML = 'Devis validé le ' + new Date(md.acceptedAt).toLocaleDateString('fr-FR') + ' — confirmation envoyée pour signature';
-  }
+  if (md.devisUploadedAt) row('💶', 'Devis reçu : ' + md.devisTotal + ' € TTC — <a href="/api/download-mission-devis/' + c.id + '" target="_blank">PDF</a>');
+  if (md.devisUploadedAt && md.devisSignToken && !md.devisSignedAt) row('👉', '<a href="/sign/devis/' + md.devisSignToken + '" target="_blank" style="font-weight:600;color:#1F4E79">Accepter le devis (bon pour accord)</a>');
+  if (md.devisSignedAt) row('✅', 'Bon pour accord signé le ' + d(md.devisSignedAt) + ' — <a href="/sign/devis/' + md.devisSignToken + '/signed-pdf" target="_blank">PDF signé</a>');
+  if (md.acceptedAt && !md.confirmationSignedAt) row('⏳', 'Confirmation générée — <a href="https://eval.linguaid.net/sign/mission/' + md.confirmationToken + '" target="_blank">lien de signature formateur</a>');
   if (md.confirmationSignedAt) {
+    row('✅', 'Confirmation signée le ' + d(md.confirmationSignedAt) + ' — <a href="/api/download-mission-confirmation-signed/' + c.id + '" style="font-weight:600;color:#1e4e79">Télécharger</a>');
     s11.style.borderTopColor = '#10b981';
-    document.getElementById('confirmationStatus').innerHTML = '✅ Confirmation signée le ' + new Date(md.confirmationSignedAt).toLocaleDateString('fr-FR') + ' &nbsp;<a href="/api/download-mission-confirmation-signed/' + c.id + '" style="font-weight:600;color:#1e4e79;text-decoration:underline">⬇ Télécharger</a>';
   }
+  document.getElementById('missionTimeline').innerHTML = rows.join('');
 }
 
 function sendMissionBrief() {
+  var tk = (document.getElementById('missionTrainer') || {}).value || '';
+  if (!tk) { document.getElementById('briefStatus').textContent = '❌ Choisissez un formateur d’abord'; return; }
   var btn = document.getElementById('btnSendBrief');
   btn.disabled = true; btn.textContent = 'Envoi en cours...';
   fetch('/api/send-mission-brief/' + window.candidateId, {
-    method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({})
+    method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({trainerKey: tk})
   }).then(function(r){ return r.json(); }).then(function(data){
     btn.disabled = false;
     if (data.error) { document.getElementById('briefStatus').textContent = '❌ ' + data.error; btn.textContent = '📄 Envoyer le brief'; return; }

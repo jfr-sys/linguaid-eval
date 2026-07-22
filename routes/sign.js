@@ -364,6 +364,7 @@ router.get('/standalone/:token/signed-pdf', function(req, res) {
 
 
 // -- Mission confirmation signing routes -------------------------------------
+var MISSION_TRAINER_NAMES = { anna: 'Anna Malzy', hannah: 'Hannah Durrant', leone: 'Leone Crinnion', stephanie: 'Stephanie Cooper-Slockyj', natasha: 'Natasha Costello', louisek: 'Louise Kulbicki', louiseg: 'Louise Garavaglia', lynsey: 'Lynsey Redfern' };
 function findByMissionToken(token) {
   var candidates = loadCandidates();
   return candidates.find(function(c) { return c.missionData && c.missionData.confirmationToken === token; });
@@ -395,7 +396,7 @@ router.get('/mission/:token/info', function(req, res) {
   res.json({
     candidateName: candidate.name,
     trainingType: 'Confirmation de mission',
-    signatoryName: '',
+    signatoryName: MISSION_TRAINER_NAMES[candidate.missionData.trainerKey] || '',
     isMission: true,
     devisUrl: (candidate.missionData.devisPath && fs.existsSync(candidate.missionData.devisPath)) ? ('/sign/mission/' + req.params.token + '/devis-pdf') : null,
   });

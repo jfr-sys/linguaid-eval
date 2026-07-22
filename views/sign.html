@@ -310,6 +310,10 @@
   fetch(`${baseUrl}/info`)
     .then(r => r.json())
     .then(info => {
+      if (isMission && info.signatoryName) {
+        var tnp = document.getElementById('typed-name');
+        if (tnp) { tnp.value = info.signatoryName; tnp.dispatchEvent(new Event('input')); }
+      }
       if (isMission && info.devisUrl) {
         var pnd = document.getElementById('pdf-note');
         if (pnd) pnd.innerHTML = pnd.textContent + ' <a href="' + info.devisUrl + '" target="_blank" style="color:#1F4E79;font-weight:600;text-decoration:underline">Consulter le devis associ\u00e9</a>';

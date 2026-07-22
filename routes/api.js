@@ -3204,6 +3204,7 @@ router.post('/send-mission-brief/:id', function(req, res) {
     var result;
     try { result = JSON.parse(stdout.trim()); } catch(e) { return res.status(500).json({ error: 'Invalid output' }); }
     if (!result.success) return res.status(500).json({ error: result.error });
+    candidates[idx].conventionData = Object.assign(c.conventionData || {}, { convocTrainer: trainerKey });
     candidates[idx].missionData = Object.assign(c.missionData || {}, {
       trainerKey: trainerKey,
       briefToken: briefToken,
