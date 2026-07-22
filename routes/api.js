@@ -2346,35 +2346,8 @@ router.post('/generate-quiz-link/:id', function(req, res) {
     var isLegal = c.courseType === 'legal' || od.cpfType === 'E360_LEGAL' || od.cpfType === 'CAJA';
     var moduleName = isLegal ? 'Yes, you Ken English' : 'Travaux personnels Volet 2';
     var quizUrl = 'https://eval.linguaid.net/quiz/' + token;
-    var trainingTitle = od.trainingTitle || (isLegal ? 'Formation en anglais juridique' : 'Formation en anglais professionnel');
-    var civility = (c.conventionData && c.conventionData.civility) || '';
-    var lastName = (c.name || '').split(' ').slice(-1)[0];
-    var greeting = civility ? civility + ' ' + lastName : (c.name || '');
-    var sigPath2 = require('path').join(__dirname, '../views/signature_catherine.png');
-    var sigCid2 = 'signature_catherine2';
-    var sigHtml2 = require('fs').existsSync(sigPath2)
-      ? '<img src="cid:' + sigCid2 + '" alt="Signature" style="max-width:400px;display:block;margin-top:8px">'
-      : '<p><strong>Catherine Frimond-Laubi\u00e8s</strong><br>Responsable suivi<br>cfr@linguaid.net</p>';
-    var html2 = '<div style="font-family:Arial,sans-serif;font-size:14px;color:#222;line-height:1.7;max-width:600px">'
-      + '<p>Bonjour ' + greeting + ',</p>'
-      + '<p>Dans le cadre de votre formation <strong>' + trainingTitle + '</strong>, nous vous invitons \u00e0 compl\u00e9ter le module suivant\u00a0:</p>'
-      + '<p style="margin-left:1rem"><strong>' + moduleName + '</strong></p>'
-      + '<p>Veuillez cliquer sur le bouton ci-dessous pour acc\u00e9der \u00e0 votre questionnaire de fin de module\u00a0:</p>'
-      + '<p><a href="' + quizUrl + '" style="background:#1F4E79;color:white;padding:12px 24px;border-radius:6px;text-decoration:none;display:inline-block;font-weight:600">Acc\u00e9der au questionnaire</a></p>'
-      + '<p style="font-size:12px;color:#666">Lien direct\u00a0: ' + quizUrl + '</p>'
-      + '<p>Ce questionnaire est \u00e0 compl\u00e9ter une seule fois. Vos r\u00e9ponses seront enregistr\u00e9es automatiquement et une attestation vous sera adress\u00e9e.</p>'
-      + '<p>Nous restons \u00e0 votre disposition pour toute question.</p>'
-      + '<p>Bien cordialement,</p>'
-      + sigHtml2
-      + '</div>';
-    var transporter2 = require('nodemailer').createTransport({ host: 'localhost', port: 25, secure: false, tls: { rejectUnauthorized: false } });
-    var quizAttachments = [];
-    if (require('fs').existsSync(sigPath2)) {
-      quizAttachments.push({ filename: 'signature_catherine.png', path: sigPath2, cid: sigCid2 });
-    }
-    transporter2.sendMail({ from: 'cfr@linguaid.net', to: c.email, cc: 'jfr@linguaid.net',
-      subject: 'Questionnaire de fin de module \u2013 ' + moduleName, html: html2, attachments: quizAttachments },
-      function(err) { if (err) console.error('quiz-link mail error:', err); else console.log('Quiz link sent to ' + c.name); });
+    // NOTE: no automatic email here by design - manual link only, copied
+    // into a manual email by Joss/Catherine. See patch_quiz_no_autosend_v1.py.
     res.json({ ok: true, token: token });
   } catch(err) { console.error('generate-quiz-link error:', err); res.status(500).json({ error: err.message }); }
 });

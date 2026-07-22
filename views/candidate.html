@@ -325,6 +325,7 @@
     <button class="tab-btn active" onclick="switchTab('eval',this)">Évaluation <span class="tab-dot" id="tdot-eval"></span></button>
     <button class="tab-btn" onclick="switchTab('dossier',this)">Dossier <span class="tab-dot" id="tdot-dossier" style="display:none"></span></button>
     <button class="tab-btn" onclick="switchTab('formation',this)">Formation <span class="tab-dot warn" id="tdot-formation" style="display:none"></span></button>
+    <button class="tab-btn" onclick="switchTab('suivi2',this)">Suivi Volet 2 <span class="tab-dot warn" id="tdot-suivi2" style="display:none"></span></button>
     <button class="tab-btn" onclick="switchTab('data',this)">Données</button>
   </div>
   <div class="tab-pane active" id="tab-eval">
@@ -565,34 +566,8 @@
       </div>
     </div>
 
-    <div class="stage" id="stage10" style="background:white;border-radius:12px;padding:1.5rem;box-shadow:0 2px 8px rgba(0,0,0,0.06);border-top:4px solid #e5e7eb;margin-bottom:1.5rem;opacity:0.5;pointer-events:none">
-      <div class="stage-num">Step 10</div>
-      <div class="stage-title">Suivi Volet 2</div>
-      <div class="stage-status" id="stage10status">Débloqué après convocation envoyée</div>
-      <div id="suiviForm" style="display:none;margin-top:1rem">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
-          <div>
-            <div style="font-size:12px;font-weight:600;color:#1F4E79;margin-bottom:8px">Quiz Volet 2</div>
-            <div style="font-size:12px;color:#666;margin-bottom:8px">Génère un lien unique envoyé à l'apprenant. Score et date enregistrés automatiquement.</div>
-            <button class="btn btn-primary" onclick="generateQuizLink()" id="btnGenQuiz">✨ Générer le lien quiz</button>
-            <div id="quizLinkBox" style="display:none;margin-top:10px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px">
-              <div style="font-size:12px;color:#1e40af;margin-bottom:4px">Lien envoyé à l'apprenant :</div>
-              <div id="quizLinkDisplay" style="font-size:11px;color:#1e3a8a;word-break:break-all"></div>
-              <div id="quizScoreDisplay" style="font-size:12px;color:#1e40af;margin-top:6px"></div>
-            </div>
-          </div>
-          <div>
-            <div style="font-size:12px;font-weight:600;color:#1F4E79;margin-bottom:8px">Attestation fin de module</div>
-            <div style="font-size:12px;color:#666;margin-bottom:8px">Générée automatiquement après le quiz. Envoyez-la à l'apprenant pour signature électronique.</div>
-            <button class="btn" id="btnSendAttestation" onclick="sendAttestationForSigning()" style="background:#7c3aed;color:white;display:none">✍️ Envoyer pour signature</button>
-            <div id="attestationStatus" style="margin-top:8px;font-size:12px;color:#666">En attente du quiz</div>
-            <div id="attestationSignStatus" style="margin-top:4px;font-size:12px;color:#666"></div>
-          </div>
-        </div>
-      </div>
-
     <div class="stage" id="stage11" style="background:white;border-radius:12px;padding:1.5rem;box-shadow:0 2px 8px rgba(0,0,0,0.06);border-top:4px solid #e5e7eb;margin-bottom:1.5rem;opacity:0.5;pointer-events:none">
-      <div class="stage-num">Step 11</div>
+      <div class="stage-num">Step 10</div>
       <div class="stage-title">Mission formateur</div>
       <div class="stage-status" id="stage11status">Débloqué après convocation envoyée</div>
       <div id="missionForm" style="display:none;margin-top:1rem">
@@ -607,8 +582,36 @@
         <div id="confirmationStatus" style="font-size:12px;color:#666"></div>
       </div>
     </div>
-    </div>
   </div><!-- /tab-formation -->
+
+  <div class="tab-pane" id="tab-suivi2">
+    <div class="stage" id="stage10" style="background:white;border-radius:12px;padding:1.5rem;box-shadow:0 2px 8px rgba(0,0,0,0.06);border-top:4px solid #e5e7eb;margin-bottom:1.5rem;opacity:0.5;pointer-events:none">
+      <div class="stage-num">Step 11</div>
+      <div class="stage-title">Suivi Volet 2</div>
+      <div class="stage-status" id="stage10status">Débloqué après convocation envoyée</div>
+      <div id="suiviForm" style="display:none;margin-top:1rem">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+          <div>
+            <div style="font-size:12px;font-weight:600;color:#1F4E79;margin-bottom:8px">Quiz Volet 2</div>
+            <div style="font-size:12px;color:#666;margin-bottom:8px">Génère un lien unique à copier dans un email manuel. Score et date enregistrés automatiquement.</div>
+            <button class="btn btn-primary" onclick="generateQuizLink()" id="btnGenQuiz">✨ Générer le lien quiz</button>
+            <div id="quizLinkBox" style="display:none;margin-top:10px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px">
+              <div style="font-size:12px;color:#1e40af;margin-bottom:4px">Lien généré — à copier dans votre email :</div>
+              <div id="quizLinkDisplay" style="font-size:11px;color:#1e3a8a;word-break:break-all"></div>
+              <div id="quizScoreDisplay" style="font-size:12px;color:#1e40af;margin-top:6px"></div>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:12px;font-weight:600;color:#1F4E79;margin-bottom:8px">Attestation fin de module</div>
+            <div style="font-size:12px;color:#666;margin-bottom:8px">Générée automatiquement après le quiz. Envoyez-la à l'apprenant pour signature électronique.</div>
+            <button class="btn" id="btnSendAttestation" onclick="sendAttestationForSigning()" style="background:#7c3aed;color:white;display:none">✍️ Envoyer pour signature</button>
+            <div id="attestationStatus" style="margin-top:8px;font-size:12px;color:#666">En attente du quiz</div>
+            <div id="attestationSignStatus" style="margin-top:4px;font-size:12px;color:#666"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /tab-suivi2 -->
 
   <div class="tab-pane" id="tab-data">
 
@@ -1935,6 +1938,8 @@ function showStep10(c) {
   var s10 = document.getElementById('stage10');
   if (!s10) return;
   s10.style.opacity = '1'; s10.style.pointerEvents = 'auto';
+  var tdotSuivi2 = document.getElementById('tdot-suivi2');
+  if (tdotSuivi2) { tdotSuivi2.style.display = 'inline-block'; tdotSuivi2.className = 'tab-dot'; }
   document.getElementById('suiviForm').style.display = 'block';
   document.getElementById('stage10status').textContent = 'Générez le lien quiz et uploadez l’attestation';
   if (c.quizToken) {
