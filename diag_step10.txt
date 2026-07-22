@@ -1,0 +1,20 @@
+===1 line count===
+3275 routes/api.js
+===2 crash site===
+===3 git state===
+?? diag_step10.txt
+62e7501 chore: rename Suivi Volet 2 to Fin de formation, Quiz Volet 2 to Quiz
+df9c9fb chore: rename generic eval3 account to Romina
+06d83f1 fix: separate tab for Suivi Volet 2, swap step 10/11 labels, remove quiz auto-email
+0a1e7a9 feat: step 11 mission pipeline - demande devis confirmation
+b1de756 feat: add rma@linguaid.net to standalone attestation signed alert
+===4 env===
+/usr/bin/python3
+Python 3.11.2
+docx-ok
+/usr/bin/soffice
+-rw-r--r-- 1 debian debian   1719 Jul 22 15:55 /home/debian/fill_demande_mission.py
+-rw-r--r-- 1 debian debian   2085 Jul 22 15:55 /home/debian/fill_mission_doc.py
+-rw-r--r-- 1 debian debian 120266 Jul 22 15:55 views/DEMANDE_MISSION_TEMPLATE.docx
+===6 generator run===
+{"success": true, "pdfPath": "/tmp/missiontest/diag1_demande.pdf"}
