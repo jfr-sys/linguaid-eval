@@ -312,6 +312,11 @@
         <div class="step-label">Convocation</div>
         <div class="step-sublabel">Envoyée à l'apprenant</div>
       </div>
+      <div class="progress-step" id="pstep10">
+        <div class="step-circle" id="pc10">11</div>
+        <div class="step-label">Mission</div>
+        <div class="step-sublabel">Confirmation formateur</div>
+      </div>
     </div>
   </div>
 
@@ -585,6 +590,23 @@
           </div>
         </div>
       </div>
+
+    <div class="stage" id="stage11" style="background:white;border-radius:12px;padding:1.5rem;box-shadow:0 2px 8px rgba(0,0,0,0.06);border-top:4px solid #e5e7eb;margin-bottom:1.5rem;opacity:0.5;pointer-events:none">
+      <div class="stage-num">Step 11</div>
+      <div class="stage-title">Mission formateur</div>
+      <div class="stage-status" id="stage11status">Débloqué après convocation envoyée</div>
+      <div id="missionForm" style="display:none;margin-top:1rem">
+        <div style="margin-bottom:0.75rem">
+          <button class="btn btn-primary" onclick="sendMissionBrief()" id="btnSendBrief">📄 Envoyer le brief</button>
+        </div>
+        <div id="briefStatus" style="font-size:12px;color:#666;margin-bottom:10px"></div>
+        <div id="devisSection" style="display:none;background:#f8fafc;border-radius:8px;padding:10px;margin-bottom:10px">
+          <div style="font-size:12px;color:#666" id="devisStatus"></div>
+          <button class="btn btn-primary" onclick="acceptDevis()" id="btnAcceptDevis" style="margin-top:8px">✅ Valider le devis</button>
+        </div>
+        <div id="confirmationStatus" style="font-size:12px;color:#666"></div>
+      </div>
+    </div>
     </div>
   </div><!-- /tab-formation -->
 
@@ -660,7 +682,7 @@
 
   marked.setOptions({ breaks: true, gfm: true });
 
-  function updateProgressBar(status, hasProposal, hasConvention, hasSigned, hasSentCatherine, hasConvocation, isCadre) {
+  function updateProgressBar(status, hasProposal, hasConvention, hasSigned, hasSentCatherine, hasConvocation, isCadre, hasMissionDevis, hasMissionConfirmed) {
     const stepIndex = STATUS_ORDER.indexOf(status);
     for (let i = 0; i < 5; i++) {
       const step = document.getElementById('pstep' + i);
@@ -699,6 +721,10 @@
     var c9 = document.getElementById('pc9');
     if (s9 && hasConvocation) { s9.classList.remove('pending','active'); s9.classList.add('done'); c9.innerHTML = '✓'; }
     else if (s9 && hasSentCatherine) { s9.classList.remove('pending','done'); s9.classList.add('active'); c9.innerHTML = '10'; }
+    var s10 = document.getElementById('pstep10');
+    var c10 = document.getElementById('pc10');
+    if (s10 && hasMissionConfirmed) { s10.classList.remove('pending','active'); s10.classList.add('done'); c10.innerHTML = '✓'; }
+    else if (s10 && (hasMissionDevis || hasConvocation)) { s10.classList.remove('pending','done'); s10.classList.add('active'); c10.innerHTML = '11'; }
   }
 
   function statusBadge(status) {
@@ -756,7 +782,7 @@
         el.innerHTML += ' <span class="badge" style="background:#f0fdf4;color:#15803d" title="Heures et dates coh\u00e9rentes">\u2713 Coh\u00e9rent</span>';
       }
     })();
-    updateProgressBar(c.status, !!(c.conventionData && c.conventionData.proposalSentAt), !!(c.conventionData && (c.conventionData.generatedAt || c.conventionData.pdfPath || c.conventionData.signingToken)), !!(c.conventionData && c.conventionData.signedAt), !!(c.conventionData && c.conventionData.sentToCatherineAt), !!(c.conventionData && c.conventionData.convocationSentAt), isCadre);
+    updateProgressBar(c.status, !!(c.conventionData && c.conventionData.proposalSentAt), !!(c.conventionData && (c.conventionData.generatedAt || c.conventionData.pdfPath || c.conventionData.signingToken)), !!(c.conventionData && c.conventionData.signedAt), !!(c.conventionData && c.conventionData.sentToCatherineAt), !!(c.conventionData && c.conventionData.convocationSentAt), isCadre, !!(c.missionData && c.missionData.devisUploadedAt), !!(c.missionData && c.missionData.confirmationSignedAt));
     if (c.status === 'invited') { var ra = document.getElementById('resendInviteArea'); if (ra) ra.style.display = 'block'; }
 
     const p = Math.round(100 * c.scores.total / (c.scores.max || 30));
@@ -1892,6 +1918,7 @@ function showStep9(c) {
       var tdot = document.getElementById('tdot-formation');
       if (tdot) { tdot.style.display='inline-block'; tdot.className='tab-dot'; }
       showStep10(c);
+      showStep11(c);
     } else {
       var tdot = document.getElementById('tdot-formation');
       if (tdot) { tdot.style.display='inline-block'; }
@@ -1936,6 +1963,56 @@ function showStep10(c) {
       document.getElementById('attestationSignStatus').style.color = '#92400e';
     }
   }
+}
+
+
+function showStep11(c) {
+  var s11 = document.getElementById('stage11');
+  if (!s11) return;
+  s11.style.opacity = '1'; s11.style.pointerEvents = 'auto';
+  document.getElementById('missionForm').style.display = 'block';
+  var md = c.missionData || {};
+  if (md.briefSentAt) {
+    document.getElementById('briefStatus').innerHTML = 'Brief envoyé le ' + new Date(md.briefSentAt).toLocaleDateString('fr-FR') + ' — <a href="/mission/' + md.briefToken + '" target="_blank">voir le lien</a>';
+    document.getElementById('btnSendBrief').textContent = '↩ Renvoyer le brief';
+  }
+  if (md.devisUploadedAt) {
+    document.getElementById('devisSection').style.display = 'block';
+    document.getElementById('devisStatus').innerHTML = 'Devis reçu : ' + md.devisTotal + ' € TTC — <a href="/api/download-mission-devis/' + c.id + '" target="_blank">télécharger</a>';
+  }
+  if (md.acceptedAt) {
+    document.getElementById('btnAcceptDevis').style.display = 'none';
+    document.getElementById('confirmationStatus').innerHTML = 'Devis validé le ' + new Date(md.acceptedAt).toLocaleDateString('fr-FR') + ' — confirmation envoyée pour signature';
+  }
+  if (md.confirmationSignedAt) {
+    s11.style.borderTopColor = '#10b981';
+    document.getElementById('confirmationStatus').innerHTML = '✅ Confirmation signée le ' + new Date(md.confirmationSignedAt).toLocaleDateString('fr-FR') + ' &nbsp;<a href="/api/download-mission-confirmation-signed/' + c.id + '" style="font-weight:600;color:#1e4e79;text-decoration:underline">⬇ Télécharger</a>';
+  }
+}
+
+function sendMissionBrief() {
+  var btn = document.getElementById('btnSendBrief');
+  btn.disabled = true; btn.textContent = 'Envoi en cours...';
+  fetch('/api/send-mission-brief/' + window.candidateId, {
+    method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({})
+  }).then(function(r){ return r.json(); }).then(function(data){
+    btn.disabled = false;
+    if (data.error) { document.getElementById('briefStatus').textContent = '❌ ' + data.error; btn.textContent = '📄 Envoyer le brief'; return; }
+    document.getElementById('briefStatus').innerHTML = 'Lien : <a href="' + data.briefUrl + '" target="_blank">' + data.briefUrl + '</a>';
+    btn.textContent = '↩ Renvoyer le brief';
+  }).catch(function(e){ btn.disabled = false; btn.textContent = '📄 Envoyer le brief'; document.getElementById('briefStatus').textContent = '❌ Erreur réseau'; });
+}
+
+function acceptDevis() {
+  var btn = document.getElementById('btnAcceptDevis');
+  btn.disabled = true; btn.textContent = 'Validation en cours...';
+  fetch('/api/accept-devis/' + window.candidateId, { method: 'POST' })
+  .then(function(r){ return r.json(); }).then(function(data){
+    btn.disabled = false;
+    if (data.error) { document.getElementById('confirmationStatus').textContent = '❌ ' + data.error; btn.textContent = '✅ Valider le devis'; return; }
+    btn.style.display = 'none';
+    document.getElementById('confirmationStatus').innerHTML = 'Confirmation générée. Lien de signature : <a href="' + data.signingUrl + '" target="_blank">' + data.signingUrl + '</a>';
+  }).catch(function(e){ btn.disabled = false; btn.textContent = '✅ Valider le devis'; });
 }
 
 function sendConvocation() {

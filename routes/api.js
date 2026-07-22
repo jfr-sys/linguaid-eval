@@ -3189,4 +3189,115 @@ router.get('/approve-reminders/:batchToken', function(req, res) {
 });
 // == END REMINDER_APPROVAL_ROUTES =============================================
 
+
+
+// -- Step 11: mission pipeline (demande de mission / devis / confirmation) --
+var trainerContracts = require('../lib/trainerContracts');
+var CONVOC_TRAINERS_NAMES = { anna: 'Anna', hannah: 'Hannah', leone: 'Leone', stephanie: 'Stephanie', natasha: 'Natasha', louisek: 'Louise', louiseg: 'Louise', lynsey: 'Lynsey' };
+var MISSION_DIR = path.join(__dirname, '../data/missions');
+
+router.post('/send-mission-brief/:id', function(req, res) {
+  var candidates = getCandidates();
+  var idx = candidates.findIndex(function(x) { return x.id === req.params.id; });
+  if (idx === -1) return res.status(404).json({ error: 'Not found' });
+  var c = candidates[idx];
+  var trainerKey = (req.body && req.body.trainerKey) || (c.conventionData && c.conventionData.convocTrainer) || '';
+  if (!trainerKey) return res.status(400).json({ error: 'Aucun formateur specifie' });
+  if (!trainerContracts.isConfigured(trainerKey)) {
+    return res.status(400).json({ error: 'Informations contractuelles manquantes pour ce formateur (SIRET/contrat/avenant) - a renseigner dans lib/trainerContracts.js avant de continuer.' });
+  }
+  var od = c.oralData || {};
+  var crypto = require('crypto');
+  var briefToken = crypto.randomBytes(16).toString('hex');
+  var today = new Date().toLocaleDateString('fr-FR');
+  var args = {
+    trainerFirstName: CONVOC_TRAINERS_NAMES[trainerKey] || '',
+    candidateName: c.name || '',
+    candidateCompany: c.company || '',
+    level: od.targetLevel || '',
+    coachingHours: od.coachingHours || od.totalHours || 0,
+    homeworkHours: od.homeworkHours || 0,
+    format: 'A distance, plusieurs rythmes possibles',
+    startDate: od.dateStart || '',
+    objective: od.trainingTitle || '',
+    today: today,
+    senderName: 'Joss Frimond',
+    outDir: MISSION_DIR,
+    id: c.id,
+  };
+  execFile('python3', ['/home/debian/fill_demande_mission.py', JSON.stringify(args)], { timeout: 60000 }, function(err, stdout, stderr) {
+    if (err) { console.error('fill_demande_mission error:', stderr, stdout); return res.status(500).json({ error: 'Brief generation failed' }); }
+    var result;
+    try { result = JSON.parse(stdout.trim()); } catch(e) { return res.status(500).json({ error: 'Invalid output' }); }
+    if (!result.success) return res.status(500).json({ error: result.error });
+    candidates[idx].missionData = Object.assign(c.missionData || {}, {
+      trainerKey: trainerKey,
+      briefToken: briefToken,
+      briefPath: result.pdfPath,
+      briefSentAt: new Date().toISOString(),
+    });
+    saveCandidates(candidates);
+    res.json({ success: true, briefUrl: 'https://eval.linguaid.net/mission/' + briefToken });
+  });
+});
+
+router.post('/accept-devis/:id', function(req, res) {
+  var candidates = getCandidates();
+  var idx = candidates.findIndex(function(x) { return x.id === req.params.id; });
+  if (idx === -1) return res.status(404).json({ error: 'Not found' });
+  var c = candidates[idx];
+  var md = c.missionData || {};
+  if (!md.devisUploadedAt) return res.status(400).json({ error: 'Aucun devis recu' });
+  var contract = trainerContracts.getTrainerContract(md.trainerKey);
+  if (!contract) return res.status(400).json({ error: 'Formateur non configure' });
+  var od = c.oralData || {};
+  var crypto = require('crypto');
+  var confirmationToken = crypto.randomBytes(16).toString('hex');
+  var today = new Date().toLocaleDateString('fr-FR');
+  var args = {
+    trainerName: contract.businessName,
+    trainerStatus: contract.status,
+    trainerSiret: contract.siret,
+    trainerAddress: contract.address,
+    candidateName: c.name || '',
+    coachingHours: (od.coachingHours || od.totalHours || 0) + '.00',
+    homeworkHours: (od.homeworkHours || 0) + '.00',
+    format: 'A distance (visioconference et travail asynchrone)',
+    missionDates: od.dateStart ? ('a compter du ' + od.dateStart) : '',
+    devisDate: today,
+    devisTotal: md.devisTotal,
+    signCity: 'Saint-Cyprien',
+    today: today,
+    contractDate: contract.contractDate,
+    avenantDate: contract.avenantDate,
+    outDir: MISSION_DIR,
+    id: c.id,
+  };
+  execFile('python3', ['/home/debian/fill_confirmation_mission.py', JSON.stringify(args)], { timeout: 60000 }, function(err, stdout, stderr) {
+    if (err) { console.error('fill_confirmation_mission error:', stderr, stdout); return res.status(500).json({ error: 'Confirmation generation failed' }); }
+    var result;
+    try { result = JSON.parse(stdout.trim()); } catch(e) { return res.status(500).json({ error: 'Invalid output' }); }
+    if (!result.success) return res.status(500).json({ error: result.error });
+    candidates[idx].missionData.acceptedAt = new Date().toISOString();
+    candidates[idx].missionData.confirmationPath = result.pdfPath;
+    candidates[idx].missionData.confirmationToken = confirmationToken;
+    saveCandidates(candidates);
+    res.json({ success: true, signingUrl: 'https://eval.linguaid.net/sign/mission/' + confirmationToken });
+  });
+});
+
+router.get('/download-mission-devis/:id', function(req, res) {
+  var candidates = getCandidates();
+  var c = candidates.find(function(x) { return x.id === req.params.id; });
+  if (!c || !c.missionData || !c.missionData.devisPath) return res.status(404).send('Not found');
+  res.sendFile(c.missionData.devisPath);
+});
+
+router.get('/download-mission-confirmation-signed/:id', function(req, res) {
+  var candidates = getCandidates();
+  var c = candidates.find(function(x) { return x.id === req.params.id; });
+  if (!c || !c.missionData || !c.missionData.confirmationSignedPdfPath) return res.status(404).send('Not found');
+  res.sendFile(c.missionData.confirmationSignedPdfPath);
+});
+
 module.exports = router;

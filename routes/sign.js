@@ -361,4 +361,104 @@ router.get('/standalone/:token/signed-pdf', function(req, res) {
 });
 
 
+
+
+// -- Mission confirmation signing routes -------------------------------------
+function findByMissionToken(token) {
+  var candidates = loadCandidates();
+  return candidates.find(function(c) { return c.missionData && c.missionData.confirmationToken === token; });
+}
+
+router.get('/mission/:token', function(req, res) {
+  var token = req.params.token;
+  var candidate = findByMissionToken(token);
+  if (!candidate) return res.status(404).send('<h2>Lien invalide ou expiré.</h2>');
+  if (candidate.missionData.confirmationSignedAt) {
+    return res.status(200).send('<html><body style="font-family:sans-serif;max-width:600px;margin:60px auto;text-align:center"><h2>Document deja signe</h2><p>Cette confirmation de mission a ete signee le ' + new Date(candidate.missionData.confirmationSignedAt).toLocaleDateString('fr-FR') + '.</p></body></html>');
+  }
+  res.sendFile(path.join(__dirname, '../views/sign.html'));
+});
+
+router.get('/mission/:token/pdf', function(req, res) {
+  var candidate = findByMissionToken(req.params.token);
+  if (!candidate) return res.status(404).send('Not found');
+  var pdfPath = candidate.missionData.confirmationPath;
+  if (!pdfPath || !fs.existsSync(pdfPath)) return res.status(404).send('PDF not found');
+  res.setHeader('Content-Type', 'application/pdf');
+  res.sendFile(pdfPath);
+});
+
+router.get('/mission/:token/info', function(req, res) {
+  var candidate = findByMissionToken(req.params.token);
+  if (!candidate) return res.status(404).json({ error: 'Invalid token' });
+  if (candidate.missionData.confirmationSignedAt) return res.json({ alreadySigned: true });
+  res.json({
+    candidateName: candidate.name,
+    trainingType: 'Confirmation de mission',
+    signatoryName: '',
+    isMission: true,
+  });
+});
+
+router.post('/mission/:token/submit', express.json({ limit: '5mb' }), function(req, res) {
+  var token = req.params.token;
+  var candidates = loadCandidates();
+  var idx = candidates.findIndex(function(c) { return c.missionData && c.missionData.confirmationToken === token; });
+  if (idx === -1) return res.status(404).json({ error: 'Invalid token' });
+  if (candidates[idx].missionData.confirmationSignedAt) return res.json({ success: true, alreadySigned: true });
+
+  var signatureImg = req.body.signatureImg || req.body.signature;
+  var typedName = req.body.typedName || candidates[idx].name;
+  var timestamp = new Date().toISOString();
+  var signerIp = req.ip || req.connection.remoteAddress;
+
+  var unsignedPdf = candidates[idx].missionData.confirmationPath;
+  var signedPdf = unsignedPdf.replace('.pdf', '_signed.pdf');
+
+  var embedArgs = JSON.stringify({
+    pdfPath: unsignedPdf,
+    signatureImg: signatureImg,
+    typedName: typedName,
+    timestamp: timestamp,
+    signerIp: signerIp,
+    outputPath: signedPdf,
+  });
+
+  execFile('python3', ['/home/debian/embed_signature_mission.py', embedArgs], function(err, stdout, stderr) {
+    if (err) { console.error('embed_signature_mission error:', stderr); return res.status(500).json({ error: 'Failed to embed signature' }); }
+    var result;
+    try { result = JSON.parse(stdout); } catch(e) { return res.status(500).json({ error: 'Invalid response' }); }
+    if (!result.success) return res.status(500).json({ error: result.error });
+
+    candidates[idx].missionData.confirmationSignedAt = timestamp;
+    candidates[idx].missionData.confirmationSignerIp = signerIp;
+    candidates[idx].missionData.confirmationTypedName = typedName;
+    candidates[idx].missionData.confirmationSignedPdfPath = signedPdf;
+    saveCandidates(candidates);
+
+    var nodemailer = require('nodemailer');
+    var transporter = nodemailer.createTransport({ host: 'localhost', port: 25, secure: false, tls: { rejectUnauthorized: false } });
+    transporter.sendMail({
+      from: 'noreply@linguaid.net',
+      to: 'jfr@linguaid.net',
+      subject: 'Confirmation de mission signee - ' + candidates[idx].name,
+      text: 'La confirmation de mission de ' + candidates[idx].name + ' a ete signee par ' + typedName + ' le ' + new Date(timestamp).toLocaleString('fr-FR') + '.',
+      attachments: [{ filename: 'confirmation_signee.pdf', path: signedPdf }],
+    }).catch(function(e) { console.error('Email notification failed:', e); });
+
+    res.json({ success: true });
+  });
+});
+
+router.get('/mission/:token/signed-pdf', function(req, res) {
+  var candidate = findByMissionToken(req.params.token);
+  if (!candidate) return res.status(404).send('Not found');
+  var signedPdfPath = candidate.missionData.confirmationSignedPdfPath;
+  if (!signedPdfPath || !fs.existsSync(signedPdfPath)) return res.status(404).send('Signed PDF not found');
+  var name = (candidate.name || 'mission').replace(/\s+/g, '_');
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', 'attachment; filename="confirmation_mission_signee_' + name + '.pdf"');
+  res.sendFile(signedPdfPath);
+});
+
 module.exports = router;
