@@ -427,6 +427,10 @@
         document.querySelector('#success-screen h2').textContent = 'Attestation signée avec succès';
         document.getElementById('download-signed').textContent = '⬇ Télécharger votre attestation signée';
       }
+      if (isMission) {
+        document.querySelector('#success-screen h2').textContent = 'Confirmation de mission signée avec succès';
+        document.getElementById('download-signed').textContent = '⬇ Télécharger votre confirmation de mission signée';
+      }
       if (isDevisAccept) {
         document.querySelector('#success-screen h2').textContent = 'Devis accepté — cachet apposé';
         document.getElementById('download-signed').textContent = '⬇ Télécharger le devis signé';
