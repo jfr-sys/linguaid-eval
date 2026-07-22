@@ -5,7 +5,7 @@ const bcrypt = require('bcryptjs');
 const USERS = [
   { id: 1, name: 'Joss', username: 'joss', password: bcrypt.hashSync('linguaid2026', 10), role: 'admin' },
   { id: 2, name: 'Caz', username: 'caz', password: bcrypt.hashSync('linguaid2026', 10), role: 'evaluator' },
-  { id: 3, name: 'Evaluator 3', username: 'eval3', password: bcrypt.hashSync('linguaid2026', 10), role: 'evaluator' },
+  { id: 3, name: 'Romina', username: 'romina', password: bcrypt.hashSync('cMxYT6pYVhpc', 10), role: 'evaluator' },
 ];
 
 router.get('/', (req, res) => res.redirect('/candidates'));
