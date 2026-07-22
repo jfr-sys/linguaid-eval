@@ -737,6 +737,25 @@
       document.getElementById('idCivility').value = civ;
     }
     document.getElementById('profileBadge').innerHTML = c.isRenewal ? '<span class="badge" style="background:#ede9fe;color:#5b21b6">Renouvellement</span>' : statusBadge(c.status);
+    /* coherence-badge */
+    (function(){
+      var od = c.oralData || {}, cd = c.conventionData || {};
+      if (!(od.totalHours || od.coachingHours || od.homeworkHours)) return;
+      var total = parseInt(od.totalHours, 10) || 0;
+      var ch = parseInt(od.coachingHours, 10); if (isNaN(ch)) ch = total;
+      var hw = parseInt(od.homeworkHours, 10); if (isNaN(hw)) hw = 0;
+      var errs = [];
+      if (!total) errs.push('Heures totales manquantes');
+      else if (total !== ch + hw) errs.push('Total ' + total + 'h \u2260 coaching ' + ch + 'h + travaux ' + hw + 'h');
+      var ds = od.dateStart || cd.dateStart || '', de = od.dateEnd || cd.dateEnd || '';
+      if (ds && de && new Date(ds) > new Date(de)) errs.push('Date de d\u00e9but post\u00e9rieure \u00e0 la date de fin');
+      var el = document.getElementById('profileBadge');
+      if (errs.length) {
+        el.innerHTML += ' <span class="badge" style="background:#fef2f2;color:#b91c1c;cursor:help" title="' + errs.join(' \u2014 ').replace(/"/g,'&quot;') + '">\u26a0 Incoh\u00e9rent</span>';
+      } else {
+        el.innerHTML += ' <span class="badge" style="background:#f0fdf4;color:#15803d" title="Heures et dates coh\u00e9rentes">\u2713 Coh\u00e9rent</span>';
+      }
+    })();
     updateProgressBar(c.status, !!(c.conventionData && c.conventionData.proposalSentAt), !!(c.conventionData && (c.conventionData.generatedAt || c.conventionData.pdfPath || c.conventionData.signingToken)), !!(c.conventionData && c.conventionData.signedAt), !!(c.conventionData && c.conventionData.sentToCatherineAt), !!(c.conventionData && c.conventionData.convocationSentAt), isCadre);
     if (c.status === 'invited') { var ra = document.getElementById('resendInviteArea'); if (ra) ra.style.display = 'block'; }
 
