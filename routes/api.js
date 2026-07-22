@@ -3166,6 +3166,7 @@ router.get('/approve-reminders/:batchToken', function(req, res) {
 
 // -- Step 11: mission pipeline (demande de mission / devis / confirmation) --
 var trainerContracts = require('../lib/trainerContracts');
+var execFile = require('child_process').execFile;
 var CONVOC_TRAINERS_NAMES = { anna: 'Anna', hannah: 'Hannah', leone: 'Leone', stephanie: 'Stephanie', natasha: 'Natasha', louisek: 'Louise', louiseg: 'Louise', lynsey: 'Lynsey' };
 var MISSION_DIR = path.join(__dirname, '../data/missions');
 
