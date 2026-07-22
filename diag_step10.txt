@@ -1,20 +1,54 @@
-===1 line count===
-3275 routes/api.js
-===2 crash site===
-===3 git state===
-?? diag_step10.txt
-62e7501 chore: rename Suivi Volet 2 to Fin de formation, Quiz Volet 2 to Quiz
-df9c9fb chore: rename generic eval3 account to Romina
-06d83f1 fix: separate tab for Suivi Volet 2, swap step 10/11 labels, remove quiz auto-email
-0a1e7a9 feat: step 11 mission pipeline - demande devis confirmation
-b1de756 feat: add rma@linguaid.net to standalone attestation signed alert
-===4 env===
-/usr/bin/python3
-Python 3.11.2
-docx-ok
-/usr/bin/soffice
--rw-r--r-- 1 debian debian   1719 Jul 22 15:55 /home/debian/fill_demande_mission.py
--rw-r--r-- 1 debian debian   2085 Jul 22 15:55 /home/debian/fill_mission_doc.py
--rw-r--r-- 1 debian debian 120266 Jul 22 15:55 views/DEMANDE_MISSION_TEMPLATE.docx
-===6 generator run===
-{"success": true, "pdfPath": "/tmp/missiontest/diag1_demande.pdf"}
+===8 route test===
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Error</title>
+</head>
+<body>
+<pre>ReferenceError: execFile is not defined<br> &nbsp; &nbsp;at /var/www/vhosts/linguaid.net/eval.linguaid.net/app/routes/api.js:3201:3<br> &nbsp; &nbsp;at Layer.handleRequest (/var/www/vhosts/linguaid.net/eval.linguaid.net/app/node_modules/router/lib/layer.js:152:17)<br> &nbsp; &nbsp;at next (/var/www/vhosts/linguaid.net/eval.linguaid.net/app/node_modules/router/lib/route.js:157:13)<br> &nbsp; &nbsp;at Route.dispatch (/var/www/vhosts/linguaid.net/eval.linguaid.net/app/node_modules/router/lib/route.js:117:3)<br> &nbsp; &nbsp;at handle (/var/www/vhosts/linguaid.net/eval.linguaid.net/app/node_modules/router/index.js:435:11)<br> &nbsp; &nbsp;at Layer.handleRequest (/var/www/vhosts/linguaid.net/eval.linguaid.net/app/node_modules/router/lib/layer.js:152:17)<br> &nbsp; &nbsp;at /var/www/vhosts/linguaid.net/eval.linguaid.net/app/node_modules/router/index.js:295:15<br> &nbsp; &nbsp;at param (/var/www/vhosts/linguaid.net/eval.linguaid.net/app/node_modules/router/index.js:600:14)<br> &nbsp; &nbsp;at param (/var/www/vhosts/linguaid.net/eval.linguaid.net/app/node_modules/router/index.js:610:14)<br> &nbsp; &nbsp;at processParams (/var/www/vhosts/linguaid.net/eval.linguaid.net/app/node_modules/router/index.js:664:3)</pre>
+</body>
+</html>
+
+===9 pm2 state===
+┌────┬──────────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name             │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼──────────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 0  │ linguaid-eval    │ default     │ N/A     │ fork    │ 4088179  │ 3s     │ 567  │ online    │ 0%       │ 86.8mb   │ debian   │ disabled │
+└────┴──────────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+===10 fresh logs===
+[TAILING] Tailing last 15 lines for [linguaid-eval] process (change the value with --lines option)
+/home/debian/.pm2/logs/linguaid-eval-out.log last 15 lines:
+0|linguaid | Oral reminder cron scheduled (daily 09:00)
+0|linguaid | Digest crons scheduled (08:30 team, 08:45 candidate nudges)
+0|linguaid | Linguaid Eval running on port 3001
+0|linguaid | ◇ injected env (2) from .env // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+0|linguaid | Oral reminder cron scheduled (daily 09:00)
+0|linguaid | Digest crons scheduled (08:30 team, 08:45 candidate nudges)
+0|linguaid | Linguaid Eval running on port 3001
+0|linguaid | ◇ injected env (2) from .env // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+0|linguaid | Oral reminder cron scheduled (daily 09:00)
+0|linguaid | Digest crons scheduled (08:30 team, 08:45 candidate nudges)
+0|linguaid | Linguaid Eval running on port 3001
+0|linguaid | ◇ injected env (2) from .env // tip: ⌘ suppress logs { quiet: true }
+0|linguaid | Oral reminder cron scheduled (daily 09:00)
+0|linguaid | Digest crons scheduled (08:30 team, 08:45 candidate nudges)
+0|linguaid | Linguaid Eval running on port 3001
+
+/home/debian/.pm2/logs/linguaid-eval-error.log last 15 lines:
+0|linguaid |     at /var/www/vhosts/linguaid.net/eval.linguaid.net/app/node_modules/router/index.js:295:15
+0|linguaid |     at param (/var/www/vhosts/linguaid.net/eval.linguaid.net/app/node_modules/router/index.js:600:14)
+0|linguaid |     at param (/var/www/vhosts/linguaid.net/eval.linguaid.net/app/node_modules/router/index.js:610:14)
+0|linguaid |     at processParams (/var/www/vhosts/linguaid.net/eval.linguaid.net/app/node_modules/router/index.js:664:3)
+0|linguaid | ReferenceError: execFile is not defined
+0|linguaid |     at /var/www/vhosts/linguaid.net/eval.linguaid.net/app/routes/api.js:3201:3
+0|linguaid |     at Layer.handleRequest (/var/www/vhosts/linguaid.net/eval.linguaid.net/app/node_modules/router/lib/layer.js:152:17)
+0|linguaid |     at next (/var/www/vhosts/linguaid.net/eval.linguaid.net/app/node_modules/router/lib/route.js:157:13)
+0|linguaid |     at Route.dispatch (/var/www/vhosts/linguaid.net/eval.linguaid.net/app/node_modules/router/lib/route.js:117:3)
+0|linguaid |     at handle (/var/www/vhosts/linguaid.net/eval.linguaid.net/app/node_modules/router/index.js:435:11)
+0|linguaid |     at Layer.handleRequest (/var/www/vhosts/linguaid.net/eval.linguaid.net/app/node_modules/router/lib/layer.js:152:17)
+0|linguaid |     at /var/www/vhosts/linguaid.net/eval.linguaid.net/app/node_modules/router/index.js:295:15
+0|linguaid |     at param (/var/www/vhosts/linguaid.net/eval.linguaid.net/app/node_modules/router/index.js:600:14)
+0|linguaid |     at param (/var/www/vhosts/linguaid.net/eval.linguaid.net/app/node_modules/router/index.js:610:14)
+0|linguaid |     at processParams (/var/www/vhosts/linguaid.net/eval.linguaid.net/app/node_modules/router/index.js:664:3)
+
