@@ -1984,6 +1984,14 @@ function showStep11(c) {
   if (md.devisUploadedAt) {
     document.getElementById('devisSection').style.display = 'block';
     document.getElementById('devisStatus').innerHTML = 'Devis reçu : ' + md.devisTotal + ' € TTC — <a href="/api/download-mission-devis/' + c.id + '" target="_blank">télécharger</a>';
+    var bAcc = document.getElementById('btnAcceptDevis');
+    if (md.devisSignToken && !md.devisSignedAt) {
+      bAcc.textContent = '✍️ Signer le devis (bon pour accord)';
+      bAcc.onclick = function(){ window.open('/sign/devis/' + md.devisSignToken, '_blank'); };
+    } else if (md.devisSignedAt) {
+      bAcc.style.display = 'none';
+      document.getElementById('devisStatus').innerHTML += '<br>✅ Bon pour accord signé le ' + new Date(md.devisSignedAt).toLocaleDateString('fr-FR') + ' — <a href="/sign/devis/' + md.devisSignToken + '/signed-pdf" target="_blank">devis signé</a>';
+    }
   }
   if (md.acceptedAt) {
     document.getElementById('btnAcceptDevis').style.display = 'none';

@@ -245,7 +245,8 @@
   const isStandalone = pathParts.includes('standalone');
   const isAttestation = pathParts.includes('attestation') || isStandalone;
   const isMission = pathParts.includes('mission');
-  const baseUrl = isMission ? `/sign/mission/${token}` : isStandalone ? `/sign/standalone/${token}` : isAttestation ? `/sign/attestation/${token}` : `/sign/${token}`;
+  const isDevisAccept = pathParts.includes('devis');
+  const baseUrl = isDevisAccept ? `/sign/devis/${token}` : isMission ? `/sign/mission/${token}` : isStandalone ? `/sign/standalone/${token}` : isAttestation ? `/sign/attestation/${token}` : `/sign/${token}`;
 
   // Update page titles for attestation pages
   if (isAttestation || isStandalone) {
@@ -279,6 +280,22 @@
     if (cslm) cslm.textContent = 'Je reconnais avoir lu et accept\u00e9 les termes de la confirmation de mission ci-dessus, et je confirme que ma signature \u00e9lectronique a la m\u00eame valeur juridique qu\u2019une signature manuscrite conform\u00e9ment au r\u00e8glement eIDAS.';
     var sbbm = document.getElementById('btn-submit');
     if (sbbm) sbbm.textContent = 'Signer la confirmation de mission';
+  }
+
+  if (isDevisAccept) {
+    document.title = 'Bon pour accord \u2014 devis formateur \u2014 Linguaid';
+    var ptd = document.getElementById('page-title');
+    if (ptd) ptd.textContent = 'Linguaid \u2014 Bon pour accord';
+    var dtd = document.getElementById('doc-title');
+    if (dtd) dtd.textContent = '\ud83d\udcc4 Devis du formateur \u2014 \u00e0 valider';
+    var pnd2 = document.getElementById('pdf-note');
+    if (pnd2) pnd2.textContent = 'V\u00e9rifiez le devis ci-dessus avant de signer le bon pour accord.';
+    var tnld = document.querySelector('label[for="typed-name"]');
+    if (tnld) tnld.textContent = 'Votre nom et pr\u00e9nom (pour Linguaid France SAS)';
+    var csld = document.querySelector('label[for="consent"]');
+    if (csld) csld.textContent = 'Bon pour accord : je valide ce devis au nom de Linguaid France SAS et confirme que ma signature \u00e9lectronique a la m\u00eame valeur juridique qu\u2019une signature manuscrite conform\u00e9ment au r\u00e8glement eIDAS.';
+    var sbbd = document.getElementById('btn-submit');
+    if (sbbd) sbbd.textContent = 'Signer le bon pour accord';
   }
 
   fetch(`${baseUrl}/info`)
@@ -400,6 +417,16 @@
       if (isAttestation) {
         document.querySelector('#success-screen h2').textContent = 'Attestation signée avec succès';
         document.getElementById('download-signed').textContent = '⬇ Télécharger votre attestation signée';
+      }
+      if (isDevisAccept) {
+        document.querySelector('#success-screen h2').textContent = 'Bon pour accord signé';
+        document.getElementById('download-signed').textContent = '⬇ Télécharger le devis signé';
+        if (data.trainerSigningUrl) {
+          var cont = document.createElement('p');
+          cont.style.marginTop = '18px';
+          cont.innerHTML = 'Confirmation de mission générée — <a href="' + data.trainerSigningUrl + '" style="background:#1F4E79;color:white;padding:10px 20px;border-radius:6px;text-decoration:none;display:inline-block;font-weight:600">Continuer → Confirmation de mission</a><br><span style="font-size:12px;color:#666">Lien de signature formateur : ' + data.trainerSigningUrl + '</span>';
+          document.getElementById('success-screen').appendChild(cont);
+        }
       }
 
     } catch (err) {

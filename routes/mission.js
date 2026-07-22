@@ -136,8 +136,11 @@ router.post('/:token/devis-confirm', express.json(), (req, res) => {
   if (!contract) return res.status(500).json({ error: 'Trainer business info not on file' });
 
   md.devisUploadedAt = new Date().toISOString();
+  const crypto = require('crypto');
+  md.devisSignToken = crypto.randomBytes(16).toString('hex');
   saveCandidates(candidates);
   const result = { total: md.devisTotal };
+  const devisSignUrl = 'https://eval.linguaid.net/sign/devis/' + md.devisSignToken;
 
     const nodemailer = require('nodemailer');
     const transporter = nodemailer.createTransport({ host: 'localhost', port: 25, secure: false, tls: { rejectUnauthorized: false } });
@@ -145,8 +148,8 @@ router.post('/:token/devis-confirm', express.json(), (req, res) => {
       from: 'noreply@linguaid.net',
       to: 'jfr@linguaid.net',
       subject: `Devis reçu — ${c.name} (${contract.businessName})`,
-      text: `${contract.businessName} a soumis un devis pour ${c.name} : ${result.total} € TTC.\n\nÀ valider ici : https://eval.linguaid.net/candidates/${c.id}`,
-      html: `<div style="font-family:Arial,sans-serif;font-size:14px;color:#222;line-height:1.7"><p><strong>${contract.businessName}</strong> a soumis un devis pour <strong>${c.name}</strong> : <strong>${result.total} € TTC</strong>.</p><p><a href="https://eval.linguaid.net/candidates/${c.id}" style="background:#1F4E79;color:white;padding:10px 20px;border-radius:6px;text-decoration:none;display:inline-block;font-weight:600">Valider le devis</a></p></div>`,
+      text: `${contract.businessName} a soumis un devis pour ${c.name} : ${result.total} € TTC.\n\nÀ signer (bon pour accord) ici : ${devisSignUrl}`,
+      html: `<div style="font-family:Arial,sans-serif;font-size:14px;color:#222;line-height:1.7"><p><strong>${contract.businessName}</strong> a soumis un devis pour <strong>${c.name}</strong> : <strong>${result.total} € TTC</strong>.</p><p><a href="${devisSignUrl}" style="background:#1F4E79;color:white;padding:10px 20px;border-radius:6px;text-decoration:none;display:inline-block;font-weight:600">Signer le devis (bon pour accord)</a></p></div>`,
     }).catch(e => console.error('Internal notify failed:', e));
 
     res.json({ success: true, total: result.total });

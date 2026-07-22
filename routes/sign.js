@@ -472,4 +472,130 @@ router.get('/mission/:token/signed-pdf', function(req, res) {
   res.sendFile(signedPdfPath);
 });
 
+
+
+// -- Devis bon-pour-accord signing (Linguaid side) ---------------------------
+function findByDevisSignToken(token) {
+  var candidates = loadCandidates();
+  return candidates.find(function(c) { return c.missionData && c.missionData.devisSignToken === token; });
+}
+
+router.get('/devis/:token', function(req, res) {
+  var candidate = findByDevisSignToken(req.params.token);
+  if (!candidate) return res.status(404).send('<h2>Lien invalide ou expir\u00e9.</h2>');
+  if (candidate.missionData.devisSignedAt) {
+    var next = candidate.missionData.confirmationToken ? ('<p><a href="/sign/mission/' + candidate.missionData.confirmationToken + '">Continuer vers la confirmation de mission</a></p>') : '';
+    return res.status(200).send('<html><body style="font-family:sans-serif;max-width:600px;margin:60px auto;text-align:center"><h2>Bon pour accord d\u00e9j\u00e0 sign\u00e9</h2><p>Ce devis a \u00e9t\u00e9 accept\u00e9 le ' + new Date(candidate.missionData.devisSignedAt).toLocaleDateString('fr-FR') + '.</p>' + next + '</body></html>');
+  }
+  res.sendFile(path.join(__dirname, '../views/sign.html'));
+});
+
+router.get('/devis/:token/pdf', function(req, res) {
+  var candidate = findByDevisSignToken(req.params.token);
+  if (!candidate) return res.status(404).send('Not found');
+  var p = candidate.missionData.devisPath;
+  if (!p || !fs.existsSync(p)) return res.status(404).send('PDF not found');
+  res.setHeader('Content-Type', 'application/pdf');
+  res.sendFile(p);
+});
+
+router.get('/devis/:token/info', function(req, res) {
+  var candidate = findByDevisSignToken(req.params.token);
+  if (!candidate) return res.status(404).json({ error: 'Invalid token' });
+  if (candidate.missionData.devisSignedAt) return res.json({ alreadySigned: true });
+  res.json({
+    candidateName: candidate.name,
+    trainingType: 'Bon pour accord \u2014 devis formateur',
+    signatoryName: 'Linguaid France SAS',
+    isDevisAccept: true,
+  });
+});
+
+router.post('/devis/:token/submit', express.json({ limit: '5mb' }), function(req, res) {
+  var token = req.params.token;
+  var candidates = loadCandidates();
+  var idx = candidates.findIndex(function(c) { return c.missionData && c.missionData.devisSignToken === token; });
+  if (idx === -1) return res.status(404).json({ error: 'Invalid token' });
+  var md0 = candidates[idx].missionData;
+  if (md0.devisSignedAt) return res.json({ success: true, alreadySigned: true, trainerSigningUrl: md0.confirmationToken ? ('https://eval.linguaid.net/sign/mission/' + md0.confirmationToken) : null });
+
+  var signatureImg = req.body.signatureImg || req.body.signature;
+  var typedName = req.body.typedName || 'Linguaid France SAS';
+  var timestamp = new Date().toISOString();
+  var signerIp = req.ip || req.connection.remoteAddress;
+  var unsignedPdf = md0.devisPath;
+  var signedPdf = unsignedPdf.replace('.pdf', '_bpa.pdf');
+
+  var embedArgs = JSON.stringify({
+    pdfPath: unsignedPdf, signatureImg: signatureImg, typedName: typedName,
+    timestamp: timestamp, signerIp: signerIp, outputPath: signedPdf,
+  });
+
+  execFile('python3', ['/home/debian/embed_signature_devis.py', embedArgs], function(err, stdout, stderr) {
+    if (err) { console.error('embed_signature_devis error:', stderr); return res.status(500).json({ error: 'Failed to embed signature' }); }
+    var result;
+    try { result = JSON.parse(stdout); } catch(e) { return res.status(500).json({ error: 'Invalid response' }); }
+    if (!result.success) return res.status(500).json({ error: result.error });
+
+    var cands2 = loadCandidates();
+    var i2 = cands2.findIndex(function(c) { return c.missionData && c.missionData.devisSignToken === token; });
+    if (i2 === -1) return res.status(404).json({ error: 'Candidate vanished' });
+    var c2 = cands2[i2];
+    var md = c2.missionData;
+    md.devisSignedAt = timestamp;
+    md.devisSignedPdfPath = signedPdf;
+    md.devisLinguaidTypedName = typedName;
+    md.devisLinguaidSignerIp = signerIp;
+
+    // Generate the confirmation de mission now that the devis is accepted
+    var trainerContracts2 = require('../lib/trainerContracts');
+    var contract = trainerContracts2.getTrainerContract(md.trainerKey);
+    if (!contract) { saveCandidates(cands2); return res.status(500).json({ error: 'Formateur non configure' }); }
+    var od = c2.oralData || {};
+    var crypto2 = require('crypto');
+    var confirmationToken = crypto2.randomBytes(16).toString('hex');
+    var today = new Date().toLocaleDateString('fr-FR');
+    var args2 = {
+      trainerName: contract.businessName,
+      trainerStatus: contract.status,
+      trainerSiret: contract.siret,
+      trainerAddress: contract.address,
+      candidateName: c2.name || '',
+      coachingHours: (od.coachingHours || od.totalHours || 0) + '.00',
+      homeworkHours: (od.homeworkHours || 0) + '.00',
+      format: 'A distance (visioconference et travail asynchrone)',
+      missionDates: od.dateStart ? ('a compter du ' + od.dateStart) : '',
+      devisDate: md.devisUploadedAt ? new Date(md.devisUploadedAt).toLocaleDateString('fr-FR') : today,
+      devisTotal: md.devisTotal,
+      signCity: 'Saint-Cyprien',
+      today: today,
+      contractDate: contract.contractDate,
+      avenantDate: contract.avenantDate,
+      outDir: path.join(__dirname, '../data/missions'),
+      id: c2.id,
+    };
+    execFile('python3', ['/home/debian/fill_confirmation_mission.py', JSON.stringify(args2)], { timeout: 60000 }, function(err2, stdout2, stderr2) {
+      if (err2) { console.error('fill_confirmation_mission error:', stderr2, stdout2); saveCandidates(cands2); return res.status(500).json({ error: 'Devis signe mais generation de la confirmation a echoue' }); }
+      var r2;
+      try { r2 = JSON.parse(stdout2.trim()); } catch(e) { saveCandidates(cands2); return res.status(500).json({ error: 'Invalid output' }); }
+      if (!r2.success) { saveCandidates(cands2); return res.status(500).json({ error: r2.error }); }
+      md.acceptedAt = timestamp;
+      md.confirmationPath = r2.pdfPath;
+      md.confirmationToken = confirmationToken;
+      saveCandidates(cands2);
+      res.json({ success: true, trainerSigningUrl: 'https://eval.linguaid.net/sign/mission/' + confirmationToken });
+    });
+  });
+});
+
+router.get('/devis/:token/signed-pdf', function(req, res) {
+  var candidate = findByDevisSignToken(req.params.token);
+  if (!candidate) return res.status(404).send('Not found');
+  var p = candidate.missionData.devisSignedPdfPath;
+  if (!p || !fs.existsSync(p)) return res.status(404).send('Signed PDF not found');
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', 'attachment; filename="devis_bon_pour_accord.pdf"');
+  res.sendFile(p);
+});
+
 module.exports = router;
