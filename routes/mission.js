@@ -118,7 +118,8 @@ router.post('/:token/devis', express.json(), (req, res) => {
       from: 'noreply@linguaid.net',
       to: 'jfr@linguaid.net',
       subject: `Devis reçu — ${c.name} (${contract.businessName})`,
-      text: `${contract.businessName} a soumis un devis pour ${c.name} : ${result.total} € TTC.\n\nÀ valider dans l'application.`,
+      text: `${contract.businessName} a soumis un devis pour ${c.name} : ${result.total} € TTC.\n\nÀ valider ici : https://eval.linguaid.net/candidates/${c.id}`,
+      html: `<div style="font-family:Arial,sans-serif;font-size:14px;color:#222;line-height:1.7"><p><strong>${contract.businessName}</strong> a soumis un devis pour <strong>${c.name}</strong> : <strong>${result.total} € TTC</strong>.</p><p><a href="https://eval.linguaid.net/candidates/${c.id}" style="background:#1F4E79;color:white;padding:10px 20px;border-radius:6px;text-decoration:none;display:inline-block;font-weight:600">Valider le devis</a></p></div>`,
     }).catch(e => console.error('Internal notify failed:', e));
 
     res.json({ success: true, total: result.total });
