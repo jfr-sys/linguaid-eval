@@ -51,6 +51,11 @@ function render(data) {
     ['Objectif', data.objective || '—'],
   ].map(([label, val]) => `<tr><td>${label}</td><td>${val}</td></tr>`).join('');
 
+  const docLinks = [];
+  if (data.hasReportEN) docLinks.push(`<a href="/mission/${token}/report-en" target="_blank" style="color:#1F4E79;font-weight:600;text-decoration:underline">Evaluation report (EN)</a>`);
+  if (data.hasProgramme) docLinks.push(`<a href="/mission/${token}/programme" target="_blank" style="color:#1F4E79;font-weight:600;text-decoration:underline">Programme de formation (FR)</a>`);
+  const docsSection = docLinks.length ? `<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin:12px 0"><div style="font-size:12px;color:#475569;font-weight:600;margin-bottom:6px">Documents \u00e0 consulter avant de d\u00e9cider :</div><div style="display:flex;gap:16px;flex-wrap:wrap;font-size:13px">${docLinks.join('')}</div></div>` : '';
+
   if (data.confirmationSigned) {
     card.innerHTML = `
       <h2>Bonjour ${data.trainerFirstName}</h2>
@@ -71,6 +76,7 @@ function render(data) {
     <h2>Bonjour ${data.trainerFirstName}</h2>
     <p class="muted">Nous souhaitons vous proposer la mission suivante. Vous demeurez naturellement libre de l'accepter ou de la décliner selon vos disponibilités.</p>
     <table class="info-table">${infoRows}</table>
+    ${docsSection}
     <div class="devis-form">
       <p class="muted" style="margin-top:0">Si cette mission vous intéresse, indiquez votre tarif pour générer votre devis :</p>
       <label for="coachingRate">Tarif coaching (€/h)</label>

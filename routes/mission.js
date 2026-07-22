@@ -50,6 +50,9 @@ router.get('/:token/data', (req, res) => {
     format: 'À distance, plusieurs rythmes possibles',
     startDate: od.dateStart || '',
     objective: od.trainingTitle || '',
+    hasProgramme: fs.existsSync(path.join(__dirname, '../data/programmes/' + candidate.id + '.pdf'))
+      || !!(candidate.programmePdfPath && fs.existsSync(candidate.programmePdfPath)),
+    hasReportEN: fs.existsSync(path.join(__dirname, '../data/finalReports/' + candidate.id + '_en.pdf')),
     devisAlreadySubmitted: !!md.devisUploadedAt,
     confirmationSigned: !!md.confirmationSignedAt,
   });
@@ -124,6 +127,28 @@ router.post('/:token/devis', express.json(), (req, res) => {
 
     res.json({ success: true, total: result.total });
   });
+});
+
+// Token-gated documents for the trainer's decision: programme (FR) + final report (EN)
+router.get('/:token/programme', (req, res) => {
+  const candidate = findByBriefToken(req.params.token);
+  if (!candidate) return res.status(404).send('Not found');
+  let p = path.join(__dirname, '../data/programmes/' + candidate.id + '.pdf');
+  if (!fs.existsSync(p) && candidate.programmePdfPath && fs.existsSync(candidate.programmePdfPath)) p = candidate.programmePdfPath;
+  if (!fs.existsSync(p)) return res.status(404).send('Programme not available');
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', 'inline; filename="programme.pdf"');
+  res.sendFile(p);
+});
+
+router.get('/:token/report-en', (req, res) => {
+  const candidate = findByBriefToken(req.params.token);
+  if (!candidate) return res.status(404).send('Not found');
+  const p = path.join(__dirname, '../data/finalReports/' + candidate.id + '_en.pdf');
+  if (!fs.existsSync(p)) return res.status(404).send('Report not available');
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', 'inline; filename="evaluation_report_en.pdf"');
+  res.sendFile(p);
 });
 
 module.exports = router;
