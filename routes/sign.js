@@ -340,7 +340,7 @@ router.post('/standalone/:token/submit', express.json({ limit: '5mb' }), functio
     var nodemailer = require('nodemailer');
     var transporter = nodemailer.createTransport({ host: 'localhost', port: 25, secure: false, tls: { rejectUnauthorized: false } });
     transporter.sendMail({
-      from: 'noreply@linguaid.net', to: 'jfr@linguaid.net',
+      from: 'noreply@linguaid.net', to: 'jfr@linguaid.net, rma@linguaid.net',
       subject: '✅ Attestation signée — ' + rec.name,
       text: 'Attestation standalone signée par ' + typedName + '\nDate : ' + new Date(timestamp).toLocaleString('fr-FR') + '\nIP : ' + signerIp,
       attachments: [{ filename: 'attestation_signee_' + rec.name.replace(/\s+/g,'_') + '.pdf', path: signedPdf }],
