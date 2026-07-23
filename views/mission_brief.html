@@ -87,34 +87,53 @@ function render(data) {
     ${docsSection}
     ${reviewSection}
     <div class="devis-form">
-      <p class="muted" style="margin-top:0">${data.devisDraft ? 'Modifier vos tarifs :' : 'Si cette mission vous intéresse, indiquez votre tarif pour générer votre devis :'}</p>
-      <label for="coachingRate">Tarif coaching (€/h)</label>
-      <input type="number" id="coachingRate" step="0.01" min="0" placeholder="ex : 45" value="${data.devisRate || ''}" />
-      <label for="homeworkRate">Tarif travail personnel (€/h)</label>
-      <input type="number" id="homeworkRate" step="0.01" min="0" placeholder="ex : 11" value="${data.devisHomeworkRate || ''}" />
-      <div class="rate-note">Ces tarifs sont les vôtres — Linguaid ne les préremplit pas.</div>
+      <p class="muted" style="margin-top:0">${data.devisDraft ? 'Modifier votre devis :' : 'Si cette mission vous intéresse, renseignez vos tarifs et volumes pour générer votre devis :'}</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 12px">
+        <div><label for="coachingRate">Tarif coaching (€/h)</label>
+        <input type="number" id="coachingRate" step="0.01" min="0" placeholder="ex : 45" value="${data.devisRate || ''}" /></div>
+        <div><label for="coachingHours">Heures de coaching</label>
+        <input type="number" id="coachingHours" step="0.5" min="0" placeholder="ex : 20" value="${data.devisCoachingHours || ''}" /></div>
+        ${data.hasHomework ? `
+        <div><label for="homeworkRate">Tarif travaux personnels (€/h)</label>
+        <input type="number" id="homeworkRate" step="0.01" min="0" placeholder="ex : 11" value="${data.devisHomeworkRate || ''}" /></div>
+        <div><label for="homeworkHours">Heures de travaux personnels</label>
+        <input type="number" id="homeworkHours" step="0.5" min="0" placeholder="0 si aucun" value="${data.devisHomeworkHours || ''}" /></div>` : ''}
+      </div>
+      <label for="devisNumber" style="margin-top:8px">Numéro de devis</label>
+      <input type="text" id="devisNumber" value="${data.devisNumber || ''}" style="font-family:monospace" />
+      <div class="rate-note">Ces tarifs et volumes sont les vôtres — Linguaid ne les préremplit pas.${data.hasHomework ? ' Laissez les travaux personnels à 0 s\u2019il n\u2019y en a pas.' : ''}</div>
       <button id="submitBtn" onclick="submitDevis()">${data.devisDraft ? 'Regénérer mon devis' : 'Générer mon devis'}</button>
       <div class="status" id="status"></div>
     </div>`;
 }
 
 function submitDevis() {
-  const coachingRate = document.getElementById('coachingRate').value;
-  const homeworkRate = document.getElementById('homeworkRate').value;
   const status = document.getElementById('status');
   const btn = document.getElementById('submitBtn');
+  const coachingRate = document.getElementById('coachingRate').value;
+  const coachingHours = document.getElementById('coachingHours').value;
+  const hwRateEl = document.getElementById('homeworkRate');
+  const hwHoursEl = document.getElementById('homeworkHours');
+  const devisNumber = (document.getElementById('devisNumber') || {}).value || '';
 
-  if (!coachingRate || !homeworkRate) {
+  if (!coachingRate || !coachingHours) {
     status.className = 'status err';
-    status.textContent = 'Merci de renseigner les deux tarifs.';
+    status.textContent = 'Merci de renseigner le tarif et les heures de coaching.';
     return;
   }
+  const body = {
+    coachingRate: parseFloat(coachingRate),
+    coachingHours: parseFloat(coachingHours),
+    devisNumber: devisNumber,
+  };
+  if (hwRateEl) body.homeworkRate = parseFloat(hwRateEl.value || 0);
+  if (hwHoursEl) body.homeworkHours = parseFloat(hwHoursEl.value || 0);
 
   btn.disabled = true; btn.textContent = 'Envoi en cours…';
   fetch('/mission/' + token + '/devis', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ coachingRate: parseFloat(coachingRate), homeworkRate: parseFloat(homeworkRate) }),
+    body: JSON.stringify(body),
   })
     .then(r => r.json())
     .then(data => {

@@ -39,8 +39,17 @@ router.get('/:token/data', (req, res) => {
   const od = candidate.oralData || {};
   const md = candidate.missionData || {};
   const trainerName = CONVOC_TRAINERS_NAMES[md.trainerKey] || '';
+  const _tc = require('../lib/trainerContracts');
+  const _contract = _tc.getTrainerContract(md.trainerKey) || {};
+  const _yr = new Date().getFullYear();
+  const _defaultDevisNo = md.devisNumber || ((_contract.devisPrefix || 'DEV') + '-' + _yr + '-' + String(candidate.id).slice(-4).toUpperCase());
 
   res.json({
+    hasHomework: !!_contract.hasHomework,
+    tva: !!_contract.tva,
+    devisNumber: _defaultDevisNo,
+    devisCoachingHours: md.devisCoachingHours || null,
+    devisHomeworkHours: md.devisHomeworkHours || null,
     trainerFirstName: trainerName,
     candidateName: candidate.name || '',
     candidateCompany: candidate.company || '',
@@ -77,31 +86,38 @@ router.post('/:token/devis', express.json(), (req, res) => {
   const contract = getTrainerContract(md.trainerKey);
   if (!contract) return res.status(500).json({ error: 'Trainer business info not on file - contact Linguaid' });
 
-  const { coachingRate, homeworkRate } = req.body || {};
-  if (coachingRate == null || homeworkRate == null) {
-    return res.status(400).json({ error: 'Missing coachingRate or homeworkRate' });
+  const b = req.body || {};
+  const coachingRate = b.coachingRate;
+  const coachingHours = b.coachingHours;
+  const homeworkRate = contract.hasHomework ? (b.homeworkRate || 0) : 0;
+  const homeworkHours = contract.hasHomework ? (b.homeworkHours || 0) : 0;
+  if (coachingRate == null || coachingHours == null) {
+    return res.status(400).json({ error: 'Tarif et heures de coaching requis' });
+  }
+  if (!contract.devisTemplate) {
+    return res.status(500).json({ error: 'Modèle de devis non configuré pour ce formateur' });
   }
 
   const od = c.oralData || {};
   const today = new Date().toLocaleDateString('fr-FR');
+  const _yr = new Date().getFullYear();
+  const devisNumber = (b.devisNumber && String(b.devisNumber).trim())
+    || md.devisNumber
+    || ((contract.devisPrefix || 'DEV') + '-' + _yr + '-' + String(c.id).slice(-4).toUpperCase());
   const args = {
-    trainerName: contract.businessName,
-    trainerSiret: contract.siret,
-    trainerTel: contract.tel,
-    trainerAddress: contract.address,
-    trainerDeclaration: contract.declarationNumber,
-    trainerPlace: contract.place,
+    trainerKey: md.trainerKey,
+    templateFile: contract.devisTemplate,
     tva: !!contract.tva,
     tvaNumber: contract.tvaNumber || '',
     today,
+    devisNumber,
     candidateName: c.name || '',
     candidateCompany: c.company || '',
-    coachingDate: od.dateStart || today,
+    period: od.dateStart || today,
     coachingRate,
-    coachingHours: od.coachingHours || od.totalHours || 0,
-    homeworkDate: od.dateStart || today,
+    coachingHours,
     homeworkRate,
-    homeworkHours: od.homeworkHours || 0,
+    homeworkHours,
     outDir: MISSION_DIR,
     id: c.id,
   };
@@ -114,7 +130,10 @@ router.post('/:token/devis', express.json(), (req, res) => {
 
     candidates[idx].missionData = Object.assign(md, {
       devisRate: coachingRate,
+      devisCoachingHours: coachingHours,
       devisHomeworkRate: homeworkRate,
+      devisHomeworkHours: homeworkHours,
+      devisNumber: devisNumber,
       devisTotal: result.total,
       devisPath: result.pdfPath,
       devisDraftAt: new Date().toISOString(),

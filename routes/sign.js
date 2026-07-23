@@ -520,18 +520,26 @@ router.post('/devis/:token/submit', express.json({ limit: '5mb' }), function(req
   var md0 = candidates[idx].missionData;
   if (md0.devisSignedAt) return res.json({ success: true, alreadySigned: true, trainerSigningUrl: md0.confirmationToken ? ('https://eval.linguaid.net/sign/mission/' + md0.confirmationToken) : null });
 
-  var typedName = 'Linguaid France SAS';
   var timestamp = new Date().toISOString();
   var signerIp = req.ip || req.connection.remoteAddress;
   var unsignedPdf = md0.devisPath;
   var signedPdf = unsignedPdf.replace('.pdf', '_bpa.pdf');
 
+  var _tc = require('../lib/trainerContracts');
+  var _contract = _tc.getTrainerContract(md0.trainerKey) || {};
+  var _cachet = _contract.cachet || {};
+  var tsFR = new Date().toLocaleDateString('fr-FR');
   var embedArgs = JSON.stringify({
-    pdfPath: unsignedPdf, useCachet: true,
-    timestamp: timestamp, signerIp: signerIp, outputPath: signedPdf,
+    pdfPath: unsignedPdf,
+    outputPath: signedPdf,
+    cachetAnchor: _cachet.anchor || 'accord',
+    cachetX: (_cachet.x != null ? _cachet.x : 158),
+    cachetW: (_cachet.w != null ? _cachet.w : 130),
+    cachetCenter: (_cachet.center !== false),
+    timestamp: tsFR,
   });
 
-  execFile('python3', ['/home/debian/embed_signature_devis.py', embedArgs], function(err, stdout, stderr) {
+  execFile('python3', ['/home/debian/fill_devis.py', '--stamp', embedArgs], function(err, stdout, stderr) {
     if (err) { console.error('embed_signature_devis error:', stderr); return res.status(500).json({ error: 'Failed to embed signature' }); }
     var result;
     try { result = JSON.parse(stdout); } catch(e) { return res.status(500).json({ error: 'Invalid response' }); }
