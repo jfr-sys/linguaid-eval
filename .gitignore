@@ -22,3 +22,5 @@ data/companies.json
 data/candidates.json.bak*
 
 data/pendingReminders.json
+data/missions/
+embed_sig_mission_readonly.txt
