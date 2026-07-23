@@ -522,6 +522,7 @@ router.post('/devis/:token/submit', express.json({ limit: '5mb' }), function(req
 
   var timestamp = new Date().toISOString();
   var signerIp = req.ip || req.connection.remoteAddress;
+  var typedName = 'Linguaid France SAS';
   var unsignedPdf = md0.devisPath;
   var signedPdf = unsignedPdf.replace('.pdf', '_bpa.pdf');
 
