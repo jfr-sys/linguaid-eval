@@ -2175,7 +2175,8 @@ router.post('/send-convocation/:id', function(req, res) {
       attachments.push({ filename: 'signature_catherine.png', path: sigPath, cid: sigCid });
     }
 
-    var ccList = [trainer.email, 'jfr@linguaid.net', 'cfr@linguaid.net'];
+    var _tc = require('../lib/trainerContracts');
+    var ccList = (_tc.TRAINER_EMAILS_ENABLED ? [trainer.email] : []).concat(['jfr@linguaid.net', 'cfr@linguaid.net']);
     if (ccExtra) ccList.push(ccExtra);
 
     // Generate ICS calendar attachment if session date+time provided
