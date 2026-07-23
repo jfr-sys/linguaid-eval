@@ -1,0 +1,13 @@
+===1 pm2 recent errors===
+/home/debian/.pm2/logs/linguaid-eval-error.log last 40 lines:
+0|linguaid | ReferenceError: execFile is not defined
+0|linguaid | ReferenceError: execFile is not defined
+0|linguaid | ReferenceError: execFile is not defined
+0|linguaid | ReferenceError: typedName is not defined
+===2 does fill_devis.py exist + stamp mode===
+-rw-r--r-- 1 debian debian 7886 Jul 23 17:38 /home/debian/fill_devis.py
+===3 cachet image present===
+-rw-r--r-- 1 debian debian 10366 Jul 22 18:58 /home/debian/cachet_linguaid.jpg
+===4 test stamp directly on Leone devis===
+-rw-r--r-- 1 debian debian 36315 Jul 23 17:42 data/missions/b6297879e2dd_devis.pdf
+-rw-r--r-- 1 debian debian 31017 Jul 23 15:21 data/missions/mq7tesgwt4jjb_devis.pdf
