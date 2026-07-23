@@ -91,6 +91,8 @@ router.post('/:token/devis', express.json(), (req, res) => {
     trainerAddress: contract.address,
     trainerDeclaration: contract.declarationNumber,
     trainerPlace: contract.place,
+    tva: !!contract.tva,
+    tvaNumber: contract.tvaNumber || '',
     today,
     candidateName: c.name || '',
     candidateCompany: c.company || '',
