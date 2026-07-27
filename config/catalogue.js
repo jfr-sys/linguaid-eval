@@ -127,13 +127,13 @@ const E360_ACTIONS = [
 // ---------------------------------------------------------------------------
 const E360_LEGAL_ACTIONS = [
   {
-    id: 'E360B220H',
+    id: 'E360B220H-26',
     label: '20h — 10h coaching + 10h TP — 1 650€ (offre avocats)',
     totalHours: 20,
     coachingHours: 10,
     tpHours: 10,
     price: 1650,
-    link: mcfLink('E360B2', 'E360B220H'),
+    link: mcfLink('E360B2-26', 'E360B220H-26'),
   },
 ];
 
@@ -259,10 +259,43 @@ function calcNonCpfPrice(type, coachingHours, tpHours) {
          (tpHours * NON_CPF_RATES.businessTP);
 }
 
+// ---------------------------------------------------------------------------
+// Referential registry — RS codes per cpfType.
+// 'current' = RS code stamped onto any candidate whose cpfType is set from
+//             this point forward (registry acts as the single dial for
+//             the next renewal — change it here only, nowhere else).
+// 'legacy'  = RS code already grandfathered onto candidates whose cpfType
+//             was set before a cutover; their oralData.rsCode is stamped
+//             once and never recomputed, so an in-flight dossier never
+//             flips RS codes mid-pipeline.
+// FAILSAFE: this is the ONLY place a current RS code is decided. Every
+// downstream document/UI string must read oralData.rsCode (falling back
+// to getRsCode() only when rsCode has never been stamped) rather than
+// hardcoding an RS number.
+// ---------------------------------------------------------------------------
+const REFERENTIALS = {
+  E360:       { current: 'RS7637', legacy: 'RS6341', cutover: '2026-07-27' },
+  E360_LEGAL: { current: 'RS7637', legacy: 'RS6341', cutover: '2026-07-27' },
+  CAJA:       { current: 'RS6810', legacy: null,     cutover: null },
+};
+
+/**
+ * Returns the RS code to use for a candidate.
+ * @param {string} cpfType
+ * @param {string} [storedRsCode] - oralData.rsCode if already stamped
+ */
+function getRsCode(cpfType, storedRsCode) {
+  if (storedRsCode) return storedRsCode;
+  const ref = REFERENTIALS[cpfType];
+  return ref ? ref.current : '';
+}
+
 module.exports = {
   CATALOGUE,
   VALID_CPF_TYPES,
   NON_CPF_RATES,
+  REFERENTIALS,
+  getRsCode,
   getAction,
   assertValidCpfType,
   calcNonCpfPrice,

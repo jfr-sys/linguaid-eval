@@ -6,7 +6,7 @@ const fs = require('fs');
 const path = require('path');
 const Anthropic = require('@anthropic-ai/sdk');
 const { execFile } = require('child_process');
-const { assertValidCpfType, getAction, CATALOGUE } = require('../config/catalogue');
+const { assertValidCpfType, getAction, CATALOGUE, getRsCode } = require('../config/catalogue');
 const { isContratCadre } = require('../lib/contratCadre');
 const coherence = require('../lib/coherence'); /* coherence-gate */
 
@@ -58,8 +58,14 @@ router.post('/api/candidates/api/:id/cpf-type', function(req, res) {
     candidates[idx].oralData.edofMCFLink = null;
   }
   candidates[idx].oralData.cpfType = cpfType;
+  /* RS7637 registry (2026-07-27): stamp the RS code once, at the moment
+     cpfType is chosen. Never overwrite an already-stamped rsCode — that
+     would flip an in-flight dossier's referential mid-pipeline. */
+  if (!candidates[idx].oralData.rsCode) {
+    candidates[idx].oralData.rsCode = getRsCode(cpfType);
+  }
   saveCandidates(candidates);
-  res.json({ success: true, cpfType: cpfType });
+  res.json({ success: true, cpfType: cpfType, rsCode: candidates[idx].oralData.rsCode });
 });
 
 // ---------------------------------------------------------------------------
@@ -494,6 +500,10 @@ router.post('/api/generate-proposition/:id', async function(req, res) {
     resumeSituation,
     price: priceInt ? String(priceInt) : String(price),
     edofMCFLink: od.edofMCFLink || '',
+    /* RS7637 registry (2026-07-27): pass the candidate's stamped RS code
+       through to fill_proposition.py — never let the Python filler
+       hardcode an RS number itself. */
+    rsCode: getRsCode(cpfType, od.rsCode),
     // TIERS_WORDING_FIX (2026-07-03): client already sends this on every
     // generate-proposition call - forward it so the generator can write
     // third-person prose for non-CPF proposals addressed to a third party.
