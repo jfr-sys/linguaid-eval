@@ -1656,7 +1656,17 @@ function onRecipientModeChange() {
     var homeworkH = String(oral.homeworkHours || '0');
     var hasHomework = homeworkH && homeworkH !== '0';
     var price = parseInt(conv.price || oral.edofPrice || '0', 10);
-    var solde = Math.max(0, price + 150 - 1500);
+    // CPF_CAP_FIX (2026-07-27): the RS CPF funding cap is 1650 EUR (confirmed
+    // against real completed enrollments - candidates have consistently paid
+    // 150 EUR reste a charge, not 300). CPF never funds the full price; it
+    // funds min(price, cap) - 150, and the candidate always pays that 150 EUR
+    // themselves (per moncompteformation.gouv.fr's own worked example, this
+    // applies even when the price is fully within the cap). cpfFunded and
+    // solde now always sum to exactly `price`.
+    var CPF_RS_CAP = 1650;
+    var CPF_FORFAITAIRE = 150;
+    var cpfFunded = Math.min(price, CPF_RS_CAP) - CPF_FORFAITAIRE;
+    var solde = price - cpfFunded;
     var edofLink = oral.edofMCFLink || 'https://www.moncompteformation.gouv.fr';
 
     // Greeting
@@ -1701,8 +1711,8 @@ function onRecipientModeChange() {
     var budgetBlock = '';
     if (isCPF) {
       budgetBlock = '**Budget\u00a0: ' + price + '\u00a0\u20ac**\n'
-        + '\u2013 1\u00a0500\u00a0\u20ac finançables via le CPF\n'
-        + '\u2013 Reste \xe0 votre charge\u00a0: ' + solde + '\u00a0\u20ac + participation forfaitaire de 150\u00a0\u20ac';
+        + '\u2013 ' + cpfFunded + '\u00a0\u20ac finançables via le CPF\n'
+        + '\u2013 Reste \xe0 votre charge\u00a0: ' + solde + '\u00a0\u20ac (participation forfaitaire de 150\u00a0\u20ac incluse)';
     } else {
       // CPF_EMAIL_FIX (2026-07-03): no rate/hours breakdown - it was never
       // requested and could silently drift from the entered price. Total only.
