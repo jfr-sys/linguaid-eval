@@ -1311,7 +1311,13 @@
     if (isContratCadre(c.company)) {
       document.getElementById('stage6status').textContent = 'Contrat cadre — envoi possible uniquement à un tiers (jamais à l’apprenant)';
     }
-    if (cd.civility) document.getElementById('propCivility').value = cd.civility;
+    // CIVILITY_SYNC_FIX (2026-07-27): was `if (cd.civility) ...` - when
+    // unset, this did nothing and left propCivility at its HTML default
+    // ("Madame", the first <option>), which silently disagreed with
+    // idCivility's explicit 'Monsieur' fallback on the Donnees tab. Now
+    // uses the identical fallback expression so the two tabs can never
+    // show different values for the same missing data.
+    document.getElementById('propCivility').value = cd.civility || 'Monsieur';
     document.getElementById('propPrice').value = cd.price || od.edofPrice || od.price || '';
     document.getElementById('propDateStart').value = cd.dateStart || od.dateStart || '';
     document.getElementById('propDateEnd').value = cd.dateEnd || od.dateEnd || '';
