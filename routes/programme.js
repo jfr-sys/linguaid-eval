@@ -266,7 +266,20 @@ router.get('/api/generate-programme/:id', async function(req, res) {
       // Mark programme as done
       var cands = getCandidates();
       var ci = cands.findIndex(function(x) { return x.id === req.params.id; });
-      if (ci > -1) { cands[ci].status = 'programme_done'; saveCandidates(cands); }
+      if (ci > -1) {
+        cands[ci].status = 'programme_done';
+        /* PROGRAMME_MATCH_CHECK (2026-07-27): snapshot the exact values
+           used to fill this programme, so send-proposition-email can
+           later verify the proposition still agrees with it. */
+        cands[ci].programmeSnapshot = {
+          isCPF: payload.isCPF, cpfType: payload.cpfType, rsCode: payload.rsCode,
+          objectives: payload.objectives, totalHours: payload.totalHours,
+          coachingHours: payload.coachingHours, homeworkHours: payload.homeworkHours,
+          targetLevel: payload.targetLevel, trainingTitle: payload.trainingTitle,
+          generatedAt: new Date().toISOString()
+        };
+        saveCandidates(cands);
+      }
 
     } catch (e) {
       res.status(500).json({ error: 'Failed to read output: ' + e.message });
@@ -552,6 +565,17 @@ router.post('/api/generate-proposition/:id', async function(req, res) {
         cands2[ci2].propositionPdfPath = pdfOut;
         cands2[ci2].propositionDocxPath = docxOut;
         cands2[ci2].propositionGeneratedAt = new Date().toISOString();
+        /* PROGRAMME_MATCH_CHECK (2026-07-27): snapshot the exact values
+           used to fill this proposition, compared against
+           programmeSnapshot before send-proposition-email is allowed to
+           actually dispatch anything. */
+        cands2[ci2].propositionSnapshot = {
+          isCPF: propData.isCPF, cpfType: propData.cpfType, rsCode: propData.rsCode,
+          objectives: propData.objectives, totalHours: propData.totalHours,
+          coachingHours: propData.coachingHours, homeworkHours: propData.homeworkHours,
+          targetLevel: propData.targetLevel,
+          generatedAt: new Date().toISOString()
+        };
         saveCandidates(cands2);
       }
 
@@ -614,6 +638,12 @@ router.post('/api/send-proposition-email/:id', async function(req, res) {
     return res.status(400).json({ error: 'Ce candidat est rattach\u00e9 \u00e0 \u00ab ' + guardCompany + ' \u00bb : la proposition financi\u00e8re part au tiers par d\u00e9faut. Confirmez explicitement l\u2019envoi \u00e0 l\u2019apprenant.' });
   }
   if (!emailBody) return res.status(400).json({ error: 'No email body' });
+
+  /* PROGRAMME_MATCH_CHECK (2026-07-27): block the SEND - not generation of
+     either document - if the last-generated programme and proposition
+     disagree on CPF status, objectives, hours, or target level. */
+  var cohMatch = coherence.checkProgrammeMatch(c);
+  if (!cohMatch.ok) return res.status(400).json({ error: cohMatch.errors.join(' ') });
 
   /* coherence-gate: no proposition from incoherent hours/price/dates */
   var cohProp = coherence.checkCoherence(c, { requirePrice: true });
