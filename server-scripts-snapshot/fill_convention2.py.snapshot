@@ -1,0 +1,117 @@
+#!/usr/bin/env python3
+import sys, json, os, subprocess
+from docx import Document
+from datetime import datetime
+APP = '/var/www/vhosts/linguaid.net/eval.linguaid.net/app'
+VIEWS = os.path.join(APP, 'views')
+OUTPUT_DIR = os.path.join(APP, 'data', 'conventions')
+TEMPLATES = {
+    'NON_CPF': os.path.join(VIEWS, 'CONVENTION_TEMPLATE_NON_CPF.docx'),
+    'CPF':     os.path.join(VIEWS, 'CONVENTION_CPF_E360.docx'),
+    'CAJA':    os.path.join(VIEWS, 'CONVENTION_CPF_CAJA.docx'),
+    'E360':    os.path.join(VIEWS, 'CONVENTION_CPF_E360.docx'),
+}
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+def rep_para(para, reps):
+    # Check if any placeholder spans multiple runs with different formatting
+    # by replacing within each run individually first
+    for r in para.runs:
+        if r.text:
+            for t, v in reps.items():
+                if t in r.text:
+                    r.text = r.text.replace(t, str(v))
+    # Fall back: if any placeholder still spans across runs, do full join
+    full = ''.join(r.text for r in para.runs)
+    for t, v in reps.items():
+        if t in full:
+            full = full.replace(t, str(v))
+            if para.runs:
+                para.runs[0].text = full
+                for r in para.runs[1:]: r.text = ''
+            break
+
+def rep_doc(doc, reps):
+    for p in doc.paragraphs:
+        if any(t in ''.join(r.text for r in p.runs) for t in reps):
+            rep_para(p, reps)
+    for tbl in doc.tables:
+        for row in tbl.rows:
+            for cell in row.cells:
+                for p in cell.paragraphs:
+                    if any(t in ''.join(r.text for r in p.runs) for t in reps):
+                        rep_para(p, reps)
+
+def fill_convention(data):
+    tt = data.get('trainingType', 'NON_CPF')
+    tpl_key = 'CAJA' if tt == 'CAJA' else 'E360' if tt == 'E360' else 'CPF' if tt == 'CPF' else 'NON_CPF'
+    tpl = TEMPLATES[tpl_key]
+    if not os.path.exists(tpl):
+        raise FileNotFoundError('Template not found: ' + tpl)
+    doc = Document(tpl)
+    MFR = {1:'janvier',2:'février',3:'mars',4:'avril',5:'mai',6:'juin',
+           7:'juillet',8:'août',9:'septembre',10:'octobre',11:'novembre',12:'décembre'}
+    now = datetime.now()
+    today = str(now.day) + ' ' + MFR[now.month] + ' ' + str(now.year)
+    name = data.get('candidateName', '')
+    civ = data.get('civility', 'Madame')
+    reps = {
+        '{{CANDIDATE_NAME}}':     name,
+        '{{CIVILITY}}':           civ,
+        '{{COMPANY_NAME}}':       data.get('companyName', ''),
+        '{{COMPANY_SIRET}}':      data.get('companySiret', ''),
+        '{{SIRET}}':              data.get('companySiret', ''),
+        '{{TOTAL_HOURS}}':        str(data.get('totalHours', 20)),
+        '{{COACHING_HOURS}}':     str(data.get('coachingHours', 10)),
+        '{{HOMEWORK_HOURS}}':     str(data.get('homeworkHours', 10)),
+        '{{PREREQ_LEVEL}}':       str(data.get('prereqLevel', 'A2')),
+        '{{TARGET_LEVEL}}':       str(data.get('targetLevel', 'B2')),
+        '{{PREREQ_LEVEL}}':       data.get('prereqLevel', ''),
+        '{{PREREQ_DESCRIPTION}}': data.get('prereqLevel', ''),
+        '{{TARGET_LEVEL}}':       data.get('targetLevel', 'B2'),
+        '{{TARGET_DESCRIPTION}}': data.get('targetLevel', 'B2'),
+        '{{LOCATION}}':           data.get('location', 'A distance'),
+        '{{DATE_STR}}':           data.get('dateStr', ''),
+        '{{PRICE}}':              str(data.get('price', '')),
+        '{{TODAY}}':              today,
+        '{{SIGN_CITY}}':          'Saint-Cyprien',
+        '{{SIGNATORY}}':          data.get('companyName', name),
+        '{{TRAINING_TITLE}}':     data.get('trainingTitle', 'Formation en anglais professionnel'),
+    }
+    rep_doc(doc, reps)
+    token = data.get('signingToken', 'draft')
+    docx_path = os.path.join(OUTPUT_DIR, 'convention_' + token + '.docx')
+    # Remove 'Niveau vise' bullet for legal candidates
+    if data.get('courseType') == 'legal':
+        for p in list(doc.paragraphs):
+            if 'Niveau vis' in p.text or 'TARGET_DESCRIPTION' in p.text:
+                p._element.getparent().remove(p._element)
+
+    doc.save(docx_path)
+    r = subprocess.run(
+        ['libreoffice', '--headless', '--convert-to', 'pdf', '--outdir', OUTPUT_DIR, docx_path],
+        capture_output=True, text=True, timeout=60
+    )
+    if r.returncode != 0:
+        raise RuntimeError('LibreOffice failed: ' + r.stderr)
+    pdf_path = os.path.join(OUTPUT_DIR, 'convention_' + token + '.pdf')
+    if not os.path.exists(pdf_path):
+        base = os.path.splitext(os.path.basename(docx_path))[0]
+        alt = os.path.join(OUTPUT_DIR, base + '.pdf')
+        if os.path.exists(alt):
+            os.rename(alt, pdf_path)
+        else:
+            raise RuntimeError('PDF not found after conversion')
+    return pdf_path
+
+if __name__ == '__main__':
+    if len(sys.argv) < 2:
+        print(json.dumps({'error': 'No JSON argument'}))
+        sys.exit(1)
+    try:
+        pdf = fill_convention(json.loads(sys.argv[1]))
+        print(json.dumps({'success': True, 'pdfPath': pdf}))
+    except Exception as e:
+        import traceback
+        print(json.dumps({'error': str(e), 'trace': traceback.format_exc()}))
+        sys.exit(1)

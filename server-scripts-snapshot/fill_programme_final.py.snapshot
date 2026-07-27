@@ -1,0 +1,470 @@
+import sys
+import os
+import json
+import zipfile
+import shutil
+import tempfile
+import copy
+from lxml import etree
+
+W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'
+R_NS = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships'
+
+def q(tag):
+    return '{%s}%s' % (W, tag)
+
+def para_text(p):
+    return ''.join(t.text or '' for t in p.iter(q('t')))
+
+def find_para(root, text):
+    for p in root.iter(q('p')):
+        if text in para_text(p):
+            return p
+    return None
+
+def find_all_paras(root, text):
+    return [p for p in root.iter(q('p')) if text in para_text(p)]
+
+def strip_sect_pr(p):
+    pPr = p.find(q('pPr'))
+    if pPr is not None:
+        sect = pPr.find(q('sectPr'))
+        if sect is not None:
+            pPr.remove(sect)
+
+def rep_para(p, new_text):
+    """Replace text in a paragraph, preserving run formatting."""
+    runs = list(p.iter(q('r')))
+    if not runs:
+        return
+    # Try to replace within individual runs first
+    full = para_text(p)
+    if new_text == full:
+        return
+    # Set first run's text to new_text, clear the rest
+    first_t = runs[0].find(q('t'))
+    if first_t is None:
+        first_t = etree.SubElement(runs[0], q('t'))
+    first_t.text = new_text
+    if new_text and (new_text[0] == ' ' or new_text[-1] == ' '):
+        first_t.set('{http://www.w3.org/XML/1998/namespace}space', 'preserve')
+    # Clear text in remaining runs
+    for r in runs[1:]:
+        for t in r.findall(q('t')):
+            t.text = ''
+
+def replace_text_in_para(p, new_text):
+    rep_para(p, new_text)
+
+CEFR_LABELS = {
+    'A1': 'A1', 'A2': 'A2', 'B1': 'B1', 'B1+': 'B1+',
+    'B2': 'B2', 'B2+': 'B2+', 'C1': 'C1', 'C2': 'C2',
+    'A1-': 'A1-', 'A2-': 'A2-',
+}
+
+def cefr_label(level):
+    if not level or level == '\u2014': return level
+    clean = level.split(' (')[0].strip()
+    return CEFR_LABELS.get(clean, clean)
+
+def fill_programme(data, template_path, output_path):
+    tmpdir = tempfile.mkdtemp()
+    with zipfile.ZipFile(template_path, 'r') as z:
+        z.extractall(tmpdir)
+
+    doc_path = os.path.join(tmpdir, 'word', 'document.xml')
+    tree = etree.parse(doc_path)
+    root = tree.getroot()
+
+    isCPF = data.get('isCPF', False)
+    # NIVEAU_VISE_FIX_V2 (2026-07-03): E360_LEGAL is still RS6341
+    # (English 360) - same CEFR-based cert, just for a legal audience -
+    # so it SHOWS. Only CAJA (RS6810, a genuinely different cert) and
+    # true non-CPF 'Anglais Juridique' bespoke courses hide it.
+    show_niveau_vise = not (
+        data.get('cpfType') == 'CAJA' or
+        ((not isCPF) and data.get('courseType') == 'legal')
+    )
+
+    # --- Simple replacements ---
+    p = find_para(root, 'Communiquer en anglais professionnel')
+    if p is not None: replace_text_in_para(p, data['trainingTitle'])
+
+    p = find_para(root, 'Mossa Aj Ahataya')
+    if p is not None:
+        name = data['candidateName']
+        if data.get('jobtitle'): name += ' \u2014 ' + data['jobtitle']
+        replace_text_in_para(p, name)
+
+    # Prereq and target levels
+    niveau_paras = find_all_paras(root, 'CECRL')
+    niveau_paras = [p for p in niveau_paras if 'Niveau' in para_text(p)]
+    if len(niveau_paras) >= 1:
+        replace_text_in_para(niveau_paras[0], 'Niveau ' + cefr_label(data['prereqLevel']) + ' sur le r\xe9f\xe9rentiel CECRL* (voir annexe)')
+    if len(niveau_paras) >= 2:
+        if show_niveau_vise:
+            tgt = cefr_label(data.get('targetLevel', '')) if data.get('targetLevel') else 'a d\xe9finir'
+            replace_text_in_para(niveau_paras[1], 'Niveau ' + tgt + ' sur le r\xe9f\xe9rentiel CECRL* (voir annexe)')
+        else:
+            p2 = niveau_paras[1]
+            parent2 = p2.getparent()
+            if parent2 is not None:
+                siblings = list(parent2)
+                idx2 = siblings.index(p2)
+                if idx2 > 0:
+                    prev = siblings[idx2 - 1]
+                    pt_prev = ''.join(t.text or '' for t in prev.iter(q('t')))
+                    if 'Objectif de niveau' in pt_prev or 'objectif de niveau' in pt_prev.lower():
+                        parent2.remove(prev)
+                parent2.remove(p2)
+
+    # Duration
+    p = find_para(root, '20 heures')
+    if p is not None: replace_text_in_para(p, data['totalHours'] + ' heures')
+
+    # Dates
+    p = find_para(root, 'mai au 31 octobre')
+    if p is not None: replace_text_in_para(p, data.get('dateStr', 'Dates \xe0 d\xe9finir'))
+
+    # Location
+    p = find_para(root, 'A distance')
+    if p is not None: replace_text_in_para(p, data.get('location', '\xc0 distance'))
+
+    # Coaching hours
+    p = find_para(root, 'heures de coaching individuel')
+    if p is not None:
+        coaching = str(data.get('coachingHours', ''))
+        homework = str(data.get('homeworkHours', '0'))
+        if homework and homework not in ('0', '-', ''):
+            sentence = (coaching + ' heures de formation en visioconf\xe9rence individuelle avec le formateur et ' + homework + ' heures d\u2019activit\xe9s p\xe9dagogiques en autonomie.')
+        else:
+            sentence = coaching + ' heures de formation en visioconf\xe9rence individuelle avec le formateur.'
+        replace_text_in_para(p, sentence)
+
+    # --- Objectives ---
+    obj_anchor = find_para(root, 'fin de la formation')
+    if obj_anchor is not None:
+        parent = obj_anchor.getparent()
+        paras = list(parent)
+        anchor_idx = paras.index(obj_anchor)
+
+        obj_paras = []
+        i = anchor_idx + 1
+        while i < len(paras):
+            p2 = paras[i]
+            ppr = p2.find(q('pPr'))
+            has_num = ppr is not None and ppr.find(q('numPr')) is not None
+            pt = para_text(p2).strip()
+            if has_num and pt:
+                obj_paras.append(p2)
+                i += 1
+            elif not pt:
+                i += 1
+            else:
+                break
+
+        if obj_paras and data.get('objectives'):
+            template_obj = obj_paras[0]
+            insert_pos = paras.index(obj_paras[-1]) + 1
+            for op in obj_paras: parent.remove(op)
+            for i, obj in enumerate(data['objectives']):
+                new_p = copy.deepcopy(template_obj)
+                strip_sect_pr(new_p)
+                replace_text_in_para(new_p, obj)
+                parent.insert(insert_pos - len(obj_paras) + i, new_p)
+
+    # --- Topics ---
+    sujets_anchor = find_para(root, 'sujets suivants seront')
+    if sujets_anchor is None:
+        sujets_anchor = find_para(root, 'Les sujets suivants')
+    if sujets_anchor is not None:
+        parent = sujets_anchor.getparent()
+        paras = list(parent)
+        anchor_idx = paras.index(sujets_anchor)
+
+        # TOPICS_BULLET_FIX (2026-07-03): collect the WHOLE contiguous
+        # zone after the anchor - blank or not, bulleted or not - and
+        # remove all of it. Previously blank paragraphs (the template's
+        # leading blank bullet and trailing blank spacers) were silently
+        # skipped instead of collected, so they were never removed and
+        # survived every generation as a blank first bullet + trailing gap.
+        topic_paras = []
+        i = anchor_idx + 1
+        while i < len(paras):
+            p2 = paras[i]
+            ppr = p2.find(q('pPr'))
+            has_num = ppr is not None and ppr.find(q('numPr')) is not None
+            pt = para_text(p2).strip()
+            if pt and not has_num:
+                break
+            topic_paras.append(p2)
+            i += 1
+
+        if topic_paras and data.get('topics'):
+            template_topic = next((p for p in topic_paras if para_text(p).strip()), topic_paras[0])
+            insert_pos = paras.index(topic_paras[-1]) + 1
+            for tp in topic_paras: parent.remove(tp)
+            for i, topic in enumerate(data['topics']):
+                new_p = copy.deepcopy(template_topic)
+                strip_sect_pr(new_p)
+                replace_text_in_para(new_p, topic)
+                parent.insert(insert_pos - len(topic_paras) + i, new_p)
+
+    # --- CPF content blocks ---
+    cpfType = data.get('cpfType', '')
+
+    if isCPF and not cpfType:
+        raise ValueError('ERREUR CPF: cpfType manquant. Impossible de g\xe9n\xe9rer un dossier CPF sans type de certification (E360, E360_LEGAL ou CAJA). Risque de non-conformit\xe9 DREETS/CDC.')
+
+    if isCPF and cpfType in ('E360', 'E360_LEGAL'):
+        travail_para = find_para(root, 'travail guid\xe9 en autonomie')
+        if travail_para is None:
+            travail_para = find_para(root, 'Le travail guid\xe9')
+
+        if travail_para is not None:
+            parent = travail_para.getparent()
+            paras = list(parent)
+            travail_idx = paras.index(travail_para)
+
+            sujets_anchor = find_para(root, 'sujets suivants seront')
+            if sujets_anchor is None:
+                sujets_anchor = find_para(root, 'Les sujets suivants')
+
+            bullet_template = None
+            if sujets_anchor is not None:
+                sa_idx = paras.index(sujets_anchor) if sujets_anchor in paras else -1
+                if sa_idx >= 0:
+                    for pp2 in paras[sa_idx+1:travail_idx]:
+                        ppr2 = pp2.find(q('pPr'))
+                        if ppr2 is not None and ppr2.find(q('numPr')) is not None and para_text(pp2).strip():
+                            bullet_template = pp2
+                            break
+
+            ref_label = 'RS6341'
+
+            cert_prep_items = [
+                "Compr\xe9hension orale\u00a0: comprendre l\u2019essentiel d\u2019un discours professionnel clair et standard, y compris en visioconf\xe9rence ou lors de r\xe9unions.",
+                "Compr\xe9hension \xe9crite\u00a0: lire et comprendre des textes professionnels courants (emails, rapports, instructions).",
+                "Expression orale en interaction\u00a0: dialoguer en anglais dans des situations professionnelles courantes (r\xe9unions, entretiens, \xe9changes informels).",
+                "Expression orale en continu\u00a0: prendre la parole pour pr\xe9senter, expliquer ou argumenter dans un contexte professionnel.",
+                "Expression \xe9crite\u00a0: r\xe9diger des textes professionnels clairs et structur\xe9s (emails, comptes-rendus, notes).",
+                "Entra\xeenement aux \xe9preuves de certification English 360 (" + ref_label + ")\u00a0: exercices de pr\xe9paration, examens blancs et feedback individualis\xe9.",
+            ]
+
+            insert_idx = travail_idx
+
+            heading_p = etree.Element(q('p'))
+            heading_pPr = etree.SubElement(heading_p, q('pPr'))
+            heading_r = etree.SubElement(heading_p, q('r'))
+            heading_rPr = etree.SubElement(heading_r, q('rPr'))
+            etree.SubElement(heading_rPr, q('b'))
+            heading_t = etree.SubElement(heading_r, q('t'))
+            heading_t.set('{http://www.w3.org/XML/1998/namespace}space', 'preserve')
+            heading_t.text = "Pr\xe9paration \xe0 la certification English 360 (" + ref_label + ") \u2014 contenu fix\xe9 par le r\xe9f\xe9rentiel\u00a0:"
+            parent.insert(insert_idx, heading_p)
+            insert_idx += 1
+
+            for item in cert_prep_items:
+                if bullet_template is not None:
+                    new_p = copy.deepcopy(bullet_template)
+                    replace_text_in_para(new_p, item)
+                else:
+                    new_p = etree.Element(q('p'))
+                    r2 = etree.SubElement(new_p, q('r'))
+                    t2 = etree.SubElement(r2, q('t'))
+                    t2.set('{http://www.w3.org/XML/1998/namespace}space', 'preserve')
+                    t2.text = '\u2022 ' + item
+                parent.insert(insert_idx, new_p)
+                insert_idx += 1
+
+    elif isCPF and cpfType == 'CAJA':
+        sujets_anchor = find_para(root, 'sujets suivants seront')
+        if sujets_anchor is None:
+            sujets_anchor = find_para(root, 'Les sujets suivants')
+        if sujets_anchor is not None:
+            replace_text_in_para(sujets_anchor, 'La formation couvre les 6 comp\xe9tences du r\xe9f\xe9rentiel RS6810 (CAJA)\u00a0:')
+
+        caja_items = [
+            'C1 \u2014 Initier un premier contact et se pr\xe9senter professionnellement en anglais juridique',
+            'C2 \u2014 Mener un entretien initial pour comprendre la situation, identifier les attentes et poser les bonnes questions',
+            'C3 \u2014 Expliquer une probl\xe9matique juridique, proposer des options et aider \xe0 la prise de d\xe9cision en anglais',
+            'C4 \u2014 Produire des \xe9crits professionnels adapt\xe9s au contexte juridique\u00a0: emails, lettres, notes d\u2019avocat',
+            'C5 \u2014 Corriger ou r\xe9diger des clauses contractuelles claires, pr\xe9cises et structur\xe9es en anglais',
+            'C6 \u2014 Conduire une n\xe9gociation, formuler ou r\xe9pondre \xe0 des propositions, d\xe9fendre les int\xe9r\xeats du client en anglais',
+        ]
+
+        travail_para = find_para(root, 'travail guid\xe9 en autonomie')
+        if travail_para is None:
+            travail_para = find_para(root, 'Le travail guid\xe9')
+        if travail_para is not None:
+            parent = travail_para.getparent()
+            paras = list(parent)
+            travail_idx = paras.index(travail_para)
+
+            sujets_anchor2 = find_para(root, 'La formation couvre les 6')
+            bullet_template2 = None
+            if sujets_anchor2 is not None and sujets_anchor2 in paras:
+                sa2_idx = paras.index(sujets_anchor2)
+                for pp3 in paras[sa2_idx+1:travail_idx]:
+                    ppr3 = pp3.find(q('pPr'))
+                    if ppr3 is not None and ppr3.find(q('numPr')) is not None:
+                        bullet_template2 = pp3
+                        break
+
+            insert_idx2 = travail_idx
+            for item in caja_items:
+                if bullet_template2 is not None:
+                    new_p = copy.deepcopy(bullet_template2)
+                    strip_sect_pr(new_p)
+                    replace_text_in_para(new_p, item)
+                else:
+                    new_p = etree.Element(q('p'))
+                    r3 = etree.SubElement(new_p, q('r'))
+                    t3 = etree.SubElement(r3, q('t'))
+                    t3.set('{http://www.w3.org/XML/1998/namespace}space', 'preserve')
+                    t3.text = '\u2022 ' + item
+                parent.insert(insert_idx2, new_p)
+                insert_idx2 += 1
+
+    # --- CPF toggle ---
+    if not isCPF:
+        for p2 in list(root.iter(q('p'))):
+            if 'Se pr\xe9parer et passer' in para_text(p2):
+                pp = p2.getparent()
+                if pp is not None: pp.remove(p2)
+        for p2 in list(root.iter(q('p'))):
+            pt = para_text(p2)
+            if 'Certification English 360' in pt and 'Moyens' not in pt and 'passer' not in pt:
+                pp = p2.getparent()
+                if pp is not None: pp.remove(p2)
+        for p2 in list(root.iter(q('p'))):
+            pt2 = para_text(p2)
+            if 'travail' in pt2.lower() and 'certification' in pt2.lower() and 'entra' in pt2.lower():
+                import re as _re5
+                for t2 in list(p2.iter(q('t'))):
+                    if t2.text and 'certification' in t2.text.lower():
+                        t2.text = _re5.sub(r'\s+ainsi que des activit\S*\s+\S*entra\S*nement \S+ la certification\.?', '.', t2.text)
+                        t2.text = t2.text.replace('..', '.')
+        for p2 in list(root.iter(q('p'))):
+            pt = para_text(p2)
+            if 'travail' in pt.lower() and 'Certification English 360' in pt:
+                for t in list(p2.iter(q('t'))):
+                    if t.text and 'Certification English 360' in t.text:
+                        import re as _re
+                        t.text = _re.sub(r'[, ]+(?:ainsi que la |et la )?[Cc]ertification English 360[^.]*\.?', '', t.text).strip()
+        for p2 in list(root.iter(q('p'))):
+            pt2 = para_text(p2)
+            if 'Certification' in pt2 and ('360' in pt2 or 'RS6341' in pt2) and 'passer' not in pt2.lower():
+                import re as _re2
+                cert_tokens = ['Certification', 'English 360', 'RS6341', 'en fin de formation']
+                for t2 in list(p2.iter(q('t'))):
+                    if t2.text:
+                        for tok in cert_tokens:
+                            if tok in t2.text:
+                                t2.text = _re2.sub(r'[,.]?\s*' + _re2.escape(tok) + r'[^.]*', '', t2.text).strip()
+                for t2 in list(p2.iter(q('t'))):
+                    if t2.text and t2.text.strip() in ('.', ' ', '. ', ' .', '(RS6341)'):
+                        t2.text = ''
+
+    # Remove 'Production de livrables' bullet when no autonomous work
+    homework_val = str(data.get('homeworkHours', '0'))
+    if homework_val in ('0', '', '-', 'None', None):
+        for p2 in list(root.iter(q('p'))):
+            pt2 = para_text(p2)
+            if 'Production de livrables' in pt2:
+                pp2 = p2.getparent()
+                if pp2 is not None:
+                    pp2.remove(p2)
+        for p2 in list(root.iter(q('p'))):
+            pt2 = para_text(p2)
+            if 'Moyens p\xe9dagogiques et techniques' in pt2 and 'travail guid\xe9 en autonomie' in pt2:
+                for t2 in list(p2.iter(q('t'))):
+                    if t2.text:
+                        import re as _re3
+                        t2.text = _re3.sub(r'\s+et\s+travail\s+guid[e\xe9]\s+en\s+autonomie\s+comprenant[^.]*', '', t2.text)
+                        t2.text = _re3.sub(r'\s+avec\s+production\s+de\s+livrables', '', t2.text)
+        for p2 in list(root.iter(q('p'))):
+            pt2 = para_text(p2)
+            if 'margement' in pt2 and 'autonomie' in pt2:
+                for t2 in list(p2.iter(q('t'))):
+                    if t2.text:
+                        import re as _re4
+                        t2.text = _re4.sub(r'\s+et\s+suivi\s+des\s+activit[e\xe9]s\s+r[e\xe9]alis[e\xe9]es\s+en\s+autonomie[^.]*', '', t2.text)
+
+    # --- Restore header/footer references in body sectPr ---
+    # Read relationship IDs from the original template
+    rId_header = None
+    rId_footer = None
+    try:
+        with zipfile.ZipFile(template_path) as _zt:
+            rels_xml = _zt.read('word/_rels/document.xml.rels')
+        for rel in etree.fromstring(rels_xml):
+            t = rel.get('Type', '')
+            if t.endswith('/header'):
+                rId_header = rel.get('Id')
+            elif t.endswith('/footer'):
+                rId_footer = rel.get('Id')
+    except Exception as e:
+        print('Warning: could not read header/footer rels: ' + str(e))
+
+    body = root.find(q('body'))
+    if body is not None:
+        sectPr = body.find(q('sectPr'))
+        if sectPr is None:
+            sectPr = etree.SubElement(body, q('sectPr'))
+        # Remove any existing references (avoid duplicates)
+        for el in list(sectPr.findall(q('headerReference'))): sectPr.remove(el)
+        for el in list(sectPr.findall(q('footerReference'))): sectPr.remove(el)
+        # Remove 'continuous' type which suppresses header/footer display
+        type_el = sectPr.find(q('type'))
+        if type_el is not None and type_el.get(q('val')) == 'continuous':
+            sectPr.remove(type_el)
+        # Insert header/footer references
+        pos = 0
+        if rId_header:
+            attrs = {q('type'): 'default'}
+            attrs['{' + R_NS + '}id'] = rId_header
+            hRef = sectPr.makeelement(q('headerReference'), attrs)
+            sectPr.insert(pos, hRef)
+            pos += 1
+        if rId_footer:
+            attrs = {q('type'): 'default'}
+            attrs['{' + R_NS + '}id'] = rId_footer
+            fRef = sectPr.makeelement(q('footerReference'), attrs)
+            sectPr.insert(pos, fRef)
+
+    # Save and repack
+    tree.write(doc_path, xml_declaration=True, encoding='UTF-8', standalone=True)
+    with zipfile.ZipFile(output_path, 'w', zipfile.ZIP_DEFLATED) as zout:
+        for dirpath, dirs, files in os.walk(tmpdir):
+            for file in files:
+                fp = os.path.join(dirpath, file)
+                zout.write(fp, os.path.relpath(fp, tmpdir))
+    shutil.rmtree(tmpdir)
+
+
+if __name__ == '__main__':
+    if len(sys.argv) == 4:
+        data = json.load(open(sys.argv[1]))
+        fill_programme(data, sys.argv[2], sys.argv[3])
+    else:
+        test_data = {
+            'trainingTitle': 'Formation en Anglais Professionnel',
+            'candidateName': 'Jerome PONARD',
+            'jobtitle': 'Responsable Satisfaction Client',
+            'prereqLevel': 'B1',
+            'targetLevel': 'B2',
+            'totalHours': '50',
+            'coachingHours': '25',
+            'homeworkHours': '25',
+            'dateStr': 'Du 04 juin 2026 au 30 septembre 2026',
+            'location': '\xc0 distance',
+            'isCPF': False,
+            'topics': ['Se pr\xe9senter', 'Small talk', 'T\xe9l\xe9phoner', 'R\xe9unions et visioconf\xe9rences', 'N\xe9gociation', 'Anglais RH'],
+            'objectives': [
+                'D\xe9velopper ses comp\xe9tences en anglais sur les quatre dimensions du CECRL',
+                'Conduire des n\xe9gociations professionnelles en d\xe9fendant ses int\xe9r\xeats',
+                'Participer activement \xe0 des r\xe9unions strat\xe9giques en anglais',
+            ]
+        }
+        fill_programme(test_data, '/home/claude/template.docx', '/home/claude/test_final.docx')

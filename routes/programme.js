@@ -157,6 +157,10 @@ router.get('/api/generate-programme/:id', async function(req, res) {
       homeworkHours: String(od.homeworkHours || 0),
       isCPF: !!(od.isCPF),
       cpfType: od.cpfType || null,
+      /* RS7637 registry (2026-07-27): threaded through to
+         fill_programme_final.py so the programme docx renders the
+         candidate's own stamped RS code, not a hardcoded one. */
+      rsCode: getRsCode(od.cpfType, od.rsCode) || null,
       edofActionId: od.edofActionId || null,
       edofPrice: od.edofPrice || null,
       edofMCFLink: od.edofMCFLink || null,

@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { canonicalCompany, listCompanies } = require('../lib/companies');
 const { isContratCadre } = require('../lib/contratCadre');
+const { getRsCode } = require('../config/catalogue');
 const coherence = require('../lib/coherence'); /* coherence-gate */
 
 // Helper: 5-skill CEFR average
@@ -896,6 +897,12 @@ router.post('/generate-convention/:id', function(req, res) {
     signingToken: signingToken,
     trainingType: tplKey,
     courseType: c.courseType || '',
+    /* RS7637 registry (2026-07-27): threaded through to fill_convention2.py
+       so the convention docx renders the candidate's own stamped RS code,
+       not a hardcoded one. Falls back to the registry default only if
+       rsCode was somehow never stamped (should not happen for a real
+       CPF candidate after the 2026-07-27 migration). */
+    rsCode: getRsCode(od.cpfType, od.rsCode) || '',
     trainingTitle: od.trainingTitle || (isCPF ? 'Communiquer en anglais professionnel - English 360 - Niveau B2' : (c.courseType === 'legal' ? 'Formation en Anglais Juridique' : 'Formation en Anglais Professionnel'))
   };
   execFile('python3', ['/home/debian/fill_convention2.py', JSON.stringify(data)], { timeout: 90000 }, function(err, stdout, stderr) {
