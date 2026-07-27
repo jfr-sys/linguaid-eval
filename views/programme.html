@@ -139,14 +139,14 @@
       <div class="cpf-type-option" onclick="selectCpfType('E360', this)">
         <input type="radio" name="cpfType" value="E360">
         <div>
-          <div class="opt-title">Anglais professionnel — English 360 <span class="cpf-badge">RS6341</span></div>
+          <div class="opt-title">Anglais professionnel — English 360 <span class="cpf-badge" id="e360OptBadge">RS6341</span></div>
           <div class="opt-sub">Salariés tous secteurs — anglais professionnel général</div>
         </div>
       </div>
       <div class="cpf-type-option" onclick="selectCpfType('E360_LEGAL', this)">
         <input type="radio" name="cpfType" value="E360_LEGAL">
         <div>
-          <div class="opt-title">Anglais juridique — English 360 pour avocats <span class="legal-badge">RS6341</span></div>
+          <div class="opt-title">Anglais juridique — English 360 pour avocats <span class="legal-badge" id="e360LegalOptBadge">RS6341</span></div>
           <div class="opt-sub">Avocats et juristes — étape préalable vers CAJA, attestation niveau B2</div>
         </div>
       </div>
@@ -205,7 +205,7 @@
       </select>
     </div>
     <div id="cpfWarning" class="warning" style="display:none">
-      ⚠ Attention : La certification English 360 (RS6341) requiert un niveau minimum A2+. Vérifiez l'éligibilité du candidat.
+      ⚠ Attention : La certification English 360 (<span id="cpfWarningRsCode">RS6341</span>) requiert un niveau minimum A2+. Vérifiez l'éligibilité du candidat.
     </div>
   </div>
 
@@ -242,7 +242,7 @@
       <!-- CPF cert prep block (E360 / E360_LEGAL only) - LOCKED, not user-selectable -->
       <div class="cpf-only" id="cpfTopics" style="margin-top:1rem;padding:1rem;background:#fffbeb;border-radius:10px;border:1px solid #fcd34d;">
         <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:#92400e;margin-bottom:8px" id="cpfTopicsLabel">
-          🔒 Préparation certification English 360 <span class="cpf-badge">CPF</span> — contenu fixé par le référentiel RS6341
+          🔒 Préparation certification English 360 <span class="cpf-badge">CPF</span> — contenu fixé par le référentiel <span id="cpfTopicsRsCode">RS6341</span>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:13px;color:#78350f;">
           <div style="padding:6px 10px;background:white;border-radius:6px;border:1px solid #fde68a">✓ Compréhension orale (listening)</div>
@@ -252,7 +252,7 @@
           <div style="padding:6px 10px;background:white;border-radius:6px;border:1px solid #fde68a">✓ Grammaire et vocabulaire ciblés</div>
           <div style="padding:6px 10px;background:white;border-radius:6px;border:1px solid #fde68a">✓ Entraînement aux épreuves de certification</div>
         </div>
-        <div style="font-size:11px;color:#92400e;margin-top:8px">Ces 5 compétences sont évaluées par l’examen English 360 et doivent figurer dans tout dossier CPF RS6341.</div>
+        <div style="font-size:11px;color:#92400e;margin-top:8px">Ces 5 compétences sont évaluées par l’examen English 360 et doivent figurer dans tout dossier CPF <span id="cpfTopicsNoteRsCode">RS6341</span>.</div>
       </div>
 
       <label style="margin-top:1rem">Thèmes supplémentaires (optionnel)</label>
@@ -349,7 +349,25 @@ var REFERENTIAL_OBJECTIVES = {
   ]
 };
 
-var REF_LABELS = { E360: 'RS6341', E360_LEGAL: 'RS6341', CAJA: 'RS6810' };
+var REF_LABELS = { E360: 'RS7637', E360_LEGAL: 'RS7637', CAJA: 'RS6810' };
+
+// RS7637 registry (2026-07-27): a candidate whose oralData.rsCode is already
+// stamped (grandfathered legacy candidates onto RS6341) must keep showing
+// THEIR OWN stamped code on screen, never the generic current default.
+function getEffectiveRsCode(type) {
+  if (candData && candData.oralData && candData.oralData.rsCode) return candData.oralData.rsCode;
+  return REF_LABELS[type] || '';
+}
+
+// Populate the static option-card badges with today's registry defaults
+// (these describe "what choosing this now gives you", not any one
+// candidate's locked-in value, so they always show the current default).
+(function initStaticOptionBadges() {
+  var e360Badge = document.getElementById('e360OptBadge');
+  if (e360Badge) e360Badge.textContent = REF_LABELS.E360;
+  var e360LegalBadge = document.getElementById('e360LegalOptBadge');
+  if (e360LegalBadge) e360LegalBadge.textContent = REF_LABELS.E360_LEGAL;
+})();
 
 var candData = null;
 var objectives = [];
@@ -538,9 +556,28 @@ function updateCpfUI(type) {
   var isLegal = candData && candData.courseType === "legal";
 
   // Update badge
+  // BUGFIX (2026-07-27): no element with id="cpfBadge" exists anywhere in
+  // this file. This used to throw a TypeError every time updateCpfUI() ran,
+  // which - since this function is called synchronously inside the
+  // candidate-data .then() callback - silently aborted the REST of that
+  // callback too (targetLevel/coachingHours/homeworkHours/dateStart were
+  // never being restored for CPF candidates). Null-guarded so the rest of
+  // this function - and the caller - actually runs.
   var badge = document.getElementById("cpfBadge");
-  badge.className = type === 'CAJA' ? 'caja-badge' : type === 'E360_LEGAL' ? 'legal-badge' : 'cpf-badge';
-  badge.textContent = type ? REF_LABELS[type] : 'RS6341';
+  if (badge) {
+    badge.className = type === 'CAJA' ? 'caja-badge' : type === 'E360_LEGAL' ? 'legal-badge' : 'cpf-badge';
+    badge.textContent = type ? getEffectiveRsCode(type) : 'RS7637';
+  }
+
+  // Keep the eligibility warning and cert-prep banner in sync with
+  // whichever RS code is actually in effect for this candidate/type.
+  var effRs = type ? getEffectiveRsCode(type) : REF_LABELS.E360;
+  var warnEl = document.getElementById('cpfWarningRsCode');
+  if (warnEl) warnEl.textContent = effRs;
+  var topicsRsEl = document.getElementById('cpfTopicsRsCode');
+  if (topicsRsEl) topicsRsEl.textContent = effRs;
+  var topicsNoteRsEl = document.getElementById('cpfTopicsNoteRsCode');
+  if (topicsNoteRsEl) topicsNoteRsEl.textContent = effRs;
 
   // Update training title (only if not manually edited by user)
   if (!titleManuallyEdited) {
@@ -566,7 +603,7 @@ function updateCpfUI(type) {
   document.getElementById("standardTopicsSection").style.display = type === 'CAJA' ? 'none' : 'block';
 
   // Update ref label
-  if (type) document.getElementById("refLabel").textContent = REF_LABELS[type];
+  if (type) document.getElementById("refLabel").textContent = getEffectiveRsCode(type);
 
   // Toggle objectives mode
   document.getElementById("objectivesLocked").classList.toggle("show", isCPF);
@@ -651,7 +688,7 @@ function renderLockedObjectives(type) {
             'value="' + (objectiveSuffixes[i] || '') + '" ' +
             'onchange="objectiveSuffixes[' + i + ']=this.value" ' +
             'style="font-style:italic;font-size:12px;color:#475569;border:1px dashed #cbd5e1;border-radius:6px;padding:5px 8px;background:white;">' +
-          '<div class="obj-lock-note">\u{1F512} Base fixe (r\u00e9f\u00e9rentiel ' + REF_LABELS[type] + ') \u2014 le champ ci-dessus personnalise le contexte</div>' +
+          '<div class="obj-lock-note">\u{1F512} Base fixe (r\u00e9f\u00e9rentiel ' + getEffectiveRsCode(type) + ') \u2014 le champ ci-dessus personnalise le contexte</div>' +
         '</div>' +
       '</div>' +
     '</div>';
