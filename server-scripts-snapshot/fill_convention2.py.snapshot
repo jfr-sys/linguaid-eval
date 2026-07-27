@@ -77,6 +77,10 @@ def fill_convention(data):
         '{{SIGN_CITY}}':          'Saint-Cyprien',
         '{{SIGNATORY}}':          data.get('companyName', name),
         '{{TRAINING_TITLE}}':     data.get('trainingTitle', 'Formation en anglais professionnel'),
+        # RS7637 registry (2026-07-27): candidate's own stamped RS code,
+        # threaded in from routes/api.js generate-convention. Fallback only
+        # covers a payload that somehow never got an rsCode field.
+        '{{RS_CODE}}':            data.get('rsCode') or 'RS7637',
     }
     rep_doc(doc, reps)
     token = data.get('signingToken', 'draft')

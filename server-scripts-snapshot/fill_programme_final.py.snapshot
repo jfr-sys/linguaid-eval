@@ -366,6 +366,20 @@ def fill_programme(data, template_path, output_path):
                     if t2.text and t2.text.strip() in ('.', ' ', '. ', ' .', '(RS6341)'):
                         t2.text = ''
 
+    # RS7637 registry (2026-07-27): for CPF candidates the certification
+    # paragraph above was never stripped (that only happens when isCPF is
+    # False) so it still reads the template's static "RS6341". Substitute
+    # the candidate's own stamped rsCode here. Placed after the non-CPF
+    # stripping block on purpose so that block's own literal-'RS6341'
+    # detection keeps matching unmodified text.
+    if isCPF:
+        rs_code = data.get('rsCode') or 'RS7637'
+        if rs_code != 'RS6341':
+            for p2 in root.iter(q('p')):
+                for t2 in p2.iter(q('t')):
+                    if t2.text and 'RS6341' in t2.text:
+                        t2.text = t2.text.replace('RS6341', rs_code)
+
     # Remove 'Production de livrables' bullet when no autonomous work
     homework_val = str(data.get('homeworkHours', '0'))
     if homework_val in ('0', '', '-', 'None', None):
