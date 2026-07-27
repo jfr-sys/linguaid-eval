@@ -24,22 +24,9 @@ function saveCandidates(candidates) {
   fs.writeFileSync(path.join(dataDir, 'candidates.json'), JSON.stringify(candidates, null, 2));
 }
 
-router.get('/preview', (req, res) => {
-  var fs = require('fs');
-  var dataPath = require('path').join(__dirname, '../data/candidates.json');
-  var candidates = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
-  // Find a candidate with oralData (already assessed) for a realistic preview
-  var c = candidates.find(function(x) { return x.oralToken && x.oralData; }) || candidates.find(function(x) { return x.oralToken; });
-  if (c) {
-    res.redirect('/oral/preview/' + c.oralToken);
-  } else {
-    res.send('No candidates found for preview');
-  }
-});
-
-router.get('/preview/:token', (req, res) => {
-  res.sendFile(path.join(__dirname, '../views/oral_v2.html'));
-});
+/* SECURITY_P1 (2026-07-27): /oral/preview routes removed - the public
+   preview redirected to a REAL candidate's live token, exposing their
+   name, email, scores and free-writing via /oral/data (audit D2). */
 
 router.get('/:token', (req, res) => {
   const candidates = getCandidates();

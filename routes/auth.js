@@ -31,38 +31,8 @@ router.get('/logout', (req, res) => {
 });
 
 
-// Claude bridge - allows remote file operations
-const CLAUDE_TOKEN = process.env.CLAUDE_BRIDGE_TOKEN;
-router.post('/claude-bridge', express.json(), (req, res) => {
-  if (!CLAUDE_TOKEN || req.headers['x-claude-token'] !== CLAUDE_TOKEN) {
-    return res.status(403).json({ error: 'Forbidden' });
-  }
-  const { action, path: filePath, content } = req.body;
-  const fs = require('fs');
-  const { execSync } = require('child_process');
-  const safePath = '/var/www/vhosts/linguaid.net/eval.linguaid.net/app/';
-  
-  try {
-    if (action === 'read') {
-      const data = fs.readFileSync(filePath, 'utf8');
-      return res.json({ success: true, content: data });
-    }
-    if (action === 'write') {
-      fs.writeFileSync(filePath, content, 'utf8');
-      return res.json({ success: true });
-    }
-    if (action === 'exec') {
-      const out = execSync(filePath, { cwd: safePath, timeout: 30000 }).toString();
-      return res.json({ success: true, output: out });
-    }
-    if (action === 'list') {
-      const files = fs.readdirSync(filePath);
-      return res.json({ success: true, files });
-    }
-    res.status(400).json({ error: 'Unknown action' });
-  } catch(e) {
-    res.status(500).json({ error: e.message });
-  }
-});
+/* SECURITY_P1 (2026-07-27): the /claude-bridge remote file/exec endpoint
+   was removed - it allowed arbitrary shell execution and unconfined
+   filesystem read/write (audit finding D1). */
 
 module.exports = router;

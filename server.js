@@ -12,7 +12,8 @@ const PORT = process.env.PORT || 3001;
 // Middleware
 app.use(express.json({ limit: "20mb" }));
 app.use(express.urlencoded({ extended: true, limit: "20mb" }));
-app.use(express.static(path.join(__dirname, 'views')));
+/* SECURITY_P1 (2026-07-27): views static mount moved below the session
+   middleware (audit D4) - see guard there. /uploads unchanged. */
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.use(session({
@@ -21,6 +22,22 @@ app.use(session({
   saveUninitialized: false,
   cookie: { secure: false, maxAge: 24 * 60 * 60 * 1000 }
 }));
+
+/* SECURITY_P1 (2026-07-27): views static previously sat ABOVE the session
+   middleware, so every admin HTML shell (candidates.html, suivi.html, ...)
+   was fetchable with no login (audit D4). It now sits after session (so
+   req.session exists) with a guard refusing anonymous direct *.html
+   requests. Candidate-facing pages are all delivered via their token
+   routes' sendFile - never by direct .html fetch - and assets (png/css/js,
+   incl. the email signature images) remain public, BEFORE the auth
+   redirect middleware below, so email clients still load them. */
+app.use((req, res, next) => {
+  if (/\.html$/i.test(req.path) && !(req.session && req.session.user)) {
+    return res.redirect('/login');
+  }
+  next();
+});
+app.use(express.static(path.join(__dirname, 'views')));
 
 // Ensure data directory exists
 const dataDir = path.join(__dirname, 'data');

@@ -2650,6 +2650,9 @@ router.post('/calendly-webhook', express.json(), function(req, res) {
 
 router.get('/tracker-data', function(req, res) {
   try {
+    /* SECURITY_P1 (2026-07-27): bulk candidate data - session required
+       (suivi.html is a session-authenticated page; audit D4). */
+    if (!crRequireSession(req, res)) return;
     var candidates = getCandidates();
     var rows = candidates.filter(function(c) {
       var od = c.oralData || {};
@@ -3113,6 +3116,9 @@ router.get('/download-report-pdf-fr/:id', function(req, res) {
 // ── Company registry: list canonical company names ──────────────────────────
 router.get('/companies', function(req, res) {
   try {
+    /* SECURITY_P1 (2026-07-27): client-company list - session required
+       (all consumer pages are session-authenticated; audit D4). */
+    if (!crRequireSession(req, res)) return;
     res.json({ companies: listCompanies() });
   } catch (err) {
     console.error('companies error:', err);
