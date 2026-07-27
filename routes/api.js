@@ -905,6 +905,20 @@ router.post('/generate-convention/:id', function(req, res) {
     rsCode: getRsCode(od.cpfType, od.rsCode) || '',
     trainingTitle: od.trainingTitle || (isCPF ? 'Communiquer en anglais professionnel - English 360 - Niveau B2' : (c.courseType === 'legal' ? 'Formation en Anglais Juridique' : 'Formation en Anglais Professionnel'))
   };
+
+  /* CONVENTION_MATCH_CHECK (2026-07-27): convention generation IS the send
+     (signing-link email goes out in this same call by default), so gate
+     generation itself. Blocks a convention that would not reproduce the
+     accepted proposal. */
+  var cohConvMatch = coherence.checkConventionMatch(c, {
+    isCPF: isCPF, cpfType: od.cpfType || '', rsCode: data.rsCode,
+    totalHours: data.totalHours, coachingHours: data.coachingHours,
+    homeworkHours: data.homeworkHours, targetLevel: data.targetLevel,
+    trainingTitle: data.trainingTitle, dateStart: data.dateStart,
+    dateEnd: data.dateEnd, price: data.price
+  });
+  if (!cohConvMatch.ok) return res.status(400).json({ error: cohConvMatch.errors.join(' ') });
+
   execFile('python3', ['/home/debian/fill_convention2.py', JSON.stringify(data)], { timeout: 90000 }, function(err, stdout, stderr) {
     if (err) { console.error('fill_convention2 error:', stderr, stdout); return res.status(500).json({ error: 'Convention generation failed: ' + stderr }); }
     var result;

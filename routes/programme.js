@@ -276,6 +276,7 @@ router.get('/api/generate-programme/:id', async function(req, res) {
           objectives: payload.objectives, totalHours: payload.totalHours,
           coachingHours: payload.coachingHours, homeworkHours: payload.homeworkHours,
           targetLevel: payload.targetLevel, trainingTitle: payload.trainingTitle,
+          dateStart: payload.dateStart, dateEnd: payload.dateEnd,
           generatedAt: new Date().toISOString()
         };
         saveCandidates(cands);
@@ -573,7 +574,9 @@ router.post('/api/generate-proposition/:id', async function(req, res) {
           isCPF: propData.isCPF, cpfType: propData.cpfType, rsCode: propData.rsCode,
           objectives: propData.objectives, totalHours: propData.totalHours,
           coachingHours: propData.coachingHours, homeworkHours: propData.homeworkHours,
-          targetLevel: propData.targetLevel,
+          targetLevel: propData.targetLevel, trainingTitle: od.trainingTitle || '',
+          dateStart: od.dateStart || '', dateEnd: od.dateEnd || '',
+          price: propData.price,
           generatedAt: new Date().toISOString()
         };
         saveCandidates(cands2);
