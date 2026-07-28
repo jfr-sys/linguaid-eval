@@ -710,6 +710,13 @@
         circle.innerHTML = (i + 1).toString();
       }
     }
+    // PROGRESS_BAR_FIX (2026-07-28): reset steps 5-10 to pending state
+    // before applying conditional logic, so unmatched conditions don't
+    // leave stale classes (e.g. 'active') from prior render.
+    [5, 6, 7, 8, 9, 10].forEach(function(i) {
+      var step = document.getElementById('pstep' + i);
+      if (step) step.classList.remove('active', 'done', 'na');
+    });
     var s5 = document.getElementById('pstep5');
     var c5 = document.getElementById('pc5');
     if (s5 && isCadre) { s5.classList.remove('pending','active','done'); s5.classList.add('na'); c5.innerHTML = '—'; }
