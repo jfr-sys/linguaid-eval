@@ -432,6 +432,7 @@
         document.getElementById('download-signed').textContent = '⬇ Télécharger votre attestation signée';
       }
       if (isStandalone && data.finUrl) {
+        document.getElementById('download-signed').style.display = 'none';
         var finP = document.createElement('p');
         finP.style.marginTop = '14px';
         finP.innerHTML = '<a href="' + data.finUrl + '" style="display:inline-block;background:#2E7D32;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;font-size:0.95rem">⬇ Télécharger votre attestation de fin de formation</a>';
