@@ -1207,7 +1207,7 @@ router.post('/resend-invite/:id', function(req, res) {
   var candidates = getCandidates();
   var c = candidates.find(function(x) { return x.id === req.params.id; });
   if (!c) return res.status(404).json({ error: 'Not found' });
-  if (c.status !== 'invited') return res.status(400).json({ error: 'Candidate is not in invited status' });
+  // Resend allowed at any status (candidate may have lost the link mid-pipeline)
 
   var typeformUrl = 'https://form.typeform.com/to/XBcM6I1W';
   var nodemailer = require('nodemailer');
