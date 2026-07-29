@@ -46,7 +46,8 @@
   <div class="card">
     <div class="info-box">
       <strong>Formation :</strong> Former de Manière Innovante en Langues Vivantes<br>
-      <strong>Module :</strong> Travaux personnels — formation certifiante (travaux personnels uniquement)
+      <strong>Module :</strong> Travaux personnels — formation certifiante (travaux personnels uniquement)<br>
+      <span style="font-size:0.82rem;color:#555">Après signature du stagiaire, l'attestation de fin de formation (art. L.6353-1) est générée automatiquement.</span>
     </div>
     <h2>📋 Informations du stagiaire</h2>
     <div class="field">
@@ -82,6 +83,11 @@
         <label>Durée du module (heures) *</label>
         <input id="durationHours" type="number" min="0.5" max="200" step="0.5" value="5.5" />
         <p class="hint">Heures de travaux personnels réalisées</p>
+      </div>
+      <div class="field">
+        <label>Durée totale de la formation (heures) *</label>
+        <input id="durationTotal" type="number" min="1" max="200" step="0.5" value="18" />
+        <p class="hint">Pour l'attestation de fin de formation</p>
       </div>
     </div>
     <button class="btn" id="btnGenerate" onclick="generate()">Générer</button>
@@ -130,7 +136,8 @@ async function generate() {
         subtitle: '',
         total: null,
         moduleName: 'Travaux personnels',
-        durationHours: parseInt(document.getElementById('durationHours').value) || null,
+        durationHours: parseFloat(document.getElementById('durationHours').value) || null,
+        durationTotal: parseFloat(document.getElementById('durationTotal').value) || 18,
       })
     });
     const data = await r.json();

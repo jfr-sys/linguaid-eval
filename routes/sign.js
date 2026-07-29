@@ -335,6 +335,24 @@ router.post('/standalone/:token/submit', express.json({ limit: '5mb' }), functio
     store[token].typedName = typedName;
     store[token].signedPdfPath = signedPdf;
     store[token].sigImg = signatureImg;
+
+    // Option B: generate the official Attestation de fin de formation (art. L.6353-1),
+    // issued by Linguaid, covering the full training. Non-blocking if it fails.
+    try {
+      var finPdf = unsignedPdf.replace('_standalone.pdf', '_fin_formation.pdf');
+      var finJsonPath = unsignedPdf.replace('_standalone.pdf', '_fin_data.json');
+      fs.writeFileSync(finJsonPath, JSON.stringify({
+        name: rec.name, company: rec.company || '', jobtitle: rec.jobtitle || '',
+        trainingTitle: rec.trainingTitle,
+        dateStart: rec.dateStart, dateEnd: rec.dateEnd,
+        durationTotal: rec.durationTotal || 18,
+        signedAt: timestamp,
+        pdfPath: finPdf,
+      }));
+      require('child_process').execFileSync('python3', ['/home/debian/generate_attestation_fin.py', finJsonPath]);
+      store[token].finPdfPath = finPdf;
+    } catch(e2) { console.error('attestation fin generation error:', e2.message); }
+
     saveStandaloneStore(store);
 
     var nodemailer = require('nodemailer');
@@ -343,11 +361,25 @@ router.post('/standalone/:token/submit', express.json({ limit: '5mb' }), functio
       from: 'noreply@linguaid.net', to: 'jfr@linguaid.net, rma@linguaid.net',
       subject: '✅ Attestation signée — ' + rec.name,
       text: 'Attestation standalone signée par ' + typedName + '\nDate : ' + new Date(timestamp).toLocaleString('fr-FR') + '\nIP : ' + signerIp,
-      attachments: [{ filename: 'attestation_signee_' + rec.name.replace(/\s+/g,'_') + '.pdf', path: signedPdf }],
+      attachments: (function(){
+        var atts = [{ filename: 'attestation_signee_' + rec.name.replace(/\s+/g,'_') + '.pdf', path: signedPdf }];
+        if (store[token].finPdfPath) atts.push({ filename: 'attestation_fin_formation_' + rec.name.replace(/\s+/g,'_') + '.pdf', path: store[token].finPdfPath });
+        return atts;
+      })(),
     }).catch(function(e) { console.error('Email error:', e); });
 
-    res.json({ success: true });
+    res.json({ success: true, finUrl: store[token].finPdfPath ? ('/sign/standalone/' + token + '/attestation-fin') : null });
   });
+});
+
+router.get('/standalone/:token/attestation-fin', function(req, res) {
+  var store = getStandaloneStore();
+  var rec = store[req.params.token];
+  if (!rec || !rec.finPdfPath || !fs.existsSync(rec.finPdfPath)) return res.status(404).send('Not found');
+  var name = (rec.name || 'attestation').replace(/\s+/g, '_');
+  res.setHeader('Content-Disposition', 'attachment; filename="attestation_fin_formation_' + name + '.pdf"');
+  res.setHeader('Content-Type', 'application/pdf');
+  res.sendFile(rec.finPdfPath);
 });
 
 router.get('/standalone/:token/signed-pdf', function(req, res) {

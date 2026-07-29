@@ -1,0 +1,170 @@
+#!/usr/bin/env python3
+# Attestation de fin de formation (Art. L.6353-1 du Code du travail)
+# Generated automatically after the stagiaire signs the attestation de réalisation.
+import json, sys, os
+from datetime import datetime
+from fpdf import FPDF
+
+data = json.load(open(sys.argv[1]))
+
+name = str(data['name'] or '')
+company = str(data.get('company', '') or '')
+jobtitle = str(data.get('jobtitle', '') or '')
+training_title = str(data.get('trainingTitle', '') or '')
+date_start = str(data.get('dateStart', '') or '')
+date_end = str(data.get('dateEnd', '') or '')
+duration_total = data.get('durationTotal', 18)
+pdf_path = data['pdfPath']
+
+def fmt_date_fr(d):
+    if not d: return ''
+    try:
+        return datetime.fromisoformat(d).strftime('%d/%m/%Y')
+    except Exception:
+        return d
+
+try:
+    issued = datetime.fromisoformat(str(data.get('signedAt', '')).replace('Z', ''))
+except Exception:
+    issued = datetime.now()
+issued_str = issued.strftime('%d/%m/%Y')
+
+header_img = '/home/debian/linguaid_logo_header.png'
+languexpert_img = '/home/debian/languexpert_logo.png'
+stamp_img = '/home/debian/linguaid_stamp.jpeg'
+
+def find_font(fname):
+    import subprocess
+    r = subprocess.run(['find', '/usr/share/fonts', '-name', f'*{fname}*', '-type', 'f'],
+                       capture_output=True, text=True)
+    lines = [l for l in r.stdout.strip().split('\n') if l and '.ttf' in l.lower()]
+    return lines[0] if lines else None
+
+font_regular = find_font('DejaVuSans.ttf') or find_font('DejaVuSans-Regular')
+font_bold = find_font('DejaVuSans-Bold')
+
+class PDF(FPDF):
+    def header(self):
+        if os.path.exists(header_img):
+            self.image(header_img, x=10, y=6, w=52)
+        if os.path.exists(languexpert_img):
+            self.image(languexpert_img, x=138, y=8, w=62)
+        self.set_y(30)
+        self.ln(4)
+
+    def footer(self):
+        self.set_y(-28)
+        self.set_draw_color(31, 78, 121)
+        self.set_line_width(0.3)
+        self.line(10, self.get_y(), 200, self.get_y())
+        self.ln(3)
+        self.set_font('DejaVu', '', 7.5)
+        self.set_text_color(100, 100, 100)
+        self.cell(0, 4, 'Linguaid France SAS  |  2 rue Hergé, 66750 Saint Cyprien  |  T: 04 68 88 49 91  |  E: certification@linguaid.net', new_x='LMARGIN', new_y='NEXT', align='C')
+        self.cell(0, 4, 'RCS Perpignan B 539 682 187  |  NAF : 8559A  |  O.F. déclaré sous le numéro : 91 66 01 620 66', new_x='LMARGIN', new_y='NEXT', align='C')
+        self.cell(0, 4, "Cet enregistrement ne vaut pas agrément de l'État", new_x='LMARGIN', new_y='NEXT', align='C')
+
+pdf = PDF()
+pdf.set_margins(15, 15, 15)
+if font_regular:
+    pdf.add_font('DejaVu', '', font_regular)
+if font_bold:
+    pdf.add_font('DejaVu', 'B', font_bold)
+F = 'DejaVu' if font_regular else 'Helvetica'
+
+pdf.add_page()
+pdf.ln(2)
+
+# Title
+pdf.set_font(F, 'B', 18)
+pdf.set_text_color(31, 78, 121)
+pdf.cell(0, 12, 'ATTESTATION DE FIN DE FORMATION', new_x='LMARGIN', new_y='NEXT', align='C')
+pdf.set_font(F, '', 10)
+pdf.set_text_color(100, 100, 100)
+pdf.cell(0, 6, 'Délivrée en application de l\u2019article L.6353-1 du Code du travail', new_x='LMARGIN', new_y='NEXT', align='C')
+pdf.ln(4)
+
+# Intro
+pdf.set_font(F, '', 12)
+pdf.set_text_color(40, 40, 40)
+intro = (
+    "Je, soussigné(e) Catherine Frimond, en qualité de responsable suivi de l'organisme "
+    "de formation LINGUAID France, enregistré sous le numéro d'organisme 91 66 01 620 66 "
+    "auprès de la DREETS de Languedoc-Roussillon, atteste que :"
+)
+pdf.multi_cell(0, 7, intro, new_x='LMARGIN', new_y='NEXT')
+pdf.ln(4)
+
+# Stagiaire
+pdf.set_font(F, 'B', 15)
+pdf.set_text_color(31, 78, 121)
+pdf.cell(0, 10, name, new_x='LMARGIN', new_y='NEXT', align='C')
+if jobtitle or company:
+    pdf.set_font(F, '', 11)
+    pdf.set_text_color(80, 80, 80)
+    line2 = ' – '.join(filter(None, [jobtitle, company]))
+    pdf.cell(0, 6, line2, new_x='LMARGIN', new_y='NEXT', align='C')
+pdf.ln(3)
+
+pdf.set_font(F, '', 12)
+pdf.set_text_color(40, 40, 40)
+pdf.cell(0, 7, "a suivi l'action de formation suivante :", new_x='LMARGIN', new_y='NEXT', align='C')
+pdf.ln(3)
+pdf.set_font(F, 'B', 13)
+pdf.set_text_color(31, 78, 121)
+pdf.cell(0, 8, training_title, new_x='LMARGIN', new_y='NEXT', align='C')
+pdf.ln(3)
+
+# Details block
+pdf.set_font(F, '', 11)
+pdf.set_text_color(40, 40, 40)
+rows = [
+    ("Nature de l'action", "Action de formation (art. L.6313-1 du Code du travail)"),
+    ("Période", f"du {fmt_date_fr(date_start)} au {fmt_date_fr(date_end)}"),
+    ("Durée totale", f"{duration_total} heures"),
+    ("Objectifs", "Intégrer des innovations pédagogiques et technologiques dans sa pratique de "
+                  "formateur en langues (ingénierie, animation, évaluation) afin de rendre la "
+                  "formation plus engageante pour les apprenants."),
+    ("Résultats de l'évaluation des acquis",
+     "Les acquis de la formation ont fait l'objet d'une évaluation formative continue tout au "
+     "long de la formation. Le/la stagiaire a atteint les objectifs pédagogiques fixés."),
+]
+for label, value in rows:
+    pdf.set_font(F, 'B', 10.5)
+    pdf.set_text_color(31, 78, 121)
+    pdf.multi_cell(0, 6, label, new_x='LMARGIN', new_y='NEXT')
+    pdf.set_font(F, '', 10.5)
+    pdf.set_text_color(40, 40, 40)
+    pdf.multi_cell(0, 5.5, value, new_x='LMARGIN', new_y='NEXT')
+    pdf.ln(1.5)
+
+pdf.ln(2)
+pdf.set_draw_color(200, 200, 200)
+pdf.set_line_width(0.3)
+pdf.line(15, pdf.get_y(), 195, pdf.get_y())
+pdf.ln(4)
+
+# Signature block — issuer only (this document is delivered by the OF, not co-signed)
+sig_y = pdf.get_y()
+pdf.set_xy(15, sig_y)
+pdf.set_font(F, '', 10)
+pdf.set_text_color(60, 60, 60)
+pdf.cell(85, 5, f'Fait à Saint-Cyprien, le {issued_str}', new_x='LMARGIN', new_y='NEXT')
+pdf.set_x(15)
+pdf.cell(85, 5, 'Pour Linguaid France SAS', new_x='LMARGIN', new_y='NEXT')
+pdf.set_x(15)
+pdf.cell(85, 5, 'Catherine Frimond-Laubiès', new_x='LMARGIN', new_y='NEXT')
+pdf.set_x(15)
+pdf.cell(85, 5, 'Responsable suivi pédagogique', new_x='LMARGIN', new_y='NEXT')
+if os.path.exists(stamp_img):
+    pdf.image(stamp_img, x=15, y=sig_y + 24, w=50)
+pdf.set_draw_color(120, 120, 120)
+pdf.set_line_width(0.3)
+pdf.line(15, sig_y + 58, 95, sig_y + 58)
+pdf.set_xy(15, sig_y + 60)
+pdf.set_font(F, '', 8)
+pdf.set_text_color(140, 140, 140)
+pdf.cell(80, 4, 'Signature et cachet')
+
+pdf.output(pdf_path)
+print('OK: ' + pdf_path)

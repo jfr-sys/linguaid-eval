@@ -2574,6 +2574,7 @@ router.post('/generate-standalone-attestation', async function(req, res) {
     var score = (req.body.score !== null && req.body.score !== undefined && req.body.score !== '') ? parseInt(req.body.score) : null;
     var moduleName = (req.body.moduleName || 'Travaux personnels - Yes You Ken English').trim();
     var durationHours = req.body.durationHours ? parseFloat(req.body.durationHours) : null;
+    var durationTotal = req.body.durationTotal ? parseFloat(req.body.durationTotal) : 18;
     var subtitle = (req.body.subtitle !== undefined) ? (req.body.subtitle || '') : null;
 
     if (!name || !email || !trainingTitle || !dateStart || !dateEnd) {
@@ -2626,6 +2627,7 @@ router.post('/generate-standalone-attestation', async function(req, res) {
       name: name, email: email, company: company, jobtitle: jobtitle,
       trainingTitle: trainingTitle, moduleName: moduleName,
       dateStart: dateStart, dateEnd: dateEnd, score: score,
+      durationTotal: durationTotal,
       completedAt: completedAt,
       attestationPath: attestPdf,
       createdAt: new Date().toISOString(),
