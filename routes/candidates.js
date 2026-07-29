@@ -47,6 +47,10 @@ router.get('/new-renewal', (req, res) => {
   res.sendFile(path.join(__dirname, '../views/new_renewal.html'));
 });
 
+router.get('/new-renewal-caja', (req, res) => {
+  res.sendFile(path.join(__dirname, '../views/new_renewal_caja.html'));
+});
+
 router.get('/:id', (req, res) => {
   res.sendFile(path.join(__dirname, '../views/candidate.html'));
 });

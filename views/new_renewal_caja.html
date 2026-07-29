@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Linguaid — Renouvellement Avocat CAJA</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f0f4f8; min-height: 100vh; }
+  .nav { background: #1F4E79; color: white; padding: 0 2rem; height: 56px; display: flex; align-items: center; justify-content: space-between; }
+  .nav a { color: white; text-decoration: none; font-size: 15px; font-weight: 600; }
+  .nav-right a { color: rgba(255,255,255,0.8); font-size: 13px; }
+  .container { max-width: 640px; margin: 0 auto; padding: 2rem; }
+  .back { font-size: 13px; color: #666; text-decoration: none; display: inline-block; margin-bottom: 1.5rem; }
+  .card { background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 1.5rem; }
+  h1 { font-size: 22px; font-weight: 700; color: #1F4E79; margin-bottom: 0.5rem; }
+  .subtitle { font-size: 14px; color: #666; margin-bottom: 1.5rem; }
+  .preset-box { background: #f5f3ff; border: 1px solid #ddd6fe; border-radius: 8px; padding: 0.9rem 1.1rem; font-size: 12.5px; color: #5b21b6; margin-bottom: 1.5rem; line-height: 1.6; }
+  .preset-box b { color: #4c1d95; }
+  label { font-size: 12px; color: #666; display: block; margin-bottom: 4px; margin-top: 12px; }
+  input, select { width: 100%; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px; font-family: inherit; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .btn { display: inline-block; padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; border: none; font-family: inherit; text-decoration: none; }
+  .btn-primary { background: #7c3aed; color: white; }
+  .btn-primary:hover { opacity: 0.88; }
+  .btn-primary:disabled { opacity: 0.5; cursor: default; }
+  .btn-secondary { background: #f1f5f9; color: #334155; }
+  .hint { font-size: 11px; color: #94a3b8; margin-top: 4px; }
+  .match-note { font-size: 12px; color: #065f46; background: #d1fae5; border-radius: 6px; padding: 6px 10px; margin-top: 6px; display: none; }
+  .step-status { font-size: 13px; margin-top: 1rem; padding: 10px 12px; border-radius: 6px; display: none; }
+  .step-status.loading { background: #eff6ff; color: #1e40af; display: block; }
+  .step-status.error { background: #fee2e2; color: #991b1b; display: block; }
+  .step-status.success { background: #d1fae5; color: #065f46; display: block; }
+</style>
+</head>
+<body>
+<nav class="nav">
+  <a href="/candidates">English Evaluation System</a>
+  <div class="nav-right"><a href="/logout">Sign out</a></div>
+</nav>
+<div class="container">
+  <a href="/candidates" class="back">← Retour aux candidats</a>
+
+  <div class="card">
+    <h1>Renouvellement Avocat — CAJA</h1>
+    <p class="subtitle">Pour un avocat ayant terminé son E360 Anglais Juridique (20h) et repartant directement sur CAJA.</p>
+
+    <div class="preset-box">
+      <b>Préréglé automatiquement :</b> CAJA-20H · 20h (10h coaching + 10h TP) · 2 150€ · CPF · référentiel RS6810 · 6 objectifs pédagogiques verrouillés (contenu générique standard, sans personnalisation IA) · programme + proposition générés automatiquement, prêts à l'envoi.
+    </div>
+
+    <label>Nom complet *</label>
+    <input id="f_name" type="text" placeholder="Prénom NOM">
+
+    <label>Email *</label>
+    <input id="f_email" type="email" placeholder="email@cabinet.fr">
+    <div class="match-note" id="matchNote"></div>
+
+    <div class="two-col">
+      <div>
+        <label>Téléphone</label>
+        <input id="f_phone" type="text">
+      </div>
+      <div>
+        <label>Cabinet / Entreprise</label>
+        <input id="f_company" type="text">
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div>
+        <label>Date début *</label>
+        <input id="f_dateStart" type="date">
+      </div>
+      <div>
+        <label>Date fin *</label>
+        <input id="f_dateEnd" type="date">
+      </div>
+    </div>
+    <div class="hint">Dates de la nouvelle formation CAJA (pas celles de l'E360 précédent).</div>
+
+    <div style="margin-top:1.5rem;display:flex;gap:1rem">
+      <button class="btn btn-primary" id="saveBtn" onclick="createAndGenerate()">Créer et générer la proposition →</button>
+      <a href="/candidates" class="btn btn-secondary">Annuler</a>
+    </div>
+    <div class="step-status" id="stepStatus"></div>
+  </div>
+</div>
+
+<script>
+var matchedId = null;
+
+async function checkExisting() {
+  var email = document.getElementById('f_email').value.trim().toLowerCase();
+  var note = document.getElementById('matchNote');
+  matchedId = null;
+  note.style.display = 'none';
+  if (!email) return;
+  try {
+    var resp = await fetch('/candidates/api/list');
+    var list = await resp.json();
+    var match = list.find(function(c) { return c.email && c.email.toLowerCase() === email; });
+    if (match) {
+      matchedId = match.id;
+      if (!document.getElementById('f_name').value) document.getElementById('f_name').value = match.name || '';
+      if (!document.getElementById('f_company').value) document.getElementById('f_company').value = match.company || '';
+      if (!document.getElementById('f_phone').value) document.getElementById('f_phone').value = match.phone || '';
+      note.textContent = '✓ Déjà dans le système (' + (match.name || email) + ') — coordonnées reprises.';
+      note.style.display = 'block';
+    }
+  } catch (e) { /* silent — autofill is a convenience, not required */ }
+}
+
+function setStatus(cls, text) {
+  var el = document.getElementById('stepStatus');
+  el.className = 'step-status ' + cls;
+  el.textContent = text;
+}
+
+async function createAndGenerate() {
+  var name = document.getElementById('f_name').value.trim();
+  var email = document.getElementById('f_email').value.trim();
+  var dateStart = document.getElementById('f_dateStart').value;
+  var dateEnd = document.getElementById('f_dateEnd').value;
+  if (!name || !email) { setStatus('error', 'Nom et email obligatoires.'); return; }
+  if (!dateStart || !dateEnd) { setStatus('error', 'Date début et date fin obligatoires.'); return; }
+
+  var btn = document.getElementById('saveBtn');
+  btn.disabled = true;
+
+  var payload = {
+    name: name,
+    email: email,
+    phone: document.getElementById('f_phone').value.trim(),
+    company: document.getElementById('f_company').value.trim(),
+    dateStart: dateStart,
+    dateEnd: dateEnd,
+    renewedFromId: matchedId
+  };
+
+  try {
+    setStatus('loading', 'Création du candidat…');
+    var resp = await fetch('/api/new-renewal-caja', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    var data = await resp.json();
+    if (!resp.ok || !data.success) throw new Error(data.error || 'Erreur de création');
+    var id = data.id;
+
+    setStatus('loading', 'Génération du programme (référentiel CAJA)…');
+    var progResp = await fetch('/api/generate-programme/' + id);
+    if (!progResp.ok) {
+      var progErr = await progResp.json().catch(function(){ return {}; });
+      throw new Error(progErr.error || 'Erreur génération programme');
+    }
+
+    setStatus('loading', 'Génération de la proposition…');
+    var propResp = await fetch('/api/generate-proposition/' + id, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ recipientType: 'learner', price: 2150 })
+    });
+    var propData = await propResp.json();
+    if (!propResp.ok || !propData.success) throw new Error(propData.error || 'Erreur génération proposition');
+
+    setStatus('success', '✓ Prêt — redirection vers la fiche candidat…');
+    window.location.href = '/candidates/' + id;
+  } catch (e) {
+    setStatus('error', 'Erreur : ' + e.message);
+    btn.disabled = false;
+  }
+}
+
+document.getElementById('f_email').addEventListener('blur', checkExisting);
+</script>
+</body>
+</html>

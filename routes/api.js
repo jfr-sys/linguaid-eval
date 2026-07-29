@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { canonicalCompany, listCompanies } = require('../lib/companies');
 const { isContratCadre } = require('../lib/contratCadre');
-const { getRsCode } = require('../config/catalogue');
+const { getRsCode, getAction } = require('../config/catalogue');
 const coherence = require('../lib/coherence'); /* coherence-gate */
 
 // Helper: 5-skill CEFR average
@@ -1290,6 +1290,84 @@ router.post('/parse-eocr', async function(req, res) {
   } catch(e) {
     console.error('parse-eocr error:', e);
     res.status(500).json({ error: e.message });
+  }
+});
+
+// Quick renewal: lawyer finishing E360_LEGAL going straight into CAJA-20H
+// (10h coaching + 10h TP, 2150 euros, CPF, RS6810 referential). Standard
+// generic content: uses the locked CAJA referential objectives untouched,
+// no AI personalisation - this is the fast path for a very common case.
+router.post('/new-renewal-caja', function(req, res) {
+  try {
+    var d = req.body || {};
+    if (!d.name || !d.email) return res.status(400).json({ error: 'Name and email required' });
+    if (!d.dateStart || !d.dateEnd) return res.status(400).json({ error: 'dateStart and dateEnd required' });
+
+    var action = getAction('CAJA', 'CAJA-20H');
+    if (!action) return res.status(500).json({ error: 'CAJA-20H action missing from catalogue' });
+
+    var CAJA_OBJECTIVES = [
+      "Se pr\u00e9senter dans un cadre professionnel et \u00e9tablir un bon contact avec un client, un coll\u00e8gue ou un confr\u00e8re",
+      "Mener un premier entretien pour comprendre la situation, poser les bonnes questions et identifier les attentes",
+      "Expliquer une probl\u00e9matique juridique, proposer des options et aider \u00e0 la prise de d\u00e9cision",
+      "R\u00e9diger des documents professionnels adapt\u00e9s au contexte : emails, lettres, notes d\u2019avocat",
+      "Corriger ou r\u00e9diger des clauses contractuelles claires, pr\u00e9cises et structur\u00e9es",
+      "Conduire une n\u00e9gociation, formuler ou r\u00e9pondre \u00e0 des propositions, et d\u00e9fendre les int\u00e9r\u00eats de son client"
+    ];
+
+    var candidates = JSON.parse(fs.readFileSync(path.join(dataDir, 'candidates.json'), 'utf8'));
+    var now = new Date().toISOString();
+    var newId = require('crypto').randomBytes(6).toString('hex');
+    var company = canonicalCompany(d.company || '');
+
+    var candidate = {
+      id: newId,
+      name: d.name,
+      email: d.email,
+      phone: d.phone || '',
+      company: company,
+      dept: company,
+      jobtitle: d.jobtitle || '',
+      courseType: 'legal',
+      testdate: now.slice(0, 10),
+      scores: { total: 0, max: 0 },
+      freewriting: { q39: '', q40: '', q41: '' },
+      goals: CAJA_OBJECTIVES.slice(),
+      avail: {},
+      otherNeeds: '',
+      status: 'oral_done',
+      isRenewal: true,
+      renewedFromId: d.renewedFromId || null,
+      oralToken: require('crypto').randomBytes(8).toString('hex'),
+      oralData: {
+        evaluator: 'Renewal',
+        sessionDate: now.slice(0, 10),
+        isCPF: true,
+        cpfType: 'CAJA',
+        edofActionId: action.id,
+        totalHours: action.totalHours,
+        coachingHours: action.coachingHours,
+        homeworkHours: action.tpHours,
+        edofPrice: action.price,
+        edofMCFLink: action.link,
+        rsCode: getRsCode('CAJA'),
+        objectives: CAJA_OBJECTIVES.slice(),
+        dateStart: d.dateStart,
+        dateEnd: d.dateEnd,
+        additionalNotes: 'Renouvellement avocat E360 juridique -> CAJA - contenu standard'
+      },
+      reportSummary: null,
+      finalReport: null,
+      conventionData: { price: String(action.price), civility: 'Ma\u00eetre' },
+      createdAt: now
+    };
+
+    candidates.push(candidate);
+    saveCandidates(candidates);
+    res.json({ success: true, id: newId });
+  } catch (err) {
+    console.error('new-renewal-caja error:', err);
+    res.status(500).json({ error: err.message });
   }
 });
 
