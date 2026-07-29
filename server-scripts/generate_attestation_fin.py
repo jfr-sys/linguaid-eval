@@ -127,7 +127,9 @@ rows = [
                   "formation plus engageante pour les apprenants."),
     ("Résultats de l'évaluation des acquis",
      "Les acquis de la formation ont fait l'objet d'une évaluation formative continue tout au "
-     "long de la formation. Le/la stagiaire a atteint les objectifs pédagogiques fixés."),
+     "long de la formation, puis d'une évaluation finale des compétences dans le cadre des "
+     "épreuves de la certification « Former de manière innovante en langues vivantes » "
+     "(dossier professionnel et entretien avec un jury)."),
 ]
 for label, value in rows:
     pdf.set_font(F, 'B', 10.5)
