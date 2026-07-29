@@ -164,13 +164,6 @@ pdf.set_x(15)
 pdf.cell(85, 5, 'Président', new_x='LMARGIN', new_y='NEXT')
 if os.path.exists(stamp_img):
     pdf.image(stamp_img, x=15, y=sig_y + 22, w=48)
-pdf.set_draw_color(120, 120, 120)
-pdf.set_line_width(0.3)
-pdf.line(15, sig_y + 52, 95, sig_y + 52)
-pdf.set_xy(15, sig_y + 54)
-pdf.set_font(F, '', 8)
-pdf.set_text_color(140, 140, 140)
-pdf.cell(80, 4, 'Signature et cachet')
 
 pdf.output(pdf_path)
 print('OK: ' + pdf_path)
