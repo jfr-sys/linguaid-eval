@@ -78,7 +78,7 @@ pdf.ln(2)
 # Title
 pdf.set_font(F, 'B', 18)
 pdf.set_text_color(31, 78, 121)
-pdf.cell(0, 12, 'ATTESTATION DE FIN DE FORMATION', new_x='LMARGIN', new_y='NEXT', align='C')
+pdf.cell(0, 10, 'ATTESTATION DE FIN DE FORMATION', new_x='LMARGIN', new_y='NEXT', align='C')
 pdf.set_font(F, '', 10)
 pdf.set_text_color(100, 100, 100)
 pdf.cell(0, 6, 'Délivrée en application de l\u2019article L.6353-1 du Code du travail', new_x='LMARGIN', new_y='NEXT', align='C')
@@ -92,13 +92,13 @@ intro = (
     "de formation LINGUAID France, enregistré sous le numéro d'organisme 91 66 01 620 66 "
     "auprès de la DREETS de Languedoc-Roussillon, atteste que :"
 )
-pdf.multi_cell(0, 7, intro, new_x='LMARGIN', new_y='NEXT')
-pdf.ln(4)
+pdf.multi_cell(0, 6.5, intro, new_x='LMARGIN', new_y='NEXT')
+pdf.ln(3)
 
 # Stagiaire
 pdf.set_font(F, 'B', 15)
 pdf.set_text_color(31, 78, 121)
-pdf.cell(0, 10, name, new_x='LMARGIN', new_y='NEXT', align='C')
+pdf.cell(0, 8, name, new_x='LMARGIN', new_y='NEXT', align='C')
 if jobtitle or company:
     pdf.set_font(F, '', 11)
     pdf.set_text_color(80, 80, 80)
@@ -137,8 +137,8 @@ for label, value in rows:
     pdf.multi_cell(0, 6, label, new_x='LMARGIN', new_y='NEXT')
     pdf.set_font(F, '', 10.5)
     pdf.set_text_color(40, 40, 40)
-    pdf.multi_cell(0, 5.5, value, new_x='LMARGIN', new_y='NEXT')
-    pdf.ln(1.5)
+    pdf.multi_cell(0, 5.2, value, new_x='LMARGIN', new_y='NEXT')
+    pdf.ln(1.2)
 
 pdf.ln(2)
 pdf.set_draw_color(200, 200, 200)
