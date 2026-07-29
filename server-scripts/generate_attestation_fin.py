@@ -88,8 +88,8 @@ pdf.ln(4)
 pdf.set_font(F, '', 12)
 pdf.set_text_color(40, 40, 40)
 intro = (
-    "Je, soussigné(e) Catherine Frimond, en qualité de responsable suivi de l'organisme "
-    "de formation LINGUAID France, enregistré sous le numéro d'organisme 91 66 01 620 66 "
+    "Je, soussigné Joss Frimond, en qualité de Président de l'organisme "
+    "de formation LINGUAID France SAS, enregistré sous le numéro d'organisme 91 66 01 620 66 "
     "auprès de la DREETS de Languedoc-Roussillon, atteste que :"
 )
 pdf.multi_cell(0, 6, intro, new_x='LMARGIN', new_y='NEXT')
@@ -159,9 +159,9 @@ pdf.cell(85, 5, f'Fait à Saint-Cyprien, le {issued_str}', new_x='LMARGIN', new_
 pdf.set_x(15)
 pdf.cell(85, 5, 'Pour Linguaid France SAS', new_x='LMARGIN', new_y='NEXT')
 pdf.set_x(15)
-pdf.cell(85, 5, 'Catherine Frimond-Laubiès', new_x='LMARGIN', new_y='NEXT')
+pdf.cell(85, 5, 'Joss Frimond', new_x='LMARGIN', new_y='NEXT')
 pdf.set_x(15)
-pdf.cell(85, 5, 'Responsable suivi pédagogique', new_x='LMARGIN', new_y='NEXT')
+pdf.cell(85, 5, 'Président', new_x='LMARGIN', new_y='NEXT')
 if os.path.exists(stamp_img):
     pdf.image(stamp_img, x=15, y=sig_y + 22, w=48)
 pdf.set_draw_color(120, 120, 120)
