@@ -92,7 +92,7 @@ intro = (
     "de formation LINGUAID France, enregistré sous le numéro d'organisme 91 66 01 620 66 "
     "auprès de la DREETS de Languedoc-Roussillon, atteste que :"
 )
-pdf.multi_cell(0, 6.5, intro, new_x='LMARGIN', new_y='NEXT')
+pdf.multi_cell(0, 6, intro, new_x='LMARGIN', new_y='NEXT')
 pdf.ln(3)
 
 # Stagiaire
@@ -122,9 +122,13 @@ rows = [
     ("Nature de l'action", "Action de formation (art. L.6313-1 du Code du travail)"),
     ("Période", f"du {fmt_date_fr(date_start)} au {fmt_date_fr(date_end)}"),
     ("Durée totale", f"{duration_total} heures"),
-    ("Objectifs", "Intégrer des innovations pédagogiques et technologiques dans sa pratique de "
-                  "formateur en langues (ingénierie, animation, évaluation) afin de rendre la "
-                  "formation plus engageante pour les apprenants."),
+    ("Objectifs", "Concevoir, animer et évaluer des dispositifs de formation linguistique "
+                  "innovants, en mobilisant les compétences suivantes : 1. Concevoir des parcours "
+                  "de formation sur mesure avec l'IA et les outils numériques – 2. Créer des "
+                  "contenus multimédias accessibles et engageants – 3. Animer des activités "
+                  "collaboratives à distance – 4. Conduire des formations actives et "
+                  "adaptatives – 5. Évaluer de façon intelligente et personnalisée – "
+                  "6. Assurer une veille continue pour rester à la pointe de l'innovation."),
     ("Résultats de l'évaluation des acquis",
      "Les acquis de la formation ont fait l'objet d'une évaluation formative continue tout au "
      "long de la formation, puis d'une évaluation finale des compétences dans le cadre des "
@@ -132,13 +136,13 @@ rows = [
      "(dossier professionnel et entretien avec un jury)."),
 ]
 for label, value in rows:
-    pdf.set_font(F, 'B', 10.5)
+    pdf.set_font(F, 'B', 10)
     pdf.set_text_color(31, 78, 121)
-    pdf.multi_cell(0, 6, label, new_x='LMARGIN', new_y='NEXT')
-    pdf.set_font(F, '', 10.5)
+    pdf.multi_cell(0, 5.5, label, new_x='LMARGIN', new_y='NEXT')
+    pdf.set_font(F, '', 10)
     pdf.set_text_color(40, 40, 40)
-    pdf.multi_cell(0, 5.2, value, new_x='LMARGIN', new_y='NEXT')
-    pdf.ln(1.2)
+    pdf.multi_cell(0, 4.8, value, new_x='LMARGIN', new_y='NEXT')
+    pdf.ln(1)
 
 pdf.ln(2)
 pdf.set_draw_color(200, 200, 200)
@@ -159,11 +163,11 @@ pdf.cell(85, 5, 'Catherine Frimond-Laubiès', new_x='LMARGIN', new_y='NEXT')
 pdf.set_x(15)
 pdf.cell(85, 5, 'Responsable suivi pédagogique', new_x='LMARGIN', new_y='NEXT')
 if os.path.exists(stamp_img):
-    pdf.image(stamp_img, x=15, y=sig_y + 24, w=50)
+    pdf.image(stamp_img, x=15, y=sig_y + 22, w=48)
 pdf.set_draw_color(120, 120, 120)
 pdf.set_line_width(0.3)
-pdf.line(15, sig_y + 58, 95, sig_y + 58)
-pdf.set_xy(15, sig_y + 60)
+pdf.line(15, sig_y + 52, 95, sig_y + 52)
+pdf.set_xy(15, sig_y + 54)
 pdf.set_font(F, '', 8)
 pdf.set_text_color(140, 140, 140)
 pdf.cell(80, 4, 'Signature et cachet')
