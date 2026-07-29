@@ -1241,6 +1241,19 @@ router.post('/resend-invite/:id', function(req, res) {
   });
 });
 
+router.post('/delete-written/:id', function(req, res) {
+  var candidates = getCandidates();
+  var idx = candidates.findIndex(function(x) { return x.id === req.params.id; });
+  if (idx === -1) return res.status(404).json({ error: 'Not found' });
+  candidates[idx].writtenReport = null;
+  candidates[idx].reportSummary = null;
+  if (candidates[idx].status === 'written_report_done') {
+    candidates[idx].status = 'csv_uploaded';
+  }
+  saveCandidates(candidates);
+  res.json({ ok: true });
+});
+
 // Parse end-of-course report PDF text to extract renewal data
 router.post('/parse-eocr', async function(req, res) {
   var text = (req.body.text || '').trim();

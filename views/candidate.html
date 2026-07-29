@@ -344,6 +344,7 @@
           <div id="stage1downloads" style="display:none;gap:4px;align-items:center;flex-wrap:wrap">
             <button class="btn btn-en" onclick="downloadWritten('en')" style="font-size:11px;padding:3px 8px">🇬🇧 EN</button>
             <button class="btn btn-fr" onclick="downloadWritten('fr')" style="font-size:11px;padding:3px 8px">🇫🇷 FR</button>
+            <button class="btn" onclick="deleteWritten()" title="Supprimer le rapport écrit" style="font-size:11px;padding:3px 8px;background:#dc2626;color:white;border:none">🗑</button>
             <div class="download-loading" id="writtenDownloadLoading" style="font-size:10px">…</div>
           </div>
         </div>
@@ -1195,6 +1196,17 @@
         if (lang==='fr' && pdfs.frReport) { var b=document.getElementById('btnReportFR'); if(b){b.style.background='#059669';b.innerHTML='🇫🇷 FR ✓';b.title='PDF enregistré';} }
       }).catch(function(){});
     }, delay);
+  }
+
+  function deleteWritten() {
+    if (!confirm("Supprimer le rapport écrit ? Le statut reviendra à CSV uploaded si aucune étape ultérieure n’est faite.")) return;
+    fetch('/api/delete-written/' + id, { method: 'POST' })
+      .then(r => r.json())
+      .then(d => {
+        if (d.ok) { location.reload(); }
+        else { alert(d.error || 'Erreur'); }
+      })
+      .catch(e => alert(e.message));
   }
 
   function downloadWritten(lang) {
