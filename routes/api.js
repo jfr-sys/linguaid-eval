@@ -1040,8 +1040,15 @@ router.post('/typeform-webhook', function(req, res) {
   var payload = req.body;
   var form_response = payload.form_response || payload;
   var answers = form_response.answers || [];
-  var score = (form_response.calculated || {}).score || 0;
-  var max = 26;
+  var tfVariables = form_response.variables || [];
+  function getTfVar(key) {
+    var v = tfVariables.find(function(x) { return x.key === key; });
+    return (v && typeof v.number === 'number') ? v.number : null;
+  }
+  var score = getTfVar('quiz_score');
+  if (score === null) score = getTfVar('correct_answers');
+  if (score === null) score = (form_response.calculated || {}).score || 0;
+  var max = getTfVar('max_score') || getTfVar('total_scorable_questions') || 30;
 
   function getAnswer(fieldId) {
     var a = answers.find(function(x) { return x.field && x.field.id === fieldId; });
