@@ -6,6 +6,8 @@
 <title>Linguaid — Programme de formation</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
+  .eoy-btn { padding:6px 10px; font-size:11px; border:1px solid #e2e8f0; border-radius:6px; background:#f8f9fb; color:#555; cursor:pointer; white-space:nowrap; flex-shrink:0; font-family:inherit; }
+  .eoy-btn:hover { background:#eef1f5; }
   body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f0f4f8; min-height: 100vh; }
   .nav { background: #1F4E79; color: white; padding: 0 2rem; height: 56px; display: flex; align-items: center; justify-content: space-between; }
   .nav-logo { font-size: 18px; font-weight: 700; }
@@ -219,7 +221,7 @@
       </div>
       <div>
         <label>Date de fin</label>
-        <input type="date" id="dateEnd">
+        <div style="display:flex;gap:6px;align-items:center"><input type="date" id="dateEnd" style="flex:1;min-width:0"><button type="button" class="eoy-btn" onclick="setEOY('dateEnd')" title="31 decembre">EOY</button></div>
       </div>
     </div>
     <label>Lieu</label>
@@ -310,6 +312,13 @@
 </div>
 
 <script>
+function setEOY(id) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.value = new Date().getFullYear() + '-12-31';
+  el.dispatchEvent(new Event('change', { bubbles: true }));
+}
+
 var STANDARD_TOPICS = [
   "Se présenter", "Small talk", "Téléphoner", "Emails professionnels",
   "Réunions et visioconférences", "Présentations orales", "Négociation",
