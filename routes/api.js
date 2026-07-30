@@ -1358,6 +1358,7 @@ router.post('/new-renewal-caja', function(req, res) {
         edofPrice: action.price,
         edofMCFLink: action.link,
         rsCode: getRsCode('CAJA'),
+        prereqLevel: 'B2', // CAJA_PREREQ_FIX (2026-07-29): CAJA's real entry requirement, not a fabricated test score
         objectives: CAJA_OBJECTIVES.slice(),
         dateStart: d.dateStart,
         dateEnd: d.dateEnd,
