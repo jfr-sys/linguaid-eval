@@ -1317,10 +1317,10 @@ router.post('/new-renewal-caja', function(req, res) {
       "Se pr\u00e9senter dans un cadre professionnel et \u00e9tablir un bon contact avec un client, un coll\u00e8gue ou un confr\u00e8re",
       "Mener un premier entretien pour comprendre la situation, poser les bonnes questions et identifier les attentes",
       "Expliquer une probl\u00e9matique juridique, proposer des options et aider \u00e0 la prise de d\u00e9cision",
-      "R\u00e9diger des documents professionnels adapt\u00e9s au contexte : emails, lettres, notes d\u2019avocat",
+      "R\u00e9diger des documents professionnels adapt\u00e9s au contexte\u00a0: emails, lettres, notes d'avocat",
       "Corriger ou r\u00e9diger des clauses contractuelles claires, pr\u00e9cises et structur\u00e9es",
-      "Conduire une n\u00e9gociation, formuler ou r\u00e9pondre \u00e0 des propositions, et d\u00e9fendre les int\u00e9r\u00eats de son client"
-    ];
+      "Conduire une n\u00e9gociation, formuler ou r\u00e9pondre \u00e0 des propositions, et d\u00e9fendre les int\u00e9r\u00eats du client"
+    ]; // OBJECTIVES_TEXT_MATCH_FIX (2026-07-30): now byte-identical to programme.js REFERENTIAL_OBJECTIVES.CAJA
 
     var candidates = JSON.parse(fs.readFileSync(path.join(dataDir, 'candidates.json'), 'utf8'));
     var now = new Date().toISOString();
