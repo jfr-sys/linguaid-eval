@@ -1720,6 +1720,17 @@ function onRecipientModeChange() {
       ? 'Suite \xe0 l\u2019\xe9valuation linguistique de ' + (cand.name || '') + ' et \xe0 nos \xe9changes, ' + resumeLine.toLowerCase() + 'Vous trouverez en pi\xe8ce jointe une proposition ainsi que le programme de formation et le rapport de l\u2019\xe9valuation, con\xe7us pour y r\xe9pondre.'
       : 'Suite \xe0 notre \xe9change, ' + resumeLine + 'Vous trouverez en pi\xe8ce jointe une proposition ainsi que le programme de formation et le rapport de l\u2019\xe9valuation, con\xe7us pour y r\xe9pondre' + (isCPF ? ' tout en permettant une prise en charge via le CPF.' : '.');
 
+    // CAJA_RENEWAL_OPENING_FIX (2026-07-30): quick CAJA renewals (E360_LEGAL
+    // graduate going straight into CAJA) get a fixed opening paragraph - the
+    // candidate is already known, this isn't their first evaluation, so the
+    // usual "suite a l'evaluation" framing doesn't fit. Only overrides the
+    // greeting+opening; everything below (formation block, budget, CPF
+    // instructions, closing) stays exactly as normally generated.
+    if (cand.isRenewal && cpfType === 'CAJA' && !thirdParty) {
+      greeting = civ + '\u00a0' + prenom + ',';
+      opening = 'Suite \xe0 votre demande de continuer des cours d\u2019anglais avec nous, nous avons le plaisir de vous adresser cette proposition de vous inscrire \xe0 la formation certifiante \xab\u00a0Communiquer en Anglais Juridique des Affaires\u00a0\xbb avec votre CPF. Cette proposition n\xe9cessite la passation du test E360 qui vous a \xe9t\xe9 pr\xe9c\xe9demment envoy\xe9.';
+    }
+
     // Trainer line
     var formateur = (isLegal)
       ? 'un formateur anglophone natif, ancien avocat, sp\xe9cialis\xe9 exclusivement dans l\u2019enseignement de l\u2019anglais juridique des affaires \u2014 un profil rare en France'
