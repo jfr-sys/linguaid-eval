@@ -16,108 +16,22 @@ function mcfLink(offerCode, actionId) {
 }
 
 // ---------------------------------------------------------------------------
-// E360 actions (RS6341) — standard business English
-// All share offer code 'E360B2' in the MCF link
+// E360 actions (RS7637) — standard business English
+// RENEWAL (2026-07-30): certification renewed, RS6341 now obsolete and can
+// no longer be used. Old offer 'E360B2' (11 legacy hour-packages) replaced
+// by the single new offer 'E360B2-26' - same umbrella E360_LEGAL already
+// uses (E360B220H-26), which was already valid post-renewal and is
+// untouched here.
 // ---------------------------------------------------------------------------
 const E360_ACTIONS = [
   {
-    id: 'E360B220HAP',
-    label: '20h — 15h coaching + 5h TP — 1 600€',
-    totalHours: 20,
-    coachingHours: 15,
-    tpHours: 5,
-    price: 1600,
-    link: mcfLink('E360B2', 'E360B220HAP'),
-  },
-  {
-    id: 'E360B220H',
-    label: '20h — 10h coaching + 10h TP — 1 650€',
-    totalHours: 20,
-    coachingHours: 10,
-    tpHours: 10,
-    price: 1650,
-    link: mcfLink('E360B2', 'E360B220H'),
-  },
-  {
-    id: 'E360B2',
-    label: '25h — 25h coaching + 0h TP — 2 275€',
-    totalHours: 25,
-    coachingHours: 25,
-    tpHours: 0,
-    price: 2275,
-    link: mcfLink('E360B2', 'E360B2'),
-  },
-  {
-    id: 'E360B1-30H-VISIO',
-    label: '30h — 30h coaching + 0h TP — 2 700€',
-    totalHours: 30,
-    coachingHours: 30,
-    tpHours: 0,
-    price: 2700,
-    link: mcfLink('E360B2', 'E360B1-30H-VISIO'),
-  },
-  {
-    id: 'E360B1-30H',
-    label: '30h — 20h coaching + 10h TP — 2 950€',
-    totalHours: 30,
-    coachingHours: 20,
-    tpHours: 10,
-    price: 2950,
-    link: mcfLink('E360B2', 'E360B1-30H'),
-  },
-  {
-    id: 'E360B2-38H',
-    label: '38h — 25h coaching + 13h TP — 2 500€',
-    totalHours: 38,
-    coachingHours: 25,
-    tpHours: 13,
-    price: 2500,
-    link: mcfLink('E360B2', 'E360B2-38H'),
-  },
-  {
-    id: 'E360B2-40H',
-    label: '40h — 20h coaching + 20h TP — 2 350€',
-    totalHours: 40,
-    coachingHours: 20,
-    tpHours: 20,
-    price: 2350,
-    link: mcfLink('E360B2', 'E360B2-40H'),
-  },
-  {
-    id: 'E360B240H',
-    label: '40h — 40h coaching + 0h TP — 3 550€',
-    totalHours: 40,
-    coachingHours: 40,
-    tpHours: 0,
-    price: 3550,
-    link: mcfLink('E360B2', 'E360B240H'),
-  },
-  {
-    id: 'E360B2-45H',
-    label: '45h — 30h coaching + 15h TP — 3 075€',
+    id: 'E360B245H-26',
+    label: '45h — 30h coaching + 15h TP — 3 275€',
     totalHours: 45,
     coachingHours: 30,
     tpHours: 15,
-    price: 3075,
-    link: mcfLink('E360B2', 'E360B2-45H'),
-  },
-  {
-    id: 'E360B2-50H',
-    label: '50h — 25h coaching + 25h TP — 2 640€',
-    totalHours: 50,
-    coachingHours: 25,
-    tpHours: 25,
-    price: 2640,
-    link: mcfLink('E360B2', 'E360B2-50H'),
-  },
-  {
-    id: 'E360B2-60H',
-    label: '60h — 40h coaching + 20h TP — 4 050€',
-    totalHours: 60,
-    coachingHours: 40,
-    tpHours: 20,
-    price: 4050,
-    link: mcfLink('E360B2', 'E360B2-60H'),
+    price: 3275,
+    link: mcfLink('E360B2-26', 'E360B245H-26'),
   },
 ];
 
