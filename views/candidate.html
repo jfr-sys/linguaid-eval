@@ -964,7 +964,14 @@
         var label = cefrRevMap[rounded] || '';
         if (label) {
           var el = document.getElementById('profileName');
-          el.innerHTML = c.name + ' <span style="font-size:14px;font-weight:500;background:#dbeafe;color:#1e40af;padding:3px 10px;border-radius:12px;vertical-align:middle">' + label + ' (' + rounded + ')</span>';
+          var oralBadgeLabel = '';
+          (function(){
+            var l = cefrMap[oral.listeningLevel], s = cefrMap[oral.speakingLevel];
+            if (typeof l === 'number' && typeof s === 'number') {
+              oralBadgeLabel = cefrRevMap[Math.round(((l + s) / 2) * 2) / 2] || '';
+            }
+          })();
+          el.innerHTML = c.name + ' <span style="font-size:14px;font-weight:500;background:#dbeafe;color:#1e40af;padding:3px 10px;border-radius:12px;vertical-align:middle">' + label + ' (' + rounded + ')' + (oralBadgeLabel ? ' \u00b7 oral ' + oralBadgeLabel : '') + '</span>';
         }
       }
     } else if (c.writtenReport) {

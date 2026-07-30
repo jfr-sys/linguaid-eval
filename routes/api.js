@@ -22,6 +22,17 @@ function calc5SkillLevel(c) {
   return rs.overallLevel || '';
 }
 
+// Helper: oral sub-level (listening + speaking average)
+function calcOralLevel(c) {
+  var od = c.oralData || {};
+  var cefrMap = {'A1':0,'A1+':0.5,'A2':1,'A2+':1.5,'B1':2,'B1+':2.5,'B2':3,'B2+':3.5,'C1':4,'C1+':4.5,'C2':5};
+  var cefrRev = {0:'A1',0.5:'A1+',1:'A2',1.5:'A2+',2:'B1',2.5:'B1+',3:'B2',3.5:'B2+',4:'C1',4.5:'C1+',5:'C2'};
+  var l = cefrMap[od.listeningLevel], s = cefrMap[od.speakingLevel];
+  if (typeof l !== 'number' || typeof s !== 'number') return '';
+  var rounded = Math.round(((l + s) / 2) * 2) / 2;
+  return cefrRev[rounded] || '';
+}
+
 const fs = require('fs');
 const path = require('path');
 const Anthropic = require('@anthropic-ai/sdk');
@@ -2029,8 +2040,9 @@ router.post('/send-proposal/:id'
       var Anthropic = require('@anthropic-ai/sdk');
       var client2 = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
       var titleFR = 'RAPPORT D EVALUATION LINGUISTIQUE INITIALE';
-      var subtitleFR = (c.reportSummary && c.reportSummary.overallLevel)
-        ? 'Niveau global CECRL : ' + c.reportSummary.overallLevel : '';
+      var ovFR = calc5SkillLevel(c) || (c.reportSummary && c.reportSummary.overallLevel) || '';
+      var orFR = calcOralLevel(c);
+      var subtitleFR = ovFR ? ('Niveau global CECRL : ' + ovFR + (orFR ? ' \u2014 oral : ' + orFR : '')) : '';
       var transPrompt = 'Translate and adapt into French for French professional context. CEFR to CECRL. Keep markdown formatting. Not assessed to Non évalué à ce stade. Do not use backtick code blocks. Report: ' + c.finalReport;
       client2.messages.create({
         model: 'claude-sonnet-4-6', max_tokens: 6000,
@@ -2071,7 +2083,7 @@ router.post('/send-proposal/:id'
         // Fall back to EN report
         var reportPayload = {
           title: 'English Evaluation Report',
-          subtitle: calc5SkillLevel(c) ? 'Overall Level: ' + calc5SkillLevel(c) : '',
+          subtitle: calc5SkillLevel(c) ? 'Overall Level: ' + calc5SkillLevel(c) + (calcOralLevel(c) ? ' \u2014 Oral: ' + calcOralLevel(c) : '') : '',
           candidate_name: c.name,
           content: c.finalReport
         };
