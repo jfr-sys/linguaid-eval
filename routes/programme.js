@@ -464,6 +464,15 @@ router.post('/api/generate-proposition/:id', async function(req, res) {
 
   // AI-generated needs summary
   let resumeSituation = '';
+  // CAJA_RENEWAL_RESUME_FIX (2026-07-30): skip the AI call for CAJA
+  // renewals - there's no oral/questionnaire data to summarize (this is a
+  // direct continuation, not a first evaluation), and the AI's honest
+  // "no data" fallback ("ce qui ne me permet pas de formuler un resume
+  // personnalise") reads as an error to a returning client Linguaid
+  // already knows well.
+  if (c.isRenewal && cpfType === 'CAJA') {
+    resumeSituation = 'Nous connaissons d\xe9j\xe0 parfaitement votre profil\u00a0: cette formation sera construite dans la continuit\xe9 de la pr\xe9c\xe9dente.';
+  } else {
   try {
     const goals = (od.validatedGoals || []).map(g => g.goal || g).join(', ');
     const criteria = (od.criteria || []).map(cr => typeof cr === 'object' ? (cr.comment || '') : cr).filter(Boolean).join('. ');
@@ -490,6 +499,7 @@ router.post('/api/generate-proposition/:id', async function(req, res) {
   } catch (e) {
     console.error('generate-proposition AI error:', e.message);
     resumeSituation = '';
+  }
   }
 
   // Build data payload for fill_proposition.py

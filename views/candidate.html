@@ -1760,7 +1760,15 @@ function onRecipientModeChange() {
 
     // Budget block
     var budgetBlock = '';
-    if (isCPF) {
+    // CAJA_RENEWAL_BUDGET_FIX (2026-07-30): for a CAJA renewal, the actual
+    // CPF funding depends on whatever credit remains in the learner's own
+    // account - the fixed cap-minus-forfaitaire split below doesn't
+    // reliably apply, so state the total and point them to their account
+    // rather than assert a specific funded/reste-a-charge breakdown.
+    if (cand.isRenewal && cpfType === 'CAJA') {
+      budgetBlock = '**Budget\u00a0: ' + price + '\u00a0\u20ac**\n\n'
+        + '*Modalit\xe9s de prise en charge dans votre compte CPF*';
+    } else if (isCPF) {
       budgetBlock = '**Budget\u00a0: ' + price + '\u00a0\u20ac**\n'
         + '\u2013 ' + cpfFunded + '\u00a0\u20ac finançables via le CPF\n'
         + '\u2013 Reste \xe0 votre charge\u00a0: ' + solde + '\u00a0\u20ac (participation forfaitaire de 150\u00a0\u20ac incluse)';
