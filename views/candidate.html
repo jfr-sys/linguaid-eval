@@ -1640,7 +1640,14 @@ function onRecipientModeChange() {
       return;
     }
     fetch('/api/check-pdfs/'+id).then(function(r){return r.json();}).then(function(pdfs){
-      if (!pdfs.frReport) {
+      // RENEWAL_FR_REPORT_SKIP (2026-07-30): renewal candidates (e.g. quick
+      // CAJA renewals) never had a fresh Step 3 evaluation in this record -
+      // there is no real report to generate, and forcing one would just be
+      // fabricated content from empty data. The server already handles a
+      // missing report gracefully (send-proposition-email just omits the
+      // attachment), so this client-side hard block only needs to apply to
+      // normal (non-renewal) candidates who skipped a real, expected step.
+      if (!pdfs.frReport && !(candidate && candidate.isRenewal)) {
         alert('Rapport FR non disponible - Téléchargez le rapport FR depuis Step 3 avant d’envoyer la proposition.');
         return;
       }
