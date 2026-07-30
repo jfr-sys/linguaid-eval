@@ -536,7 +536,11 @@ router.post('/api/generate-proposition/:id', async function(req, res) {
     // generate-proposition call - forward it so the generator can write
     // third-person prose for non-CPF proposals addressed to a third party.
     // (firstName/lastName are already sent above - not duplicated here.)
-    recipientType: req.body.recipientType || 'learner'
+    recipientType: req.body.recipientType || 'learner',
+    // RENEWAL_PROPDATA_FLAG (2026-07-30): lets fill_proposition.py apply
+    // the renewal-specific layout (no niveau line, credit-dependent CPF
+    // funding wording).
+    isRenewal: !!c.isRenewal
   };
 
   // Paths
