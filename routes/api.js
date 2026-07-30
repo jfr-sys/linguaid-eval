@@ -1359,6 +1359,7 @@ router.post('/new-renewal-caja', function(req, res) {
         edofMCFLink: action.link,
         rsCode: getRsCode('CAJA'),
         prereqLevel: 'B2', // CAJA_PREREQ_FIX (2026-07-29): CAJA's real entry requirement, not a fabricated test score
+        trainingTitle: 'Communiquer en Anglais Juridique des Affaires - RS6810', // CAJA_TITLE_FIX (2026-07-29): official course title, not the generic legal fallback
         objectives: CAJA_OBJECTIVES.slice(),
         dateStart: d.dateStart,
         dateEnd: d.dateEnd,
