@@ -58,6 +58,10 @@ router.post('/api/candidates/api/:id/cpf-type', function(req, res) {
     candidates[idx].oralData.edofMCFLink = null;
   }
   candidates[idx].oralData.cpfType = cpfType;
+  // CPF_FLAG_ASSERT_TYPE (2026-07-30): choosing a CPF type IS declaring the
+  // dossier CPF - without this, candidates whose flag wasn't already on
+  // (e.g. legal intake) land in the ghost state CPF_GHOST_DATA_CHECK blocks.
+  candidates[idx].oralData.isCPF = true;
   /* RS7637 registry (2026-07-27): stamp the RS code once, at the moment
      cpfType is chosen. Never overwrite an already-stamped rsCode — that
      would flip an in-flight dossier's referential mid-pipeline. */
@@ -85,6 +89,11 @@ router.post('/api/candidates/api/:id/edof-action', function(req, res) {
     return res.status(400).json({ error: 'Action ' + actionId + ' not found in catalogue for cpfType ' + cpfType });
   }
   if (!candidates[idx].oralData) candidates[idx].oralData = {};
+  // CPF_FLAG_ASSERT_ACTION (2026-07-30): same assertion as the cpf-type
+  // route - selecting an EDOF catalogue action only makes sense on a CPF
+  // dossier, so make the flag consistent here too (covers candidates whose
+  // cpfType predates the cpf-type fix).
+  candidates[idx].oralData.isCPF = true;
   candidates[idx].oralData.edofActionId   = action.id;
   candidates[idx].oralData.totalHours     = action.totalHours;
   candidates[idx].oralData.coachingHours  = action.coachingHours;
