@@ -3405,4 +3405,31 @@ router.get('/download-mission-confirmation-signed/:id', function(req, res) {
   res.sendFile(c.missionData.confirmationSignedPdfPath);
 });
 
+/* save-levels */
+router.post('/save-levels/:id', (req, res) => {
+  var VALID = ['A1','A1+','A2','A2+','B1','B1+','B2','B2+','C1','C1+','C2'];
+  var candidates = getCandidates();
+  var idx = candidates.findIndex(function(c){ return c.id === req.params.id; });
+  if (idx === -1) return res.status(404).json({ error: 'Candidate not found' });
+  var b = req.body || {};
+  var fields = ['grammarLevel','writingLevel','readingLevel','listeningLevel','speakingLevel'];
+  for (var i = 0; i < fields.length; i++) {
+    var v = b[fields[i]];
+    if (v && VALID.indexOf(v) === -1) return res.status(400).json({ error: 'Invalid level: ' + v });
+  }
+  var c = candidates[idx];
+  if ((b.listeningLevel || b.speakingLevel) && !c.oralData) {
+    return res.status(400).json({ error: 'Oral assessment not yet submitted - listening/speaking levels live in oralData' });
+  }
+  if (!c.reportSummary) c.reportSummary = {};
+  if (b.grammarLevel) c.reportSummary.grammarLevel = b.grammarLevel;
+  if (b.writingLevel) c.reportSummary.writingLevel = b.writingLevel;
+  if (b.readingLevel) c.reportSummary.readingLevel = b.readingLevel;
+  if (b.listeningLevel) c.oralData.listeningLevel = b.listeningLevel;
+  if (b.speakingLevel) c.oralData.speakingLevel = b.speakingLevel;
+  c.levelsManuallyEditedAt = new Date().toISOString();
+  saveCandidates(candidates);
+  res.json({ success: true });
+});
+
 module.exports = router;

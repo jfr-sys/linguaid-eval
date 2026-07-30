@@ -363,6 +363,7 @@
         <div style="font-size:11px;font-weight:600;text-transform:uppercase;color:#999;letter-spacing:0.04em">Step 2 · Oral</div>
         <div id="stage2status" style="font-size:11px;color:#666"></div>
         <div id="oralLinkArea"></div>
+        <button class="btn" id="btnEditLevels" onclick="toggleLevelsPanel()" style="display:none;font-size:11px;padding:3px 8px;background:#7c3aed;color:white;border:none;align-self:flex-start;cursor:pointer">✏️ Niveaux</button>
       </div>
       <div style="width:1px;background:#e5e7eb;align-self:stretch;margin:2px 0;flex-shrink:0"></div>
       <!-- Step 3 -->
@@ -392,6 +393,19 @@
           </div>
         </div>
       </div>
+    </div>
+    <!-- edit-levels panel -->
+    <div id="levelsPanel" style="display:none;border-top:1px solid #f1f5f9;margin-top:0.75rem;padding-top:0.75rem">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+        <label style="display:flex;flex-direction:column;gap:3px;font-size:11px;color:#666">Grammar<select id="lvGrammar" style="font-size:12px;padding:4px 6px;border:1px solid #e2e8f0;border-radius:6px;font-family:inherit"><option value=""></option><option>A1</option><option>A1+</option><option>A2</option><option>A2+</option><option>B1</option><option>B1+</option><option>B2</option><option>B2+</option><option>C1</option><option>C1+</option><option>C2</option></select></label>
+        <label style="display:flex;flex-direction:column;gap:3px;font-size:11px;color:#666">Writing<select id="lvWriting" style="font-size:12px;padding:4px 6px;border:1px solid #e2e8f0;border-radius:6px;font-family:inherit"><option value=""></option><option>A1</option><option>A1+</option><option>A2</option><option>A2+</option><option>B1</option><option>B1+</option><option>B2</option><option>B2+</option><option>C1</option><option>C1+</option><option>C2</option></select></label>
+        <label style="display:flex;flex-direction:column;gap:3px;font-size:11px;color:#666">Reading<select id="lvReading" style="font-size:12px;padding:4px 6px;border:1px solid #e2e8f0;border-radius:6px;font-family:inherit"><option value=""></option><option>A1</option><option>A1+</option><option>A2</option><option>A2+</option><option>B1</option><option>B1+</option><option>B2</option><option>B2+</option><option>C1</option><option>C1+</option><option>C2</option></select></label>
+        <label style="display:flex;flex-direction:column;gap:3px;font-size:11px;color:#666">Listening<select id="lvListening" style="font-size:12px;padding:4px 6px;border:1px solid #e2e8f0;border-radius:6px;font-family:inherit"><option value=""></option><option>A1</option><option>A1+</option><option>A2</option><option>A2+</option><option>B1</option><option>B1+</option><option>B2</option><option>B2+</option><option>C1</option><option>C1+</option><option>C2</option></select></label>
+        <label style="display:flex;flex-direction:column;gap:3px;font-size:11px;color:#666">Speaking<select id="lvSpeaking" style="font-size:12px;padding:4px 6px;border:1px solid #e2e8f0;border-radius:6px;font-family:inherit"><option value=""></option><option>A1</option><option>A1+</option><option>A2</option><option>A2+</option><option>B1</option><option>B1+</option><option>B2</option><option>B2+</option><option>C1</option><option>C1+</option><option>C2</option></select></label>
+        <button class="btn btn-primary" onclick="saveLevels()" style="font-size:11px;padding:5px 12px">Enregistrer</button>
+        <span id="lvStatus" style="font-size:11px;color:#166534"></span>
+      </div>
+      <div style="font-size:11px;color:#92400e;margin-top:6px">⚠️ Après modification : régénérer le rapport final (Step 3) puis recréer le programme (Step 4). Ne PAS régénérer le rapport écrit (Step 1) — cela écraserait les niveaux Grammar/Writing/Reading.</div>
     </div>
     <!-- Final report edit toggle -->
     <div id="finalReportToggleBar" style="display:none;border-top:1px solid #f1f5f9;margin-top:0.75rem;padding-top:0.75rem;display:flex;align-items:center;justify-content:space-between">
@@ -934,6 +948,7 @@
     if (c.oralData) {
       document.getElementById('stage2').classList.add('done');
       document.getElementById('stage2status').textContent = 'Oral assessment submitted ✓';
+      showLevelsEditor(c); /* edit-levels */
       document.getElementById('btnFinal').disabled = false;
       document.getElementById('stage3').classList.add('active');
       // Show global average level next to name
@@ -1006,6 +1021,37 @@
     }
     if (current) sections.push(current);
     return sections;
+  }
+
+  function showLevelsEditor(c) {
+    var b = document.getElementById('btnEditLevels'); if (b) b.style.display = 'inline-block';
+    var rs = c.reportSummary || {}, od = c.oralData || {};
+    var map = { lvGrammar: rs.grammarLevel, lvWriting: rs.writingLevel, lvReading: rs.readingLevel, lvListening: od.listeningLevel, lvSpeaking: od.speakingLevel };
+    Object.keys(map).forEach(function(k){ var el = document.getElementById(k); if (el && map[k]) el.value = map[k]; });
+  }
+
+  function toggleLevelsPanel() {
+    var p = document.getElementById('levelsPanel');
+    if (p) p.style.display = (p.style.display === 'none') ? 'block' : 'none';
+  }
+
+  function saveLevels() {
+    var body = {
+      grammarLevel: document.getElementById('lvGrammar').value,
+      writingLevel: document.getElementById('lvWriting').value,
+      readingLevel: document.getElementById('lvReading').value,
+      listeningLevel: document.getElementById('lvListening').value,
+      speakingLevel: document.getElementById('lvSpeaking').value
+    };
+    var st = document.getElementById('lvStatus');
+    st.textContent = 'Enregistrement…';
+    fetch('/api/save-levels/' + window.candidateId, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+      .then(function(r){ return r.json(); })
+      .then(function(j){
+        if (j.success) { st.textContent = 'Niveaux enregistrés ✓'; setTimeout(function(){ location.reload(); }, 1200); }
+        else { st.style.color = '#dc2626'; st.textContent = 'Erreur: ' + (j.error || ''); }
+      })
+      .catch(function(){ st.style.color = '#dc2626'; st.textContent = 'Erreur réseau'; });
   }
 
   function renderReportSections(reportText) {
