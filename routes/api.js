@@ -2671,6 +2671,11 @@ router.post('/generate-standalone-attestation', async function(req, res) {
     var dateStart = (req.body.dateStart || '').trim();
     var dateEnd = (req.body.dateEnd || '').trim();
     var score = (req.body.score !== null && req.body.score !== undefined && req.body.score !== '') ? parseInt(req.body.score) : null;
+    var totalQ = req.body.total ? parseInt(req.body.total) : 5;
+    if (!totalQ || totalQ < 1 || totalQ > 100) totalQ = 5;
+    if (score !== null && (isNaN(score) || score < 0 || score > totalQ)) {
+      return res.status(400).json({ error: 'Score invalide (0-' + totalQ + ')' });
+    }
     var moduleName = (req.body.moduleName || 'Travaux personnels - Yes You Ken English').trim();
     var durationHours = req.body.durationHours ? parseFloat(req.body.durationHours) : null;
     var durationTotal = req.body.durationTotal ? parseFloat(req.body.durationTotal) : 18;
@@ -2688,7 +2693,7 @@ router.post('/generate-standalone-attestation', async function(req, res) {
     var attestPdf = path3.join(attestDir, uid + '_attestation_standalone.pdf');
     var attestJson = path3.join(attestDir, uid + '_standalone_data.json');
 
-    var completedAt = new Date().toISOString();
+    var completedAt = dateEnd; // Date de realisation = training end date (2026-07-31)
 
     var jsonData = {
       name: name,
@@ -2697,7 +2702,7 @@ router.post('/generate-standalone-attestation', async function(req, res) {
       trainingTitle: trainingTitle,
       moduleName: moduleName,
       score: score,
-      total: 5,
+      total: totalQ,
       completedAt: completedAt,
       dateStart: dateStart,
       dateEnd: dateEnd,

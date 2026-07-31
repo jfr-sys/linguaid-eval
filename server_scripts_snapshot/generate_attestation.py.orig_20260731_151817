@@ -1,0 +1,221 @@
+#!/usr/bin/env python3
+import json, sys, os
+from datetime import datetime
+from fpdf import FPDF
+
+data = json.load(open(sys.argv[1]))
+
+name = str(data['name'] or '')
+company = str(data.get('company', '') or '')
+jobtitle = str(data.get('jobtitle', '') or '')
+training_title = str(data.get('trainingTitle', '') or '')
+date_start = str(data.get('dateStart', '') or '')
+date_end = str(data.get('dateEnd', '') or '')
+duration_hours = data.get('durationHours', None)
+
+def fmt_date_fr(d):
+    if not d: return ''
+    try:
+        from datetime import datetime as _dt
+        return _dt.fromisoformat(d).strftime('%d/%m/%Y')
+    except:
+        return d
+score = data.get('score')  # may be None for no-quiz attestations
+total = data.get('total')
+pdf_path = data['pdfPath']
+
+module_display = str(data.get('moduleName') or 'Travaux personnels - Yes You Ken English')
+
+try:
+    dt = datetime.fromisoformat(data['completedAt'].replace('Z',''))
+    date_str = dt.strftime('%d/%m/%Y')
+    time_str = dt.strftime('%H:%M')
+except:
+    date_str = data['completedAt'][:10]
+    time_str = ''
+
+header_img = '/home/debian/linguaid_logo_header.png'
+languexpert_img = '/home/debian/languexpert_logo.png'
+stamp_img = '/home/debian/linguaid_stamp.jpeg'
+
+def find_font(name):
+    import subprocess
+    r = subprocess.run(['find', '/usr/share/fonts', '-name', f'*{name}*', '-type', 'f'],
+                       capture_output=True, text=True)
+    lines = [l for l in r.stdout.strip().split('\n') if l and '.ttf' in l.lower()]
+    return lines[0] if lines else None
+
+font_regular = find_font('DejaVuSans.ttf') or find_font('DejaVuSans-Regular')
+font_bold = find_font('DejaVuSans-Bold')
+
+class PDF(FPDF):
+    def header(self):
+        # Left logo: Linguaid
+        if os.path.exists(header_img):
+            self.image(header_img, x=10, y=6, w=52)
+        # Right logo: LangueXpert
+        if os.path.exists(languexpert_img):
+            self.image(languexpert_img, x=138, y=8, w=62)
+        self.set_y(30)
+        self.ln(4)
+
+    def footer(self):
+        self.set_y(-28)
+        self.set_draw_color(31, 78, 121)
+        self.set_line_width(0.3)
+        self.line(10, self.get_y(), 200, self.get_y())
+        self.ln(3)
+        self.set_font('DejaVu', '', 7.5)
+        self.set_text_color(100, 100, 100)
+        self.cell(0, 4, 'Linguaid France SAS  |  2 rue Hergé, 66750 Saint Cyprien  |  T: 04 68 88 49 91  |  E: certification@linguaid.net', new_x='LMARGIN', new_y='NEXT', align='C')
+        self.cell(0, 4, 'RCS Perpignan B 539 682 187  |  NAF : 8559A  |  O.F. déclaré sous le numéro : 91 66 01 620 66', new_x='LMARGIN', new_y='NEXT', align='C')
+        self.cell(0, 4, "Cet enregistrement ne vaut pas agrément de l'État", new_x='LMARGIN', new_y='NEXT', align='C')
+
+pdf = PDF()
+pdf.set_margins(15, 15, 15)
+
+if font_regular:
+    pdf.add_font('DejaVu', '', font_regular)
+if font_bold:
+    pdf.add_font('DejaVu', 'B', font_bold)
+
+F = 'DejaVu' if font_regular else 'Helvetica'
+
+pdf.add_page()
+pdf.ln(5)
+
+# Title
+pdf.set_font(F, 'B', 18)
+pdf.set_text_color(31, 78, 121)
+pdf.cell(0, 12, 'ATTESTATION DE RÉALISATION', new_x='LMARGIN', new_y='NEXT', align='C')
+pdf.set_font(F, '', 11)
+pdf.set_text_color(100, 100, 100)
+_subtitle = data.get('subtitle')  # '' = hide, None = default, string = show
+if _subtitle is None:
+    _subtitle = 'Module de formation complémentaire – Volet 2'
+if _subtitle:  # empty string = hide
+    pdf.cell(0, 6, _subtitle, new_x='LMARGIN', new_y='NEXT', align='C')
+pdf.ln(4)
+
+
+# Official certification text
+pdf.set_font(F, '', 12)
+pdf.set_text_color(40, 40, 40)
+intro = (
+    "Je, soussigné(e) Catherine Frimond, en qualité de responsable suivi de l'organisme "
+    "de formation LINGUAID France, enregistré sous le numéro d'organisme 91 66 01 620 66 "
+    "auprès de la DREETS de Languedoc-Roussillon, atteste que :"
+)
+pdf.multi_cell(0, 7, intro, new_x='LMARGIN', new_y='NEXT')
+pdf.ln(4)
+
+# Candidate
+pdf.set_font(F, 'B', 15)
+pdf.set_text_color(31, 78, 121)
+pdf.cell(0, 10, name, new_x='LMARGIN', new_y='NEXT', align='C')
+if jobtitle or company:
+    pdf.set_font(F, '', 11)
+    pdf.set_text_color(80, 80, 80)
+    line2 = ' – '.join(filter(None, [jobtitle, company]))
+    pdf.cell(0, 6, line2, new_x='LMARGIN', new_y='NEXT', align='C')
+pdf.ln(3)
+
+# Module
+pdf.set_font(F, '', 12)
+pdf.set_text_color(40, 40, 40)
+pdf.cell(0, 7, 'a complété avec succès le module suivant :', new_x='LMARGIN', new_y='NEXT', align='C')
+pdf.ln(3)
+pdf.set_font(F, 'B', 13)
+pdf.set_text_color(31, 78, 121)
+pdf.cell(0, 8, module_display, new_x='LMARGIN', new_y='NEXT', align='C')
+if training_title:
+    pdf.set_font(F, '', 11)
+    pdf.set_text_color(80, 80, 80)
+    pdf.cell(0, 6, 'dans le cadre de : ' + training_title, new_x='LMARGIN', new_y='NEXT', align='C')
+if date_start and date_end:
+    pdf.set_font(F, '', 10)
+    pdf.set_text_color(100, 100, 100)
+    pdf.cell(0, 5, f'Période de formation : du {fmt_date_fr(date_start)} au {fmt_date_fr(date_end)}', new_x='LMARGIN', new_y='NEXT', align='C')
+if duration_hours:
+    pdf.set_font(F, '', 10)
+    pdf.set_text_color(100, 100, 100)
+    pdf.cell(0, 5, f'Durée : {duration_hours} heures', new_x='LMARGIN', new_y='NEXT', align='C')
+pdf.ln(3)
+
+# Date de réalisation (quiz only — hidden for no-score attestations)
+if score is not None:
+    pdf.set_font(F, '', 11)
+    pdf.set_text_color(40, 40, 40)
+    date_line = f'Date de réalisation : {date_str}'
+    if time_str:
+        date_line += f' à {time_str}'
+    pdf.cell(0, 7, date_line, new_x='LMARGIN', new_y='NEXT', align='C')
+    pdf.ln(4)
+
+# Score box (only if score provided)
+if score is not None:
+    pdf.set_fill_color(235, 245, 255)
+    pdf.set_draw_color(31, 78, 121)
+    pdf.set_line_width(0.5)
+    box_y = pdf.get_y()
+    pdf.rect(65, box_y, 80, 22, 'DF')
+    pdf.set_xy(65, box_y + 3)
+    pdf.set_font(F, '', 10)
+    pdf.set_text_color(80, 80, 80)
+    pdf.cell(80, 5, 'Score obtenu', new_x='LMARGIN', new_y='NEXT', align='C')
+    pdf.set_x(65)
+    pdf.set_font(F, 'B', 18)
+    pdf.set_text_color(31, 78, 121)
+    pdf.cell(80, 10, f'{score} / {total}', new_x='LMARGIN', new_y='NEXT', align='C')
+    pdf.ln(3)
+
+pdf.set_draw_color(200, 200, 200)
+pdf.set_line_width(0.3)
+pdf.line(15, pdf.get_y(), 195, pdf.get_y())
+pdf.ln(3)
+
+# Signature block
+sig_y = pdf.get_y()
+
+# Left: issuer + stamp
+pdf.set_xy(15, sig_y)
+pdf.set_font(F, '', 10)
+pdf.set_text_color(60, 60, 60)
+pdf.cell(85, 5, 'Pour Linguaid France SAS', new_x='LMARGIN', new_y='NEXT')
+pdf.set_x(15)
+pdf.cell(85, 5, 'Catherine Frimond-Laubiès', new_x='LMARGIN', new_y='NEXT')
+pdf.set_x(15)
+pdf.cell(85, 5, 'Responsable suivi pédagogique', new_x='LMARGIN', new_y='NEXT')
+if os.path.exists(stamp_img):
+    pdf.image(stamp_img, x=15, y=sig_y + 22, w=55)
+pdf.set_draw_color(120, 120, 120)
+pdf.set_line_width(0.3)
+pdf.line(15, sig_y + 62, 95, sig_y + 62)
+pdf.set_xy(15, sig_y + 64)
+pdf.set_font(F, '', 8)
+pdf.set_text_color(140, 140, 140)
+pdf.cell(80, 4, 'Signature et cachet')
+
+# Right: learner signature box
+pdf.set_xy(110, sig_y)
+pdf.set_font(F, '', 10)
+pdf.set_text_color(60, 60, 60)
+pdf.cell(85, 5, 'Lu et approuvé(e) par le/la stagiaire :', new_x='LMARGIN', new_y='NEXT')
+pdf.set_xy(110, pdf.get_y())
+pdf.set_font(F, 'B', 11)
+pdf.set_text_color(31, 78, 121)
+pdf.cell(85, 6, name, new_x='LMARGIN', new_y='NEXT')
+pdf.set_xy(110, pdf.get_y())
+pdf.set_font(F, '', 9)
+pdf.set_text_color(100, 100, 100)
+pdf.cell(85, 5, f'Le {date_str}')
+pdf.set_draw_color(180, 180, 180)
+pdf.set_line_width(0.3)
+pdf.rect(110, sig_y + 22, 85, 40, 'D')
+pdf.set_xy(110, sig_y + 28)
+pdf.set_font(F, '', 8)
+pdf.set_text_color(180, 180, 180)
+pdf.cell(85, 5, 'Signature électronique', align='C')
+
+pdf.output(pdf_path)
+print('OK: ' + pdf_path)

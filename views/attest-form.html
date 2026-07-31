@@ -66,10 +66,9 @@
     <div class="field">
       <label>Intitulé de la formation *</label>
       <select id="trainingTitle" style="width:100%;padding:9px 12px;border:1.5px solid #ddd;border-radius:6px;font-size:0.95rem">
-      <!-- canonical-training-titles v1 -->
-      <option value="Communiquer en anglais professionnel – English 360 – Niveau B2">CPF — English 360 – Niveau B2</option>
-      <option value="Communiquer en anglais professionnel – English 360 en contexte juridique – Niveau B2">CPF — English 360 en contexte juridique – Niveau B2</option>
-      <option value="Communiquer en anglais juridique des affaires – CAJA – Niveau B2">CPF — CAJA – Anglais Juridique des Affaires – Niveau B2</option>
+      <!-- canonical-training-titles v2 -->
+      <option value="Communiquer en anglais professionnel – English 360 – Niveau B2">CPF — Communiquer en anglais professionnel – English 360 – Niveau B2</option>
+      <option value="Communiquer en anglais juridique des affaires">CPF — Communiquer en anglais juridique des affaires</option>
       <option value="Formation en Anglais Professionnel">Formation en Anglais Professionnel</option>
       <option value="Formation en Anglais Juridique">Formation en Anglais Juridique</option>
     </select>
@@ -137,6 +136,12 @@ async function generate() {
     return;
   }
 
+  if (isNaN(score) || score < 0 || score > 10) {
+    res.className = 'err'; res.style.display = 'block';
+    res.textContent = 'Le score doit être compris entre 0 et 10.';
+    return;
+  }
+
   btn.disabled = true; btn.textContent = 'Génération en cours…';
   res.style.display = 'none';
 
@@ -148,7 +153,7 @@ async function generate() {
         name, email,
         company: document.getElementById('company').value.trim(),
         jobtitle: document.getElementById('jobtitle').value.trim(),
-        trainingTitle, dateStart, dateEnd, score,
+        trainingTitle, dateStart, dateEnd, score, total: 10, subtitle: '',
         moduleName: document.getElementById('moduleName').value.trim(),
         durationHours: document.getElementById('durationHours').value.trim(),
       })
