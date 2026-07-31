@@ -47,8 +47,7 @@ class PDF(FPDF):
     def header(self):
         if os.path.exists(header_img):
             self.image(header_img, x=10, y=6, w=52)
-        if os.path.exists(languexpert_img):
-            self.image(languexpert_img, x=138, y=8, w=62)
+        # LangueXpert logo removed (2026-07-31)
         self.set_y(30)
         self.ln(4)
 
