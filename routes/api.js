@@ -2681,7 +2681,7 @@ router.post('/generate-standalone-attestation', async function(req, res) {
     var durationTotal = req.body.durationTotal ? parseFloat(req.body.durationTotal) : 18;
     var subtitle = (req.body.subtitle !== undefined) ? (req.body.subtitle || '') : null;
 
-    if (!name || !email || !trainingTitle || !dateStart || !dateEnd) {
+    if (!name || !trainingTitle || !dateStart || !dateEnd) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 

@@ -60,10 +60,6 @@
       </div>
     </div>
     <div class="field">
-      <label>Email *</label>
-      <input id="email" type="email" placeholder="ex. marie.dupont@cabinet.fr" />
-    </div>
-    <div class="field">
       <label>Intitulé de la formation *</label>
       <select id="trainingTitle" style="width:100%;padding:9px 12px;border:1.5px solid #ddd;border-radius:6px;font-size:0.95rem">
       <!-- canonical-training-titles v2 -->
@@ -124,13 +120,12 @@ async function generate() {
   const btn = document.getElementById('btnGenerate');
   const res = document.getElementById('result');
   const name = document.getElementById('name').value.trim();
-  const email = document.getElementById('email').value.trim();
   const trainingTitle = document.getElementById('trainingTitle').value.trim();
   const dateStart = document.getElementById('dateStart').value;
   const dateEnd = document.getElementById('dateEnd').value;
   const score = parseInt(document.getElementById('score').value) || 0;
 
-  if (!name || !email || !trainingTitle || !dateStart || !dateEnd) {
+  if (!name || !trainingTitle || !dateStart || !dateEnd) {
     res.className = 'err'; res.style.display = 'block';
     res.textContent = 'Veuillez remplir tous les champs obligatoires (*).';
     return;
@@ -150,7 +145,7 @@ async function generate() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        name, email,
+        name,
         company: document.getElementById('company').value.trim(),
         jobtitle: document.getElementById('jobtitle').value.trim(),
         trainingTitle, dateStart, dateEnd, score, total: 10, subtitle: '',
