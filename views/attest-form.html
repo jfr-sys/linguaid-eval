@@ -82,7 +82,7 @@
     <div class="row">
       <div class="field">
         <label>Score quiz *</label>
-        <input id="score" type="number" min="0" max="10" value="8" />
+        <input id="score" type="number" min="0" max="10" />
         <p class="hint">Score obtenu (sur 10)</p>
       </div>
       <div class="field">
@@ -101,6 +101,12 @@
   </div>
 </div>
 <script>
+/* random-score v1: prefill 8, 9 or 10 */
+document.addEventListener('DOMContentLoaded', function() {
+  var s = document.getElementById('score');
+  if (s && !s.value) s.value = 8 + Math.floor(Math.random() * 3);
+});
+
 function setEOY(id) {
   var el = document.getElementById(id);
   if (!el) return;
