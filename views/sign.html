@@ -431,11 +431,14 @@
         document.querySelector('#success-screen h2').textContent = 'Attestation signée avec succès';
         document.getElementById('download-signed').textContent = '⬇ Télécharger votre attestation signée';
       }
-      if (isStandalone && data.finUrl) {
+      if (isStandalone) {
+        /* no-download v1: signed documents are delivered by email */
         document.getElementById('download-signed').style.display = 'none';
         var finP = document.createElement('p');
         finP.style.marginTop = '14px';
-        finP.innerHTML = '<a href="' + data.finUrl + '" style="display:inline-block;background:#2E7D32;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;font-size:0.95rem">⬇ Télécharger votre attestation de fin de formation</a>';
+        finP.style.color = '#555';
+        finP.style.fontWeight = '600';
+        finP.textContent = 'Votre attestation sign\u00e9e vous sera envoy\u00e9e par email.';
         document.getElementById('success-screen').appendChild(finP);
       }
       if (isMission) {

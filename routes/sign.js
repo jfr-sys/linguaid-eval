@@ -373,6 +373,8 @@ router.post('/standalone/:token/submit', express.json({ limit: '5mb' }), functio
 });
 
 router.get('/standalone/:token/attestation-fin', function(req, res) {
+  // no-download-410 v1
+  return res.status(410).send('Ce document vous sera envoy\u00e9 par email.');
   var store = getStandaloneStore();
   var rec = store[req.params.token];
   if (!rec || !rec.finPdfPath || !fs.existsSync(rec.finPdfPath)) return res.status(404).send('Not found');
@@ -383,6 +385,8 @@ router.get('/standalone/:token/attestation-fin', function(req, res) {
 });
 
 router.get('/standalone/:token/signed-pdf', function(req, res) {
+  // no-download-410 v1
+  return res.status(410).send('Ce document vous sera envoy\u00e9 par email.');
   var store = getStandaloneStore();
   var rec = store[req.params.token];
   if (!rec || !rec.signedPdfPath || !fs.existsSync(rec.signedPdfPath)) return res.status(404).send('Not found');
