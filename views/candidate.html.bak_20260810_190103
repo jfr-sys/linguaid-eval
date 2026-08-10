@@ -481,37 +481,6 @@
         <button id="btnPropAccepted" class="btn btn-secondary" onclick="markPropositionAccepted()" style="">✅ Acceptée</button>
       </div>
       <div style="margin-top:6px"><a href="#" onclick="downloadProposition(event);return false;" style="font-size:12px;color:#64748b;text-decoration:underline">Télécharger la proposition (PDF)</a></div>
-      <!-- devis-opco -->
-      <div style="margin-top:10px;padding-top:8px;border-top:1px dashed #e2e8f0">
-        <a href="#" onclick="toggleDevisOpco(event);return false;" style="font-size:12px;color:#0f766e;text-decoration:underline;font-weight:600">📄 Devis OPCO / entreprise…</a>
-        <div id="devisOpcoForm" style="display:none;margin-top:8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
-            <label style="font-size:11px;color:#64748b;display:block">N° devis<input id="dvNum" type="text" style="width:100%;font-size:13px;padding:5px 8px;border:1px solid #e2e8f0;border-radius:6px;box-sizing:border-box;margin-top:2px"></label>
-            <label style="font-size:11px;color:#64748b;display:block">Valable jusqu'au<input id="dvValid" type="text" style="width:100%;font-size:13px;padding:5px 8px;border:1px solid #e2e8f0;border-radius:6px;box-sizing:border-box;margin-top:2px"></label>
-          </div>
-          <label style="font-size:11px;color:#64748b;display:block;margin-bottom:8px">Coordonnées entreprise — 1re ligne = raison sociale (puis adresse, RCS, TVA, tél., contact…)<textarea id="dvClient" rows="5" style="width:100%;font-size:13px;padding:6px 8px;border:1px solid #e2e8f0;border-radius:6px;box-sizing:border-box;margin-top:2px;font-family:inherit"></textarea></label>
-          <label style="font-size:11px;color:#64748b;display:block;margin-bottom:8px">Intitulé<input id="dvIntitule" type="text" style="width:100%;font-size:13px;padding:5px 8px;border:1px solid #e2e8f0;border-radius:6px;box-sizing:border-box;margin-top:2px"></label>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
-            <label style="font-size:11px;color:#64748b;display:block">Stagiaire<input id="dvStagiaire" type="text" style="width:100%;font-size:13px;padding:5px 8px;border:1px solid #e2e8f0;border-radius:6px;box-sizing:border-box;margin-top:2px"></label>
-            <label style="font-size:11px;color:#64748b;display:block">Période<input id="dvPeriode" type="text" placeholder="du 1 septembre 2026 au 31 décembre 2026" style="width:100%;font-size:13px;padding:5px 8px;border:1px solid #e2e8f0;border-radius:6px;box-sizing:border-box;margin-top:2px"></label>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px">
-            <label style="font-size:11px;color:#64748b;display:block">Heures coaching<input id="dvHours" type="number" min="0" step="0.5" style="width:100%;font-size:13px;padding:5px 8px;border:1px solid #e2e8f0;border-radius:6px;box-sizing:border-box;margin-top:2px"></label>
-            <label style="font-size:11px;color:#64748b;display:block">Tarif €/h<input id="dvRate" type="number" min="0" step="1" style="width:100%;font-size:13px;padding:5px 8px;border:1px solid #e2e8f0;border-radius:6px;box-sizing:border-box;margin-top:2px"></label>
-            <label style="font-size:11px;color:#64748b;display:block">Travaux € (forfait, 0 = aucun)<input id="dvTrav" type="number" min="0" step="1" value="0" style="width:100%;font-size:13px;padding:5px 8px;border:1px solid #e2e8f0;border-radius:6px;box-sizing:border-box;margin-top:2px"></label>
-          </div>
-          <label style="font-size:11px;color:#64748b;display:block;margin-bottom:8px">Réfs dossier OPCO (optionnel, ex. G-1068756 / OP26-4341090)<input id="dvRefs" type="text" style="width:100%;font-size:13px;padding:5px 8px;border:1px solid #e2e8f0;border-radius:6px;box-sizing:border-box;margin-top:2px"></label>
-          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-            <button class="btn btn-secondary" id="btnGenDevisOpco" onclick="generateDevisOpco(this)">📄 Générer le devis</button>
-            <span style="font-size:12px;color:#334155">Total : <b id="dvTotal">—</b> net de taxes</span>
-          </div>
-          <div id="dvLinks" style="display:none;margin-top:8px;font-size:12px">
-            <a id="dvDownloadPdf" href="#" style="color:#0f766e;text-decoration:underline;margin-right:12px">Télécharger le devis (PDF)</a>
-            <a id="dvDownloadDocx" href="#" style="color:#64748b;text-decoration:underline">Version Word (.docx)</a>
-          </div>
-          <div id="dvStatus" style="margin-top:6px;font-size:12px;color:#666"></div>
-        </div>
-      </div>
       <div id="propSendStatus" style="margin-top:8px;font-size:12px;color:#666"></div>
       <div id="propositionSentBar" style="display:none;margin-top:0.5rem">
         <div style="font-size:12px;color:#94a3b8" id="propositionSentText"></div>
@@ -1402,84 +1371,6 @@
       }
     })
     .catch(function(e){ alert('Erreur réseau'); btn.disabled = false; btn.textContent = '📧 Envoyer à Catherine'; });
-  }
-
-  /* devis-opco */
-  var _dvInit = false;
-  function toggleDevisOpco(e) {
-    if (e && e.preventDefault) e.preventDefault();
-    var f = document.getElementById('devisOpcoForm');
-    if (!f) return;
-    var open = (f.style.display === 'none' || !f.style.display);
-    f.style.display = open ? 'block' : 'none';
-    if (open && !_dvInit) { _dvInit = true; prefillDevisOpco(); }
-  }
-  function dvFrDate(s) {
-    if (!s) return '\u2026';
-    var m = String(s).match(/^(\d{4})-(\d{2})-(\d{2})/);
-    if (m) {
-      var d = new Date(parseInt(m[1],10), parseInt(m[2],10)-1, parseInt(m[3],10));
-      return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
-    }
-    return s;
-  }
-  function dvRecalc() {
-    var h = parseFloat(document.getElementById('dvHours').value) || 0;
-    var r = parseFloat(document.getElementById('dvRate').value) || 0;
-    var t = parseFloat(document.getElementById('dvTrav').value) || 0;
-    var total = h * r + t;
-    document.getElementById('dvTotal').textContent = total > 0
-      ? total.toFixed(2).replace('.', ',') + ' \u20ac' : '\u2014';
-  }
-  function prefillDevisOpco() {
-    var c = candidate || {};
-    var od = c.oralData || {};
-    var isLegal = (c.courseType === 'legal') || od.cpfType === 'E360_LEGAL' || od.cpfType === 'CAJA';
-    var yr = new Date().getFullYear();
-    document.getElementById('dvNum').value = 'DEV-' + yr + '-' + String(id).slice(-4).toUpperCase();
-    document.getElementById('dvValid').value = '31 d\u00e9cembre ' + yr;
-    document.getElementById('dvClient').value = c.company || '';
-    document.getElementById('dvIntitule').value = 'Formation en anglais ' + (isLegal ? 'juridique' : 'professionnel') + ' \u2014 Action individuelle';
-    document.getElementById('dvStagiaire').value = c.name || '';
-    var ds = od.dateStart || '', de = od.dateEnd || '';
-    document.getElementById('dvPeriode').value = (ds || de) ? ('du ' + dvFrDate(ds) + ' au ' + dvFrDate(de)) : '';
-    document.getElementById('dvHours').value = od.coachingHours || '';
-    document.getElementById('dvRate').value = isLegal ? 132 : 90;
-    ['dvHours','dvRate','dvTrav'].forEach(function(fid){
-      document.getElementById(fid).addEventListener('input', dvRecalc);
-    });
-    dvRecalc();
-  }
-  function generateDevisOpco(btn) {
-    var st = document.getElementById('dvStatus');
-    var payload = {
-      devisNumber: document.getElementById('dvNum').value,
-      dateValidite: document.getElementById('dvValid').value,
-      clientBlock: document.getElementById('dvClient').value,
-      intitule: document.getElementById('dvIntitule').value,
-      stagiaire: document.getElementById('dvStagiaire').value,
-      periode: document.getElementById('dvPeriode').value,
-      hours: document.getElementById('dvHours').value,
-      rate: document.getElementById('dvRate').value,
-      travauxMontant: document.getElementById('dvTrav').value,
-      refsOpco: document.getElementById('dvRefs').value
-    };
-    if (!payload.clientBlock.trim()) { st.textContent = 'Coordonn\u00e9es entreprise requises.'; st.style.color = '#dc2626'; return; }
-    btn.disabled = true; btn.textContent = 'G\u00e9n\u00e9ration\u2026'; st.textContent = ''; st.style.color = '#666';
-    fetch('/api/generate-devis-opco/' + id, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
-    .then(function(r){ return r.json().then(function(d){ return { ok: r.ok, d: d }; }); })
-    .then(function(x){
-      btn.disabled = false; btn.textContent = '\U0001F4C4 G\u00e9n\u00e9rer le devis';
-      if (x.ok && x.d.success) {
-        st.textContent = 'Devis g\u00e9n\u00e9r\u00e9 \u2014 total ' + x.d.total + ' net de taxes.'; st.style.color = '#16a34a';
-        document.getElementById('dvLinks').style.display = 'block';
-        document.getElementById('dvDownloadPdf').href = '/api/download-devis-opco/' + id;
-        document.getElementById('dvDownloadDocx').href = '/api/download-devis-opco-docx/' + id;
-      } else {
-        st.textContent = 'Erreur : ' + (x.d.error || 'inconnue'); st.style.color = '#dc2626';
-      }
-    })
-    .catch(function(e){ btn.disabled = false; btn.textContent = '\U0001F4C4 G\u00e9n\u00e9rer le devis'; st.textContent = 'Erreur r\u00e9seau : ' + e.message; st.style.color = '#dc2626'; });
   }
 
   function showPropositionStep(c) {

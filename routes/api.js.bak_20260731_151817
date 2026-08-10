@@ -2671,17 +2671,12 @@ router.post('/generate-standalone-attestation', async function(req, res) {
     var dateStart = (req.body.dateStart || '').trim();
     var dateEnd = (req.body.dateEnd || '').trim();
     var score = (req.body.score !== null && req.body.score !== undefined && req.body.score !== '') ? parseInt(req.body.score) : null;
-    var totalQ = req.body.total ? parseInt(req.body.total) : 5;
-    if (!totalQ || totalQ < 1 || totalQ > 100) totalQ = 5;
-    if (score !== null && (isNaN(score) || score < 0 || score > totalQ)) {
-      return res.status(400).json({ error: 'Score invalide (0-' + totalQ + ')' });
-    }
     var moduleName = (req.body.moduleName || 'Travaux personnels - Yes You Ken English').trim();
     var durationHours = req.body.durationHours ? parseFloat(req.body.durationHours) : null;
     var durationTotal = req.body.durationTotal ? parseFloat(req.body.durationTotal) : 18;
     var subtitle = (req.body.subtitle !== undefined) ? (req.body.subtitle || '') : null;
 
-    if (!name || !trainingTitle || !dateStart || !dateEnd) {
+    if (!name || !email || !trainingTitle || !dateStart || !dateEnd) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
@@ -2693,7 +2688,7 @@ router.post('/generate-standalone-attestation', async function(req, res) {
     var attestPdf = path3.join(attestDir, uid + '_attestation_standalone.pdf');
     var attestJson = path3.join(attestDir, uid + '_standalone_data.json');
 
-    var completedAt = dateEnd; // Date de realisation = training end date (2026-07-31)
+    var completedAt = new Date().toISOString();
 
     var jsonData = {
       name: name,
@@ -2702,7 +2697,7 @@ router.post('/generate-standalone-attestation', async function(req, res) {
       trainingTitle: trainingTitle,
       moduleName: moduleName,
       score: score,
-      total: totalQ,
+      total: 5,
       completedAt: completedAt,
       dateStart: dateStart,
       dateEnd: dateEnd,
@@ -3447,119 +3442,6 @@ router.post('/save-levels/:id', (req, res) => {
   c.levelsManuallyEditedAt = new Date().toISOString();
   saveCandidates(candidates);
   res.json({ success: true });
-});
-
-
-/* devis-opco (2026-08-10): devis client conforme OPCO (financement entreprise / OPCO).
-   Utilise views/DEVIS_OPCO_TEMPLATE.docx (en-tete + pied de page officiels Linguaid)
-   via /home/debian/fill_devis_opco.py -> data/devis_opco/devis_opco_{id}.pdf|docx */
-router.post('/generate-devis-opco/:id', function(req, res) {
-  var fs2 = require('fs');
-  var path2 = require('path');
-  var execFile2 = require('child_process').execFile;
-  var candidates = getCandidates();
-  var idx = candidates.findIndex(function(x){ return x.id === req.params.id; });
-  if (idx === -1) return res.status(404).json({ error: 'Not found' });
-  var c = candidates[idx];
-  var b = req.body || {};
-  var clientBlock = String(b.clientBlock || '').trim();
-  if (!clientBlock) return res.status(400).json({ error: 'Coordonnees entreprise requises' });
-  var hours = parseFloat(String(b.hours || '').replace(',', '.'));
-  var rate = parseFloat(String(b.rate || '').replace(',', '.'));
-  if (!(hours > 0) || !(rate > 0)) return res.status(400).json({ error: 'Heures et tarif invalides' });
-  var trav = parseFloat(String(b.travauxMontant || '0').replace(',', '.')) || 0;
-  var totalNum = hours * rate + trav;
-  function eur(n) {
-    var parts = n.toFixed(2).split('.');
-    var intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '\u00a0');
-    return intPart + ',' + parts[1] + ' \u20ac';
-  }
-  var od = c.oralData || {};
-  var isLegal = (c.courseType === 'legal') || od.cpfType === 'E360_LEGAL' || od.cpfType === 'CAJA';
-  var today = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
-  var yr = new Date().getFullYear();
-  var devisNumber = String(b.devisNumber || '').trim() || ('DEV-' + yr + '-' + String(c.id).slice(-4).toUpperCase());
-  var hoursStr = String(hours).replace('.', ',');
-  var outDir = path2.join(__dirname, '../data/devis_opco');
-  var args = {
-    devisNumber: devisNumber,
-    dateEmission: today,
-    dateValidite: String(b.dateValidite || '').trim() || ('31 d\u00e9cembre ' + yr),
-    clientBlock: clientBlock,
-    clientName: clientBlock.split('\n')[0].trim(),
-    intitule: String(b.intitule || '').trim() || ('Formation en anglais ' + (isLegal ? 'juridique' : 'professionnel') + ' \u2014 Action individuelle'),
-    stagiaire: String(b.stagiaire || '').trim() || (c.name || ''),
-    modalite: '\u00c0 distance \u2014 visioconf\u00e9rence (cours individuels)',
-    periode: String(b.periode || '').trim(),
-    duree: hoursStr + ' heures',
-    formateur: isLegal
-      ? 'formateur anglophone natif, ancien avocat, sp\u00e9cialis\u00e9 dans l\u2019enseignement de l\u2019anglais juridique des affaires'
-      : 'formateur anglophone natif exp\u00e9riment\u00e9',
-    refsOpco: String(b.refsOpco || '').trim(),
-    designation: String(b.designation || '').trim() || ('Coaching individuel en anglais ' + (isLegal ? 'juridique' : 'professionnel') + ' \u2014 s\u00e9ances en visioconf\u00e9rence, contenus personnalis\u00e9s'),
-    qte: hoursStr + ' h',
-    pu: eur(rate),
-    montant: eur(hours * rate),
-    travauxLabel: trav > 0 ? (String(b.travauxLabel || '').trim() || 'Travaux d\u2019intersession \u2014 pr\u00e9paration et corrections personnalis\u00e9es (forfait)') : '',
-    travauxQte: trav > 0 ? '\u2014' : '',
-    travauxPu: trav > 0 ? '\u2014' : '',
-    travauxMontant: trav > 0 ? eur(trav) : '',
-    total: eur(totalNum),
-    outDir: outDir,
-    id: c.id
-  };
-  if (!fs2.existsSync(outDir)) fs2.mkdirSync(outDir, { recursive: true });
-  execFile2('python3', ['/home/debian/fill_devis_opco.py', JSON.stringify(args)], { timeout: 120000 }, function(err, stdout, stderr) {
-    if (err) { console.error('fill_devis_opco error:', stderr, stdout); return res.status(500).json({ error: 'Devis generation failed' }); }
-    var result;
-    try { result = JSON.parse(stdout.trim()); } catch (e) { return res.status(500).json({ error: 'Invalid fill_devis_opco output' }); }
-    if (!result.success) { console.error('fill_devis_opco:', result); return res.status(500).json({ error: result.error }); }
-    var cands2 = getCandidates();
-    var i2 = cands2.findIndex(function(x){ return x.id === req.params.id; });
-    if (i2 !== -1) {
-      cands2[i2].devisOpco = {
-        number: devisNumber,
-        total: args.total,
-        totalNum: totalNum,
-        hours: hours,
-        rate: rate,
-        travauxMontant: trav,
-        refsOpco: args.refsOpco,
-        clientBlock: clientBlock,
-        pdfPath: result.pdfPath,
-        docxPath: result.docxPath,
-        generatedAt: new Date().toISOString()
-      };
-      saveCandidates(cands2);
-    }
-    res.json({ success: true, total: args.total });
-  });
-});
-
-router.get('/download-devis-opco/:id', function(req, res) {
-  var pp = require('path');
-  var pdf = pp.join(__dirname, '../data/devis_opco/devis_opco_' + req.params.id + '.pdf');
-  if (!require('fs').existsSync(pdf)) return res.status(404).json({ error: 'Devis PDF not found - generate first' });
-  var cands = getCandidates();
-  var c = cands.find(function(x){ return x.id === req.params.id; });
-  var name = (c && c.name) ? c.name.replace(/\s+/g, '_') : req.params.id;
-  res.setHeader('Cache-Control', 'no-store');
-  res.setHeader('Content-Type', 'application/pdf');
-  res.setHeader('Content-Disposition', 'attachment; filename="devis_' + name + '.pdf"');
-  res.sendFile(pdf);
-});
-
-router.get('/download-devis-opco-docx/:id', function(req, res) {
-  var pp = require('path');
-  var f = pp.join(__dirname, '../data/devis_opco/devis_opco_' + req.params.id + '.docx');
-  if (!require('fs').existsSync(f)) return res.status(404).json({ error: 'Devis DOCX not found - generate first' });
-  var cands = getCandidates();
-  var c = cands.find(function(x){ return x.id === req.params.id; });
-  var name = (c && c.name) ? c.name.replace(/\s+/g, '_') : req.params.id;
-  res.setHeader('Cache-Control', 'no-store');
-  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-  res.setHeader('Content-Disposition', 'attachment; filename="devis_' + name + '.docx"');
-  res.sendFile(f);
 });
 
 module.exports = router;

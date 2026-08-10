@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Générer une attestation — Linguaid</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    .eoy-btn { padding:6px 10px; font-size:11px; border:1px solid #ddd; border-radius:6px; background:#f8f9fb; color:#555; cursor:pointer; white-space:nowrap; flex-shrink:0; font-family:inherit; }
+    .eoy-btn:hover { background:#eef1f5; }
+    body { font-family: "Segoe UI", Arial, sans-serif; background: #f5f6fa; color: #222; min-height: 100vh; }
+    .header { background: #1F4E79; color: white; padding: 18px 32px; }
+    .header h1 { font-size: 1.1rem; font-weight: 600; }
+    .header p { font-size: 0.85rem; opacity: 0.8; margin-top: 2px; }
+    .container { max-width: 620px; margin: 40px auto; padding: 0 20px 60px; }
+    .card { background: white; border-radius: 10px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); padding: 28px 32px; }
+    h2 { font-size: 1rem; font-weight: 600; color: #1F4E79; margin-bottom: 20px; }
+    .field { margin-bottom: 16px; }
+    label { display: block; font-size: 0.85rem; font-weight: 500; margin-bottom: 5px; color: #444; }
+    input, select { width: 100%; padding: 9px 12px; border: 1.5px solid #ddd; border-radius: 6px; font-size: 0.95rem; }
+    input:focus, select:focus { outline: none; border-color: #1F4E79; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .btn { width: 100%; padding: 13px; background: #1F4E79; color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; margin-top: 8px; }
+    .btn:hover { background: #163d61; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    #result { margin-top: 20px; padding: 16px; border-radius: 8px; font-size: 0.9rem; display: none; }
+    #result.ok { background: #f0fff4; color: #065f46; border: 1px solid #6ee7b7; }
+    #result.err { background: #fff0f0; color: #c00; border: 1px solid #fca5a5; }
+    .hint { font-size: 0.78rem; color: #888; margin-top: 3px; }
+
+    /* responsive-v1 */
+    @media (max-width: 700px) {
+      .header { padding: 14px 16px; }
+      .container { margin: 20px auto; padding: 0 12px 40px; }
+      .card { padding: 20px 16px; }
+      .row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="header">
+  <h1>Linguaid — Attestation de réalisation</h1>
+  <p>Générer et envoyer une attestation pour signature électronique</p>
+</div>
+<div class="container">
+  <div class="card">
+    <h2>📋 Informations du stagiaire</h2>
+    <div class="field">
+      <label>Nom complet *</label>
+      <input id="name" type="text" placeholder="ex. Marie Dupont" />
+    </div>
+    <div class="row">
+      <div class="field">
+        <label>Entreprise</label>
+        <input id="company" type="text" placeholder="ex. Cabinet Martin" />
+      </div>
+      <div class="field">
+        <label>Poste</label>
+        <input id="jobtitle" type="text" placeholder="ex. Avocat associé" />
+      </div>
+    </div>
+    <div class="field">
+      <label>Email *</label>
+      <input id="email" type="email" placeholder="ex. marie.dupont@cabinet.fr" />
+    </div>
+    <div class="field">
+      <label>Intitulé de la formation *</label>
+      <select id="trainingTitle" style="width:100%;padding:9px 12px;border:1.5px solid #ddd;border-radius:6px;font-size:0.95rem">
+      <!-- canonical-training-titles v1 -->
+      <option value="Communiquer en anglais professionnel – English 360 – Niveau B2">CPF — English 360 – Niveau B2</option>
+      <option value="Communiquer en anglais professionnel – English 360 en contexte juridique – Niveau B2">CPF — English 360 en contexte juridique – Niveau B2</option>
+      <option value="Communiquer en anglais juridique des affaires – CAJA – Niveau B2">CPF — CAJA – Anglais Juridique des Affaires – Niveau B2</option>
+      <option value="Formation en Anglais Professionnel">Formation en Anglais Professionnel</option>
+      <option value="Formation en Anglais Juridique">Formation en Anglais Juridique</option>
+    </select>
+    </div>
+    <div class="row">
+      <div class="field">
+        <label>Date de début *</label>
+        <input id="dateStart" type="date" />
+      </div>
+      <div class="field">
+        <label>Date de fin *</label>
+        <div style="display:flex;gap:6px;align-items:center"><input id="dateEnd" type="date" style="flex:1;min-width:0" /><button type="button" class="eoy-btn" onclick="setEOY('dateEnd')" title="31 decembre">EOY</button></div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="field">
+        <label>Score quiz *</label>
+        <input id="score" type="number" min="0" max="10" value="8" />
+        <p class="hint">Score obtenu (sur 10)</p>
+      </div>
+      <div class="field">
+        <label>Module</label>
+        <input id="moduleName" type="text" value="Travaux personnels - Yes You Ken English" />
+      </div>
+    </div>
+    <div class="row">
+      <div class="field">
+        <label>Durée du module (heures) *</label>
+        <input id="durationHours" type="number" min="1" max="100" value="10" />
+      </div>
+    </div>
+    <button class="btn" id="btnGenerate" onclick="generate()">Générer</button>
+    <div id="result"></div>
+  </div>
+</div>
+<script>
+function setEOY(id) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.value = new Date().getFullYear() + '-12-31';
+  el.dispatchEvent(new Event('change', { bubbles: true }));
+}
+
+function copySignLink(btn) {
+  var box = document.getElementById('signLinkBox');
+  if (!box) return;
+  box.select();
+  var done = function(){ btn.textContent = '✅ Copié'; setTimeout(function(){ btn.textContent = '📋 Copier le lien'; }, 2500); };
+  if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(box.value).then(done, function(){ document.execCommand('copy'); done(); }); }
+  else { document.execCommand('copy'); done(); }
+}
+async function generate() {
+  const btn = document.getElementById('btnGenerate');
+  const res = document.getElementById('result');
+  const name = document.getElementById('name').value.trim();
+  const email = document.getElementById('email').value.trim();
+  const trainingTitle = document.getElementById('trainingTitle').value.trim();
+  const dateStart = document.getElementById('dateStart').value;
+  const dateEnd = document.getElementById('dateEnd').value;
+  const score = parseInt(document.getElementById('score').value) || 0;
+
+  if (!name || !email || !trainingTitle || !dateStart || !dateEnd) {
+    res.className = 'err'; res.style.display = 'block';
+    res.textContent = 'Veuillez remplir tous les champs obligatoires (*).';
+    return;
+  }
+
+  btn.disabled = true; btn.textContent = 'Génération en cours…';
+  res.style.display = 'none';
+
+  try {
+    const r = await fetch('/api/generate-standalone-attestation', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name, email,
+        company: document.getElementById('company').value.trim(),
+        jobtitle: document.getElementById('jobtitle').value.trim(),
+        trainingTitle, dateStart, dateEnd, score,
+        moduleName: document.getElementById('moduleName').value.trim(),
+        durationHours: document.getElementById('durationHours').value.trim(),
+      })
+    });
+    const data = await r.json();
+    if (data.ok) {
+      res.className = 'ok'; res.style.display = 'block';
+      /* manual-link-only */
+      res.innerHTML = '✅ Attestation générée. <strong>Aucun email envoyé</strong> — partagez ce lien manuellement :<br><br>'
+        + '<input id="signLinkBox" type="text" readonly value="' + data.signingUrl + '" onclick="this.select()" style="width:100%;box-sizing:border-box;padding:9px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;background:#fff">'
+        + '<br><br><button type="button" onclick="copySignLink(this)" style="padding:8px 16px;border:none;border-radius:6px;background:#1F4E79;color:#fff;cursor:pointer;font-size:14px">📋 Copier le lien</button> '
+        + '<a href="' + data.signingUrl + '" target="_blank" style="color:#1F4E79;font-weight:600;margin-left:10px">🔗 Ouvrir</a>';
+    } else {
+      throw new Error(data.error || 'Erreur inconnue');
+    }
+  } catch(e) {
+    res.className = 'err'; res.style.display = 'block';
+    res.textContent = 'Erreur : ' + e.message;
+  }
+  btn.disabled = false; btn.textContent = 'Générer';
+}
+</script>
+</body>
+</html>
