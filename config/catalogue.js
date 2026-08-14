@@ -33,6 +33,15 @@ const E360_ACTIONS = [
     price: 3275,
     link: mcfLink('E360B2-26', 'E360B245H-26'),
   },
+  {
+    id: 'E360B220HPRO-26',
+    label: '20h \u2014 15h coaching + 5h TP \u2014 1 650\u20ac',
+    totalHours: 20,
+    coachingHours: 15,
+    tpHours: 5,
+    price: 1650,
+    link: mcfLink('E360B2-26', 'E360B220HPRO-26'),
+  },
 ];
 
 // ---------------------------------------------------------------------------
