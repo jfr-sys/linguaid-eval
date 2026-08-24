@@ -772,8 +772,6 @@ router.get('/download/:id/:lang', function(req, res) {
 });
 
 
-
-
 function buildProgramme(p) {
   var NB = {style:BorderStyle.NONE,size:0,color:'FFFFFF'};
   var NO = {top:NB,bottom:NB,left:NB,right:NB};
@@ -947,18 +945,6 @@ router.get('/download-convention-signed/:id', function(req, res) {
   fs.createReadStream(pdfPath).pipe(res);
 });
 
-router.get('/download-convention-signed/:id', function(req, res) {
-  var candidates = getCandidates();
-  var candidate = candidates.find(function(c) { return c.id === req.params.id; });
-  if (!candidate) return res.status(404).json({ error: 'Not found' });
-  var path = require('path');
-  var fs = require('fs');
-  var pdfPath = (candidate.conventionData && candidate.conventionData.signedPdfPath) || '';
-  if (!pdfPath || !fs.existsSync(pdfPath)) return res.status(404).json({ error: 'Signed PDF not found' });
-  res.setHeader('Content-Type', 'application/pdf');
-  res.setHeader('Content-Disposition', 'attachment; filename="convention_signee_' + (candidate.name||'').replace(/\s+/g,'_') + '.pdf"');
-  fs.createReadStream(pdfPath).pipe(res);
-});
 
 router.get('/download-convention/:id', (req, res) => {
   const candidate = getCandidates().find(c => c.id === req.params.id);
@@ -2957,7 +2943,6 @@ router.post('/generate-standalone-attestation', async function(req, res) {
 });
 
 
-
 // POST /api/calendly-webhook — called by Zapier when a candidate books an oral slot
 router.post('/calendly-webhook', express.json(), function(req, res) {
   try {
@@ -3154,7 +3139,6 @@ router.post('/push-to-drive/:id', async function(req, res) {
     res.status(500).json({ error: err.message });
   }
 });
-
 
 
 // ── Company report: live per-company status with shareable link ─────────────
@@ -3450,7 +3434,6 @@ router.get('/download-report-pdf-fr/:id', function(req, res) {
 });
 
 
-
 // ── Company registry: list canonical company names ──────────────────────────
 router.get('/companies', function(req, res) {
   try {
@@ -3513,7 +3496,6 @@ router.get('/approve-reminders/:batchToken', function(req, res) {
   approveReminders(req, res, function(e) { return e.batchToken === req.params.batchToken; });
 });
 // == END REMINDER_APPROVAL_ROUTES =============================================
-
 
 
 // -- Step 11: mission pipeline (demande de mission / devis / confirmation) --

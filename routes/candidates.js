@@ -295,11 +295,6 @@ router.post('/api/:id/company', (req, res) => {
 
 // ── Legal English candidate intake ──────────────────────────────────────────
 
-router.get('/new-legal', (req, res) => {
-  res.sendFile(path.join(__dirname, '../views/new_legal.html'));
-});
-
-
 
 router.post('/api/new-legal', (req, res) => {
   try {
