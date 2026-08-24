@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Propositions en cours — Linguaid Eval</title>
+<!-- PROPOSAL_RELANCES (2026-08-24) -->
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; background:#f6f8fb; color:#1a1a1a; }
+  .nav { background:#1F4E79; color:white; padding:0 2rem; height:56px; display:flex; align-items:center; justify-content:space-between; }
+  .nav a { color:rgba(255,255,255,0.85); text-decoration:none; font-size:13px; }
+  .wrap { max-width:1280px; margin:1.5rem auto; padding:0 1.5rem; }
+  h1 { font-size:20px; color:#1F4E79; margin:0 0 4px; }
+  .sub { font-size:13px; color:#64748b; margin:0 0 18px; }
+  .layout { display:grid; grid-template-columns:1fr 1fr; gap:18px; align-items:start; }
+  @media (max-width:1000px) { .layout { grid-template-columns:1fr; } }
+  .card { background:white; border:1px solid #e2e8f0; border-radius:12px; overflow:hidden; }
+  table { width:100%; border-collapse:collapse; }
+  th { background:#1F4E79; color:white; font-size:11px; text-align:left; padding:8px 10px; font-weight:600; }
+  td { padding:8px 10px; border-bottom:1px solid #eef2f7; font-size:13px; vertical-align:top; }
+  tr.row { cursor:pointer; }
+  tr.row:hover { background:#f8fafc; }
+  tr.row.sel { background:#eff6ff; }
+  .pill { display:inline-block; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:600; }
+  .p-red { background:#fee2e2; color:#991b1b; }
+  .p-amb { background:#fef3c7; color:#92400e; }
+  .p-grn { background:#dcfce7; color:#166534; }
+  .p-gry { background:#f1f5f9; color:#475569; }
+  .panel { padding:16px; }
+  label { display:block; font-size:11px; color:#64748b; margin:10px 0 4px; font-weight:600; }
+  input[type=text], textarea { width:100%; font-family:inherit; font-size:13px; padding:8px 10px; border:1px solid #cbd5e1; border-radius:8px; }
+  textarea { min-height:280px; line-height:1.6; resize:vertical; }
+  .btn { font-size:13px; padding:8px 16px; border-radius:8px; border:none; cursor:pointer; font-family:inherit; font-weight:600; }
+  .btn-primary { background:#1F4E79; color:white; }
+  .btn-primary:disabled { background:#94a3b8; cursor:not-allowed; }
+  .btn-ghost { background:white; color:#475569; border:1px solid #cbd5e1; }
+  .meta { font-size:12px; color:#64748b; line-height:1.7; }
+  .warnbox { background:#fffbeb; border:1px solid #fde68a; color:#92400e; font-size:12px; padding:8px 10px; border-radius:8px; margin-top:10px; }
+  .empty { padding:40px; text-align:center; color:#64748b; font-size:14px; }
+</style>
+</head>
+<body>
+<nav class="nav">
+  <a href="/candidates" style="display:flex;align-items:center;gap:14px"><span style="font-size:15px;font-weight:600;color:white">English Evaluation System</span></a>
+  <div><a href="/candidates">&larr; Liste des candidats</a></div>
+</nav>
+
+<div class="wrap">
+  <h1>Propositions en cours</h1>
+  <p class="sub">Propositions envoyées et restées sans réponse. Rien ne part automatiquement : chaque relance est relue et envoyée par vous.</p>
+
+  <div class="layout">
+    <div class="card">
+      <table>
+        <thead><tr><th>Candidat</th><th>Entreprise</th><th>Destinataire</th><th>Envoyée</th><th>Depuis</th><th>Relances</th></tr></thead>
+        <tbody id="tbody"><tr><td colspan="6" class="empty">Chargement…</td></tr></tbody>
+      </table>
+    </div>
+
+    <div class="card" id="panelCard" style="display:none">
+      <div class="panel">
+        <div id="who" style="font-size:15px;font-weight:600;color:#1F4E79"></div>
+        <div class="meta" id="meta"></div>
+        <div id="recentWarn"></div>
+
+        <label>Destinataire</label>
+        <input type="text" id="fTo">
+
+        <label>Objet</label>
+        <input type="text" id="fSubject">
+
+        <label>Message (modifiable — la signature Linguaid est ajoutée automatiquement)</label>
+        <textarea id="fBody"></textarea>
+
+        <div style="margin-top:10px" id="attachRow">
+          <label style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#475569;margin:0;font-weight:400">
+            <input type="checkbox" id="fAttach"> Rejoindre la proposition en PJ
+          </label>
+        </div>
+
+        <div style="margin-top:14px;display:flex;gap:10px;align-items:center">
+          <button class="btn btn-primary" id="btnSend" onclick="sendReminder()">Envoyer la relance</button>
+          <button class="btn btn-ghost" onclick="redraft()">Réinitialiser le texte</button>
+          <span id="status" style="font-size:12px;color:#166534"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var ITEMS = [];
+var CUR = null;
+
+function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+function fdate(iso) { return iso ? new Date(iso).toLocaleDateString('fr-FR') : "\u2014"; }
+function firstName(n) { return String(n || '').split(' ')[0]; }
+
+function agePill(d) {
+  if (d == null) return '<span class="pill p-gry">-</span>';
+  var cls = d > 14 ? 'p-red' : (d > 7 ? 'p-amb' : 'p-grn');
+  return '<span class="pill ' + cls + '">' + d + ' j</span>';
+}
+
+function load() {
+  fetch('/candidates/api/proposal-reminders')
+    .then(function(r) { return r.json(); })
+    .then(function(j) {
+      ITEMS = j.items || [];
+      var tb = document.getElementById('tbody');
+      if (!ITEMS.length) {
+        tb.innerHTML = '<tr><td colspan="6" class="empty">' + "Aucune proposition en attente de réponse — tout est à jour." + '</td></tr>';
+        return;
+      }
+      tb.innerHTML = ITEMS.map(function(it, i) {
+        return '<tr class="row" id="row-' + i + '" onclick="pick(' + i + ')">'
+          + '<td><strong>' + esc(it.name) + '</strong>' + (it.isThirdParty ? '<br><span class="pill p-gry">tiers payeur</span>' : '') + '</td>'
+          + '<td>' + esc(it.company || '-') + '</td>'
+          + '<td style="font-size:12px">' + esc(it.to || '-') + '</td>'
+          + '<td>' + fdate(it.proposalSentAt) + '</td>'
+          + '<td>' + agePill(it.daysSince) + '</td>'
+          + '<td>' + (it.reminderCount ? it.reminderCount + '<br><span style="font-size:11px;color:#94a3b8">' + fdate(it.lastReminderAt) + '</span>' : '-') + '</td>'
+          + '</tr>';
+      }).join('');
+    })
+    .catch(function() {
+      document.getElementById('tbody').innerHTML = '<tr><td colspan="6" class="empty">Erreur de chargement.</td></tr>';
+    });
+}
+
+function draftFor(it) {
+  var d = fdate(it.proposalSentAt);
+  if (it.isThirdParty) {
+    return {
+      subject: "Relance — proposition de formation en anglais pour " + it.name,
+      body: "Madame, Monsieur,\n\n"
+        + "Je me permets de revenir vers vous au sujet de la proposition de formation en anglais adressée le " + d + " pour " + it.name + ".\n\n"
+        + "Sans retour de votre part à ce stade, je souhaitais m\u2019assurer qu\u2019elle vous était bien parvenue et savoir si des précisions vous seraient utiles, sur le contenu pédagogique, le calendrier ou les modalités de financement.\n\n"
+        + "Si le projet doit être reporté, dites-le moi simplement : je garde le dossier ouvert et nous le reprendrons au moment qui vous conviendra.\n\n"
+        + "Je reste bien entendu à votre disposition pour en échanger de vive voix.\n\n"
+        + "Bien cordialement,"
+    };
+  }
+  return {
+    subject: "Votre proposition de formation en anglais",
+    body: "Bonjour " + firstName(it.name) + ",\n\n"
+      + "Je me permets de revenir vers vous au sujet de la proposition de formation que je vous ai adressée le " + d + ".\n\n"
+      + "Je souhaitais m\u2019assurer qu\u2019elle vous était bien parvenue et savoir si vous aviez des questions, sur le déroulé des séances, le rythme ou les démarches administratives.\n\n"
+      + "Si le moment n\u2019est pas le bon, dites-le moi sans souci : je garde votre dossier ouvert et nous pourrons le reprendre plus tard.\n\n"
+      + "Je reste à votre disposition.\n\n"
+      + "Bien cordialement,"
+  };
+}
+
+function pick(i) {
+  CUR = ITEMS[i];
+  ITEMS.forEach(function(x, k) {
+    var r = document.getElementById('row-' + k);
+    if (r) r.classList.toggle('sel', k === i);
+  });
+  document.getElementById('panelCard').style.display = 'block';
+  document.getElementById('who').textContent = CUR.name + (CUR.company ? " — " + CUR.company : '');
+  var bits = [];
+  if (CUR.jobtitle) bits.push(esc(CUR.jobtitle));
+  if (CUR.totalHours) bits.push(esc(CUR.totalHours) + ' h');
+  if (CUR.price) bits.push(esc(CUR.price) + " \u20ac");
+  if (CUR.isCPF) bits.push('CPF' + (CUR.cpfType ? ' ' + esc(CUR.cpfType) : ''));
+  if (CUR.courseType === 'legal') bits.push('anglais juridique');
+  document.getElementById('meta').innerHTML = bits.join(' &middot; ')
+    + "<br>Proposée le " + fdate(CUR.proposalSentAt) + ' (' + (CUR.daysSince == null ? '?' : CUR.daysSince) + ' jours)'
+    + (CUR.reminderCount ? ' &middot; ' + CUR.reminderCount + " relance(s), dernière le " + fdate(CUR.lastReminderAt) : '');
+
+  var warn = '';
+  if (CUR.lastReminderAt) {
+    var since = Math.floor((Date.now() - new Date(CUR.lastReminderAt).getTime()) / 86400000);
+    if (since < 3) warn = '<div class="warnbox">' + "Une relance a déjà été envoyée il y a " + since + " jour(s). Laisser respirer avant de relancer à nouveau ?" + '</div>';
+  }
+  document.getElementById('recentWarn').innerHTML = warn;
+
+  document.getElementById('attachRow').style.display = CUR.hasPropositionPdf ? 'block' : 'none';
+  document.getElementById('fAttach').checked = false;
+  document.getElementById('fTo').value = CUR.to || '';
+  redraft();
+  document.getElementById('status').textContent = '';
+  document.getElementById('btnSend').disabled = false;
+  document.getElementById('btnSend').textContent = 'Envoyer la relance';
+}
+
+function redraft() {
+  if (!CUR) return;
+  var d = draftFor(CUR);
+  document.getElementById('fSubject').value = d.subject;
+  document.getElementById('fBody').value = d.body;
+}
+
+function sendReminder() {
+  if (!CUR) return;
+  var to = document.getElementById('fTo').value.trim();
+  if (!confirm("Envoyer cette relance à " + to + " ?")) return;
+  var btn = document.getElementById('btnSend');
+  var st = document.getElementById('status');
+  btn.disabled = true;
+  btn.textContent = "Envoi…";
+  st.style.color = '#64748b';
+  st.textContent = '';
+  fetch('/candidates/api/send-proposal-reminder/' + CUR.id, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      to: to,
+      subject: document.getElementById('fSubject').value,
+      body: document.getElementById('fBody').value,
+      attachProposition: document.getElementById('fAttach').checked
+    })
+  })
+    .then(function(r) { return r.json(); })
+    .then(function(j) {
+      if (j.ok) {
+        st.style.color = '#166534';
+        st.textContent = "Relance envoyée à " + j.to + " \u2713";
+        btn.textContent = "Envoyée \u2713";
+        setTimeout(load, 800);
+      } else {
+        st.style.color = '#dc2626';
+        st.textContent = 'Erreur : ' + (j.error || '');
+        btn.disabled = false;
+        btn.textContent = 'Envoyer la relance';
+      }
+    })
+    .catch(function(e) {
+      st.style.color = '#dc2626';
+      st.textContent = "Erreur réseau : " + e.message;
+      btn.disabled = false;
+      btn.textContent = 'Envoyer la relance';
+    });
+}
+
+load();
+</script>
+</body>
+</html>

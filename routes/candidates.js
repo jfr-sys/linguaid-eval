@@ -31,6 +31,122 @@ router.get('/suivi', (req, res) => {
   res.sendFile(path.join(__dirname, '../views/suivi.html'));
 });
 
+/* == PROPOSAL_RELANCES (2026-08-24) =========================================
+   Outstanding propositions + per-candidate reminder that Joss reads, edits and
+   sends by hand. REMINDER APPROVAL POLICY: nothing here is ever automatic.
+   Declared above router.get('/:id') so /candidates/relances is not swallowed
+   by the candidate-detail route. */
+var _cadre = require('../lib/contratCadre');
+
+function proposalOutstanding(c) {
+  if (!c) return false;
+  if (_cadre.isContratCadre(c.company)) return false;      /* never proposed to */
+  var cd = c.conventionData || {};
+  if (!cd.proposalSentAt) return false;                     /* nothing sent yet */
+  if (cd.proposalAcceptedAt || c.proposalAcceptedAt) return false;
+  /* dossier already moved past the proposal -> convention nudges take over */
+  if (cd.signedAt || cd.signingToken || cd.generatedAt || cd.pdfPath) return false;
+  if (cd.sentToCatherineAt || cd.convocationSentAt) return false;
+  return true;
+}
+
+function daysSinceIso(iso) {
+  if (!iso) return null;
+  return Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+}
+
+router.get('/relances', (req, res) => {
+  res.sendFile(path.join(__dirname, '../views/relances.html'));
+});
+
+router.get('/api/proposal-reminders', (req, res) => {
+  try {
+    var items = getCandidates().filter(proposalOutstanding).map(function(c) {
+      var cd = c.conventionData || {};
+      var od = c.oralData || {};
+      var pdf = path.join(dataDir, 'propositions', c.id + '.pdf');
+      return {
+        id: c.id,
+        name: c.name || '',
+        company: c.company || '',
+        jobtitle: c.jobtitle || '',
+        to: cd.proposalRecipient || c.email || '',
+        isThirdParty: !!cd.isThirdParty || !!(cd.proposalRecipient && c.email
+              && String(cd.proposalRecipient).toLowerCase() !== String(c.email).toLowerCase()),
+        courseType: c.courseType || '',
+        cpfType: od.cpfType || '',
+        isCPF: !!cd.isCPF,
+        totalHours: od.totalHours || '',
+        price: cd.price || od.edofPrice || '',
+        proposalSentAt: cd.proposalSentAt || null,
+        daysSince: daysSinceIso(cd.proposalSentAt),
+        lastReminderAt: cd.proposalLastReminderAt || null,
+        reminderCount: cd.proposalReminderCount || 0,
+        hasPropositionPdf: fs.existsSync(pdf)
+      };
+    });
+    items.sort(function(a, b) { return (b.daysSince || 0) - (a.daysSince || 0); });
+    res.json({ items: items });
+  } catch (err) {
+    console.error('proposal-reminders error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/api/send-proposal-reminder/:id', (req, res) => {
+  var b = req.body || {};
+  var candidates = getCandidates();
+  var c = candidates.find(function(x) { return x.id === req.params.id; });
+  if (!c) return res.status(404).json({ error: 'Candidat introuvable' });
+  /* re-verify at click time, exactly like the approval links do */
+  if (!proposalOutstanding(c)) {
+    return res.status(400).json({ error: 'Proposition deja acceptee ou dossier avance - rien a relancer' });
+  }
+  var to = String(b.to || '').trim() || (c.conventionData || {}).proposalRecipient || c.email || '';
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) {
+    return res.status(400).json({ error: 'Adresse destinataire invalide' });
+  }
+  var subject = String(b.subject || '').trim();
+  var body = String(b.body || '').trim();
+  if (!subject) return res.status(400).json({ error: 'Objet vide' });
+  if (!body) return res.status(400).json({ error: 'Corps du message vide' });
+
+  var html = '<div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.8;color:#1a1a1a;max-width:600px">'
+    + '<p>' + body.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                  .replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>') + '</p>'
+    + '<br><img src="https://eval.linguaid.net/signature_joss.png" alt="Joss Frimond - Linguaid" style="max-width:400px;display:block;margin-top:8px">'
+    + '</div>';
+
+  var attachments = [];
+  if (b.attachProposition) {
+    var pdf = path.join(dataDir, 'propositions', c.id + '.pdf');
+    if (fs.existsSync(pdf)) {
+      attachments.push({ filename: 'proposition_' + String(c.name).replace(/\s+/g, '_') + '.pdf', path: pdf });
+    }
+  }
+
+  var nodemailer = require('nodemailer');
+  var transporter = nodemailer.createTransport({ host: 'localhost', port: 25, secure: false, tls: { rejectUnauthorized: false } });
+  transporter.sendMail({
+    from: 'jfr@linguaid.net', to: to, cc: 'jfr@linguaid.net',
+    subject: subject, html: html, attachments: attachments
+  }, function(err) {
+    if (err) { console.error('send-proposal-reminder error:', err); return res.status(500).json({ error: err.message }); }
+    /* re-read after the async gap - never write back a stale copy */
+    var fresh = getCandidates();
+    var i = fresh.findIndex(function(x) { return x.id === req.params.id; });
+    if (i > -1) {
+      fresh[i].conventionData = fresh[i].conventionData || {};
+      fresh[i].conventionData.proposalLastReminderAt = new Date().toISOString();
+      fresh[i].conventionData.proposalReminderCount = (fresh[i].conventionData.proposalReminderCount || 0) + 1;
+      saveCandidates(fresh);
+    }
+    console.log('Proposal reminder sent to ' + to + ' for ' + c.name);
+    res.json({ ok: true, to: to });
+  });
+});
+/* == END PROPOSAL_RELANCES ================================================== */
+
 router.get('/company-report', (req, res) => {
   res.sendFile(path.join(__dirname, '../views/company_report.html'));
 });
