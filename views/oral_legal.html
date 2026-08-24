@@ -263,6 +263,29 @@
       </div>
       <label>Observations &amp; exemples</label>
       <textarea id="speakingObs" placeholder="ex. Bonne aisance sur les sujets familiers ; erreurs récurrentes sur les modaux de contrat ; vocabulaire procédural limité…"></textarea>
+
+      <!-- LEGAL_ORAL_WRITTEN_LEVELS (2026-08-24) -->
+      <div style="margin-top:1.5rem;padding-top:1.25rem;border-top:1px solid #e2e8f0">
+        <div class="section-label">Niveaux CECR — compétences écrites</div>
+        <p class="hint" style="margin-bottom:0.75rem">
+          Facultatif. Renseignez uniquement ce que vous avez pu observer (documents, échanges écrits,
+          production pendant l'entretien). Laissé vide, le rapport indiquera « Not assessed at this stage ».
+          Ces niveaux alimentent directement le rapport final — inutile de repasser par Niveaux.
+        </p>
+        <div id="selfDeclaredRef" style="font-size:12px;color:#64748b;margin-bottom:0.75rem"></div>
+
+        <label>Grammaire</label>
+        <div class="cefr-grid" id="cefrGrammar"></div>
+
+        <label>Expression écrite</label>
+        <div class="cefr-grid" id="cefrWriting"></div>
+
+        <label>Compréhension écrite</label>
+        <div class="cefr-grid" id="cefrReading"></div>
+
+        <button type="button" class="btn btn-secondary" style="margin-top:0.75rem;font-size:12px;padding:6px 12px"
+          onclick="clearWrittenLevels()">Effacer les niveaux écrits</button>
+      </div>
     </div>
     <div class="btn-row">
       <button class="btn btn-secondary" onclick="goSec(1)">← Retour</button>
@@ -466,7 +489,7 @@
   ];
   const RATINGS = ["Strong","Good","Developing","Weak"];
 
-  let sel = { listening: null, speaking: null, criteria: {} };
+  let sel = { listening: null, speaking: null, grammar: null, writing: null, reading: null, criteria: {} }; /* LEGAL_ORAL_WRITTEN_LEVELS (2026-08-24) */
   let candData = null;
   let goals = [];
   let extraGoals = [];
@@ -481,6 +504,20 @@
       renderProfilePanel(c);
       makeCefrGrid('cefrListening', 'listening');
       makeCefrGrid('cefrSpeaking', 'speaking');
+      /* LEGAL_ORAL_WRITTEN_LEVELS (2026-08-24): optional, never pre-selected */
+      makeCefrGrid('cefrGrammar', 'grammar');
+      makeCefrGrid('cefrWriting', 'writing');
+      makeCefrGrid('cefrReading', 'reading');
+      (function() {
+        var ref = document.getElementById('selfDeclaredRef');
+        if (!ref) return;
+        var bits = [];
+        if (c.selfLevelWriting) bits.push("écrit déclaré : " + c.selfLevelWriting);
+        if (c.selfLevelOral) bits.push("oral déclaré : " + c.selfLevelOral);
+        ref.innerHTML = bits.length
+          ? "Auto-évaluation du candidat (référence, non retenue automatiquement) — " + bits.join(" · ")
+          : "";
+      })();
       makeCriteriaGrid();
       renderGoalsValidation();
       if (c.legalDomains) document.getElementById("legalFocus").value = c.legalDomains;
@@ -555,6 +592,14 @@
       c.appendChild(btn);
     });
   }
+
+  /* LEGAL_ORAL_WRITTEN_LEVELS (2026-08-24) */
+  window.clearWrittenLevels = function() {
+    sel.grammar = null; sel.writing = null; sel.reading = null;
+    makeCefrGrid('cefrGrammar', 'grammar');
+    makeCefrGrid('cefrWriting', 'writing');
+    makeCefrGrid('cefrReading', 'reading');
+  };
 
   function makeCriteriaGrid() {
     const grid = document.getElementById('criteriaGrid');
@@ -692,6 +737,10 @@
       format:             document.getElementById('format').value,
       listeningLevel:     sel.listening,
       speakingLevel:      sel.speaking,
+      /* LEGAL_ORAL_WRITTEN_LEVELS (2026-08-24): optional written skills */
+      grammarLevel:       sel.grammar,
+      writingLevel:       sel.writing,
+      readingLevel:       sel.reading,
       criteria:           sel.criteria,
       listeningObs:       document.getElementById('listeningObs').value,
       speakingObs:        document.getElementById('speakingObs').value,

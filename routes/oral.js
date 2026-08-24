@@ -76,6 +76,30 @@ router.post('/submit/:token', async (req, res) => {
 
   candidates[idx].oralData = coherence.deriveTotal(req.body); /* coherence-derive */
   candidates[idx].status = 'oral_done';
+
+  /* LEGAL_ORAL_WRITTEN_LEVELS (2026-08-24)
+     Written-skill levels supplied during the interview go straight into
+     reportSummary, so no second pass through the Niveaux panel is needed.
+     MERGE, never replace - and stamp levelsManuallyEditedAt so the guard in
+     /api/generate-written protects them like any hand-entered level. */
+  (function () {
+    var VALID = ['A1','A1+','A2','A2+','B1','B1+','B2','B2+','C1','C1+','C2'];
+    var b = req.body || {};
+    var map = { grammarLevel: b.grammarLevel, writingLevel: b.writingLevel, readingLevel: b.readingLevel };
+    var wrote = false;
+    Object.keys(map).forEach(function (k) {
+      var v = map[k];
+      if (!v || VALID.indexOf(v) === -1) return;      /* blank or junk: leave alone */
+      candidates[idx].reportSummary = candidates[idx].reportSummary || {};
+      candidates[idx].reportSummary[k] = v;
+      wrote = true;
+    });
+    if (wrote) {
+      candidates[idx].levelsManuallyEditedAt = new Date().toISOString();
+      console.log('oral submit: written levels captured in interview for ' + candidates[idx].id);
+    }
+  })();
+
   saveCandidates(candidates);
 
   const candidate = candidates[idx];
