@@ -1998,8 +1998,16 @@ router.post('/hec-webhook', function(req, res) {
 
 // ── Proposal: send proposal email with all 3 PDFs ──────────────────────────
 router.get('/check-pdfs/:id', function(req, res) {
+  /* CHECK_PDFS_SESSION (2026-08-24): /api is public by design, so this route was
+     internet-reachable. Its only callers are on the session-authenticated
+     candidate page and all of them .catch(), so a 401 degrades to "document
+     badges not refreshed" rather than a visible error. */
+  if (!crRequireSession(req, res)) return;
   var c2 = JSON.parse(require('fs').readFileSync(require('path').join(__dirname,'../data/candidates.json'),'utf8'));
   var c = c2.find(function(x){ return x.id === req.params.id; });
+  /* CHECK_PDFS_SESSION (2026-08-24): c.id below threw a TypeError -> 500 for an
+     unknown id. */
+  if (!c) return res.status(404).json({ error: 'Not found' });
   var fs2 = require('fs'), pp = require('path');
   res.json({
     frReport: fs2.existsSync(pp.join(__dirname,'../data/finalReports/'+c.id+'_fr.pdf')),
