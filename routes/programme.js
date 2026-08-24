@@ -19,12 +19,21 @@ function calc5SkillLevel(c) {
   var levels = [rs.grammarLevel, rs.writingLevel, rs.readingLevel, od.listeningLevel, od.speakingLevel]
     .map(function(l){ return cefrMap[l]; })
     .filter(function(n){ return typeof n === 'number'; });
+  /* PREREQ_LEVEL_PERSIST (2026-08-24): the overallLevel fallback used to be
+     returned unvalidated. A report generated from an empty test can contain
+     prose there ("Undetermined - Estimated A2+ to B1"), which then lands in a
+     CEFR field in the programme, proposition and convention. Only a real CEFR
+     token is acceptable; anything else is no level at all. */
+  var safeOverall = (function() {
+    var o = String(rs.overallLevel == null ? '' : rs.overallLevel).trim();
+    return cefrMap[o] === undefined ? '' : o;
+  })();
   if (levels.length === 5) {
     var avg = levels.reduce(function(a,b){return a+b;},0) / 5;
     var rounded = Math.round(avg * 2) / 2;
-    return cefrRev[rounded] || rs.overallLevel || '';
+    return cefrRev[rounded] || safeOverall;
   }
-  return rs.overallLevel || '';
+  return safeOverall;
 }
 
 const dataDir = path.join(__dirname, '../data');
@@ -159,7 +168,9 @@ router.get('/api/generate-programme/:id', async function(req, res) {
       jobtitle: c.jobtitle || '',
       dept: c.dept || '',
       company: c.company || '',
-      prereqLevel: calc5SkillLevel(c) || od.prereqLevel || '',
+      /* PREREQ_LEVEL_PERSIST (2026-08-24): an explicitly edited level wins
+         over the recompute; untouched, the 5-skill average still governs. */
+      prereqLevel: (od.prereqLevelManual && od.prereqLevel) || calc5SkillLevel(c) || od.prereqLevel || '',
       targetLevel: od.targetLevel || '',
       totalHours: String(od.totalHours || 10),
       coachingHours: String(od.coachingHours || od.totalHours || 10),
@@ -526,7 +537,8 @@ router.post('/api/generate-proposition/:id', async function(req, res) {
     candidateName: c.name || '',
     company: c.company || c.dept || '',
     email: c.email || '',
-    prereqLevel: calc5SkillLevel(c) || od.prereqLevel || '',
+    /* PREREQ_LEVEL_PERSIST (2026-08-24) */
+    prereqLevel: (od.prereqLevelManual && od.prereqLevel) || calc5SkillLevel(c) || od.prereqLevel || '',
     targetLevel: od.targetLevel || '',
     totalHours: String(od.totalHours || ''),
     coachingHours: String(od.coachingHours || ''),
@@ -771,6 +783,12 @@ router.post('/api/save-programme-data/:id', function(req, res) {
       topics: body.topics !== undefined ? body.topics : oral.topics,
       customTopics: body.customTopics !== undefined ? body.customTopics : oral.customTopics,
       trainingTitle: body.trainingTitle !== undefined ? body.trainingTitle : oral.trainingTitle,
+      /* PREREQ_LEVEL_PERSIST (2026-08-24): these three were sent by the page
+         but never stored, so every edit was lost on reload. */
+      prereqLevel: body.prereqLevel !== undefined ? body.prereqLevel : oral.prereqLevel,
+      prereqLevelManual: body.prereqLevelManual !== undefined ? !!body.prereqLevelManual : oral.prereqLevelManual,
+      targetLevel: body.targetLevel !== undefined ? body.targetLevel : oral.targetLevel,
+      location: body.location !== undefined ? body.location : oral.location,
       coachingHours: body.coachingHours !== undefined ? body.coachingHours : oral.coachingHours,
       homeworkHours: body.homeworkHours !== undefined ? body.homeworkHours : oral.homeworkHours,
       totalHours: body.totalHours !== undefined ? body.totalHours : oral.totalHours,

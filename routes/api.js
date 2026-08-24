@@ -14,12 +14,21 @@ function calc5SkillLevel(c) {
   var levels = [rs.grammarLevel, rs.writingLevel, rs.readingLevel, od.listeningLevel, od.speakingLevel]
     .map(function(l){ return cefrMap[l]; })
     .filter(function(n){ return typeof n === 'number'; });
+  /* PREREQ_LEVEL_PERSIST (2026-08-24): the overallLevel fallback used to be
+     returned unvalidated. A report generated from an empty test can contain
+     prose there ("Undetermined - Estimated A2+ to B1"), which then lands in a
+     CEFR field in the programme, proposition and convention. Only a real CEFR
+     token is acceptable; anything else is no level at all. */
+  var safeOverall = (function() {
+    var o = String(rs.overallLevel == null ? '' : rs.overallLevel).trim();
+    return cefrMap[o] === undefined ? '' : o;
+  })();
   if (levels.length === 5) {
     var avg = levels.reduce(function(a,b){return a+b;},0) / 5;
     var rounded = Math.round(avg * 2) / 2;
-    return cefrRev[rounded] || rs.overallLevel || '';
+    return cefrRev[rounded] || safeOverall;
   }
-  return rs.overallLevel || '';
+  return safeOverall;
 }
 
 // Helper: oral sub-level (listening + speaking average)

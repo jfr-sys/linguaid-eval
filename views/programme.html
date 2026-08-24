@@ -185,7 +185,7 @@
     </div>
     <div class="info-row">
       <span class="info-label">Niveau prérequis</span>
-      <input class="info-value" id="prereqLevel" type="text" value="" style="border:1px solid #e2e8f0;border-radius:6px;padding:4px 8px;font-size:14px;font-weight:600;width:130px;text-align:right">
+      <input class="info-value" id="prereqLevel" type="text" value="" onchange="prereqManuallyEdited=true" style="border:1px solid #e2e8f0;border-radius:6px;padding:4px 8px;font-size:14px;font-weight:600;width:130px;text-align:right">
     </div>
     <div class="info-row">
       <span class="info-label">Objectif de niveau</span>
@@ -384,6 +384,7 @@ var objectiveSuffixes = []; // AI-generated personalisation suffixes
 var currentCpfType = null;
 var currentEdofAction = null;
 var titleManuallyEdited = false;
+var prereqManuallyEdited = false; /* PREREQ_LEVEL_PERSIST (2026-08-24) */
 var id = window.location.pathname.split("/")[2];
 
 document.getElementById("backLink").href = "/candidates/" + id;
@@ -413,7 +414,18 @@ fetch("/candidates/api/" + id)
       var rounded5 = Math.round(avg5 * 2) / 2;
       prereq5 = cefrRevMap5[rounded5] || rs.overallLevel;
     }
-    document.getElementById("prereqLevel").value = cefrLabel(prereq5) || "";
+    /* PREREQ_LEVEL_PERSIST (2026-08-24): a previously edited level is restored
+       as-is; otherwise show the 5-skill computation. The overallLevel fallback
+       is validated - a report built on an empty test can leave prose there. */
+    var CEFR_OK = ['A1','A1+','A2','A2+','B1','B1+','B2','B2+','C1','C1+','C2'];
+    if (oral.prereqLevelManual && oral.prereqLevel) {
+      prereqManuallyEdited = true;
+      document.getElementById("prereqLevel").value = cefrLabel(oral.prereqLevel);
+    } else {
+      var shown = prereq5;
+      if (shown && CEFR_OK.indexOf(String(shown).trim()) === -1 && !/\(\d/.test(String(shown))) shown = "";
+      document.getElementById("prereqLevel").value = cefrLabel(shown) || "";
+    }
     /* LEGAL_TITLE_ON_LOAD_FIX (2026-08-24)
        updateCpfUI() holds the only courseType-aware title recompute, and on load
        it is called solely from inside `if (oral.isCPF)`. A non-CPF candidate
@@ -828,6 +840,7 @@ function generateProgramme() {
     edofMCFLink: currentEdofAction ? currentEdofAction.link : null,
     trainingTitle: document.getElementById("trainingTitle").value,
     prereqLevel: document.getElementById("prereqLevel").value || rs.overallLevel || "",
+    prereqLevelManual: prereqManuallyEdited, /* PREREQ_LEVEL_PERSIST (2026-08-24) */
     targetLevel: document.getElementById("targetLevel").value || oral.targetLevel || "",
     coachingHours: coachingH,
     homeworkHours: homeworkH,
