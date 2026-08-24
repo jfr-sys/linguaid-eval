@@ -447,7 +447,7 @@ router.post('/api/generate-proposition/:id', async function(req, res) {
       'Expliquer une probl\xe9matique juridique, proposer des options et aider \xe0 la prise de d\xe9cision',
       "R\xe9diger des documents professionnels adapt\xe9s au contexte\u00a0: emails, lettres, notes d'avocat",
       'Corriger ou r\xe9diger des clauses contractuelles claires, pr\xe9cises et structur\xe9es',
-      "Conduire une n\xe9gociation, formuler ou r\xe9pondre \xe0 des propositions, et d\xe9fendre les int\xe9r\xeats du client"
+      "Conduire une n\xe9gociation, formuler ou r\xe9pondre \xe0 des propositions, et d\xe9fendre les int\xe9r\xeats de son client"
     ]
   };
 
