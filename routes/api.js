@@ -248,7 +248,7 @@ OTHER NEEDS: ${c.otherNeeds}
 AVAILABILITY: ${Object.entries(c.avail).map(([d,v]) => v ? d+': '+v : '').filter(Boolean).join(', ')}
 
 Write a comprehensive report in English covering:
-1. Overall CEFR level (based on MCQ score: 87%+=B2, 73%+=B1+, 60%+=B1, 47%+=A2+, 33%+=A2, below=A1)
+1. Overall CEFR level (based on MCQ score: 97%+=C1, 93%+=B2+, 87%+=B2, 73%+=B1+, 60%+=B1, 47%+=A2+, 33%+=A2, below=A1). The MCQ band sets the GRAMMAR level. Writing and Reading are judged on the free-writing evidence and may sit ABOVE the MCQ band (up to C1+ or C2) where the free writing clearly demonstrates it, or below it where it clearly does not. Never cap Writing or Reading at the MCQ band by default.
 2. Skill Assessment Overview (Grammar MCQ, Writing, Reading/Vocabulary, Overall)
 3. Detailed Grammar analysis — what they got right, specific gaps with examples from their answers
 4. Reading/Vocabulary assessment based on free writing quality
@@ -294,11 +294,34 @@ Also add a clearly delimited JSON block:
     const cleanReport = fullText.replace(/---SUMMARY_JSON---[\s\S]*?---END_SUMMARY_JSON---/, '').trim();
 
     candidates[idx].writtenReport = cleanReport;
-    candidates[idx].reportSummary = reportSummary;
+    /* LEVELS_PRESERVE_FIX (2026-08-24): reportSummary used to be replaced wholesale,
+       which silently destroyed grammar/writing/reading levels entered by hand via
+       /api/save-levels (listening/speaking survived because they live in oralData).
+       When the levels were manually edited, the hand-entered values now win and the
+       AI proposal is kept alongside under reportSummary.aiLevels for reference. */
+    var prevRS = candidates[idx].reportSummary || {};
+    var finalRS = reportSummary;
+    if (candidates[idx].levelsManuallyEditedAt) {
+      finalRS = reportSummary || {};
+      finalRS.aiLevels = {
+        grammarLevel: finalRS.grammarLevel || '',
+        writingLevel: finalRS.writingLevel || '',
+        readingLevel: finalRS.readingLevel || '',
+        overallLevel: finalRS.overallLevel || '',
+        generatedAt: new Date().toISOString()
+      };
+      if (prevRS.grammarLevel) finalRS.grammarLevel = prevRS.grammarLevel;
+      if (prevRS.writingLevel) finalRS.writingLevel = prevRS.writingLevel;
+      if (prevRS.readingLevel) finalRS.readingLevel = prevRS.readingLevel;
+      if (prevRS.overallLevel) finalRS.overallLevel = prevRS.overallLevel;
+      finalRS.levelsPreservedFromManualEdit = true;
+      console.log('generate-written: preserved manually edited levels for candidate ' + candidates[idx].id);
+    }
+    candidates[idx].reportSummary = finalRS;
     candidates[idx].status = 'written_report_done';
     saveCandidates(candidates);
 
-    res.json({ success: true, report: cleanReport, summary: reportSummary });
+    res.json({ success: true, report: cleanReport, summary: candidates[idx].reportSummary, levelsPreserved: !!(finalRS && finalRS.levelsPreservedFromManualEdit) });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
@@ -1264,7 +1287,21 @@ router.post('/delete-written/:id', function(req, res) {
   var idx = candidates.findIndex(function(x) { return x.id === req.params.id; });
   if (idx === -1) return res.status(404).json({ error: 'Not found' });
   candidates[idx].writtenReport = null;
-  candidates[idx].reportSummary = null;
+  /* LEVELS_PRESERVE_FIX (2026-08-24): keep hand-entered levels when the written
+     report is deleted -- for interview-assessed candidates they are the only
+     record of grammar/writing/reading. */
+  if (candidates[idx].levelsManuallyEditedAt && candidates[idx].reportSummary) {
+    var keptRS = candidates[idx].reportSummary;
+    candidates[idx].reportSummary = {
+      grammarLevel: keptRS.grammarLevel || '',
+      writingLevel: keptRS.writingLevel || '',
+      readingLevel: keptRS.readingLevel || '',
+      overallLevel: keptRS.overallLevel || '',
+      levelsPreservedFromManualEdit: true
+    };
+  } else {
+    candidates[idx].reportSummary = null;
+  }
   if (candidates[idx].status === 'written_report_done') {
     candidates[idx].status = 'csv_uploaded';
   }

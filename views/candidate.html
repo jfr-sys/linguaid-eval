@@ -405,7 +405,7 @@
         <button class="btn btn-primary" onclick="saveLevels()" style="font-size:11px;padding:5px 12px">Enregistrer</button>
         <span id="lvStatus" style="font-size:11px;color:#166534"></span>
       </div>
-      <div style="font-size:11px;color:#92400e;margin-top:6px">⚠️ Après modification : régénérer le rapport final (Step 3) puis recréer le programme (Step 4). Ne PAS régénérer le rapport écrit (Step 1) — cela écraserait les niveaux Grammar/Writing/Reading.</div>
+      <div style="font-size:11px;color:#92400e;margin-top:6px">⚠️ Après modification : régénérer le rapport final (Step 3) puis recréer le programme (Step 4). Les niveaux saisis ici sont désormais protégés : régénérer le rapport écrit (Step 1) ne les écrase plus, mais réécrit le texte du rapport.</div>
     </div>
     <!-- Final report edit toggle -->
     <div id="finalReportToggleBar" style="display:none;border-top:1px solid #f1f5f9;margin-top:0.75rem;padding-top:0.75rem;display:flex;align-items:center;justify-content:space-between">
@@ -970,6 +970,7 @@
     }
 
     if (c.writtenReport) {
+      window.__levelsManuallyEdited = !!c.levelsManuallyEditedAt; /* LEVELS_PRESERVE_FIX (2026-08-24) */
       document.getElementById('btnWritten').textContent = 'Regenerate';
       document.getElementById('stage1').classList.add('done');
       document.getElementById('stage1status').textContent = 'Written report generated ✓';
@@ -1062,6 +1063,7 @@
   }
 
   function showLevelsEditor(c) {
+    window.__levelsManuallyEdited = !!c.levelsManuallyEditedAt; /* LEVELS_PRESERVE_FIX (2026-08-24) */
     var b = document.getElementById('btnEditLevels'); if (b) b.style.display = 'inline-block';
     var rs = c.reportSummary || {}, od = c.oralData || {};
     var map = { lvGrammar: rs.grammarLevel, lvWriting: rs.writingLevel, lvReading: rs.readingLevel, lvListening: od.listeningLevel, lvSpeaking: od.speakingLevel };
@@ -1249,6 +1251,13 @@
   }
 
   function generateWritten() {
+    /* LEVELS_PRESERVE_FIX (2026-08-24) */
+    if (window.__levelsManuallyEdited) {
+      var warn = "\u26a0\ufe0f Les niveaux Grammar / Writing / Reading de ce candidat ont \u00e9t\u00e9 saisis \u00e0 la main.\n\n"
+        + "Ces niveaux seront CONSERV\u00c9S, mais le texte du rapport \u00e9crit sera enti\u00e8rement r\u00e9\u00e9crit par l\u2019IA "
+        + "et pourra contredire les niveaux saisis.\n\nContinuer ?";
+      if (!confirm(warn)) return;
+    }
     const btn = document.getElementById('btnWritten');
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner"></span>Generating...';
