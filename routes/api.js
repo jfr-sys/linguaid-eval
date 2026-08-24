@@ -475,12 +475,21 @@ router.post('/generate-final/:id', async (req, res) => {
     return generateLegalIntakeReport(req, res, candidates, idx);
   }
 
-  if (!c.writtenReport) {
-    return res.status(400).json({ error: 'Missing written report' });
-  }
-
+  /* FINAL_REPORT_WITHOUT_TEST (2026-08-24)
+     A missing written report is no longer fatal - legal candidates assessed by
+     positioning interview never have one. Having NO evidence at all is fatal. */
   const oral = c.oralData;
   const summary = c.reportSummary || {};
+  const hasWritten = !!c.writtenReport;
+  const anyLevel = [summary.grammarLevel, summary.writingLevel, summary.readingLevel,
+                    oral.listeningLevel, oral.speakingLevel]
+                   .some(function(l) { return l && String(l).trim(); });
+  if (!hasWritten && !anyLevel) {
+    return res.status(400).json({
+      error: 'Ni test ecrit ni niveaux saisis pour ce candidat. Saisissez au moins les niveaux '
+           + 'via le bouton Niveaux (Step 2), puis relancez la generation du rapport final.'
+    });
+  }
   const validatedGoals = (oral.validatedGoals || []).map(g => `${g.goal} [${g.status}]`).join('\n');
   const validatedAvail = (Array.isArray(oral.validatedAvail) ? oral.validatedAvail : Object.values(oral.validatedAvail || {})).map(a => `${a.day} ${a.time} [${a.status}]`).join(', ');
 
@@ -495,7 +504,7 @@ Written Test Date: ${c.testdate}
 Oral Session Date: ${oral.sessionDate || ''}
 Evaluator: ${oral.evaluator || ''}
 
-WRITTEN TEST SUMMARY:
+${hasWritten ? `WRITTEN TEST SUMMARY:
 Grammar Level: ${cefrLabel(summary.grammarLevel) || ''}
 Writing Level: ${cefrLabel(summary.writingLevel) || ''}
 Reading Level: ${cefrLabel(summary.readingLevel) || ''}
@@ -503,7 +512,19 @@ Overall Written Level: ${cefrLabel(summary.overallLevel) || ''}
 Key Grammar Gaps: ${(summary.keyGaps || []).join('; ')}
 
 FULL WRITTEN REPORT:
-${c.writtenReport}
+${c.writtenReport}` : `NO WRITTEN TEST WAS TAKEN BY THIS CANDIDATE.
+There is no MCQ result and no writing sample. The levels below were set by the evaluator on the basis of the positioning interview; they are estimates, not measurements.
+Grammar (evaluator estimate): ${cefrLabel(summary.grammarLevel) || 'Not assessed at this stage'}
+Writing (evaluator estimate): ${cefrLabel(summary.writingLevel) || 'Not assessed at this stage'}
+Reading (evaluator estimate): ${cefrLabel(summary.readingLevel) || 'Not assessed at this stage'}
+
+EVIDENCE RULES - these override every other instruction below:
+- NEVER name a grammar structure, tense, error type, or vocabulary item as a gap unless those exact words appear in the evaluator notes, strengths, gaps or observations supplied below. No invented examples.
+- NEVER invent sample errors, quotations, percentages, scores, or test results, and never state or imply that the candidate sat a written test.
+- Present every level as an estimate from the interview ("estimated at", "on the basis of the interview"), never as a measured result.
+- Where a level is "Not assessed at this stage", say exactly that and move on - do not infer one.
+- Hedge throughout: "appears to", "reports", "indicates". Reserve flat assertion for what the candidate or evaluator actually stated.
+- Do NOT write your own disclaimer about the absence of a test - a standard caveat is added automatically.`}
 
 ORAL ASSESSMENT:
 Listening Level: ${cefrLabel(oral.listeningLevel) || ''}
@@ -549,7 +570,10 @@ Generate a complete professional Final Evaluation Report with markdown formattin
       messages: [{ role: 'user', content: prompt }]
     });
 
-    const report = message.content[0].text.replace(/```[a-z]*\n/g, '').replace(/```/g, '');
+    var rawFinal = message.content[0].text.replace(/```[a-z]*\n/g, '').replace(/```/g, '');
+    /* FINAL_REPORT_WITHOUT_TEST (2026-08-24): same caveat as the legal intake
+       report, inserted by code so a re-roll cannot drop it. */
+    const report = hasWritten ? rawFinal : insertNoTestCaveat(rawFinal);
     candidates[idx].finalReport = report;
     candidates[idx].status = 'final_report_done';
 
