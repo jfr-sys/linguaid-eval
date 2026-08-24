@@ -329,6 +329,32 @@ Also add a clearly delimited JSON block:
 });
 
 
+/* LEGAL_REPORT_NO_TEST_CAVEAT (2026-08-24)
+   The legal intake report rests on an interview, not a test. This caveat is
+   inserted by code rather than requested from the model, so it can never be
+   dropped on a re-roll. Idempotent: a report that already carries it is
+   returned untouched. */
+var LEGAL_NO_TEST_CAVEAT_MARKER = 'In the absence of a formal level test';
+var LEGAL_NO_TEST_CAVEAT = '*' + LEGAL_NO_TEST_CAVEAT_MARKER
+  + ', the observations below are working assumptions based on the positioning interview'
+  + ' and the questionnaire submitted by the candidate. They are indicative rather than'
+  + ' measured, and will be confirmed and refined during the first sessions.*';
+
+function insertNoTestCaveat(report) {
+  var r = String(report || '');
+  if (r.indexOf(LEGAL_NO_TEST_CAVEAT_MARKER) !== -1) return r;   /* already there */
+  var lines = r.split('\n');
+  for (var i = 0; i < lines.length; i++) {
+    /* preferred home: directly under the level/gaps heading, whatever it is called */
+    if (/^#{1,3}\s/.test(lines[i]) && /current level|level\s*&|niveau/i.test(lines[i])) {
+      lines.splice(i + 1, 0, '', LEGAL_NO_TEST_CAVEAT);
+      return lines.join('\n');
+    }
+  }
+  /* fallback: top of the report, before anything else */
+  return LEGAL_NO_TEST_CAVEAT + '\n\n' + r;
+}
+
 async function generateLegalIntakeReport(req, res, candidates, idx) {
   const c = candidates[idx];
   const oral = c.oralData;
@@ -337,6 +363,14 @@ async function generateLegalIntakeReport(req, res, candidates, idx) {
   const prompt = `You are an expert English language consultant for Linguaid France, specialising in legal English coaching for French legal professionals.
 
 Generate a concise, professional Final Evaluation Report for a legal English candidate based on a needs-analysis interview (not a formal CEFR test). Write in English. Use markdown formatting (## headers, **bold**, - bullets). Do NOT produce a scored CEFR sub-skill table.
+
+EVIDENCE RULES - these override every other instruction below:
+- No formal CEFR level test underlies this report. Everything you write must be traceable to the interview data supplied below. Where a written-test extract is supplied, you may cite only what it actually shows; where none is supplied, there is no test evidence at all. Nothing may be inferred into specifics.
+- NEVER name a grammar structure, tense, error type, or vocabulary item as a gap unless those exact words appear in the interviewer notes, the blockers, or the priority gaps. Do not write "difficulty with conditionals", "confusion between the present perfect and the simple past", "gaps in contract vocabulary" or similar unless the interviewer wrote it. Broad categories the interviewer ticked (for example "legal vocabulary" or "spoken fluency") stay at that level of generality - do not decompose them into invented examples.
+- NEVER invent sample errors, quotations, percentages, scores, or sub-skill breakdowns.
+- The level supplied is the interviewer's ESTIMATE from conversation. Present it as such ("estimated at", "on the basis of the interview") and never as a measured or tested result. Do not state or imply that the candidate was assessed, scored, or tested.
+- Where the data is thin, say plainly that a point will be confirmed in the first sessions. Do not pad. An empty field is "Not assessed at this stage".
+- Hedge accordingly throughout: "appears to", "reports", "indicates". Reserve flat assertion for what the candidate or interviewer actually stated.
 
 CANDIDATE:
 Name: ${c.name}
@@ -353,8 +387,8 @@ Dominant skills required: ${oral.dominantSkills || 'not specified'}
 Main blockers: ${oral.blockers || 'not specified'}
 
 EVALUATION:
-Approximate level: ${oral.approxLevel || 'not assessed'}
-Priority gaps: ${oral.priorityGaps || 'not specified'}
+Interviewer's ESTIMATED level (from conversation only - not a test result): ${oral.approxLevel || 'not assessed'}
+Priority gaps as ticked by the interviewer (use these categories as written, do not decompose into specifics): ${oral.priorityGaps || 'not specified'}
 Interviewer notes: ${oral.notes || ''}
 
 ${wr ? 'WRITTEN TEST BACKGROUND (for context only):\n' + wr.slice(0, 800) : ''}
@@ -374,7 +408,9 @@ Generate a professional report with these sections:
 ## Recommendation
 ## Sign-off
 
-Interviewer: Joss Frimond, Linguaid France. Do not wrap any part of your response in backtick code blocks.`;
+Interviewer: Joss Frimond, Linguaid France. Do not wrap any part of your response in backtick code blocks.
+
+Do NOT write your own disclaimer about the absence of a test - a standard caveat is added automatically under Current Level & Key Gaps. Just respect the evidence rules above.`;
 
   try {
     const message = await client.messages.create({
@@ -383,7 +419,9 @@ Interviewer: Joss Frimond, Linguaid France. Do not wrap any part of your respons
       messages: [{ role: 'user', content: prompt }]
     });
 
-    const report = message.content[0].text.replace(/```[a-z]*\n/g, '').replace(/```/g, '');
+    var rawReport = message.content[0].text.replace(/```[a-z]*\n/g, '').replace(/```/g, '');
+    /* LEGAL_REPORT_NO_TEST_CAVEAT (2026-08-24) */
+    const report = insertNoTestCaveat(rawReport);
     candidates[idx].finalReport = report;
     candidates[idx].status = 'final_report_done';
     if (oral.recommendedProgramme) candidates[idx].oralData.cpfType = oral.recommendedProgramme;
