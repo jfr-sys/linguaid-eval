@@ -414,7 +414,20 @@ fetch("/candidates/api/" + id)
       prereq5 = cefrRevMap5[rounded5] || rs.overallLevel;
     }
     document.getElementById("prereqLevel").value = cefrLabel(prereq5) || "";
-    if (oral.trainingTitle) document.getElementById("trainingTitle").value = oral.trainingTitle;
+    /* LEGAL_TITLE_ON_LOAD_FIX (2026-08-24)
+       updateCpfUI() holds the only courseType-aware title recompute, and on load
+       it is called solely from inside `if (oral.isCPF)`. A non-CPF candidate
+       therefore kept the hardcoded business default from the markup, whatever
+       their courseType. Compute it here instead when nothing is stored. */
+    if (oral.trainingTitle) {
+      document.getElementById("trainingTitle").value = oral.trainingTitle;
+    } else if (!oral.isCPF) {
+      var isLegalOnLoad = (c.courseType === "legal")
+        || oral.cpfType === "E360_LEGAL" || oral.cpfType === "CAJA";
+      document.getElementById("trainingTitle").value = isLegalOnLoad
+        ? "Formation en Anglais Juridique"
+        : "Formation en Anglais Professionnel";
+    }
 
     // Restore saved objective suffixes BEFORE CPF UI render (renderLockedObjectives reads this)
     if (Array.isArray(oral.objectiveSuffixes)) objectiveSuffixes = oral.objectiveSuffixes;
