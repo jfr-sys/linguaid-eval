@@ -969,6 +969,7 @@
       }
     }
 
+    applyWrittenTestGate(c); /* NO_TEST_NO_WRITTEN_REPORT (2026-08-24) */
     if (c.writtenReport) {
       window.__levelsManuallyEdited = !!c.levelsManuallyEditedAt; /* LEVELS_PRESERVE_FIX (2026-08-24) */
       document.getElementById('btnWritten').textContent = 'Regenerate';
@@ -1060,6 +1061,46 @@
     }
     if (current) sections.push(current);
     return sections;
+  }
+
+  /* NO_TEST_NO_WRITTEN_REPORT (2026-08-24): mirrors hasWrittenTestEvidence()
+     in routes/api.js - keep the two in step. */
+  function hasWrittenTestEvidence(c) {
+    if (!c) return false;
+    var sc = c.scores || {};
+    var fw = c.freewriting || {};
+    if (Number(sc.total) > 0) return true;
+    return ['q39', 'q40', 'q41'].some(function(k) {
+      return String(fw[k] == null ? '' : fw[k]).trim().length > 0;
+    });
+  }
+
+  function applyWrittenTestGate(c) {
+    var btn = document.getElementById('btnWritten');
+    if (!btn) return;
+    var note = document.getElementById('noTestNote');
+    if (!note) {
+      note = document.createElement('span');
+      note.id = 'noTestNote';
+      note.style.cssText = 'font-size:10px;color:#92400e;line-height:1.3;display:block;margin-top:3px';
+      btn.parentNode.appendChild(note);
+    }
+    if (hasWrittenTestEvidence(c)) {
+      btn.disabled = false;
+      btn.style.opacity = '';
+      btn.style.cursor = '';
+      btn.title = '';
+      note.textContent = '';
+      note.style.display = 'none';
+      return;
+    }
+    btn.disabled = true;
+    btn.style.opacity = '0.45';
+    btn.style.cursor = 'not-allowed';
+    btn.title = "Pas de test \u00e9crit exploitable \u2014 rien \u00e0 \u00e9valuer";
+    note.style.display = 'block';
+    note.textContent = "\u26a0\ufe0f Pas de test \u00e9crit (ni QCM ni productions libres). "
+      + "Saisissez les niveaux via Niveaux, puis Step 3.";
   }
 
   function showLevelsEditor(c) {
@@ -1251,6 +1292,13 @@
   }
 
   function generateWritten() {
+    /* NO_TEST_NO_WRITTEN_REPORT (2026-08-24) */
+    if (typeof candidate !== 'undefined' && !hasWrittenTestEvidence(candidate)) {
+      alert("Pas de test \u00e9crit exploitable pour ce candidat : ni r\u00e9ponses QCM ni productions libres.\n\n"
+        + "Un rapport \u00e9crit ne peut pas \u00eatre g\u00e9n\u00e9r\u00e9 \u2014 il n\u2019y a rien \u00e0 \u00e9valuer.\n\n"
+        + "Saisissez les niveaux via Niveaux, puis g\u00e9n\u00e9rez le rapport final (Step 3).");
+      return;
+    }
     /* LEVELS_PRESERVE_FIX (2026-08-24) */
     if (window.__levelsManuallyEdited) {
       var warn = "\u26a0\ufe0f Les niveaux Grammar / Writing / Reading de ce candidat ont \u00e9t\u00e9 saisis \u00e0 la main.\n\n"

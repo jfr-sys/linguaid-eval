@@ -220,11 +220,36 @@ function buildDocx(candidateName, reportText, language) {
   });
 }
 
+/* NO_TEST_NO_WRITTEN_REPORT (2026-08-24)
+   A written report is a report ON a written test. With no MCQ answers and no
+   free writing there is nothing to evaluate, and the model can only invent -
+   which is exactly how a legal intake candidate ends up with fabricated
+   A2+ grammar/writing/reading levels. Single source of truth, mirrored by
+   hasWrittenTestEvidence() in views/candidate.html. */
+function hasWrittenTestEvidence(c) {
+  if (!c) return false;
+  var sc = c.scores || {};
+  var fw = c.freewriting || {};
+  if (Number(sc.total) > 0) return true;
+  return ['q39', 'q40', 'q41'].some(function(k) {
+    return String(fw[k] == null ? '' : fw[k]).trim().length > 0;
+  });
+}
+
 router.post('/generate-written/:id', async (req, res) => {
   const candidates = getCandidates();
   const idx = candidates.findIndex(c => c.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: 'Not found' });
   const c = candidates[idx];
+
+  /* NO_TEST_NO_WRITTEN_REPORT (2026-08-24) */
+  if (!hasWrittenTestEvidence(c)) {
+    return res.status(400).json({
+      error: 'Aucun test ecrit exploitable pour ce candidat (pas de reponses QCM, pas de productions libres). '
+           + 'Le rapport ecrit ne peut pas etre genere : il n y a rien a evaluer. '
+           + 'Saisissez les niveaux via Niveaux, puis generez le rapport final (Step 3).'
+    });
+  }
 
   const prompt = `You are an expert English language evaluator for Linguaid France. Generate a detailed Initial English Language Evaluation Report based on the following written placement test data.
 
