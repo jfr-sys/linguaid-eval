@@ -6,6 +6,24 @@ const { getRsCode, getAction } = require('../config/catalogue');
 const coherence = require('../lib/coherence'); /* coherence-gate */
 
 // Helper: 5-skill CEFR average
+/* STALE_WRITE_FIX (2026-08-24)
+   Routes that read candidates.json, then spend seconds in an AI call, a Python
+   generator or SMTP, used to write back the array they read at the start -
+   silently discarding anything saved in the meantime. This re-reads, applies
+   only the delta to the fresh record, and saves. Returns the fresh record, or
+   null if the candidate disappeared mid-flight. */
+function applyToCandidate(id, mutate) {
+  var fresh = getCandidates();
+  var i = fresh.findIndex(function (x) { return x.id === id; });
+  if (i === -1) {
+    console.error('applyToCandidate: candidate ' + id + ' no longer exists - write skipped');
+    return null;
+  }
+  mutate(fresh[i]);
+  saveCandidates(fresh);
+  return fresh[i];
+}
+
 function calc5SkillLevel(c) {
   var rs = c.reportSummary || {};
   var od = c.oralData || {};
@@ -327,7 +345,6 @@ Also add a clearly delimited JSON block:
     }
     const cleanReport = fullText.replace(/---SUMMARY_JSON---[\s\S]*?---END_SUMMARY_JSON---/, '').trim();
 
-    candidates[idx].writtenReport = cleanReport;
     /* LEVELS_PRESERVE_FIX (2026-08-24): reportSummary used to be replaced wholesale,
        which silently destroyed grammar/writing/reading levels entered by hand via
        /api/save-levels (listening/speaking survived because they live in oralData).
@@ -351,11 +368,15 @@ Also add a clearly delimited JSON block:
       finalRS.levelsPreservedFromManualEdit = true;
       console.log('generate-written: preserved manually edited levels for candidate ' + candidates[idx].id);
     }
-    candidates[idx].reportSummary = finalRS;
-    candidates[idx].status = 'written_report_done';
-    saveCandidates(candidates);
+    /* STALE_WRITE_FIX (2026-08-24) */
+    var savedW = applyToCandidate(req.params.id, function (fc) {
+      fc.writtenReport = cleanReport;
+      fc.reportSummary = finalRS;
+      fc.status = 'written_report_done';
+    });
+    if (!savedW) return res.status(404).json({ error: 'Candidate no longer exists' });
 
-    res.json({ success: true, report: cleanReport, summary: candidates[idx].reportSummary, levelsPreserved: !!(finalRS && finalRS.levelsPreservedFromManualEdit) });
+    res.json({ success: true, report: cleanReport, summary: savedW.reportSummary, levelsPreserved: !!(finalRS && finalRS.levelsPreservedFromManualEdit) });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
@@ -456,12 +477,16 @@ Do NOT write your own disclaimer about the absence of a test - a standard caveat
     var rawReport = message.content[0].text.replace(/```[a-z]*\n/g, '').replace(/```/g, '');
     /* LEGAL_REPORT_NO_TEST_CAVEAT (2026-08-24) */
     const report = insertNoTestCaveat(rawReport);
-    candidates[idx].finalReport = report;
-    candidates[idx].status = 'final_report_done';
-    if (oral.recommendedProgramme) candidates[idx].oralData.cpfType = oral.recommendedProgramme;
-    if (oral.targetLevel) candidates[idx].oralData.targetLevel = oral.targetLevel;
-    if (oral.totalHours) candidates[idx].oralData.totalHours = parseInt(oral.totalHours, 10) || oral.totalHours;
-    saveCandidates(candidates);
+    /* STALE_WRITE_FIX (2026-08-24) */
+    var savedLI = applyToCandidate(req.params.id, function (fc) {
+      fc.finalReport = report;
+      fc.status = 'final_report_done';
+      fc.oralData = fc.oralData || {};
+      if (oral.recommendedProgramme) fc.oralData.cpfType = oral.recommendedProgramme;
+      if (oral.targetLevel) fc.oralData.targetLevel = oral.targetLevel;
+      if (oral.totalHours) fc.oralData.totalHours = parseInt(oral.totalHours, 10) || oral.totalHours;
+    });
+    if (!savedLI) return res.status(404).json({ error: 'Candidate no longer exists' });
     res.json({ success: true, report });
   } catch(err) {
     console.error('generateLegalIntakeReport error:', err);
@@ -603,7 +628,17 @@ Generate a complete professional Final Evaluation Report with markdown formattin
       console.error('Objective extraction failed (non-fatal):', extractErr.message);
     }
 
-    saveCandidates(candidates);
+    /* STALE_WRITE_FIX (2026-08-24) */
+    var extractedObjectives = (candidates[idx].oralData && candidates[idx].oralData.objectives) || null;
+    var savedF = applyToCandidate(req.params.id, function (fc) {
+      fc.finalReport = report;
+      fc.status = 'final_report_done';
+      if (extractedObjectives) {
+        fc.oralData = fc.oralData || {};
+        fc.oralData.objectives = extractedObjectives;
+      }
+    });
+    if (!savedF) return res.status(404).json({ error: 'Candidate no longer exists' });
 
     res.json({ success: true, report });
   } catch (err) {
@@ -1054,8 +1089,12 @@ router.post('/generate-convention/:id', function(req, res) {
     var result;
     try { result = JSON.parse(stdout.trim()); } catch(e) { return res.status(500).json({ error: 'Invalid fill_convention2 output: ' + stdout }); }
     if (result.success === false) return res.status(500).json({ error: result.error });
-    candidates[idx].conventionData = Object.assign(cd, { pdfPath: result.pdfPath, signingToken: signingToken, generatedAt: new Date().toISOString() });
-    saveCandidates(candidates);
+    /* STALE_WRITE_FIX (2026-08-24) */
+    var convDelta = { pdfPath: result.pdfPath, signingToken: signingToken, generatedAt: new Date().toISOString() };
+    Object.assign(cd, convDelta);
+    if (!applyToCandidate(req.params.id, function (fc) {
+      fc.conventionData = Object.assign(fc.conventionData || {}, convDelta);
+    })) return res.status(404).json({ error: 'Candidate no longer exists' });
     if (!sendEmail) return res.json({ success: true, pdfPath: result.pdfPath });
     var signingUrl = 'https://eval.linguaid.net/sign/' + signingToken;
     var nodemailer = require('nodemailer');
@@ -1124,9 +1163,8 @@ router.post('/send-oral-link/:id', function(req, res) {
   var body = ['Bonjour ' + evaluator + ',', '', 'Please find the oral assessment link for ' + c.name + ':', '', oralUrl, '', 'Best regards,', 'Linguaid Eval'].join('\n');
   transporter.sendMail({ from: 'eval@linguaid.net', to: toEmail, subject: 'Oral assessment - ' + c.name, text: body }, function(err) {
     if (err) { console.error('sendMail error:', err); return res.status(500).json({ error: err.message }); }
-    var idx = candidates.findIndex(function(x) { return x.id === req.params.id; });
-    candidates[idx].oralEmailSentTo = evaluator;
-    saveCandidates(candidates);
+    /* STALE_WRITE_FIX (2026-08-24) */
+    applyToCandidate(req.params.id, function (fc) { fc.oralEmailSentTo = evaluator; });
     res.json({ ok: true });
   });
 });
@@ -3510,14 +3548,17 @@ router.post('/send-mission-brief/:id', function(req, res) {
     var result;
     try { result = JSON.parse(stdout.trim()); } catch(e) { return res.status(500).json({ error: 'Invalid output' }); }
     if (!result.success) return res.status(500).json({ error: result.error });
-    candidates[idx].conventionData = Object.assign(c.conventionData || {}, { convocTrainer: trainerKey });
-    candidates[idx].missionData = Object.assign(c.missionData || {}, {
+    /* STALE_WRITE_FIX (2026-08-24) */
+    var missionDelta = {
       trainerKey: trainerKey,
       briefToken: briefToken,
       briefPath: result.pdfPath,
       briefSentAt: new Date().toISOString(),
-    });
-    saveCandidates(candidates);
+    };
+    if (!applyToCandidate(req.params.id, function (fc) {
+      fc.conventionData = Object.assign(fc.conventionData || {}, { convocTrainer: trainerKey });
+      fc.missionData = Object.assign(fc.missionData || {}, missionDelta);
+    })) return res.status(404).json({ error: 'Candidate no longer exists' });
     res.json({ success: true, briefUrl: 'https://eval.linguaid.net/mission/' + briefToken });
   });
 });
@@ -3559,10 +3600,15 @@ router.post('/accept-devis/:id', function(req, res) {
     var result;
     try { result = JSON.parse(stdout.trim()); } catch(e) { return res.status(500).json({ error: 'Invalid output' }); }
     if (!result.success) return res.status(500).json({ error: result.error });
-    candidates[idx].missionData.acceptedAt = new Date().toISOString();
-    candidates[idx].missionData.confirmationPath = result.pdfPath;
-    candidates[idx].missionData.confirmationToken = confirmationToken;
-    saveCandidates(candidates);
+    /* STALE_WRITE_FIX (2026-08-24) */
+    var devisDelta = {
+      acceptedAt: new Date().toISOString(),
+      confirmationPath: result.pdfPath,
+      confirmationToken: confirmationToken,
+    };
+    if (!applyToCandidate(req.params.id, function (fc) {
+      fc.missionData = Object.assign(fc.missionData || {}, devisDelta);
+    })) return res.status(404).json({ error: 'Candidate no longer exists' });
     res.json({ success: true, signingUrl: 'https://eval.linguaid.net/sign/mission/' + confirmationToken });
   });
 });
