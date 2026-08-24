@@ -425,6 +425,14 @@ router.post('/api/generate-proposition/:id', async function(req, res) {
   const cpfType = od.cpfType || '';
   const isLegal = c.courseType === 'legal' || cpfType === 'E360_LEGAL' || cpfType === 'CAJA';
 
+  /* PROPOSITION_COHERENCE_GATE (2026-08-24): the proposition document is built
+     from the stored hours, dates and price - the same fields the convention and
+     send-proposal routes gate on. Without this, a dossier whose hours do not add
+     up produced a PDF on disk and a downloadable link, and was only caught later
+     at send time. Placed before the Anthropic call so it fails fast and free. */
+  var cohPropDoc = coherence.checkCoherence(c, { requirePrice: true });
+  if (!cohPropDoc.ok) return res.status(400).json({ error: cohPropDoc.errors.join(' ') });
+
   // Build objectives with suffixes
   const REFERENTIAL_OBJECTIVES = {
     'E360': [
