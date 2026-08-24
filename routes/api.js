@@ -2102,7 +2102,11 @@ router.post('/send-proposal/:id'
     } else {
       // Regenerate from scratch via fill_programme_final.py
       var progPayload = {
-        trainingTitle: (od.legalTrainingType === 'CAJA') ? 'Formation en Anglais Juridique' : (cd.isCPF ? 'Communiquer en anglais professionnel – English 360 – Niveau ' + (od.targetLevel||'B2') : 'Formation en Anglais Professionnel'),
+        /* LEGAL_TITLE_FALLBACK_FIX (2026-08-24): this branch ignored courseType,
+           so a legal candidate who was neither CAJA nor CPF got the business
+           title - and it was then persisted into oralData.trainingTitle. Same
+           isLegal convention as every other title site in this file. */
+        trainingTitle: (od.legalTrainingType === 'CAJA') ? 'Formation en Anglais Juridique' : (cd.isCPF ? 'Communiquer en anglais professionnel – English 360 – Niveau ' + (od.targetLevel||'B2') : ((c.courseType === 'legal' || od.cpfType === 'E360_LEGAL' || od.cpfType === 'CAJA') ? 'Formation en Anglais Juridique' : 'Formation en Anglais Professionnel')),
         candidateName: c.name,
         jobtitle: c.jobtitle || '',
         dept: c.dept || '',
