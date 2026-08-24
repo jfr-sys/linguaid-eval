@@ -5,6 +5,37 @@ const path = require('path');
 const nodemailer = require('nodemailer');
 const coherence = require('../lib/coherence'); /* coherence-gate */
 
+/* ORAL_SUBMIT_MERGE (2026-08-24)
+   oralData used to be REPLACED by the submission payload, which destroyed every
+   field written after the interview: cpfType, edofActionId, edofPrice, rsCode,
+   edofMCFLink, trainingTitle, prereqLevel, targetLevel, objectives, topics,
+   dateStart/dateEnd. The form stays authoritative for what it sends; anything
+   it does not send survives.
+
+   "Not sent" means undefined, null, or a blank string. 0 and false ARE values
+   (homeworkHours 0 is real), and [] / {} ARE values (an evaluator clearing
+   every goal must actually clear them). */
+function mergeOralSubmission(existing, incoming) {
+  var base = (existing && typeof existing === 'object' && !Array.isArray(existing)) ? existing : {};
+  var body = (incoming && typeof incoming === 'object') ? incoming : {};
+  var preserved = [];
+  Object.keys(base).forEach(function (k) {
+    var v = body[k];
+    var absent = (v === undefined || v === null || (typeof v === 'string' && v.trim() === ''));
+    if (absent && base[k] !== undefined && base[k] !== null && base[k] !== '') preserved.push(k);
+  });
+  Object.keys(body).forEach(function (k) {
+    var v = body[k];
+    if (v === undefined || v === null) return;
+    if (typeof v === 'string' && v.trim() === '') return;
+    base[k] = v;
+  });
+  if (preserved.length) {
+    console.log('oral submit: preserved ' + preserved.length + ' field(s) not sent by the form -> ' + preserved.join(', '));
+  }
+  return coherence.deriveTotal(base);
+}
+
 const dataDir = path.join(__dirname, '../data');
 
 const transporter = nodemailer.createTransport({
@@ -74,7 +105,8 @@ router.post('/submit/:token', async (req, res) => {
   const idx = candidates.findIndex(c => c.oralToken === req.params.token);
   if (idx === -1) return res.status(404).json({ error: 'Not found' });
 
-  candidates[idx].oralData = coherence.deriveTotal(req.body); /* coherence-derive */
+  /* ORAL_SUBMIT_MERGE (2026-08-24): merge, never replace */
+  candidates[idx].oralData = mergeOralSubmission(candidates[idx].oralData, req.body);
   candidates[idx].status = 'oral_done';
 
   /* LEGAL_ORAL_WRITTEN_LEVELS (2026-08-24)
@@ -171,7 +203,8 @@ router.post('/submit-intake/:token', express.json(), async (req, res) => {
   const idx = candidates.findIndex(c => c.intakeToken === req.params.token);
   if (idx === -1) return res.status(404).json({ error: 'Not found' });
 
-  candidates[idx].oralData = coherence.deriveTotal(req.body); /* coherence-derive */
+  /* ORAL_SUBMIT_MERGE (2026-08-24): merge, never replace */
+  candidates[idx].oralData = mergeOralSubmission(candidates[idx].oralData, req.body);
   candidates[idx].status = 'oral_done';
   saveCandidates(candidates);
 
