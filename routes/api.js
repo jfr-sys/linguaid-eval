@@ -1307,11 +1307,33 @@ router.post('/invite-candidate', function(req, res) {
   });
 });
 
+/* NO_TEST_PATHWAY_NO_RESEND (2026-08-24)
+   The resend sends the business English Typeform. Legal intake candidates and
+   renewals are never meant to sit it. Pathway test, not evidence test - a
+   business candidate who has not yet taken the test must stay chaseable.
+   Mirrored by onWrittenTestPathway() in views/candidate.html. */
+function onWrittenTestPathway(c) {
+  if (!c) return false;
+  if (c.isRenewal) return false;
+  if (c.courseType === 'legal') return false;
+  if ((c.oralData || {}).intakeType === 'legal_intake') return false;
+  return true;
+}
+
 router.post('/resend-invite/:id', function(req, res) {
   var candidates = getCandidates();
   var c = candidates.find(function(x) { return x.id === req.params.id; });
   if (!c) return res.status(404).json({ error: 'Not found' });
   // Resend allowed at any status (candidate may have lost the link mid-pipeline)
+
+  /* NO_TEST_PATHWAY_NO_RESEND (2026-08-24) */
+  if (!onWrittenTestPathway(c)) {
+    return res.status(400).json({
+      error: 'Ce candidat ne passe pas le test ecrit (parcours juridique ou renouvellement). '
+           + 'Lui envoyer le questionnaire English 360 serait une erreur : son niveau se recueille '
+           + 'en entretien de positionnement.'
+    });
+  }
 
   var typeformUrl = 'https://form.typeform.com/to/XBcM6I1W';
   var nodemailer = require('nodemailer');

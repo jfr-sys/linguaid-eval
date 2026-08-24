@@ -856,6 +856,7 @@
     })();
     updateProgressBar(c.status, !!(c.conventionData && c.conventionData.proposalSentAt), !!(c.conventionData && (c.conventionData.generatedAt || c.conventionData.pdfPath || c.conventionData.signingToken)), !!(c.conventionData && c.conventionData.signedAt), !!(c.conventionData && c.conventionData.sentToCatherineAt), !!(c.conventionData && c.conventionData.convocationSentAt), isCadre, !!(c.missionData && c.missionData.devisUploadedAt), !!(c.missionData && c.missionData.confirmationSignedAt));
     (function(){ var ra = document.getElementById('resendInviteArea'); if (ra) ra.style.display = 'block'; })();
+    applyResendGate(c); /* NO_TEST_PATHWAY_NO_RESEND (2026-08-24) */
 
     const p = Math.round(100 * c.scores.total / (c.scores.max || 30));
     document.getElementById('testDataBlock').innerHTML = `
@@ -1103,6 +1104,43 @@
       + "Saisissez les niveaux via Niveaux, puis Step 3.";
   }
 
+  /* NO_TEST_PATHWAY_NO_RESEND (2026-08-24): mirrors onWrittenTestPathway()
+     in routes/api.js - keep the two in step. */
+  function onWrittenTestPathway(c) {
+    if (!c) return false;
+    if (c.isRenewal) return false;
+    if (c.courseType === 'legal') return false;
+    if ((c.oralData || {}).intakeType === 'legal_intake') return false;
+    return true;
+  }
+
+  function applyResendGate(c) {
+    var btn = document.getElementById('btnResendInvite');
+    if (!btn) return;
+    var note = document.getElementById('noResendNote');
+    if (!note) {
+      note = document.createElement('span');
+      note.id = 'noResendNote';
+      note.style.cssText = 'font-size:10px;color:#92400e;line-height:1.3;display:block;margin-top:3px';
+      btn.parentNode.appendChild(note);
+    }
+    if (onWrittenTestPathway(c)) {
+      btn.disabled = false;
+      btn.style.opacity = '';
+      btn.style.cursor = '';
+      btn.title = '';
+      note.textContent = '';
+      note.style.display = 'none';
+      return;
+    }
+    btn.disabled = true;
+    btn.style.opacity = '0.45';
+    btn.style.cursor = 'not-allowed';
+    btn.title = "Ce candidat ne passe pas le test \u00e9crit";
+    note.style.display = 'block';
+    note.textContent = "\u26a0\ufe0f Parcours sans test \u00e9crit \u2014 niveau recueilli en entretien.";
+  }
+
   function showLevelsEditor(c) {
     window.__levelsManuallyEdited = !!c.levelsManuallyEditedAt; /* LEVELS_PRESERVE_FIX (2026-08-24) */
     var b = document.getElementById('btnEditLevels'); if (b) b.style.display = 'inline-block';
@@ -1272,6 +1310,12 @@
   }
 
   function resendInvite() {
+    /* NO_TEST_PATHWAY_NO_RESEND (2026-08-24) */
+    if (typeof candidate !== 'undefined' && !onWrittenTestPathway(candidate)) {
+      alert("Ce candidat ne passe pas le test \u00e9crit English 360 (parcours juridique ou renouvellement).\n\n"
+        + "Son niveau se recueille en entretien de positionnement.");
+      return;
+    }
     var btn = document.getElementById('btnResendInvite');
     var status = document.getElementById('resendStatus');
     btn.disabled = true;
