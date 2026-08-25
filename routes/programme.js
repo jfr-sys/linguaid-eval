@@ -847,7 +847,12 @@ router.post('/api/rewrite-objectives/:id', async function (req, res) {
   const goals = (od.validatedGoals || [])
     .map(function (g) { return (g && g.goal) ? g.goal : g; })
     .filter(Boolean).join(', ');
-  const topicList = (body.topics && body.topics.length ? body.topics : (od.topics || [])).join(', ');
+  const topicsArr = (body.topics && body.topics.length ? body.topics : (od.topics || []))
+    .map(function (t) { return String(t == null ? '' : t).trim(); })
+    .filter(Boolean);
+  const topicsBlock = topicsArr.length
+    ? topicsArr.map(function (t, i) { return '  ' + (i + 1) + '. ' + t; }).join('\n')
+    : '  (aucun theme selectionne: reste sur des situations professionnelles generiques, sans specialite metier)';
 
   // The page shows CEFR levels as "B2 (3)" - keep only the CEFR token.
   const cefrOnly = function (v) {
@@ -878,8 +883,10 @@ router.post('/api/rewrite-objectives/:id', async function (req, res) {
     '7. Conserve l intention de l objectif d origine: tu le rends mesurable, tu ne changes pas de sujet.',
     '7b. A qualite egale, choisis toujours la formulation la plus courte. Si un mot peut etre retire sans perdre le sens ou la mesurabilite, retire-le.',
     isLegal
-      ? '8. Contexte anglais juridique des affaires: ancre les objectifs dans des situations juridiques reelles (contrats, clauses, conseil client, negociation, notes et memos).'
-      : '8. Contexte anglais professionnel des affaires: ancre les objectifs dans des situations de travail reelles (reunions, visio, emails, presentations, echanges clients ou fournisseurs).',
+      ? '8. Registre: anglais juridique des affaires. Ancre chaque objectif dans une situation de travail reelle du candidat.'
+      : '8. Registre: anglais professionnel des affaires. Ancre chaque objectif dans une situation de travail reelle du candidat.',
+    '9. PERIMETRE CONTRAIGNANT: chaque objectif doit correspondre a au moins un des themes selectionnes listes plus bas. N invente aucune situation qui ne releve d aucun theme selectionne. Un theme absent de la liste est un theme volontairement exclu du programme: ne l utilise jamais, meme comme simple exemple ou decor.',
+    '9b. Ne cite pas le nom du theme tel quel dans l objectif: utilise la situation de travail concrete qui lui correspond.',
     '',
     'NIVEAU DE DETAIL ATTENDU (exemple):',
     'Avant: Expression orale - confiance augmentee',
@@ -895,7 +902,9 @@ router.post('/api/rewrite-objectives/:id', async function (req, res) {
     '- Niveau cible (CECRL): ' + target,
     '- Volume: ' + coaching + ' h de coaching individuel' + (parseInt(homework, 10) > 0 ? ' + ' + homework + ' h de travaux personnels' : ''),
     '- Objectifs valides lors du bilan oral: ' + (goals || 'non precises'),
-    '- Themes de coaching selectionnes: ' + (topicList || 'non selectionnes'),
+    '',
+    'THEMES SELECTIONNES - PERIMETRE AUTORISE (aucune situation en dehors de cette liste):',
+    topicsBlock,
     '',
     'OBJECTIFS ACTUELS A REFORMULER (' + source.length + '):',
   ].concat(source.map(function (s, i) { return (i + 1) + '. ' + s; })).concat([
