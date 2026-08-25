@@ -292,8 +292,10 @@
       <p style="font-size:13px;color:#64748b;margin-bottom:1rem">Pré-remplis depuis le rapport final. Vous pouvez les modifier.</p>
       <div id="objectivesContainer"></div>
       <button onclick="addObjective()" style="margin-top:8px;font-size:12px;padding:6px 14px;border-radius:6px;border:1px solid #cbd5e1;background:white;cursor:pointer;font-family:inherit">+ Ajouter un objectif</button>
-      <button onclick="saveDraftObjectives()" id="btnSaveDraft" style="margin-top:8px;margin-left:8px;font-size:12px;padding:6px 14px;border-radius:6px;border:1px solid #93c5fd;background:#eff6ff;color:#1d4ed8;cursor:pointer;font-family:inherit">\u{1F4BE} Enregistrer brouillon</button>
-      <span id="draftSavedFlash" style="margin-left:8px;font-size:12px;color:#16a34a;opacity:0;transition:opacity 0.3s">\u2713 Enregistr\u00e9</span>
+      <button onclick="saveDraftObjectives()" id="btnSaveDraft" style="margin-top:8px;margin-left:8px;font-size:12px;padding:6px 14px;border-radius:6px;border:1px solid #93c5fd;background:#eff6ff;color:#1d4ed8;cursor:pointer;font-family:inherit">💾 Enregistrer brouillon</button>
+      <span id="draftSavedFlash" style="margin-left:8px;font-size:12px;color:#16a34a;opacity:0;transition:opacity 0.3s">✓ Enregistré</span>
+      <button onclick="bloomRewriteObjectives()" id="btnBloom" style="margin-top:8px;margin-left:8px;font-size:12px;padding:6px 14px;border-radius:6px;border:1px solid #2E75B6;background:#eff6ff;color:#1e40af;cursor:pointer;font-family:inherit">🎯 Rendre évaluables (Bloom)</button>
+      <div id="bloomReview" style="display:none;margin-top:14px"></div>
     </div>
   </div>
 
@@ -941,6 +943,141 @@ function aiPersonaliseObjectives() {
     btn.disabled = false;
     alert('Erreur: ' + e.message);
   });
+}
+
+// ── BLOOM — OBJECTIFS ÉVALUABLES (non-CPF) [BLOOM_OBJECTIVES] ────────────
+var bloomProposals = [];
+var bloomOriginals = [];
+
+var BLOOM_COLORS = {
+  'M\u00e9moriser':  ['#f1f5f9', '#475569'],
+  'Comprendre':   ['#e0f2fe', '#075985'],
+  'Appliquer':    ['#dcfce7', '#166534'],
+  'Analyser':     ['#fef9c3', '#854d0e'],
+  '\u00c9valuer':    ['#ffedd5', '#9a3412'],
+  'Evaluer':      ['#ffedd5', '#9a3412'],
+  'Cr\u00e9er':      ['#f3e8ff', '#6b21a8'],
+  'Creer':        ['#f3e8ff', '#6b21a8']
+};
+
+function bloomEsc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function bloomBadge(level) {
+  var col = BLOOM_COLORS[level] || ['#e2e8f0', '#334155'];
+  return '<span style="display:inline-block;background:' + col[0] + ';color:' + col[1] +
+    ';border-radius:999px;padding:2px 10px;font-size:11px;font-weight:600">Bloom : ' +
+    bloomEsc(level || 'n/a') + '</span>';
+}
+
+function bloomRewriteObjectives() {
+  var cpf = document.getElementById('cpfToggle');
+  if (cpf && cpf.checked) {
+    alert('Les objectifs CPF sont verrouill\u00e9s sur le r\u00e9f\u00e9rentiel de la certification et ne peuvent pas \u00eatre reformul\u00e9s.\n\nUtilisez \u00ab Personnaliser via IA \u00bb pour ancrer le contexte professionnel.');
+    return;
+  }
+  bloomOriginals = objectives.map(function (o) { return String(o == null ? '' : o).trim(); }).filter(Boolean);
+  if (!bloomOriginals.length) { alert('Aucun objectif \u00e0 reformuler.'); return; }
+
+  var btn = document.getElementById('btnBloom');
+  var label = btn.innerHTML;
+  btn.innerHTML = '\u23F3 Reformulation en cours...';
+  btn.disabled = true;
+
+  var el = function (i) { var e = document.getElementById(i); return e ? e.value : ''; };
+
+  fetch('/api/rewrite-objectives/' + id, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      isCPF: false,
+      objectives: bloomOriginals,
+      topics: getSelectedTopics(),
+      prereqLevel: el('prereqLevel'),
+      targetLevel: el('targetLevel'),
+      coachingHours: el('coachingHours'),
+      homeworkHours: el('homeworkHours')
+    })
+  })
+  .then(function (r) { return r.json(); })
+  .then(function (d) {
+    btn.innerHTML = label; btn.disabled = false;
+    if (!d.success) { alert('Erreur : ' + (d.error || 'inconnue')); return; }
+    bloomProposals = d.objectives || [];
+    if (!bloomProposals.length) { alert('Aucune proposition re\u00e7ue.'); return; }
+    renderBloomReview();
+  })
+  .catch(function (e) {
+    btn.innerHTML = label; btn.disabled = false;
+    alert('Erreur : ' + e.message);
+  });
+}
+
+function renderBloomReview() {
+  var box = document.getElementById('bloomReview');
+  if (!box) return;
+  box.innerHTML =
+    '<div style="border:1px solid #bfdbfe;background:#f8fbff;border-radius:10px;padding:14px">' +
+      '<div style="font-size:12px;font-weight:700;color:#1e40af;letter-spacing:.04em;margin-bottom:4px">' +
+        'PROPOSITION IA \u2014 OBJECTIFS \u00c9VALUABLES</div>' +
+      '<div style="font-size:12px;color:#64748b;margin-bottom:6px">' +
+        'Verbe d\u2019action observable + contexte professionnel + crit\u00e8re de r\u00e9ussite. ' +
+        'D\u00e9cochez ce que vous ne voulez pas ; les textes restent modifiables avant application.</div>' +
+      bloomProposals.map(function (p, i) {
+        return '<div style="border-top:1px solid #e2e8f0;padding:10px 0">' +
+          '<label style="display:flex;gap:8px;align-items:center;font-size:12px;color:#334155;margin-bottom:6px">' +
+            '<input type="checkbox" id="bloomChk' + i + '" checked> ' +
+            'Remplacer l\u2019objectif ' + (i + 1) + ' &nbsp;' + bloomBadge(p.bloom) +
+          '</label>' +
+          '<div style="font-size:11px;color:#94a3b8;margin-bottom:6px">Avant : ' +
+            bloomEsc(bloomOriginals[i] || '\u2014') + '</div>' +
+          '<textarea onchange="bloomProposals[' + i + '].objective=this.value" ' +
+            'style="min-height:74px;font-size:13px;width:100%">' + bloomEsc(p.objective) + '</textarea>' +
+          (p.evaluation
+            ? '<div style="font-size:11px;color:#475569;margin-top:5px">\u{1F3AF} \u00c9valuation : ' +
+              bloomEsc(p.evaluation) + '</div>'
+            : '') +
+        '</div>';
+      }).join('') +
+      '<div style="display:flex;gap:8px;margin-top:12px">' +
+        '<button onclick="bloomApply()" style="font-size:12px;padding:7px 16px;border-radius:6px;' +
+          'border:1px solid #16a34a;background:#dcfce7;color:#166534;cursor:pointer;font-family:inherit">' +
+          '\u2714 Appliquer la s\u00e9lection</button>' +
+        '<button onclick="bloomCancel()" style="font-size:12px;padding:7px 16px;border-radius:6px;' +
+          'border:1px solid #cbd5e1;background:white;color:#475569;cursor:pointer;font-family:inherit">' +
+          'Annuler</button>' +
+      '</div>' +
+    '</div>';
+  box.style.display = 'block';
+}
+
+function bloomApply() {
+  var next = [];
+  bloomProposals.forEach(function (p, i) {
+    var cb = document.getElementById('bloomChk' + i);
+    var use = cb ? cb.checked : true;
+    var txt = use ? String(p.objective || '').trim() : String(bloomOriginals[i] || '').trim();
+    if (txt) next.push(txt);
+  });
+  for (var j = bloomProposals.length; j < bloomOriginals.length; j++) {
+    var kept = String(bloomOriginals[j] || '').trim();
+    if (kept) next.push(kept);
+  }
+  if (!next.length) { alert('Rien \u00e0 appliquer.'); return; }
+  objectives = next;
+  renderObjectives();
+  bloomCancel();
+  saveDraftObjectives();
+}
+
+function bloomCancel() {
+  bloomProposals = [];
+  bloomOriginals = [];
+  var box = document.getElementById('bloomReview');
+  if (box) { box.innerHTML = ''; box.style.display = 'none'; }
 }
 
 // ── UTILITIES ─────────────────────────────────────────────────────────────────

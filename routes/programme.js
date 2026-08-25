@@ -813,4 +813,128 @@ router.post('/api/save-programme-data/:id', function(req, res) {
   }
 });
 
+
+// ---------------------------------------------------------------------------
+// POST /api/rewrite-objectives/:id                          [BLOOM_OBJECTIVES]
+// Rewrites vague free-text (non-CPF) pedagogical objectives into observable,
+// evaluable objectives built on Bloom taxonomy, and returns the evaluation
+// modality for each one.
+// Returns PROPOSALS ONLY - nothing is written to candidates.json here. The
+// page applies the accepted ones and persists them through
+// POST /api/save-programme-data/:id.
+// CPF objectives are locked to the certification referential and are never
+// touched by this route.
+// ---------------------------------------------------------------------------
+router.post('/api/rewrite-objectives/:id', async function (req, res) {
+  const candidates = getCandidates();
+  const c = candidates.find(x => x.id === req.params.id);
+  if (!c) return res.status(404).json({ error: 'Not found' });
+
+  const body = req.body || {};
+  if (body.isCPF === true) {
+    return res.status(400).json({
+      error: 'Objectifs CPF verrouilles sur le referentiel de certification - reformulation interdite.'
+    });
+  }
+
+  const source = (body.objectives || [])
+    .map(function (o) { return String(o == null ? '' : o).trim(); })
+    .filter(Boolean);
+  if (!source.length) return res.status(400).json({ error: 'Aucun objectif a reformuler.' });
+  if (source.length > 12) return res.status(400).json({ error: 'Trop d objectifs (max 12).' });
+
+  const od = c.oralData || {};
+  const goals = (od.validatedGoals || [])
+    .map(function (g) { return (g && g.goal) ? g.goal : g; })
+    .filter(Boolean).join(', ');
+  const topicList = (body.topics && body.topics.length ? body.topics : (od.topics || [])).join(', ');
+
+  // The page shows CEFR levels as "B2 (3)" - keep only the CEFR token.
+  const cefrOnly = function (v) {
+    const s = String(v == null ? '' : v).trim();
+    const m = s.match(/^(A1\+?|A2\+?|B1\+?|B2\+?|C1\+?|C2)/i);
+    return m ? m[1].toUpperCase() : s;
+  };
+  const prereq = cefrOnly(body.prereqLevel || od.prereqLevel || calc5SkillLevel(c)) || 'non precise';
+  const target = cefrOnly(body.targetLevel || od.targetLevel) || 'non precise';
+  const coaching = body.coachingHours || od.coachingHours || 'non precise';
+  const homework = body.homeworkHours || od.homeworkHours || 0;
+  const isLegal = (c.courseType === 'legal') || (od.intakeType === 'legal');
+
+  const prompt = [
+    'Tu es ingenieur pedagogique, specialiste de la formation professionnelle en anglais et de la conformite Qualiopi.',
+    'On te donne des objectifs pedagogiques rediges de maniere vague et non evaluable.',
+    'Reecris-les en objectifs OPERATIONNELS et EVALUABLES, fondes sur la taxonomie de Bloom.',
+    '',
+    'REGLES IMPERATIVES:',
+    '1. Chaque objectif commence par un verbe d action observable a l infinitif (rediger, animer, presenter, argumenter, negocier, synthetiser, reformuler, structurer, comparer, justifier, adapter, concevoir, arbitrer...).',
+    '2. Verbes INTERDITS comme verbe principal, car non evaluables: comprendre, connaitre, savoir, maitriser, ameliorer, developper, acquerir, se familiariser, prendre confiance, etre sensibilise, etre a l aise.',
+    '3. Chaque objectif contient trois elements: (a) la performance observable, (b) la condition ou le contexte professionnel reel du candidat, (c) le critere de reussite mesurable (niveau CECRL vise, degre de precision, autonomie, duree, tolerance aux erreurs, effet produit sur l interlocuteur).',
+    '4. Chaque objectif doit etre atteignable compte tenu du niveau de depart, du niveau cible et du volume horaire indiques.',
+    '5. Repartis les objectifs sur des niveaux de Bloom differents et progressifs, majoritairement Appliquer, Analyser, Evaluer, Creer. N utilise Memoriser pour aucun objectif.',
+    '6. Longueur: 25 a 45 mots par objectif. Francais professionnel correct et accentue. Aucun jargon pedagogique dans le texte de l objectif lui-meme.',
+    '7. Conserve l intention de l objectif d origine: tu le rends mesurable, tu ne changes pas de sujet.',
+    isLegal
+      ? '8. Contexte anglais juridique des affaires: ancre les objectifs dans des situations juridiques reelles (contrats, clauses, conseil client, negociation, notes et memos).'
+      : '8. Contexte anglais professionnel des affaires: ancre les objectifs dans des situations de travail reelles (reunions, visio, emails, presentations, echanges clients ou fournisseurs).',
+    '',
+    'PROFIL DU CANDIDAT:',
+    '- Poste: ' + (c.jobtitle || 'non precise'),
+    '- Departement: ' + (c.dept || 'non precise'),
+    '- Entreprise: ' + (c.company || 'non precisee'),
+    '- Secteur / type de parcours: ' + (isLegal ? 'anglais juridique' : 'anglais professionnel des affaires'),
+    '- Niveau de depart (CECRL): ' + prereq,
+    '- Niveau cible (CECRL): ' + target,
+    '- Volume: ' + coaching + ' h de coaching individuel' + (parseInt(homework, 10) > 0 ? ' + ' + homework + ' h de travaux personnels' : ''),
+    '- Objectifs valides lors du bilan oral: ' + (goals || 'non precises'),
+    '- Themes de coaching selectionnes: ' + (topicList || 'non selectionnes'),
+    '',
+    'OBJECTIFS ACTUELS A REFORMULER (' + source.length + '):',
+  ].concat(source.map(function (s, i) { return (i + 1) + '. ' + s; })).concat([
+    '',
+    'Pour chaque objectif, produis:',
+    '- "objective": le texte reformule, celui qui figurera tel quel dans le programme de formation',
+    '- "bloom": le niveau de Bloom vise, exactement un de: Comprendre, Appliquer, Analyser, Evaluer, Creer',
+    '- "verb": le verbe d action principal utilise',
+    '- "evaluation": comment cet objectif sera concretement evalue en fin de parcours (une phrase courte: mise en situation, tache a produire, grille appliquee)',
+    '',
+    'Reponds UNIQUEMENT avec un objet JSON valide de la forme:',
+    '{"objectives":[{"objective":"...","bloom":"...","verb":"...","evaluation":"..."}]}',
+    'Exactement ' + source.length + ' elements, dans le meme ordre que les objectifs actuels.',
+    'Aucun texte avant ou apres le JSON. Pas de markdown.'
+  ]).join('\n');
+
+  try {
+    const msg = await client.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 2500,
+      messages: [{ role: 'user', content: prompt }]
+    });
+    const raw = msg.content[0].text.trim()
+      .replace(/^```[a-z]*\n?/, '').replace(/```$/, '').trim();
+    const parsed = JSON.parse(raw);
+    let list = Array.isArray(parsed) ? parsed : parsed.objectives;
+    if (!Array.isArray(list)) throw new Error('Invalid response format');
+
+    list = list.map(function (o, i) {
+      if (typeof o === 'string') o = { objective: o };
+      o = o || {};
+      return {
+        original:   source[i] || '',
+        objective:  String(o.objective  == null ? '' : o.objective).trim(),
+        bloom:      String(o.bloom      == null ? '' : o.bloom).trim(),
+        verb:       String(o.verb       == null ? '' : o.verb).trim(),
+        evaluation: String(o.evaluation == null ? '' : o.evaluation).trim()
+      };
+    }).filter(function (o) { return o.objective; });
+
+    if (!list.length) throw new Error('Empty rewrite');
+    res.json({ success: true, objectives: list });
+  } catch (e) {
+    console.error('rewrite-objectives error:', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+
 module.exports = router;
