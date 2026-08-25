@@ -1037,7 +1037,14 @@ router.post('/generate-convention/:id', function(req, res) {
     totalHours: String(od.totalHours || ''),
     coachingHours: String(od.coachingHours || ''),
     homeworkHours: String(od.homeworkHours || ''),
-    prereqLevel: calc5SkillLevel(c) || '',
+    /* CONVENTION_PREREQ (2026-08-25): was calc5SkillLevel(c) alone, which
+       returns '' when the 5 skills are not all present (legal intake, no
+       written test) - the Prerequis bullet then rendered blank even though
+       the programme showed a level. The convention must reproduce the value
+       the programme was built with; the computed level is only a fallback.
+       Normalised to a bare CEFR token: the page stores "B2+ (3.5)". */
+    prereqLevel: (String(od.prereqLevel || calc5SkillLevel(c) || '')
+      .match(/^(A1\+?|A2\+?|B1\+?|B2\+?|C1\+?|C2)/i) || [''])[0].toUpperCase(),
     targetLevel: od.targetLevel || '',
     location: 'A distance',
     dateStart: dateStart,
