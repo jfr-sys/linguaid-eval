@@ -1712,7 +1712,25 @@
         convCpfEl.style.opacity = '0.6';
       }
       var siretRow = document.getElementById('convSiretRow');
-      if (siretRow) siretRow.style.display = isCPF ? 'none' : 'block';
+      /* PARTICULIER_CONVENTION_UI (2026-08-26): a particulier has no SIRET and
+         no company signatory - the learner signs in person. Hide the SIRET
+         field, relabel the signatory fields, and default the signing email to
+         the learner so the convention visibly goes to them. */
+      var convCoRaw = (c.company || '').trim().toLowerCase();
+      var convPart = (!convCoRaw || convCoRaw === 'particulier');
+      if (siretRow) siretRow.style.display = (isCPF || convPart) ? 'none' : 'block';
+      if (convPart) {
+        var sigEl = document.getElementById('convSignatory');
+        var sigLbl = sigEl && sigEl.previousElementSibling;
+        if (sigLbl && sigLbl.tagName === 'LABEL') sigLbl.textContent = 'Signataire (le stagiaire)';
+        var semEl = document.getElementById('convSignatoryEmail');
+        var semLbl = semEl && semEl.previousElementSibling;
+        if (semLbl && semLbl.tagName === 'LABEL') semLbl.textContent = 'Email du stagiaire';
+        if (semEl) {
+          semEl.placeholder = 'prenom.nom@email.com';
+          if (!semEl.value && c.email) semEl.value = c.email;
+        }
+      }
       var cpfLabel = document.querySelector('#conventionForm label');
       if (cpfLabel) {
         if (cpfType === 'CAJA') cpfLabel.textContent = 'Formation CPF — Certification CAJA (RS6810)';
@@ -1776,7 +1794,10 @@
     function toggleConvCPF() {
     var isCPF = document.getElementById("convIsCPF").checked;
     var siretRow = document.getElementById("convSiretRow");
-    if (siretRow) siretRow.style.display = isCPF ? 'none' : 'block';
+    /* PARTICULIER_CONVENTION_UI (2026-08-26) */
+    var coTog = ((document.getElementById('profileCompany')||{}).value || '').trim().toLowerCase();
+    var partTog = (!coTog || coTog === 'particulier');
+    if (siretRow) siretRow.style.display = (isCPF || partTog) ? 'none' : 'block';
   }
   fetch('/candidates/api/' + id)
     .then(r => r.json())

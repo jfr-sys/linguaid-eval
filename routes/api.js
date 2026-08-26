@@ -1032,8 +1032,13 @@ router.post('/generate-convention/:id', function(req, res) {
   var data = {
     candidateName: c.name || '',
     civility: cd.civility || 'Madame',
-    companyName: c.company || '',
-    companySiret: cd.siret || '',
+    /* PARTICULIER_CONVENTION (2026-08-26): a particulier (or a candidate with
+       no company at all) is not a legal entity and has no SIRET - the
+       preamble must name the person, exactly as the CPF templates already do.
+       The ", SIRET " literal now lives inside COMPANY_SIRET, so a real
+       company with a blank SIRET no longer renders a dangling "SIRET ,". */
+    companyName: guardRealCo ? (c.company || '') : ((cd.civility || 'Madame') + ' ' + (c.name || '')).trim(),
+    companySiret: (guardRealCo && String(cd.siret || '').trim()) ? (', SIRET ' + String(cd.siret).trim()) : '',
     totalHours: String(od.totalHours || ''),
     coachingHours: String(od.coachingHours || ''),
     homeworkHours: String(od.homeworkHours || ''),
