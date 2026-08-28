@@ -2152,10 +2152,53 @@ function onRecipientModeChange() {
       });
   }
 
+  /* ACCEPT_STAMPS_PROPOSITION (2026-08-28): clicking Acceptee used to write
+     conventionData.proposalAcceptedAt and nothing else. The convention gate
+     (checkConventionMatch in lib/coherence.js) requires
+     candidate.propositionSnapshot, which is stamped only by
+     /api/generate-proposition - so a dossier marked accepted without a prior
+     generate looked complete at Step 6 and was refused at Step 7. Acceptance
+     now generates the proposition document first when no snapshot exists (no
+     email, no download), then records the acceptance. If generation is
+     refused, the acceptance is NOT recorded and the real reason is shown
+     here, at the step where it can actually be fixed. */
   function markPropositionAccepted() {
-    fetch('/api/mark-proposal-accepted/'+id,{method:'POST'}).then(function(r){return r.json();}).then(function(d){
-      if(d.ok){ location.reload(); }
-    });
+    var btnAcc = document.getElementById('btnPropAccepted');
+    function resetAccBtn() {
+      if (btnAcc) { btnAcc.disabled = false; btnAcc.textContent = '\u2705 Accept\u00e9e'; }
+    }
+    function doMarkAccepted() {
+      fetch('/api/mark-proposal-accepted/'+id,{method:'POST'}).then(function(r){return r.json();}).then(function(d){
+        if(d.ok){ location.reload(); }
+        else { resetAccBtn(); alert('Erreur\u00a0: ' + (d.error || 'inconnue')); }
+      }).catch(function(){ resetAccBtn(); alert('Erreur r\u00e9seau'); });
+    }
+    if (typeof candidate !== 'undefined' && candidate && candidate.propositionSnapshot) {
+      doMarkAccepted();
+      return;
+    }
+    if (btnAcc) { btnAcc.disabled = true; btnAcc.textContent = 'G\u00e9n\u00e9ration de la proposition\u2026'; }
+    var accVal = function(elId) { var el = document.getElementById(elId); return el ? el.value : ''; };
+    var accThird = document.getElementById('propModeThird') && document.getElementById('propModeThird').checked;
+    fetch('/api/generate-proposition/' + id, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        price: accVal('propPrice'),
+        dateStart: accVal('propDateStart'),
+        dateEnd: accVal('propDateEnd'),
+        civility: accVal('propCivility'),
+        recipientType: accThird ? 'hr' : 'learner'
+      })
+    }).then(function(r){ return r.json().then(function(d){ return { ok: r.ok, d: d || {} }; }); })
+      .then(function(res){
+        if (!res.ok || res.d.error) {
+          resetAccBtn();
+          alert('La proposition n\u2019a pas pu \u00eatre g\u00e9n\u00e9r\u00e9e, l\u2019acceptation n\u2019a pas \u00e9t\u00e9 enregistr\u00e9e\u00a0:\n\n' + (res.d.error || 'erreur inconnue'));
+          return;
+        }
+        doMarkAccepted();
+      }).catch(function(){ resetAccBtn(); alert('Erreur r\u00e9seau'); });
   }
 </script>
 
