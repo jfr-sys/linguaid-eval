@@ -17,9 +17,27 @@
     el.value = new Date().getFullYear() + '-12-31';
     el.dispatchEvent(new Event('change', { bubbles: true }));
   }
+  /* SIGNSTATUS_STALE_FIX (2026-08-28): stamp every Step 7 message with the
+     time it was produced, and clear the line before each new attempt, so a
+     message from an earlier click can never be mistaken for a live one. */
+  function convStatusStamp() {
+    var d = new Date();
+    return '[' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0') + '] ';
+  }
+  function convClearStatus() {
+    var s = document.getElementById('signStatus');
+    if (s) { s.textContent = ''; s.style.color = '#666'; }
+  }
+  function convSetStatus(msg, isError) {
+    var s = document.getElementById('signStatus');
+    if (!s) return;
+    s.textContent = convStatusStamp() + msg;
+    s.style.color = isError ? '#b91c1c' : '#666';
+  }
   function sendForSignature() {
     var btn = document.getElementById('btnSendSign');
     var status = document.getElementById('signStatus');
+    convClearStatus();
     var coC = ((document.getElementById('profileCompany')||{}).value || '').trim();
     var thirdC = document.getElementById('propModeThird') && document.getElementById('propModeThird').checked;
     // CADRE_TIERS_REINTRODUCED (2026-07-03): learner-direct never allowed
@@ -78,6 +96,11 @@
   }
 
   function downloadConvention() {
+    /* SIGNSTATUS_STALE_FIX (2026-08-28): this path used to report only via
+       alert(), leaving whatever sendForSignature() last wrote sitting under
+       the buttons - so a successful download appeared to have failed. */
+    convClearStatus();
+    convSetStatus('G\u00e9n\u00e9ration de la convention\u2026', false);
     var data = {
       siret: document.getElementById("convSiret").value,
       civility: document.getElementById("propCivility").value,
@@ -100,10 +123,26 @@
           fetch("/api/generate-convention/" + id, {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({sendEmail:false})})
             .then(function(r2){return r2.json();})
             .then(function(d2){
-              if (d2.success || d2.pdfPath) { window.location.href = "/api/download-convention/" + id; }
-              else alert("Erreur génération: " + d2.error);
+              if (d2.success || d2.pdfPath) {
+                convSetStatus('Convention g\u00e9n\u00e9r\u00e9e \u2014 t\u00e9l\u00e9chargement en cours\u2026', false);
+                window.location.href = "/api/download-convention/" + id;
+              } else {
+                convSetStatus('\u00c9chec de la g\u00e9n\u00e9ration\u00a0: ' + (d2.error || 'erreur inconnue'), true);
+                alert("Erreur génération: " + d2.error);
+              }
+            })
+            .catch(function(e2) {
+              convSetStatus('Erreur r\u00e9seau\u00a0: ' + e2.message, true);
+              alert('Erreur r\u00e9seau: ' + e2.message);
             });
-        } else alert("Erreur: " + d.error);
+        } else {
+          convSetStatus('Enregistrement refus\u00e9\u00a0: ' + (d.error || 'erreur inconnue'), true);
+          alert("Erreur: " + d.error);
+        }
+      })
+      .catch(function(e) {
+        convSetStatus('Erreur r\u00e9seau\u00a0: ' + e.message, true);
+        alert('Erreur r\u00e9seau: ' + e.message);
       });
   }
 
