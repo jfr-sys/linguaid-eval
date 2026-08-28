@@ -155,6 +155,62 @@
   var activeFilters = {};
   var openFilter = null;
 
+  /* CANDLIST_STATE_PERSIST (2026-08-28): opening a candidate is a full page
+     navigation, so every filter/sort/tab variable above is reinitialised on
+     return. Mirror them into sessionStorage on each render and restore them
+     once before the first render. Session-scoped on purpose: survives back
+     and reload, does not silently persist into a new browser session. */
+  var CAND_VIEW_KEY = 'candListView_v1';
+
+  function candViewSave() {
+    try {
+      var f = {};
+      for (var k in activeFilters) { f[k] = Array.from(activeFilters[k]); }
+      sessionStorage.setItem(CAND_VIEW_KEY, JSON.stringify({
+        filters: f,
+        sk: sk,
+        sd: sd,
+        tab: candTab,
+        q: ((document.getElementById('searchBox') || {}).value || '')
+      }));
+    } catch (e) {}
+  }
+
+  function candViewRestore() {
+    var st;
+    try { st = JSON.parse(sessionStorage.getItem(CAND_VIEW_KEY) || 'null'); } catch (e) { st = null; }
+    if (!st) return;
+
+    /* Drop any saved filter value that no longer exists in the loaded data -
+       otherwise a renamed company or deleted candidate restores a filter
+       matching nothing, and the list looks broken rather than filtered. */
+    var filters = st.filters || {};
+    for (var field in filters) {
+      var present = {};
+      all.forEach(function(x) { present[getFieldVal(x, field)] = 1; });
+      var kept = (filters[field] || []).filter(function(v) { return present[v]; });
+      if (!kept.length) continue;
+      activeFilters[field] = new Set(kept);
+      var btn = document.getElementById('cfb-' + field);
+      if (btn) btn.classList.add('active');
+    }
+
+    if (st.sk) sk = st.sk;
+    if (st.sd === 1 || st.sd === -1) sd = st.sd;
+
+    if (st.tab === 'active' || st.tab === 'done') {
+      candTab = st.tab;
+      var ab = document.getElementById('tabActiveBtn'), db = document.getElementById('tabDoneBtn');
+      if (ab) ab.classList.toggle('active', candTab === 'active');
+      if (db) db.classList.toggle('active', candTab === 'done');
+    }
+
+    if (st.q) {
+      var sb = document.getElementById('searchBox');
+      if (sb) sb.value = st.q;
+    }
+  }
+
   function getFieldVal(x, field) {
     if (field === 'status') {
       return computeStage(x).label;
@@ -327,6 +383,10 @@
   function render(){
     var tb=document.getElementById('candidateList');
     var q=((document.getElementById('searchBox')||{}).value||'').toLowerCase();
+    /* CANDLIST_STATE_PERSIST (2026-08-28): saved at the TOP of render, not the
+       bottom - render() returns early when there are no rows, so a bottom hook
+       would silently skip saving exactly when a filter matched nothing. */
+    candViewSave();
     var preTabRows=all.filter(function(x){
       if (q && ((x.name||'')+(x.jobtitle||'')+(x.company||'')+(x.status||'')).toLowerCase().indexOf(q)===-1) return false;
       for (var f in activeFilters) { if (!activeFilters[f].has(getFieldVal(x,f))) return false; }
@@ -378,7 +438,7 @@
     if(!confirm('Delete '+name+'?'))return;
     fetch('/candidates/api/'+id,{method:'DELETE'}).then(function(r){return r.json();}).then(function(d){if(d.success){all=all.filter(function(x){return x.id!==id;});render();}else alert(d.error);});
   }
-  fetch('/candidates/api/list').then(function(r){return r.json();}).then(function(d){all=d;render();}).catch(function(e){document.getElementById('candidateList').innerHTML='<tr><td colspan="5" class="empty">Error: '+e+'</td></tr>';});
+  fetch('/candidates/api/list').then(function(r){return r.json();}).then(function(d){all=d;candViewRestore();render();}).catch(function(e){document.getElementById('candidateList').innerHTML='<tr><td colspan="5" class="empty">Error: '+e+'</td></tr>';});
 </script>
 
 <div id='inviteModal' style='display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center'>
