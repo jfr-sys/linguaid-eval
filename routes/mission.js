@@ -164,7 +164,7 @@ router.post('/:token/devis-confirm', express.json(), (req, res) => {
   const devisSignUrl = 'https://eval.linguaid.net/sign/devis/' + md.devisSignToken;
 
     const nodemailer = require('nodemailer');
-    const transporter = nodemailer.createTransport({ host: 'localhost', port: 25, secure: false, tls: { rejectUnauthorized: false } });
+    const transporter = nodemailer.createTransport(require('../lib/mailer').transportOptions());
     transporter.sendMail({
       from: 'noreply@linguaid.net',
       to: 'jfr@linguaid.net',

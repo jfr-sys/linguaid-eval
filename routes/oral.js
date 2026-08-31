@@ -38,12 +38,7 @@ function mergeOralSubmission(existing, incoming) {
 
 const dataDir = path.join(__dirname, '../data');
 
-const transporter = nodemailer.createTransport({
-  host: 'localhost',
-  port: 25,
-  secure: false,
-  tls: { rejectUnauthorized: false }
-});
+const transporter = nodemailer.createTransport(require('../lib/mailer').transportOptions());
 
 function getCandidates() {
   const file = path.join(dataDir, 'candidates.json');

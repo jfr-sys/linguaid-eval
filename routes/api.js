@@ -1096,7 +1096,7 @@ router.post('/generate-convention/:id', function(req, res) {
     if (!sendEmail) return res.json({ success: true, pdfPath: result.pdfPath });
     var signingUrl = 'https://eval.linguaid.net/sign/' + signingToken;
     var nodemailer = require('nodemailer');
-    var transporter = nodemailer.createTransport({ host: 'localhost', port: 25, secure: false, tls: { rejectUnauthorized: false } });
+    var transporter = nodemailer.createTransport(require('../lib/mailer').transportOptions());
     var isThirdParty = guardThird;
     var convTitle = od.trainingTitle || (isCPF ? 'Communiquer en anglais professionnel – English 360 – Niveau ' + (od.targetLevel || 'B2') : (c.courseType === 'legal' ? 'Formation en Anglais Juridique' : 'Formation en Anglais Professionnel'));
     var convGreeting = isThirdParty
@@ -1127,7 +1127,7 @@ router.post('/send-intake-link/:id', function(req, res) {
   }
   var intakeUrl = 'https://eval.linguaid.net/oral/intake/' + c.intakeToken;
   var nodemailer = require('nodemailer');
-  var transporter = nodemailer.createTransport({ host: 'localhost', port: 25, secure: false, tls: { rejectUnauthorized: false } });
+  var transporter = nodemailer.createTransport(require('../lib/mailer').transportOptions());
   var body = [
     'Entretien de positionnement \u2014 ' + c.name,
     '',
@@ -1157,7 +1157,7 @@ router.post('/send-oral-link/:id', function(req, res) {
   if (!toEmail) return res.status(400).json({ error: 'Unknown evaluator' });
   var oralUrl = 'https://eval.linguaid.net/oral/' + c.oralToken;
   var nodemailer = require('nodemailer');
-  var transporter = nodemailer.createTransport({ host: 'localhost', port: 25, secure: false, tls: { rejectUnauthorized: false } });
+  var transporter = nodemailer.createTransport(require('../lib/mailer').transportOptions());
   var body = ['Bonjour ' + evaluator + ',', '', 'Please find the oral assessment link for ' + c.name + ':', '', oralUrl, '', 'Best regards,', 'Linguaid Eval'].join('\n');
   transporter.sendMail({ from: 'eval@linguaid.net', to: toEmail, subject: 'Oral assessment - ' + c.name, text: body }, function(err) {
     if (err) { console.error('sendMail error:', err); return res.status(500).json({ error: err.message }); }
@@ -1303,7 +1303,7 @@ router.post('/typeform-webhook', function(req, res) {
 
   // Alert Joss
   var nodemailer = require('nodemailer');
-  var transporter = nodemailer.createTransport({ host: 'localhost', port: 25, secure: false, tls: { rejectUnauthorized: false } });
+  var transporter = nodemailer.createTransport(require('../lib/mailer').transportOptions());
   transporter.sendMail({
     from: 'eval@linguaid.net',
     to: 'jfr@linguaid.net',
@@ -1351,7 +1351,7 @@ router.post('/invite-candidate', function(req, res) {
 
   var typeformUrl = 'https://form.typeform.com/to/XBcM6I1W';
   var nodemailer = require('nodemailer');
-  var transporter = nodemailer.createTransport({ host: 'localhost', port: 25, secure: false, tls: { rejectUnauthorized: false } });
+  var transporter = nodemailer.createTransport(require('../lib/mailer').transportOptions());
   var body = '<div style="font-family:Arial,sans-serif;font-size:14px;color:#222;line-height:1.6">'
     + '<p>Bonjour ' + name + ',</p>'
     + '<p>Vous allez normalement suivre une formation en anglais avec nous. Avant la formation, nous avons besoin d\'évaluer votre niveau et vos besoins afin d\'établir le devis de formation et le programme personnalisé.</p>'
@@ -1406,7 +1406,7 @@ router.post('/resend-invite/:id', function(req, res) {
 
   var typeformUrl = 'https://form.typeform.com/to/XBcM6I1W';
   var nodemailer = require('nodemailer');
-  var transporter = nodemailer.createTransport({ host: 'localhost', port: 25, secure: false, tls: { rejectUnauthorized: false } });
+  var transporter = nodemailer.createTransport(require('../lib/mailer').transportOptions());
   var name = c.name;
   var body = '<div style="font-family:Arial,sans-serif;font-size:14px;color:#222;line-height:1.6">'
     + '<p>Bonjour ' + name + ',</p>'
@@ -1713,7 +1713,7 @@ router.post('/send-calendly-link/:id', function(req, res) {
     + '</div>';
 
   var nodemailer = require('nodemailer');
-  var transporter = nodemailer.createTransport({ host: 'localhost', port: 25, secure: false, tls: { rejectUnauthorized: false } });
+  var transporter = nodemailer.createTransport(require('../lib/mailer').transportOptions());
   transporter.sendMail({
     from: 'eval@linguaid.net',
     to: candidate.email,
@@ -1797,7 +1797,7 @@ router.post('/send-to-catherine/:id', function(req, res) {
     var conventionPdf = cd.signedPdfPath || cd.pdfPath || null;
 
     var nodemailer = require('nodemailer');
-    var transporter = nodemailer.createTransport({ host: 'localhost', port: 25, secure: false, tls: { rejectUnauthorized: false } });
+    var transporter = nodemailer.createTransport(require('../lib/mailer').transportOptions());
 
     var MONTHS_FR = ['janvier','fevrier','mars','avril','mai','juin','juillet','aout','septembre','octobre','novembre','decembre'];
     function fmtDate(iso) {
@@ -1982,7 +1982,7 @@ router.post('/hec-webhook', function(req, res) {
 
   // Alert Joss
   var nodemailer = require('nodemailer');
-  var transporter = nodemailer.createTransport({ host: 'localhost', port: 25, secure: false, tls: { rejectUnauthorized: false } });
+  var transporter = nodemailer.createTransport(require('../lib/mailer').transportOptions());
   transporter.sendMail({
     from: 'eval@linguaid.net',
     to: 'jfr@linguaid.net',
@@ -2204,7 +2204,7 @@ router.post('/send-proposal/:id'
 
   function sendProposalEmail() {
     var nodemailer = require('nodemailer');
-    var transporter = nodemailer.createTransport({ host: 'localhost', port: 25, secure: false, tls: { rejectUnauthorized: false } });
+    var transporter = nodemailer.createTransport(require('../lib/mailer').transportOptions());
     // Build HTML — body text + branded signature image
     var bodyHtml = '<div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.8;color:#1a1a1a;max-width:600px">'
       + '<p>' + emailBody.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
@@ -2343,7 +2343,7 @@ router.post('/send-oral-reminders', express.json(), (req, res) => {
   }).join('\n');
   const candidates = JSON.parse(fs.readFileSync(path.join(__dirname, '../data/candidates.json'), 'utf8'));
   const nodemailer = require('nodemailer');
-  const transporter = nodemailer.createTransport({ host: 'localhost', port: 25, secure: false, tls: { rejectUnauthorized: false } });
+  const transporter = nodemailer.createTransport(require('../lib/mailer').transportOptions());
   let sent = 0, failed = 0;
   const promises = ids.map(id => {
     const c = candidates.find(x => x.id === id);
@@ -2582,7 +2582,7 @@ router.post('/send-convocation/:id', function(req, res) {
     }
 
     var nodemailer = require('nodemailer');
-    var transporter = nodemailer.createTransport({ host: 'localhost', port: 25, secure: false, tls: { rejectUnauthorized: false } });
+    var transporter = nodemailer.createTransport(require('../lib/mailer').transportOptions());
 
     console.log('Sending convocation for ' + c.name + ' isCPF=' + isCPF + ' cpfType=' + cpfType + ' attachments=' + attachments.length);
 
@@ -2818,7 +2818,7 @@ router.post('/send-attestation-signing/:id', function(req, res) {
     var trainingTitle = (c.oralData && c.oralData.trainingTitle) || 'votre formation';
 
     var nodemailer2 = require('nodemailer');
-    var transporter2 = nodemailer2.createTransport({ host: 'localhost', port: 25, secure: false, tls: { rejectUnauthorized: false } });
+    var transporter2 = nodemailer2.createTransport(require('../lib/mailer').transportOptions());
 
     var htmlBody = '<div style="font-family:sans-serif;max-width:600px;margin:0 auto">'
       + '<p>Bonjour ' + learnerName + ',</p>'
@@ -3469,7 +3469,7 @@ function approveReminders(req, res, match) {
     var cPath = path.join(dataDir, 'candidates.json');
     var cands = JSON.parse(fs.readFileSync(cPath, 'utf8'));
     var nodemailer = require('nodemailer');
-    var t = nodemailer.createTransport({ host: 'localhost', port: 25, secure: false, tls: { rejectUnauthorized: false } });
+    var t = nodemailer.createTransport(require('../lib/mailer').transportOptions());
     var sent = [], skipped = [];
     var list = Object.keys(pending.reminders).map(function(k) { return pending.reminders[k]; })
       .filter(function(e) { return !e.sentAt && !e.skippedAt && match(e); });

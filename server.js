@@ -75,7 +75,7 @@ app.get('/mon-parcours/:token', function(req, res) { res.sendFile(require('path'
 const cron = require('node-cron');
 const { isContratCadre } = require('./lib/contratCadre');
 const nodemailerCron = require('nodemailer');
-const transporterCron = nodemailerCron.createTransport({ host: 'localhost', port: 25, secure: false, tls: { rejectUnauthorized: false } });
+const transporterCron = nodemailerCron.createTransport(require('./lib/mailer').transportOptions());
 // == REMINDER_APPROVAL_HOLD (2026-07-03) ======================================
 // No candidate-facing reminder is ever sent automatically. Due reminders are
 // queued to data/pendingReminders.json and Joss receives one approval email

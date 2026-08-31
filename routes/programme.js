@@ -396,7 +396,7 @@ const nodemailer = require('nodemailer');
 const os = require('os');
 
 function getTransporter() {
-  return nodemailer.createTransport({ host: 'localhost', port: 25, secure: false, tls: { rejectUnauthorized: false } });
+  return nodemailer.createTransport(require('../lib/mailer').transportOptions());
 }
 
 const SIGNATURE_HTML = '<br><img src="https://eval.linguaid.net/signature_joss.png" alt="Joss Frimond - Linguaid" style="max-width:400px;display:block;margin-top:8px">';
