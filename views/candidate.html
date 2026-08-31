@@ -2357,25 +2357,27 @@ function showStep9(c) {
   var md = (c && c.missionData) || {};
   if (cd.signedAt || cd.sentToCatherineAt) {
     showStep11(c);
-    if (md.confirmationSignedAt) {
-      s9.style.opacity = '1'; s9.style.pointerEvents = 'auto';
-      document.getElementById('convocationForm').style.display = 'block';
-      document.getElementById('stage9status').textContent = 'Envoyez la convocation à l’apprenant';
-      if (cd.convocationSentAt) {
-        s9.style.borderTopColor = '#10b981';
-        document.getElementById('stage9status').textContent = 'Convocation envoyée ✓';
-        document.getElementById('btnSendConvoc').textContent = '↩ Renvoyer';
-        var tdot = document.getElementById('tdot-formation');
-        if (tdot) { tdot.style.display='inline-block'; tdot.className='tab-dot'; }
-        showStep10(c);
-      } else {
-        var tdot = document.getElementById('tdot-formation');
-        if (tdot) { tdot.style.display='inline-block'; }
-      }
+    /* CONVOC_UNGATED (2026-08-31)
+       The convocation panel used to stay locked until the trainer mission
+       confirmation was signed (md.confirmationSignedAt). It now opens as soon
+       as the convention is signed or sent to Catherine, so a convocation can go
+       out at short notice. The unsigned state shows an advisory warning instead
+       of blocking. The server route has never enforced this. */
+    s9.style.opacity = '1'; s9.style.pointerEvents = 'auto';
+    document.getElementById('convocationForm').style.display = 'block';
+    var tdot = document.getElementById('tdot-formation');
+    if (tdot) { tdot.style.display = 'inline-block'; }
+    if (cd.convocationSentAt) {
+      s9.style.borderTopColor = '#10b981';
+      document.getElementById('stage9status').textContent = 'Convocation envoy\u00e9e \u2713';
+      document.getElementById('btnSendConvoc').textContent = '\u21a9 Renvoyer';
+      if (tdot) { tdot.className = 'tab-dot'; }
+      showStep10(c);
+    } else if (md.confirmationSignedAt) {
+      document.getElementById('stage9status').textContent = 'Envoyez la convocation \u00e0 l\u2019apprenant';
     } else {
-      document.getElementById('stage9status').textContent = 'Débloqué après confirmation de mission signée';
-      var tdot = document.getElementById('tdot-formation');
-      if (tdot) { tdot.style.display='inline-block'; }
+      document.getElementById('stage9status').innerHTML =
+        '<span style="color:#b45309">\u26a0 Confirmation formateur non sign\u00e9e \u2014 envoi anticip\u00e9 possible</span>';
     }
     if (cd.convocTrainer) {
       var sel = document.getElementById('convocTrainer');
