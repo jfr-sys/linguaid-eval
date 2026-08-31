@@ -135,7 +135,7 @@ router.post('/submit/:token', async (req, res) => {
 
   try {
     await transporter.sendMail({
-      from: 'eval@linguaid.net',
+      from: 'eval@linguaid.net', replyTo: require('../lib/mailer').replyTo(), /* MAILER_REPLYTO */
       to: 'jfr@linguaid.net',
       subject: `Oral assessment submitted — ${candidate.name}`,
       html: `
@@ -208,7 +208,7 @@ router.post('/submit-intake/:token', express.json(), async (req, res) => {
 
   try {
     await transporter.sendMail({
-      from: 'eval@linguaid.net',
+      from: 'eval@linguaid.net', replyTo: require('../lib/mailer').replyTo(), /* MAILER_REPLYTO */
       to: 'jfr@linguaid.net',
       subject: 'Entretien de positionnement enregistr\u00e9 \u2014 ' + candidate.name,
       html: `

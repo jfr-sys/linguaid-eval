@@ -166,7 +166,7 @@ router.post('/:token/devis-confirm', express.json(), (req, res) => {
     const nodemailer = require('nodemailer');
     const transporter = nodemailer.createTransport(require('../lib/mailer').transportOptions());
     transporter.sendMail({
-      from: 'noreply@linguaid.net',
+      from: 'noreply@linguaid.net', replyTo: require('../lib/mailer').replyTo(), /* MAILER_REPLYTO */
       to: 'jfr@linguaid.net',
       subject: `Devis reçu — ${c.name} (${contract.businessName})`,
       text: `${contract.businessName} a soumis un devis pour ${c.name} : ${result.total} € TTC.\n\nÀ signer (bon pour accord) ici : ${devisSignUrl}`,

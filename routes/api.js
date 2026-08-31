@@ -1137,7 +1137,7 @@ router.post('/send-intake-link/:id', function(req, res) {
     'Linguaid Eval'
   ].join('\n');
   transporter.sendMail({
-    from: 'eval@linguaid.net',
+    from: 'eval@linguaid.net', replyTo: require('../lib/mailer').replyTo(), /* MAILER_REPLYTO */
     to: 'jfr@linguaid.net',
     subject: 'Entretien de positionnement \u2014 ' + c.name,
     text: body
@@ -1159,7 +1159,7 @@ router.post('/send-oral-link/:id', function(req, res) {
   var nodemailer = require('nodemailer');
   var transporter = nodemailer.createTransport(require('../lib/mailer').transportOptions());
   var body = ['Bonjour ' + evaluator + ',', '', 'Please find the oral assessment link for ' + c.name + ':', '', oralUrl, '', 'Best regards,', 'Linguaid Eval'].join('\n');
-  transporter.sendMail({ from: 'eval@linguaid.net', to: toEmail, subject: 'Oral assessment - ' + c.name, text: body }, function(err) {
+  transporter.sendMail({ from: 'eval@linguaid.net', replyTo: require('../lib/mailer').replyTo(), /* MAILER_REPLYTO */ to: toEmail, subject: 'Oral assessment - ' + c.name, text: body }, function(err) {
     if (err) { console.error('sendMail error:', err); return res.status(500).json({ error: err.message }); }
     /* STALE_WRITE_FIX (2026-08-24) */
     applyToCandidate(req.params.id, function (fc) { fc.oralEmailSentTo = evaluator; });
@@ -1305,7 +1305,7 @@ router.post('/typeform-webhook', function(req, res) {
   var nodemailer = require('nodemailer');
   var transporter = nodemailer.createTransport(require('../lib/mailer').transportOptions());
   transporter.sendMail({
-    from: 'eval@linguaid.net',
+    from: 'eval@linguaid.net', replyTo: require('../lib/mailer').replyTo(), /* MAILER_REPLYTO */
     to: 'jfr@linguaid.net',
     subject: 'Test completed - ' + name,
     text: name + ' (' + email + ') has completed the English test.\n\nScore: ' + score + '/' + max + '\n\nhttps://eval.linguaid.net/candidates'
@@ -1366,7 +1366,7 @@ router.post('/invite-candidate', function(req, res) {
     + '<img src="https://eval.linguaid.net/signature_joss.png" alt="Joss Frimond - Linguaid" style="max-width:400px;display:block;margin-top:8px">'
     + '</div>';
   transporter.sendMail({
-    from: 'eval@linguaid.net',
+    from: 'eval@linguaid.net', replyTo: require('../lib/mailer').replyTo(), /* MAILER_REPLYTO */
     to: email,
     subject: 'Votre test d\'anglais - Linguaid',
     html: body
@@ -1426,7 +1426,7 @@ router.post('/resend-invite/:id', function(req, res) {
   saveCandidates(candidates);
 
   transporter.sendMail({
-    from: 'eval@linguaid.net',
+    from: 'eval@linguaid.net', replyTo: require('../lib/mailer').replyTo(), /* MAILER_REPLYTO */
     to: c.email,
     subject: 'Rappel : votre test d’anglais - Linguaid',
     html: body
@@ -1715,7 +1715,7 @@ router.post('/send-calendly-link/:id', function(req, res) {
   var nodemailer = require('nodemailer');
   var transporter = nodemailer.createTransport(require('../lib/mailer').transportOptions());
   transporter.sendMail({
-    from: 'eval@linguaid.net',
+    from: 'eval@linguaid.net', replyTo: require('../lib/mailer').replyTo(), /* MAILER_REPLYTO */
     to: candidate.email,
     cc: evaluatorEmail || undefined,
     subject: "Votre evaluation anglais - reservez votre entretien oral",
@@ -1984,7 +1984,7 @@ router.post('/hec-webhook', function(req, res) {
   var nodemailer = require('nodemailer');
   var transporter = nodemailer.createTransport(require('../lib/mailer').transportOptions());
   transporter.sendMail({
-    from: 'eval@linguaid.net',
+    from: 'eval@linguaid.net', replyTo: require('../lib/mailer').replyTo(), /* MAILER_REPLYTO */
     to: 'jfr@linguaid.net',
     subject: 'HEC test completed - ' + name,
     text: name + ' (' + email + ') has completed the HEC English test.\n\nDept: ' + dept + '\nJob: ' + jobtitle + '\nScore: ' + score + '/' + max + '\n\nhttps://eval.linguaid.net/candidates'

@@ -4,6 +4,16 @@ const path = require('path');
 const fs = require('fs');
 require('dotenv').config();
 
+/* MAILER_BOOT_LOG (2026-08-31): announce the active outbound mail mode at startup.
+   If this ever prints "unauthenticated", mail is going out unsigned and
+   Plesk DKIM will refuse to sign it. */
+try {
+  console.log('[mail] outbound: ' + require('./lib/mailer').describe() +
+              ' | reply-to: ' + require('./lib/mailer').replyTo());
+} catch (e) {
+  console.log('[mail] could not read lib/mailer: ' + e.message);
+}
+
 const app = express();
 app.set("trust proxy", 1);
 app.set('trust proxy', 1);
@@ -126,7 +136,7 @@ function queueRemindersAndNotify(dueList) {
     + cards
     + '<p style="font-size:12px;color:#666">Chaque lien ne fonctionne qu\u2019une fois. Au clic, l\u2019\u00e9tat du candidat est re-v\u00e9rifi\u00e9 (sign\u00e9 entre-temps, contrat cadre\u2026) avant tout envoi.</p>'
     + '</div>';
-  transporterCron.sendMail({ from: 'eval@linguaid.net', to: 'jfr@linguaid.net',
+  transporterCron.sendMail({ from: 'eval@linguaid.net', replyTo: require('./lib/mailer').replyTo(), /* MAILER_REPLYTO */ to: 'jfr@linguaid.net',
     subject: 'ACTION \u2014 ' + entries.length + ' rappel(s) en attente de validation', html: html },
     function(err) { if (err) console.error('Approval email error', err); else console.log('Approval email sent (' + entries.length + ' pending)'); });
 }
@@ -171,7 +181,7 @@ cron.schedule('0 9 * * *', function() {
 
       // REMINDER_APPROVAL_HOLD: queue for Joss's approval, never auto-send.
       oralPending.push({ type: 'oral', candidateId: c.id, candidateName: c.name || '', company: c.company || '',
-        from: 'eval@linguaid.net', to: c.email,
+        from: 'eval@linguaid.net', replyTo: require('./lib/mailer').replyTo(), /* MAILER_REPLYTO */ to: c.email,
         subject: 'Rappel : r\u00e9servez votre entretien oral', html: html });
     });
     queueRemindersAndNotify(oralPending);
@@ -261,11 +271,11 @@ cron.schedule('30 8 * * *', function() {
     const dataPath = path.join(__dirname, 'data/candidates.json');
     const candidates = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
     const cazHtml = buildCazDigest(candidates);
-    if (cazHtml) transporterCron.sendMail({ from: 'eval@linguaid.net', to: 'cfr@linguaid.net', cc: 'jfr@linguaid.net',
+    if (cazHtml) transporterCron.sendMail({ from: 'eval@linguaid.net', replyTo: require('./lib/mailer').replyTo(), /* MAILER_REPLYTO */ to: 'cfr@linguaid.net', cc: 'jfr@linguaid.net',
       subject: 'Commandes en attente de convocation', html: cazHtml },
       function(err) { if (err) console.error('Caz digest mail error', err); else console.log('Caz digest sent'); });
     const jossHtml = buildJossDigest(candidates);
-    if (jossHtml) transporterCron.sendMail({ from: 'eval@linguaid.net', to: 'jfr@linguaid.net',
+    if (jossHtml) transporterCron.sendMail({ from: 'eval@linguaid.net', replyTo: require('./lib/mailer').replyTo(), /* MAILER_REPLYTO */ to: 'jfr@linguaid.net',
       subject: 'Linguaid Eval \u2014 point du jour', html: jossHtml },
       function(err) { if (err) console.error('Joss digest mail error', err); else console.log('Joss digest sent'); });
   } catch (e) { console.error('Digest cron error:', e); }

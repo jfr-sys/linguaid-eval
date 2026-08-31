@@ -137,7 +137,7 @@ router.post('/:token/submit', express.json({ limit: '5mb' }), (req, res) => {
     const transporter = nodemailer.createTransport(require('../lib/mailer').transportOptions());
     const candidateName = candidates[idx].name;
     transporter.sendMail({
-      from: 'noreply@linguaid.net',
+      from: 'noreply@linguaid.net', replyTo: require('../lib/mailer').replyTo(), /* MAILER_REPLYTO */
       to: 'jfr@linguaid.net',
       subject: `✅ Convention signée — ${candidateName}`,
       text: `La convention de formation de ${candidateName} a été signée électroniquement.\n\nSignataire : ${typedName}\nDate : ${new Date(timestamp).toLocaleString('fr-FR')}\nIP : ${signerIp}\n\nLe PDF signé est disponible dans l'application.`,
@@ -246,7 +246,7 @@ router.post('/attestation/:token/submit', express.json({ limit: '5mb' }), functi
     var nodemailer = require('nodemailer');
     var transporter = nodemailer.createTransport(require('../lib/mailer').transportOptions());
     transporter.sendMail({
-      from: 'noreply@linguaid.net',
+      from: 'noreply@linguaid.net', replyTo: require('../lib/mailer').replyTo(), /* MAILER_REPLYTO */
       to: 'jfr@linguaid.net',
       subject: '✅ Attestation signée — ' + candidates[idx].name,
       text: 'L\'attestation de ' + candidates[idx].name + ' a été signée électroniquement.\n\nSignataire : ' + typedName + '\nDate : ' + new Date(timestamp).toLocaleString('fr-FR') + '\nIP : ' + signerIp,
@@ -358,7 +358,7 @@ router.post('/standalone/:token/submit', express.json({ limit: '5mb' }), functio
     var nodemailer = require('nodemailer');
     var transporter = nodemailer.createTransport(require('../lib/mailer').transportOptions());
     transporter.sendMail({
-      from: 'noreply@linguaid.net', to: 'jfr@linguaid.net, rma@linguaid.net',
+      from: 'noreply@linguaid.net', replyTo: require('../lib/mailer').replyTo(), /* MAILER_REPLYTO */ to: 'jfr@linguaid.net, rma@linguaid.net',
       subject: '✅ Attestation signée — ' + rec.name,
       text: 'Attestation standalone signée par ' + typedName + '\nDate : ' + new Date(timestamp).toLocaleString('fr-FR') + '\nIP : ' + signerIp,
       attachments: (function(){
@@ -487,7 +487,7 @@ router.post('/mission/:token/submit', express.json({ limit: '5mb' }), function(r
     var nodemailer = require('nodemailer');
     var transporter = nodemailer.createTransport(require('../lib/mailer').transportOptions());
     transporter.sendMail({
-      from: 'noreply@linguaid.net',
+      from: 'noreply@linguaid.net', replyTo: require('../lib/mailer').replyTo(), /* MAILER_REPLYTO */
       to: 'jfr@linguaid.net',
       subject: 'Confirmation de mission signee - ' + candidates[idx].name,
       text: 'La confirmation de mission de ' + candidates[idx].name + ' a ete signee par ' + typedName + ' le ' + new Date(timestamp).toLocaleString('fr-FR') + '.',
