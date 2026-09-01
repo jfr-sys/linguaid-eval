@@ -389,8 +389,8 @@
         <div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center">
           <button class="btn btn-primary" id="btnWritten" onclick="generateWritten()" style="font-size:11px;padding:3px 10px">Generate</button>
           <div id="stage1downloads" style="display:none;gap:4px;align-items:center;flex-wrap:wrap">
-            <button class="btn btn-en" onclick="downloadWritten('en')" style="font-size:11px;padding:3px 8px">🇬🇧 EN</button>
-            <button class="btn btn-fr" onclick="downloadWritten('fr')" style="font-size:11px;padding:3px 8px">🇫🇷 FR</button>
+            <button class="btn btn-en" id="btnWrittenEN" onclick="downloadWritten('en')" style="font-size:11px;padding:3px 8px">🇬🇧 EN</button>
+            <button class="btn btn-fr" id="btnWrittenFR" onclick="downloadWritten('fr')" style="font-size:11px;padding:3px 8px">🇫🇷 FR</button>
             <button class="btn" onclick="deleteWritten()" title="Supprimer le rapport écrit" style="font-size:11px;padding:3px 8px;background:#dc2626;color:white;border:none">🗑</button>
             <div class="download-loading" id="writtenDownloadLoading" style="font-size:10px">…</div>
           </div>
@@ -1438,18 +1438,34 @@
       }
     }
 
-    function regenerate() {
+    function regenerate() { /* DOWNLOAD_FEEDBACK_20260901 */
       loading.style.display = 'block';
       loading.textContent = lang === 'fr' ? 'Traduction en cours\u2026' : 'Generating\u2026';
       window.location.href = '/api/download/' + id + '/' + lang;
-      var delay = lang === 'fr' ? 20000 : 8000;
-      setTimeout(function () {
-        loading.style.display = 'none';
+      /* The PDF is written by LibreOffice after the document is sent, so a
+         single check fires while the file is still being produced. Poll until
+         it appears instead of making the operator reload the page. */
+      var attempts = 0;
+      var maxAttempts = 60;          /* 60 x 3 s = 3 minutes */
+      var poll = setInterval(function () {
+        attempts++;
         fetch('/api/check-pdfs/' + id)
           .then(function (r) { return r.json(); })
-          .then(markSaved)
-          .catch(function () {});
-      }, delay);
+          .then(function (pdfs) {
+            var have = (lang === 'fr') ? pdfs.frReport : pdfs.enReport;
+            if (have) {
+              clearInterval(poll);
+              loading.style.display = 'none';
+              markSaved(pdfs);
+            } else if (attempts >= maxAttempts) {
+              clearInterval(poll);
+              loading.style.display = 'none';
+            }
+          })
+          .catch(function () {
+            if (attempts >= maxAttempts) { clearInterval(poll); loading.style.display = 'none'; }
+          });
+      }, 3000);
     }
 
     if (force) { regenerate(); return; }
@@ -1486,12 +1502,33 @@
       .catch(e => alert(e.message));
   }
 
-  function downloadWritten(lang) {
+  function downloadWritten(lang) { /* DOWNLOAD_FEEDBACK_20260901 */
     const loading = document.getElementById('writtenDownloadLoading');
+    /* The written report downloads a docx and caches nothing, so these buttons
+       have no saved-PDF state to show and must never go permanently green.
+       They do need to acknowledge the click though - previously nothing at all
+       happened on screen. Disable, show progress, flash a tick, restore. */
+    var btn = document.getElementById(lang === 'fr' ? 'btnWrittenFR' : 'btnWrittenEN');
+    var original = btn ? btn.innerHTML : null;
+    if (btn) {
+      btn.disabled = true;
+      btn.style.opacity = '0.6';
+      btn.innerHTML = lang === 'fr' ? 'FR \u2026' : 'EN \u2026';
+    }
     loading.style.display = 'block';
-    loading.textContent = lang === 'fr' ? 'Traduction en cours…' : 'Generating…';
+    loading.textContent = lang === 'fr' ? 'Traduction en cours\u2026' : 'Generating\u2026';
     window.location.href = '/api/download-written/' + id + '/' + lang;
-    setTimeout(() => { loading.style.display = 'none'; }, lang === 'fr' ? 15000 : 5000);
+    setTimeout(function () {
+      loading.style.display = 'none';
+      if (btn) {
+        btn.innerHTML = (lang === 'fr' ? '\uD83C\uDDEB\uD83C\uDDF7 FR' : '\uD83C\uDDEC\uD83C\uDDE7 EN') + ' \u2713';
+        setTimeout(function () {
+          btn.innerHTML = original;
+          btn.disabled = false;
+          btn.style.opacity = '';
+        }, 2500);
+      }
+    }, lang === 'fr' ? 15000 : 5000);
   }
 
   function downloadProgramme(lang) {
