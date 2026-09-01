@@ -53,7 +53,7 @@
   <div class="layout">
     <div class="card">
       <table>
-        <thead><tr><th>Candidat</th><th>Entreprise</th><th>Destinataire</th><th>Envoyée</th><th>Depuis</th><th>Relances</th></tr></thead>
+        <thead><tr><th>Candidat</th><th>Entreprise</th><th>Téléphone</th><th>Destinataire</th><th>Envoyée</th><th>Depuis</th><th>Relances</th></tr></thead>
         <tbody id="tbody"><tr><td colspan="6" class="empty">Chargement…</td></tr></tbody>
       </table>
     </div>
@@ -117,6 +117,7 @@ function load() {
         return '<tr class="row" id="row-' + i + '" onclick="pick(' + i + ')">'
           + '<td><strong>' + esc(it.name) + '</strong>' + (it.isThirdParty ? '<br><span class="pill p-gry">tiers payeur</span>' : '') + '</td>'
           + '<td>' + esc(it.company || '-') + '</td>'
+          + '<td>' + (it.phone ? esc(it.phone) : '<span style="color:#cbd5e1">—</span>') + '</td>'  /* LEARNER_PHONE */
           + '<td style="font-size:12px">' + esc(it.to || '-') + '</td>'
           + '<td>' + fdate(it.proposalSentAt) + '</td>'
           + '<td>' + agePill(it.daysSince) + '</td>'

@@ -1220,6 +1220,7 @@ router.post('/typeform-webhook', function(req, res) {
     var a = answers.find(function(x) { return x.field && x.field.id === fieldId; });
     if (!a) return null;
     if (a.type === 'text' || a.type === 'email') return a[a.type] || null;
+      if (a.type === 'phone_number') return a.phone_number || null;  /* LEARNER_PHONE */
     if (a.type === 'choice') return (a.choice || {}).label || null;
     if (a.type === 'choices') return a.choices || null;
     if (a.type === 'boolean') return a.boolean;
@@ -1232,6 +1233,15 @@ router.post('/typeform-webhook', function(req, res) {
   var dept = getAnswer('REMkImqUgjz6') || '';
   var jobtitle = getAnswer('71SDBs9cYd2p') || '';
   var otherNeeds = getAnswer('tBwFQiTenYCQ') || '';
+    /* LEARNER_PHONE (2026-09-01): matched on Typeform's phone_number answer
+       TYPE rather than a field id, so adding a phone question to the form
+       populates the record with no further code change. */
+    var phone = '';
+    for (var _pi = 0; _pi < answers.length; _pi++) {
+      if (answers[_pi] && answers[_pi].type === 'phone_number' && answers[_pi].phone_number) {
+        phone = String(answers[_pi].phone_number); break;
+      }
+    }
   var q39 = getAnswer('9xeyds9qFwxc') || '';
   var q40 = getAnswer('tBc5ipiPSw9t') || '';
   var q41 = getAnswer('hTuJurZ183Mn') || '';
@@ -1284,6 +1294,7 @@ router.post('/typeform-webhook', function(req, res) {
       id: newId,
       name: name,
       email: email,
+      phone: phone,  /* LEARNER_PHONE */
       company: company,
       dept: dept,
       jobtitle: jobtitle,
@@ -1783,7 +1794,8 @@ router.post('/send-to-catherine/:id', function(req, res) {
     var cd = c.conventionData || {};
     var od = c.oralData || {};
     var notes = (req.body && req.body.notes) || '';
-    var learnerTel = (req.body && req.body.learnerTel) || cd.learnerTel || '';
+    /* LEARNER_PHONE (2026-09-01): fall back to the identity phone. */
+    var learnerTel = (req.body && req.body.learnerTel) || cd.learnerTel || c.phone || '';
     var orderNumber = (req.body && req.body.orderNumber) || cd.orderNumber || '';
     var companyAddress = (req.body && req.body.companyAddress) || cd.companyAddress || '';
     var availabilities = (req.body && req.body.availabilities) || cd.availabilities || (od.validatedAvail ? od.validatedAvail.map(function(a){return a.day+' '+a.time;}).join(', ') : '') || od.schedNotes || '';
@@ -1895,6 +1907,7 @@ router.post('/hec-webhook', function(req, res) {
     var a = answers.find(function(x) { return x.field && x.field.id === fieldId; });
     if (!a) return null;
     if (a.type === 'text') return a.text || null;
+      if (a.type === 'phone_number') return a.phone_number || null;  /* LEARNER_PHONE */
     if (a.type === 'email') return a.email || null;
     if (a.type === 'choice') return (a.choice || {}).label || null;
     if (a.type === 'choices') return a.choices || null;
@@ -1907,6 +1920,15 @@ router.post('/hec-webhook', function(req, res) {
   var dept = getAnswer('fVSco3dwYncM') || '';
   var jobtitle = getAnswer('y8OH4vxEti1l') || '';
   var otherNeeds = getAnswer('LnlpjBLpA6LQ') || '';
+    /* LEARNER_PHONE (2026-09-01): matched on Typeform's phone_number answer
+       TYPE rather than a field id, so adding a phone question to the form
+       populates the record with no further code change. */
+    var phone = '';
+    for (var _pi = 0; _pi < answers.length; _pi++) {
+      if (answers[_pi] && answers[_pi].type === 'phone_number' && answers[_pi].phone_number) {
+        phone = String(answers[_pi].phone_number); break;
+      }
+    }
   var q39 = getAnswer('TIlw5XoY07mx') || '';
   var q40 = getAnswer('Q7yeLsFkTmyJ') || '';
   var q41 = getAnswer('i0cAcNJJy3ZM') || '';
@@ -1960,6 +1982,7 @@ router.post('/hec-webhook', function(req, res) {
       id: newId,
       name: name,
       email: email,
+      phone: phone,  /* LEARNER_PHONE */
       company: 'HEC Paris',
       dept: dept,
       jobtitle: jobtitle,

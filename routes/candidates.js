@@ -70,6 +70,7 @@ router.get('/api/proposal-reminders', (req, res) => {
         name: c.name || '',
         company: c.company || '',
         jobtitle: c.jobtitle || '',
+        phone: c.phone || '',  /* LEARNER_PHONE */
         to: cd.proposalRecipient || c.email || '',
         isThirdParty: !!cd.isThirdParty || !!(cd.proposalRecipient && c.email
               && String(cd.proposalRecipient).toLowerCase() !== String(c.email).toLowerCase()),
@@ -274,7 +275,8 @@ router.post('/api/:id/identity', (req, res) => {
   const candidates = getCandidates();
   const idx = candidates.findIndex(c => c.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: 'Not found' });
-  const allowed = ['name','email','company','jobtitle','dept','courseType'];
+  /* LEARNER_PHONE (2026-09-01) */
+  const allowed = ['name','email','company','jobtitle','dept','courseType','phone'];
   allowed.forEach(k => { if (req.body[k] !== undefined) candidates[idx][k] = (k === 'company') ? canonicalCompany(req.body[k]) : req.body[k]; });
   if (req.body.civility !== undefined) {
     if (!candidates[idx].conventionData) candidates[idx].conventionData = {};

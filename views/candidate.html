@@ -750,6 +750,11 @@
         <label style="font-size:12px;color:#64748b;display:block;margin-bottom:4px">Poste</label>
         <input id="idJobtitle" type="text" style="width:100%;font-size:13px;padding:7px 10px;border:1px solid #e2e8f0;border-radius:6px;box-sizing:border-box">
       </div>
+      <!-- LEARNER_PHONE (2026-09-01) -->
+      <div>
+        <label style="font-size:12px;color:#64748b;display:block;margin-bottom:4px">T&eacute;l&eacute;phone</label>
+        <input id="idPhone" type="tel" placeholder="06 XX XX XX XX" style="width:100%;font-size:13px;padding:7px 10px;border:1px solid #e2e8f0;border-radius:6px;box-sizing:border-box">
+      </div>
       <div>
         <label style="font-size:12px;color:#64748b;display:block;margin-bottom:4px">Type de formation</label>
         <select id="idCourseType" style="width:100%;font-size:13px;padding:7px 10px;border:1px solid #e2e8f0;border-radius:6px;background:#fff;box-sizing:border-box">
@@ -869,6 +874,9 @@
       document.getElementById('idEmail').value = c.email || '';
       document.getElementById('idCompany').value = c.company || '';
       document.getElementById('idJobtitle').value = c.jobtitle || '';
+      /* LEARNER_PHONE */
+      var _ph = document.getElementById('idPhone');
+      if (_ph) _ph.value = c.phone || '';
       document.getElementById('idCourseType').value = (c.courseType === 'legal') ? 'legal' : 'business';
       var civ = (c.conventionData && c.conventionData.civility) || 'Monsieur';
       document.getElementById('idCivility').value = civ;
@@ -2277,6 +2285,7 @@ async function saveIdentity() {
       email: document.getElementById('idEmail').value.trim(),
       company: document.getElementById('idCompany').value.trim(),
       jobtitle: document.getElementById('idJobtitle').value.trim(),
+      phone: (document.getElementById('idPhone') || {value:''}).value.trim(), /* LEARNER_PHONE */
       civility: document.getElementById('idCivility').value,
       courseType: document.getElementById('idCourseType').value
     };
