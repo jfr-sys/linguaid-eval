@@ -414,6 +414,7 @@
           <div id="stage3downloads" style="display:none;gap:4px;align-items:center;flex-wrap:wrap">
             <button class="btn btn-en" id="btnReportEN" onclick="downloadReport('en')" style="font-size:11px;padding:3px 8px">🇬🇧 EN</button>
             <button class="btn btn-fr" id="btnReportFR" onclick="downloadReport('fr')" style="font-size:11px;padding:3px 8px">🇫🇷 FR</button>
+            <button id="btnReportRegen" onclick="regenerateReport('fr')" title="Regenerer la traduction FR" style="font-size:11px;padding:3px 7px;border-radius:6px;border:1px solid #e2e8f0;background:white;cursor:pointer;font-family:inherit;color:#64748b">↻</button><!-- FR_REPORT_CACHE_20260901 -->
             <div class="download-loading" id="downloadLoading" style="font-size:10px">…</div>
           </div>
         </div>
@@ -1422,20 +1423,56 @@
       .catch(err => { alert(err.message); btn.disabled = false; btn.textContent = 'Generate final report'; });
   }
 
-  function downloadReport(lang) {
+  function downloadReport(lang, force) { /* FR_REPORT_CACHE_20260901 */
     const loading = document.getElementById('downloadLoading');
+    var cachedUrl = (lang === 'fr' ? '/api/download-report-pdf-fr/' : '/api/download-report-pdf/') + id;
+
+    function markSaved(pdfs) {
+      if (lang === 'en' && pdfs.enReport) {
+        var be = document.getElementById('btnReportEN');
+        if (be) { be.style.background = '#059669'; be.innerHTML = '\uD83C\uDDEC\uD83C\uDDE7 EN \u2713'; be.title = 'PDF enregistre'; }
+      }
+      if (lang === 'fr' && pdfs.frReport) {
+        var bf = document.getElementById('btnReportFR');
+        if (bf) { bf.style.background = '#059669'; bf.innerHTML = '\uD83C\uDDEB\uD83C\uDDF7 FR \u2713'; bf.title = 'PDF enregistre'; }
+      }
+    }
+
+    function regenerate() {
+      loading.style.display = 'block';
+      loading.textContent = lang === 'fr' ? 'Traduction en cours\u2026' : 'Generating\u2026';
+      window.location.href = '/api/download/' + id + '/' + lang;
+      var delay = lang === 'fr' ? 20000 : 8000;
+      setTimeout(function () {
+        loading.style.display = 'none';
+        fetch('/api/check-pdfs/' + id)
+          .then(function (r) { return r.json(); })
+          .then(markSaved)
+          .catch(function () {});
+      }, delay);
+    }
+
+    if (force) { regenerate(); return; }
+
     loading.style.display = 'block';
-    loading.textContent = lang === 'fr' ? 'Traduction en cours…' : 'Generating…';
-    window.location.href = '/api/download/' + id + '/' + lang;
-    var delay = lang === 'fr' ? 20000 : 8000;
-    setTimeout(() => {
-      loading.style.display = 'none';
-      // Check if PDF now cached
-      fetch('/api/check-pdfs/' + id).then(function(r){return r.json();}).then(function(pdfs){
-        if (lang==='en' && pdfs.enReport) { var b=document.getElementById('btnReportEN'); if(b){b.style.background='#059669';b.innerHTML='🇬🇧 EN ✓';b.title='PDF enregistré';} }
-        if (lang==='fr' && pdfs.frReport) { var b=document.getElementById('btnReportFR'); if(b){b.style.background='#059669';b.innerHTML='🇫🇷 FR ✓';b.title='PDF enregistré';} }
-      }).catch(function(){});
-    }, delay);
+    loading.textContent = 'Ouverture\u2026';
+    fetch('/api/check-pdfs/' + id)
+      .then(function (r) { return r.json(); })
+      .then(function (pdfs) {
+        loading.style.display = 'none';
+        var have = (lang === 'fr') ? pdfs.frReport : pdfs.enReport;
+        if (have) { window.location.href = cachedUrl; }
+        else { regenerate(); }
+      })
+      .catch(function () { loading.style.display = 'none'; regenerate(); });
+  }
+
+  function regenerateReport(lang) { /* FR_REPORT_CACHE_20260901 */
+    var msg = (lang === 'fr')
+      ? 'Regenerer la traduction FR du rapport final ? Environ 30 secondes.'
+      : 'Regenerer le document EN du rapport final ?';
+    if (!confirm(msg)) return;
+    downloadReport(lang, true);
   }
 
   function deleteWritten() {

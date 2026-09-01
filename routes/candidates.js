@@ -264,6 +264,14 @@ router.post('/api/:id/report', (req, res) => {
   if (idx === -1) return res.status(404).json({ error: 'Not found' });
   candidates[idx].finalReport = req.body.finalReport;
   saveCandidates(candidates);
+  /* FR_REPORT_CACHE_20260901 */
+  try {
+    var fsi = require('fs'), pi = require('path');
+    ['_en.pdf', '_fr.pdf'].forEach(function (suffix) {
+      var p = pi.join(__dirname, '../data/finalReports/' + req.params.id + suffix);
+      if (fsi.existsSync(p)) { fsi.unlinkSync(p); }
+    });
+  } catch (e) { console.error('finalReport pdf cache purge:', e.message); }
   res.json({ success: true });
 });
 

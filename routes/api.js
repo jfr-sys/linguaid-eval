@@ -494,6 +494,20 @@ Do NOT write your own disclaimer about the absence of a test - a standard caveat
   }
 }
 
+
+/* FR_REPORT_CACHE_20260901 : the FR/EN report PDFs under data/finalReports are a cache of
+   the rendered final report. Any write to c.finalReport makes them stale, so they
+   are dropped here and rebuilt on the next download. */
+function invalidateFinalReportPdfs(id) {
+  try {
+    var fsi = require('fs'), pi = require('path');
+    ['_en.pdf', '_fr.pdf'].forEach(function (suffix) {
+      var p = pi.join(__dirname, '../data/finalReports/' + id + suffix);
+      if (fsi.existsSync(p)) { fsi.unlinkSync(p); }
+    });
+  } catch (e) { console.error('invalidateFinalReportPdfs:', e.message); }
+}
+
 router.post('/generate-final/:id', async (req, res) => {
   const candidates = getCandidates();
   const idx = candidates.findIndex(c => c.id === req.params.id);
@@ -639,6 +653,7 @@ Generate a complete professional Final Evaluation Report with markdown formattin
       }
     });
     if (!savedF) return res.status(404).json({ error: 'Candidate no longer exists' });
+    invalidateFinalReportPdfs(req.params.id); /* FR_REPORT_CACHE_20260901 */
 
     res.json({ success: true, report });
   } catch (err) {
