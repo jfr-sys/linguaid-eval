@@ -38,7 +38,7 @@ function mergeOralSubmission(existing, incoming) {
 
 const dataDir = path.join(__dirname, '../data');
 
-const transporter = nodemailer.createTransport(require('../lib/mailer').transportOptions());
+const transporter = require('../lib/mailer').createTransport();
 
 function getCandidates() {
   const file = path.join(dataDir, 'candidates.json');

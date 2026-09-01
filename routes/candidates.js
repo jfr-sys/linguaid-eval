@@ -127,7 +127,7 @@ router.post('/api/send-proposal-reminder/:id', (req, res) => {
   }
 
   var nodemailer = require('nodemailer');
-  var transporter = nodemailer.createTransport(require('../lib/mailer').transportOptions());
+  var transporter = require('../lib/mailer').createTransport();
   transporter.sendMail({
     from: 'jfr@linguaid.net', to: to, cc: 'jfr@linguaid.net',
     subject: subject, html: html, attachments: attachments

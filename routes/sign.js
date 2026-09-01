@@ -134,7 +134,7 @@ router.post('/:token/submit', express.json({ limit: '5mb' }), (req, res) => {
 
     // Notify Joss
     const nodemailer = require('nodemailer');
-    const transporter = nodemailer.createTransport(require('../lib/mailer').transportOptions());
+    const transporter = require('../lib/mailer').createTransport();
     const candidateName = candidates[idx].name;
     transporter.sendMail({
       from: 'noreply@linguaid.net', replyTo: require('../lib/mailer').replyTo(), /* MAILER_REPLYTO */
@@ -244,7 +244,7 @@ router.post('/attestation/:token/submit', express.json({ limit: '5mb' }), functi
     saveCandidates(candidates);
 
     var nodemailer = require('nodemailer');
-    var transporter = nodemailer.createTransport(require('../lib/mailer').transportOptions());
+    var transporter = require('../lib/mailer').createTransport();
     transporter.sendMail({
       from: 'noreply@linguaid.net', replyTo: require('../lib/mailer').replyTo(), /* MAILER_REPLYTO */
       to: 'jfr@linguaid.net',
@@ -356,7 +356,7 @@ router.post('/standalone/:token/submit', express.json({ limit: '5mb' }), functio
     saveStandaloneStore(store);
 
     var nodemailer = require('nodemailer');
-    var transporter = nodemailer.createTransport(require('../lib/mailer').transportOptions());
+    var transporter = require('../lib/mailer').createTransport();
     transporter.sendMail({
       from: 'noreply@linguaid.net', replyTo: require('../lib/mailer').replyTo(), /* MAILER_REPLYTO */ to: 'jfr@linguaid.net, rma@linguaid.net',
       subject: '✅ Attestation signée — ' + rec.name,
@@ -485,7 +485,7 @@ router.post('/mission/:token/submit', express.json({ limit: '5mb' }), function(r
     saveCandidates(candidates);
 
     var nodemailer = require('nodemailer');
-    var transporter = nodemailer.createTransport(require('../lib/mailer').transportOptions());
+    var transporter = require('../lib/mailer').createTransport();
     transporter.sendMail({
       from: 'noreply@linguaid.net', replyTo: require('../lib/mailer').replyTo(), /* MAILER_REPLYTO */
       to: 'jfr@linguaid.net',
