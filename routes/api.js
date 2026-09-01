@@ -1375,7 +1375,31 @@ router.post('/typeform-webhook', function(req, res) {
   var candidates = JSON.parse(fs.readFileSync(path.join(dataDir, 'candidates.json'), 'utf8'));
 
   // Check if already exists (by email)
-  var existing = candidates.find(function(x) { return x.email && x.email.toLowerCase() === email.toLowerCase(); });
+  /* WEBHOOK_PICK_PATHWAY_20260901: .find() returned the FIRST record holding the
+     address. With a legal-intake duplicate sitting earlier in the file, a
+     business test result was merged onto the legal record while the business
+     record stayed empty at 'invited' - the score existed but was invisible
+     everywhere it mattered. Choose among ALL records with that address:
+     written-test pathway first (legal intake and renewals never sit this
+     form), then records with no evidence yet, then the most recent. */
+  var emailKey = String(email || '').trim().toLowerCase();
+  var emailMatches = emailKey ? candidates.filter(function (x) {
+    return String(x.email || '').trim().toLowerCase() === emailKey;
+  }) : [];
+  var pathwayMatches = emailMatches.filter(function (x) { return onWrittenTestPathway(x); });
+  var pickPool = (pathwayMatches.length ? pathwayMatches : emailMatches).slice();
+  pickPool.sort(function (a, b) {
+    var ae = hasWrittenTestEvidence(a) ? 1 : 0, be = hasWrittenTestEvidence(b) ? 1 : 0;
+    if (ae !== be) return ae - be;
+    var at = String(a.invitedAt || a.createdAt || ''), bt = String(b.invitedAt || b.createdAt || '');
+    return bt.localeCompare(at);
+  });
+  var existing = pickPool[0];
+  if (emailMatches.length > 1) {
+    console.log('Typeform webhook: ' + emailMatches.length + ' records share ' + emailKey
+      + ' - chose ' + (existing && existing.id) + ' ('
+      + emailMatches.map(function (x) { return x.id; }).join(', ') + ')');
+  }
   /* TYPEFORM_MERGE_FIX_20260901: the old guard refused any record whose status was not
      exactly 'invited' and returned 200 OK, so Typeform never retried and the
      whole submission - score, free writing, goals, availability - was lost in
