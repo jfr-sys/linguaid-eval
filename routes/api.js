@@ -1277,6 +1277,37 @@ router.post('/typeform-webhook', function(req, res) {
     else if (v && Array.isArray(v)) avail[days[i]] = v.join(', ');
   });
 
+  /* WEBHOOK_BLANK_GUARD_20260901: a payload that resolves a score but not one single answer
+     means the field id map no longer matches the form. Writing it silently is
+     how a candidate ends up with a measured grammar level beside an invented
+     writing level. Record the ids Typeform actually sent so the map can be
+     corrected from evidence. */
+  var resolvedCount = [name !== 'Unknown' ? name : '', email, company, dept, jobtitle,
+                       q39, q40, q41, otherNeeds]
+    .filter(function (v) { return String(v || '').trim().length > 0; }).length
+    + ((goals && goals.length) ? 1 : 0)
+    + (Object.keys(avail || {}).length ? 1 : 0);
+  if (resolvedCount === 0) {
+    var sentIds = answers.map(function (x) {
+      return (x.field && x.field.id) + ':' + (x.type || '?');
+    }).join(', ');
+    console.error('Typeform webhook: payload resolved NO answer fields. '
+      + 'Score=' + score + '/' + max + '. Field ids received: ' + sentIds);
+    try {
+      var nmAlert = require('nodemailer');
+      nmAlert.createTransport(require('../lib/mailer').transportOptions()).sendMail({
+        from: 'eval@linguaid.net', replyTo: require('../lib/mailer').replyTo(),
+        to: 'jfr@linguaid.net',
+        subject: 'ALERTE - reponse Typeform non exploitable',
+        text: 'Une reponse Typeform est arrivee avec un score (' + score + '/' + max + ') '
+          + 'mais aucun champ de reponse na pu etre lu.\n\n'
+          + 'Les identifiants de champ envoyes par Typeform sont :\n' + sentIds + '\n\n'
+          + 'Rien na ete ecrase. Comparez ces identifiants avec ceux codes dans '
+          + 'routes/api.js (getAnswer) et corrigez la correspondance.'
+      }, function (e) { if (e) console.error('blank-payload alert mail error:', e); });
+    } catch (eAlert) { console.error('blank-payload alert failed:', eAlert.message); }
+  }
+
   var candidates = JSON.parse(fs.readFileSync(path.join(dataDir, 'candidates.json'), 'utf8'));
 
   // Check if already exists (by email)
@@ -1304,15 +1335,23 @@ router.post('/typeform-webhook', function(req, res) {
       console.log('Typeform webhook: merged results into ' + candidates[idx].id
         + ' at status ' + candidates[idx].status + ' (status left unchanged)');
     }
+    /* WEBHOOK_BLANK_GUARD_20260901: merge field by field. An empty value from a partial
+       payload must never overwrite a populated one - that turns a failed
+       capture into active data loss. */
     candidates[idx].scores = { total: score, max: max };
-    candidates[idx].freewriting = { q39: q39, q40: q40, q41: q41 };
-    candidates[idx].goals = goals;
-    candidates[idx].avail = avail;
-    candidates[idx].otherNeeds = otherNeeds;
+    var fwOld = candidates[idx].freewriting || {};
+    candidates[idx].freewriting = {
+      q39: String(q39 || '').trim() ? q39 : (fwOld.q39 || ''),
+      q40: String(q40 || '').trim() ? q40 : (fwOld.q40 || ''),
+      q41: String(q41 || '').trim() ? q41 : (fwOld.q41 || '')
+    };
+    if (goals && goals.length) candidates[idx].goals = goals;
+    if (avail && Object.keys(avail).length) candidates[idx].avail = avail;
+    if (String(otherNeeds || '').trim()) candidates[idx].otherNeeds = otherNeeds;
     candidates[idx].company = candidates[idx].company || company;
     candidates[idx].dept = candidates[idx].dept || dept;
     candidates[idx].jobtitle = candidates[idx].jobtitle || jobtitle;
-    candidates[idx].testdate = testdate;
+    candidates[idx].testdate = candidates[idx].testdate || testdate;
   } else {
     // Create new candidate from webhook
     var newId = require('crypto').randomBytes(6).toString('hex');
