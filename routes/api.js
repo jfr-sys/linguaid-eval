@@ -375,11 +375,19 @@ Also add a clearly delimited JSON block:
       console.log('generate-written: preserved manually edited levels for candidate ' + candidates[idx].id);
     }
     /* STALE_WRITE_FIX (2026-08-24) */
+    /* WRITTEN_PDF_CACHE_20260901: status was set unconditionally, so regenerating the
+       written report on a candidate at final_report_done or programme_done
+       knocked them back down the pipeline. Advance only, never regress. */
+    var STATUS_ORDER = ['invited', 'csv_uploaded', 'written_report_done',
+                        'oral_done', 'final_report_done', 'programme_done'];
     var savedW = applyToCandidate(req.params.id, function (fc) {
       fc.writtenReport = cleanReport;
       fc.reportSummary = finalRS;
-      fc.status = 'written_report_done';
+      var now = STATUS_ORDER.indexOf(fc.status);
+      var target = STATUS_ORDER.indexOf('written_report_done');
+      if (now < target) { fc.status = 'written_report_done'; }
     });
+    invalidateWrittenReportPdfs(req.params.id); /* WRITTEN_PDF_CACHE_20260901 */
     if (!savedW) return res.status(404).json({ error: 'Candidate no longer exists' });
 
     res.json({ success: true, report: cleanReport, summary: savedW.reportSummary, levelsPreserved: !!(finalRS && finalRS.levelsPreservedFromManualEdit) });
@@ -674,6 +682,18 @@ Generate a complete professional Final Evaluation Report with markdown formattin
   }
 });
 
+/* WRITTEN_PDF_CACHE_20260901: the written report PDFs are a cache of the rendered report.
+   Any rewrite of c.writtenReport makes them stale. */
+function invalidateWrittenReportPdfs(id) {
+  try {
+    var fsi = require('fs'), pi = require('path');
+    ['_en.pdf', '_fr.pdf'].forEach(function (suffix) {
+      var p = pi.join(__dirname, '../data/writtenReports/' + id + suffix);
+      if (fsi.existsSync(p)) { fsi.unlinkSync(p); }
+    });
+  } catch (e) { console.error('invalidateWrittenReportPdfs:', e.message); }
+}
+
 router.get('/download-written/:id/:lang', function(req, res) {
   var candidates = getCandidates();
   var cand = candidates.find(function(x) { return x.id === req.params.id; });
@@ -710,7 +730,19 @@ router.get('/download-written/:id/:lang', function(req, res) {
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
         res.setHeader('Content-Disposition', 'attachment; filename="' + fname + '"');
         res.send(buffer);
-        try { fs.unlinkSync(tmpJson); fs.unlinkSync(tmpOut); } catch(e2) {}
+        /* WRITTEN_PDF_CACHE_20260901: save a PDF copy so the Step 1 buttons have a cached
+           state, like the final report. */
+        try {
+          var wDir = nodePath.join(__dirname, '../data/writtenReports');
+          if (!fs.existsSync(wDir)) fs.mkdirSync(wDir, { recursive: true });
+          var wPerm = nodePath.join(wDir, req.params.id + (isEN ? '_en' : '_fr') + '.pdf');
+          execFile('soffice', ['--headless','--convert-to','pdf','--outdir', wDir, tmpOut],
+            { timeout: 60000 }, function (errSo) {
+              var soOut = nodePath.join(wDir, nodePath.basename(tmpOut).replace('.docx', '.pdf'));
+              if (!errSo && fs.existsSync(soOut)) { try { fs.renameSync(soOut, wPerm); } catch (e) {} }
+              try { fs.unlinkSync(tmpJson); fs.unlinkSync(tmpOut); } catch (e2) {}
+            });
+        } catch (eSave) { try { fs.unlinkSync(tmpJson); fs.unlinkSync(tmpOut); } catch(e2) {} }
       } catch(e) { res.status(500).json({ error: e.message }); }
     });
   }
@@ -2143,6 +2175,9 @@ router.get('/check-pdfs/:id', function(req, res) {
   res.json({
     frReport: fs2.existsSync(pp.join(__dirname,'../data/finalReports/'+c.id+'_fr.pdf')),
     enReport: fs2.existsSync(pp.join(__dirname,'../data/finalReports/'+c.id+'_en.pdf')),
+    /* WRITTEN_PDF_CACHE_20260901 */
+    frWritten: fs2.existsSync(pp.join(__dirname,'../data/writtenReports/'+c.id+'_fr.pdf')),
+    enWritten: fs2.existsSync(pp.join(__dirname,'../data/writtenReports/'+c.id+'_en.pdf')),
     programme: fs2.existsSync(pp.join(__dirname,'../data/programmes/'+c.id+'.pdf')),
     proposition: fs2.existsSync(pp.join(__dirname,'../data/propositions/'+c.id+'.pdf'))
   });
@@ -3901,5 +3936,22 @@ router.get('/download-devis-opco-docx/:id', function(req, res) {
   res.setHeader('Content-Disposition', 'attachment; filename="devis_' + name + '.docx"');
   res.sendFile(f);
 });
+
+
+/* WRITTEN_PDF_CACHE_20260901: serve the cached written-report PDFs. */
+function sendWrittenPdf(req, res, lang) {
+  var fsw = require('fs'), pw = require('path');
+  var p = pw.join(__dirname, '../data/writtenReports/' + req.params.id + '_' + lang + '.pdf');
+  if (!fsw.existsSync(p)) return res.status(404).json({ error: 'Written report PDF not found' });
+  var cs = getCandidates();
+  var c = cs.find(function (x) { return x.id === req.params.id; });
+  var name = c ? String(c.name || '').replace(/\s+/g, '_') : req.params.id;
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition',
+    'attachment; filename="rapport_ecrit_' + lang + '_' + name + '.pdf"');
+  res.sendFile(p);
+}
+router.get('/download-written-pdf/:id', function (req, res) { sendWrittenPdf(req, res, 'en'); });
+router.get('/download-written-pdf-fr/:id', function (req, res) { sendWrittenPdf(req, res, 'fr'); });
 
 module.exports = router;

@@ -1024,6 +1024,13 @@
       document.getElementById('btnWritten').textContent = 'Regenerate';
       document.getElementById('stage1').classList.add('done');
       document.getElementById('stage1status').textContent = 'Written report generated ✓';
+      /* WRITTEN_PDF_CACHE_20260901 */
+      fetch('/api/check-pdfs/' + c.id).then(function (r) { return r.json(); }).then(function (pdfs) {
+        if (pdfs.enWritten) { var be = document.getElementById('btnWrittenEN');
+          if (be) { be.style.background = '#059669'; be.innerHTML = '\uD83C\uDDEC\uD83C\uDDE7 EN \u2713'; be.title = 'PDF enregistre'; } }
+        if (pdfs.frWritten) { var bf = document.getElementById('btnWrittenFR');
+          if (bf) { bf.style.background = '#059669'; bf.innerHTML = '\uD83C\uDDEB\uD83C\uDDF7 FR \u2713'; bf.title = 'PDF enregistre'; } }
+      }).catch(function () {});
       document.getElementById('stage1downloads').style.display = 'flex';
     }
 
@@ -1502,33 +1509,65 @@
       .catch(e => alert(e.message));
   }
 
-  function downloadWritten(lang) { /* DOWNLOAD_FEEDBACK_20260901 */
+  function downloadWritten(lang, force) { /* WRITTEN_PDF_CACHE_20260901 */
     const loading = document.getElementById('writtenDownloadLoading');
-    /* The written report downloads a docx and caches nothing, so these buttons
-       have no saved-PDF state to show and must never go permanently green.
-       They do need to acknowledge the click though - previously nothing at all
-       happened on screen. Disable, show progress, flash a tick, restore. */
-    var btn = document.getElementById(lang === 'fr' ? 'btnWrittenFR' : 'btnWrittenEN');
-    var original = btn ? btn.innerHTML : null;
-    if (btn) {
-      btn.disabled = true;
-      btn.style.opacity = '0.6';
-      btn.innerHTML = lang === 'fr' ? 'FR \u2026' : 'EN \u2026';
-    }
-    loading.style.display = 'block';
-    loading.textContent = lang === 'fr' ? 'Traduction en cours\u2026' : 'Generating\u2026';
-    window.location.href = '/api/download-written/' + id + '/' + lang;
-    setTimeout(function () {
-      loading.style.display = 'none';
-      if (btn) {
-        btn.innerHTML = (lang === 'fr' ? '\uD83C\uDDEB\uD83C\uDDF7 FR' : '\uD83C\uDDEC\uD83C\uDDE7 EN') + ' \u2713';
-        setTimeout(function () {
-          btn.innerHTML = original;
-          btn.disabled = false;
-          btn.style.opacity = '';
-        }, 2500);
+    var btnId = (lang === 'fr') ? 'btnWrittenFR' : 'btnWrittenEN';
+    var cachedUrl = (lang === 'fr' ? '/api/download-written-pdf-fr/' : '/api/download-written-pdf/') + id;
+
+    function markSaved(pdfs) {
+      if (lang === 'en' && pdfs.enWritten) {
+        var be = document.getElementById('btnWrittenEN');
+        if (be) { be.style.background = '#059669'; be.innerHTML = '\uD83C\uDDEC\uD83C\uDDE7 EN \u2713'; be.title = 'PDF enregistre'; }
       }
-    }, lang === 'fr' ? 15000 : 5000);
+      if (lang === 'fr' && pdfs.frWritten) {
+        var bf = document.getElementById('btnWrittenFR');
+        if (bf) { bf.style.background = '#059669'; bf.innerHTML = '\uD83C\uDDEB\uD83C\uDDF7 FR \u2713'; bf.title = 'PDF enregistre'; }
+      }
+    }
+
+    function regenerate() {
+      var btn = document.getElementById(btnId);
+      if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; }
+      loading.style.display = 'block';
+      loading.textContent = lang === 'fr' ? 'Traduction en cours\u2026' : 'Generating\u2026';
+      window.location.href = '/api/download-written/' + id + '/' + lang;
+      var attempts = 0, maxAttempts = 60;
+      var poll = setInterval(function () {
+        attempts++;
+        fetch('/api/check-pdfs/' + id)
+          .then(function (r) { return r.json(); })
+          .then(function (pdfs) {
+            var have = (lang === 'fr') ? pdfs.frWritten : pdfs.enWritten;
+            if (have || attempts >= maxAttempts) {
+              clearInterval(poll);
+              loading.style.display = 'none';
+              if (btn) { btn.disabled = false; btn.style.opacity = ''; }
+              if (have) markSaved(pdfs);
+            }
+          })
+          .catch(function () {
+            if (attempts >= maxAttempts) {
+              clearInterval(poll);
+              loading.style.display = 'none';
+              if (btn) { btn.disabled = false; btn.style.opacity = ''; }
+            }
+          });
+      }, 3000);
+    }
+
+    if (force) { regenerate(); return; }
+
+    loading.style.display = 'block';
+    loading.textContent = 'Ouverture\u2026';
+    fetch('/api/check-pdfs/' + id)
+      .then(function (r) { return r.json(); })
+      .then(function (pdfs) {
+        loading.style.display = 'none';
+        var have = (lang === 'fr') ? pdfs.frWritten : pdfs.enWritten;
+        if (have) { window.location.href = cachedUrl; }
+        else { regenerate(); }
+      })
+      .catch(function () { loading.style.display = 'none'; regenerate(); });
   }
 
   function downloadProgramme(lang) {
