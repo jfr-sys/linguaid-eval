@@ -1281,18 +1281,29 @@ router.post('/typeform-webhook', function(req, res) {
 
   // Check if already exists (by email)
   var existing = candidates.find(function(x) { return x.email && x.email.toLowerCase() === email.toLowerCase(); });
-  if (existing && existing.status !== 'invited') {
-    console.log('Typeform webhook: candidate already exists:', email);
+  /* TYPEFORM_MERGE_FIX_20260901: the old guard refused any record whose status was not
+     exactly 'invited' and returned 200 OK, so Typeform never retried and the
+     whole submission - score, free writing, goals, availability - was lost in
+     silence. A record is only a genuine duplicate if it ALREADY holds written
+     test evidence; anything else gets the results merged in, whatever its
+     status. Status is advanced, never regressed. */
+  if (existing && hasWrittenTestEvidence(existing)) {
+    console.log('Typeform webhook: candidate already has test results, ignoring:', email);
     return res.json({ ok: true, message: 'already exists' });
   }
 
   var now = new Date().toISOString();
   var testdate = now.slice(0,10);
 
-  if (existing && existing.status === 'invited') {
-    // Update the invited candidate with test results
+  if (existing) {
+    // Merge test results into the existing record
     var idx = candidates.findIndex(function(x) { return x.id === existing.id; });
-    candidates[idx].status = 'csv_uploaded';
+    if (!candidates[idx].status || candidates[idx].status === 'invited') {
+      candidates[idx].status = 'csv_uploaded';
+    } else {
+      console.log('Typeform webhook: merged results into ' + candidates[idx].id
+        + ' at status ' + candidates[idx].status + ' (status left unchanged)');
+    }
     candidates[idx].scores = { total: score, max: max };
     candidates[idx].freewriting = { q39: q39, q40: q40, q41: q41 };
     candidates[idx].goals = goals;
@@ -1361,7 +1372,8 @@ router.post('/invite-candidate', function(req, res) {
     jobtitle: jobtitle,
     dept: '',
     testdate: '',
-    scores: { total: 0, max: 26 },
+    scores: { total: 0, max: 0 },  /* TYPEFORM_MERGE_FIX_20260901: was 0/26, which rendered
+                                      as a plausible real score in reports */
     freewriting: { q39: '', q40: '', q41: '' },
     goals: [],
     avail: {},
