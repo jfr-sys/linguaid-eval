@@ -333,9 +333,15 @@ Also add a clearly delimited JSON block:
   try {
     const message = await client.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 6000,
+      max_tokens: 16000,  /* TRUNCATION_GUARD_20260901 */
       messages: [{ role: 'user', content: prompt }]
     });
+    /* TRUNCATION_GUARD_20260901 */
+    if (message.stop_reason === 'max_tokens') {
+      console.error('Written report truncated for candidate ' + req.params.id);
+      return res.status(500).json({ error: 'Le rapport ecrit a ete tronque a la '
+        + 'generation. Rien n a ete enregistre. Relancez la generation.' });
+    }
 
     const fullText = message.content[0].text;
     let reportSummary = null;
@@ -614,9 +620,15 @@ Generate a complete professional Final Evaluation Report with markdown formattin
   try {
     const message = await client.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 5000,
+      max_tokens: 16000,  /* TRUNCATION_GUARD_20260901 */
       messages: [{ role: 'user', content: prompt }]
     });
+    /* TRUNCATION_GUARD_20260901 */
+    if (message.stop_reason === 'max_tokens') {
+      console.error('Final report truncated for candidate ' + req.params.id);
+      return res.status(500).json({ error: 'Le rapport final a ete tronque a la '
+        + 'generation. Rien n a ete enregistre. Relancez la generation.' });
+    }
 
     var rawFinal = message.content[0].text.replace(/```[a-z]*\n/g, '').replace(/```/g, '');
     /* FINAL_REPORT_WITHOUT_TEST (2026-08-24): same caveat as the legal intake
@@ -706,9 +718,19 @@ router.get('/download-written/:id/:lang', function(req, res) {
   if (!isEN) {
     var transPrompt = 'Translate and adapt into French for French professional context. CEFR to CECRL. Keep markdown formatting. Not assessed to Non evalue a ce stade. Do not use backtick code blocks. Report: ' + reportText;
     client2.messages.create({
-      model: 'claude-sonnet-4-6', max_tokens: 6000,
+      /* TRUNCATION_GUARD_20260901: was 6000. French runs 15-20 percent longer than the
+         English source, so a full report crossed the cap and the truncated
+         text was built into a PDF with nothing checking stop_reason. */
+      model: 'claude-sonnet-4-6', max_tokens: 16000,
       messages: [{ role: 'user', content: transPrompt }]
     }).then(function(msg) {
+      if (msg.stop_reason === 'max_tokens') {
+        console.error('Translation truncated for candidate ' + req.params.id
+          + ' - refusing to build a partial document');
+        return res.status(500).json({ error: 'La traduction a ete tronquee : '
+          + 'le rapport depasse la limite de generation. Le document n a pas ete '
+          + 'produit. Raccourcissez le rapport ou signalez-le pour augmenter la limite.' });
+      }
       generate(msg.content[0].text);
     }).catch(function(err) {
       res.status(500).json({ error: 'Translation failed: ' + err.message });
@@ -774,9 +796,19 @@ router.get('/download/:id/:lang', function(req, res) {
   if (!isEN) {
     var transPrompt = 'Translate and adapt into French for French professional context. CEFR to CECRL. Keep markdown formatting. Not assessed to Non evalue a ce stade. Do not use backtick code blocks. Report: ' + reportText;
     client2.messages.create({
-      model: 'claude-sonnet-4-6', max_tokens: 6000,
+      /* TRUNCATION_GUARD_20260901: was 6000. French runs 15-20 percent longer than the
+         English source, so a full report crossed the cap and the truncated
+         text was built into a PDF with nothing checking stop_reason. */
+      model: 'claude-sonnet-4-6', max_tokens: 16000,
       messages: [{ role: 'user', content: transPrompt }]
     }).then(function(msg) {
+      if (msg.stop_reason === 'max_tokens') {
+        console.error('Translation truncated for candidate ' + req.params.id
+          + ' - refusing to build a partial document');
+        return res.status(500).json({ error: 'La traduction a ete tronquee : '
+          + 'le rapport depasse la limite de generation. Le document n a pas ete '
+          + 'produit. Raccourcissez le rapport ou signalez-le pour augmenter la limite.' });
+      }
       generate(msg.content[0].text);
     }).catch(function(err) {
       res.status(500).json({ error: 'Translation failed: ' + err.message });
