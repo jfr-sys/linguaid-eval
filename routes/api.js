@@ -1960,8 +1960,12 @@ router.post('/hec-webhook', function(req, res) {
   var q40 = getAnswer('Q7yeLsFkTmyJ') || '';
   var q41 = getAnswer('i0cAcNJJy3ZM') || '';
 
-  var score = getVar('correct_answers');
-  var max = getVar('max_score') || 30;
+  /* HEC_MERGE_FIX_20260901: the general webhook reads quiz_score first because
+     Typeform forms differ in which variable they expose. Reading only
+     correct_answers scores every candidate 0 if this form emits
+     quiz_score, with no error raised anywhere. */
+  var score = getVar('quiz_score') || getVar('correct_answers');
+  var max = getVar('max_score') || getVar('total_scorable_questions') || 30;
 
   // Goals
   var goalsRaw = getAnswer('D5oVbrWgm7KJ');
@@ -1983,17 +1987,25 @@ router.post('/hec-webhook', function(req, res) {
 
   // Deduplicate by email
   var existing = candidates.find(function(x) { return x.email && x.email.toLowerCase() === email.toLowerCase(); });
-  if (existing && existing.status !== 'invited') {
-    console.log('HEC webhook: candidate already exists:', email);
+  /* HEC_MERGE_FIX_20260901: same silent-drop guard as the general webhook. Every HEC
+     learner is invited before testing, so this path is the more exposed of
+     the two. Merge unless the record already holds real test evidence. */
+  if (existing && hasWrittenTestEvidence(existing)) {
+    console.log('HEC webhook: candidate already has test results, ignoring:', email);
     return res.json({ ok: true, message: 'already exists' });
   }
 
   var now = new Date().toISOString();
   var testdate = (form_response.submitted_at || now).slice(0, 10);
 
-  if (existing && existing.status === 'invited') {
+  if (existing) {
     var idx = candidates.findIndex(function(x) { return x.id === existing.id; });
-    candidates[idx].status = 'csv_uploaded';
+    if (!candidates[idx].status || candidates[idx].status === 'invited') {
+      candidates[idx].status = 'csv_uploaded';
+    } else {
+      console.log('HEC webhook: merged results into ' + candidates[idx].id
+        + ' at status ' + candidates[idx].status + ' (status left unchanged)');
+    }
     candidates[idx].scores = { total: score, max: max };
     candidates[idx].freewriting = { q39: q39, q40: q40, q41: q41 };
     candidates[idx].goals = goals;
