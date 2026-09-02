@@ -651,23 +651,38 @@
               <input id="convocSessionDate" type="date" style="font-size:13px;padding:5px 8px;border:1px solid #e2e8f0;border-radius:6px;flex:1;min-width:130px" onchange="updateSessionString()" />
               <select id="convocSessionStart" style="font-size:13px;padding:5px 8px;border:1px solid #e2e8f0;border-radius:6px" onchange="updateSessionString()">
                 <option value="">Début</option>
-                <option>8h00</option><option>8h30</option><option>9h00</option><option>9h30</option>
-                <option>10h00</option><option>10h30</option><option>11h00</option><option>11h30</option>
-                <option>12h00</option><option>12h30</option><option>13h00</option><option>13h30</option>
-                <option>14h00</option><option>14h30</option><option>15h00</option><option>15h30</option>
-                <option>16h00</option><option>16h30</option><option>17h00</option><option>17h30</option>
-                <option>18h00</option><option>18h30</option><option>19h00</option><option>19h30</option>
+              <!-- CONVOC_QUARTER_HOUR_20260902: quarter-hour steps replace the old
+                   half-hour ones. parseHhmm() in api.js already reads
+                   the minutes, so the ICS and the PDF need no change. -->
+                <option>8h00</option><option>8h15</option><option>8h30</option><option>8h45</option>
+                <option>9h00</option><option>9h15</option><option>9h30</option><option>9h45</option>
+                <option>10h00</option><option>10h15</option><option>10h30</option><option>10h45</option>
+                <option>11h00</option><option>11h15</option><option>11h30</option><option>11h45</option>
+                <option>12h00</option><option>12h15</option><option>12h30</option><option>12h45</option>
+                <option>13h00</option><option>13h15</option><option>13h30</option><option>13h45</option>
+                <option>14h00</option><option>14h15</option><option>14h30</option><option>14h45</option>
+                <option>15h00</option><option>15h15</option><option>15h30</option><option>15h45</option>
+                <option>16h00</option><option>16h15</option><option>16h30</option><option>16h45</option>
+                <option>17h00</option><option>17h15</option><option>17h30</option><option>17h45</option>
+                <option>18h00</option><option>18h15</option><option>18h30</option><option>18h45</option>
+                <option>19h00</option><option>19h15</option><option>19h30</option><option>19h45</option>
                 <option>20h00</option>
               </select>
               <span style="font-size:12px;color:#666">à</span>
               <select id="convocSessionEnd" style="font-size:13px;padding:5px 8px;border:1px solid #e2e8f0;border-radius:6px" onchange="updateSessionString()">
                 <option value="">Fin</option>
-                <option>8h00</option><option>8h30</option><option>9h00</option><option>9h30</option>
-                <option>10h00</option><option>10h30</option><option>11h00</option><option>11h30</option>
-                <option>12h00</option><option>12h30</option><option>13h00</option><option>13h30</option>
-                <option>14h00</option><option>14h30</option><option>15h00</option><option>15h30</option>
-                <option>16h00</option><option>16h30</option><option>17h00</option><option>17h30</option>
-                <option>18h00</option><option>18h30</option><option>19h00</option><option>19h30</option>
+                <option>8h00</option><option>8h15</option><option>8h30</option><option>8h45</option>
+                <option>9h00</option><option>9h15</option><option>9h30</option><option>9h45</option>
+                <option>10h00</option><option>10h15</option><option>10h30</option><option>10h45</option>
+                <option>11h00</option><option>11h15</option><option>11h30</option><option>11h45</option>
+                <option>12h00</option><option>12h15</option><option>12h30</option><option>12h45</option>
+                <option>13h00</option><option>13h15</option><option>13h30</option><option>13h45</option>
+                <option>14h00</option><option>14h15</option><option>14h30</option><option>14h45</option>
+                <option>15h00</option><option>15h15</option><option>15h30</option><option>15h45</option>
+                <option>16h00</option><option>16h15</option><option>16h30</option><option>16h45</option>
+                <option>17h00</option><option>17h15</option><option>17h30</option><option>17h45</option>
+                <option>18h00</option><option>18h15</option><option>18h30</option><option>18h45</option>
+                <option>19h00</option><option>19h15</option><option>19h30</option><option>19h45</option>
                 <option>20h00</option>
               </select>
             </div>
