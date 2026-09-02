@@ -290,6 +290,14 @@ router.post('/api/:id/identity', (req, res) => {
     if (!candidates[idx].conventionData) candidates[idx].conventionData = {};
     candidates[idx].conventionData.civility = req.body.civility;
   }
+  /* LEARNER_PHONE_SYNC_20260902: Donnees advertises itself as the source of
+     truth, so a phone edit there must reach the Step 8 field and the documents
+     built from it. Only a non-empty number overwrites - an identity save that
+     leaves the field blank must not wipe a number typed on the order form. */
+  if (typeof req.body.phone === 'string' && req.body.phone.trim()) {
+    if (!candidates[idx].conventionData) candidates[idx].conventionData = {};
+    candidates[idx].conventionData.learnerTel = req.body.phone.trim();
+  }
   saveCandidates(candidates);
   res.json({ success: true });
 });

@@ -1861,7 +1861,15 @@
       if (cd.signatory) document.getElementById('convSignatory').value = cd.signatory;
       else if (c.name) document.getElementById('convSignatory').value = c.name;
       if (cd.signatoryEmail) document.getElementById('convSignatoryEmail').value = cd.signatoryEmail;
-      if (cd.learnerTel) document.getElementById('convLearnerTel').value = cd.learnerTel;
+      /* LEARNER_PHONE_SYNC_20260902: the Donnees identity phone is the source of
+         truth for the learner number, but Step 8 read only its own
+         conventionData.learnerTel and showed an empty field whenever the number
+         had been entered in Donnees. send-to-catherine already fell back to
+         c.phone, so Catherine got the number while the form looked blank -
+         and generate-convention, which reads this input directly, sent an
+         empty tel. Fall back here too. */
+      var _learnerTel = cd.learnerTel || c.phone || '';
+      if (_learnerTel) document.getElementById('convLearnerTel').value = _learnerTel;
       if (cd.orderNumber) document.getElementById('convOrderNumber').value = cd.orderNumber;
       if (cd.companyAddress) document.getElementById('convCompanyAddress').value = cd.companyAddress;
       var isCPF = !!(od.isCPF || cd.isCPF || (od.financingMode === 'CPF'));
