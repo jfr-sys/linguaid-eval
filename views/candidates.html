@@ -137,7 +137,11 @@
   </div>
   <!-- CANDIDATES_TABS (2026-07-04) -->
   <div style="display:flex;gap:0;border-bottom:2px solid #e2e8f0;margin-bottom:1rem">
+    <!-- CANDIDATES_TABS_THREE_20260902: stage 9 (Envoye a Catherine) pulled out
+         of En cours into its own tab, so the dossiers waiting on Catherine are
+         not buried among the 40-odd still in evaluation. -->
     <button class="cand-tab active" id="tabActiveBtn" onclick="setCandTab('active')">En cours</button>
+    <button class="cand-tab" id="tabCatherineBtn" onclick="setCandTab('catherine')">Envoyé à Catherine</button>
     <button class="cand-tab" id="tabDoneBtn" onclick="setCandTab('done')">Terminé</button>
   </div>
   <div id="statsBar" style="display:flex;gap:1.5rem;align-items:center;justify-content:space-between;margin-bottom:0.5rem;padding:10px 16px;background:white;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.06);font-size:13px;color:#475569"><div style="display:flex;gap:1.5rem;align-items:center"><span><strong id="statCount">—</strong> candidates</span><span style="color:#e2e8f0">|</span><span>Total budget : <strong id="statBudget" style="color:#1F4E79">—</strong></span></div><div><button class="mode-btn" id="modeCompactBtn" onclick="setTableMode('compact')">Compact</button><button class="mode-btn" id="modeDetailedBtn" onclick="setTableMode('detailed')">Detailed</button></div></div>
@@ -223,10 +227,13 @@
     if (st.sk) sk = st.sk;
     if (st.sd === 1 || st.sd === -1) sd = st.sd;
 
-    if (st.tab === 'active' || st.tab === 'done') {
+    if (st.tab === 'active' || st.tab === 'catherine' || st.tab === 'done') {
       candTab = st.tab;
-      var ab = document.getElementById('tabActiveBtn'), db = document.getElementById('tabDoneBtn');
+      var ab = document.getElementById('tabActiveBtn'),
+          cb = document.getElementById('tabCatherineBtn'),
+          db = document.getElementById('tabDoneBtn');
       if (ab) ab.classList.toggle('active', candTab === 'active');
+      if (cb) cb.classList.toggle('active', candTab === 'catherine');
       if (db) db.classList.toggle('active', candTab === 'done');
     }
 
@@ -359,11 +366,17 @@
   var candTab = 'active';
   function setCandTab(t) {
     candTab = t;
-    var ab = document.getElementById('tabActiveBtn'), db = document.getElementById('tabDoneBtn');
+    var ab = document.getElementById('tabActiveBtn'),
+        cb = document.getElementById('tabCatherineBtn'),
+        db = document.getElementById('tabDoneBtn');
     if (ab) ab.classList.toggle('active', t === 'active');
+    if (cb) cb.classList.toggle('active', t === 'catherine');
     if (db) db.classList.toggle('active', t === 'done');
     render();
   }
+  /* CANDIDATES_TABS_THREE_20260902: one place deciding which tab a row belongs
+     to, so the counters and the row filter can never drift apart. */
+  function candTabOf(idx) { return idx >= 10 ? 'done' : (idx === 9 ? 'catherine' : 'active'); }
   function computeStage(x) {
     var cd = x.conventionData || {};
     // STAGE_PROPOSITION_GENERATED_FIX (2026-07-03): mirrors the same fix in
@@ -417,14 +430,16 @@
       for (var f in activeFilters) { if (!activeFilters[f].has(getFieldVal(x,f))) return false; }
       return true;
     });
-    var tabActiveCount = 0, tabDoneCount = 0;
-    preTabRows.forEach(function(x) { if (computeStage(x).idx >= 10) tabDoneCount++; else tabActiveCount++; });
-    var tabActiveBtnEl = document.getElementById('tabActiveBtn'), tabDoneBtnEl = document.getElementById('tabDoneBtn');
-    if (tabActiveBtnEl) tabActiveBtnEl.textContent = 'En cours \u00b7 ' + tabActiveCount;
-    if (tabDoneBtnEl) tabDoneBtnEl.textContent = 'Termin\u00e9 \u00b7 ' + tabDoneCount;
+    var tabCounts = { active: 0, catherine: 0, done: 0 };
+    preTabRows.forEach(function(x) { tabCounts[candTabOf(computeStage(x).idx)]++; });
+    var tabActiveBtnEl = document.getElementById('tabActiveBtn'),
+        tabCatherineBtnEl = document.getElementById('tabCatherineBtn'),
+        tabDoneBtnEl = document.getElementById('tabDoneBtn');
+    if (tabActiveBtnEl) tabActiveBtnEl.textContent = 'En cours \u00b7 ' + tabCounts.active;
+    if (tabCatherineBtnEl) tabCatherineBtnEl.textContent = 'Envoy\u00e9 \u00e0 Catherine \u00b7 ' + tabCounts.catherine;
+    if (tabDoneBtnEl) tabDoneBtnEl.textContent = 'Termin\u00e9 \u00b7 ' + tabCounts.done;
     var rows=preTabRows.filter(function(x){
-      var idx = computeStage(x).idx;
-      return candTab === 'done' ? idx >= 10 : idx < 10;
+      return candTabOf(computeStage(x).idx) === candTab;
     });
     rows.sort(function(a,b){
       var aPin = a.email==='jossfrimond@hotmail.com'?1:0;
