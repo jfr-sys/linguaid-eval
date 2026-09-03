@@ -1058,6 +1058,8 @@ router.post('/generate-convention/:id', function(req, res) {
   var c = candidates[idx];
   var cd = c.conventionData || {};
   var od = c.oralData || {};
+  /* CIVILITY_REQUIRED (2026-09-03) */
+  if (!String(cd.civility || '').trim()) return res.status(400).json({ error: 'Civilit\u00e9 manquante \u2014 choisissez Madame / Monsieur / Ma\u00eetre dans la fiche candidat avant de g\u00e9n\u00e9rer.' });
   var sendEmail = !(req.body && req.body.sendEmail === false);
   // FINANCIAL PRIVACY GUARD (convention): third-party mode never falls back
   // to the learner; company-attached learner-mode sends need explicit override.
@@ -2598,6 +2600,8 @@ router.post('/send-convocation/:id', function(req, res) {
     var trainerKey = (req.body && req.body.trainer) || '';
     var firstSession = (req.body && req.body.firstSession) || '';
     var sessionDate = (req.body && req.body.sessionDate) || '';
+    /* CIVILITY_REQUIRED (2026-09-03) */
+    if (!String(cd.civility || '').trim()) return res.status(400).json({ error: 'Civilit\u00e9 manquante \u2014 choisissez Madame / Monsieur / Ma\u00eetre dans la fiche candidat avant de g\u00e9n\u00e9rer.' });
     var sessionStart = (req.body && req.body.sessionStart) || '';
     var sessionEnd = (req.body && req.body.sessionEnd) || '';
     var ccExtra = (req.body && req.body.cc) || '';

@@ -432,6 +432,10 @@ router.post('/api/generate-proposition/:id', async function(req, res) {
      at send time. Placed before the Anthropic call so it fails fast and free. */
   var cohPropDoc = coherence.checkCoherence(c, { requirePrice: true });
   if (!cohPropDoc.ok) return res.status(400).json({ error: cohPropDoc.errors.join(' ') });
+  /* CIVILITY_REQUIRED (2026-09-03) */
+  if (!String((req.body && req.body.civility) || cd.civility || '').trim()) {
+    return res.status(400).json({ error: 'Civilit\u00e9 manquante \u2014 choisissez Madame / Monsieur / Ma\u00eetre dans la fiche candidat avant de g\u00e9n\u00e9rer.' });
+  }
 
   // Build objectives with suffixes
   const REFERENTIAL_OBJECTIVES = {

@@ -466,7 +466,7 @@
     <div id="propositionForm" style="display:none;margin-top:1rem">
       <div style="font-size:12px;font-weight:500;color:#666;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">Proposition de formation</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem">
-        <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Civilité</label><select id="propCivility" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"><option>Madame</option><option>Monsieur</option></select></div>
+        <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Civilité</label><select id="propCivility" onchange="autoSaveConventionField('propCivility','civility');civilityFlag()" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"><option value="">— Civilité ? —</option><option>Madame</option><option>Monsieur</option><option>Maître</option></select><!-- CIVILITY_REQUIRED --></div>
         <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Prix (euros HT)</label><input id="propPrice" type="text" placeholder="3800" onblur="autoSaveConventionField('propPrice','price')" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
         <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Date début</label><input id="propDateStart" type="date" onchange="autoSaveConventionField('propDateStart','dateStart')" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
         <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Date fin</label><div style="display:flex;gap:6px;align-items:center"><input id="propDateEnd" type="date" onchange="autoSaveConventionField('propDateEnd','dateEnd')" style="flex:1;min-width:0;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"><button type="button" class="eoy-btn" onclick="setEOY('propDateEnd')" title="31 decembre">EOY</button></div></div>
@@ -741,6 +741,7 @@
       <div style="grid-column:1/-1">
         <label style="font-size:12px;color:#64748b;display:block;margin-bottom:4px">Civilité</label>
         <select id="idCivility" style="width:180px;font-size:13px;padding:7px 10px;border:1px solid #e2e8f0;border-radius:6px;background:#fff">
+          <option value="">— Civilité ? —</option>
           <option value="Monsieur">Monsieur</option>
           <option value="Madame">Madame</option>
           <option value="Maître">Maître</option>
@@ -894,7 +895,7 @@
       var _ph = document.getElementById('idPhone');
       if (_ph) _ph.value = c.phone || '';
       document.getElementById('idCourseType').value = (c.courseType === 'legal') ? 'legal' : 'business';
-      var civ = (c.conventionData && c.conventionData.civility) || 'Monsieur';
+      var civ = (c.conventionData && c.conventionData.civility) || ''; // CIVILITY_REQUIRED
       document.getElementById('idCivility').value = civ;
     }
     document.getElementById('profileBadge').innerHTML = c.isRenewal ? '<span class="badge" style="background:#ede9fe;color:#5b21b6">Renouvellement</span>' : statusBadge(c.status);
@@ -1381,6 +1382,15 @@
   // typing a value and navigating away never silently loses it. Mirrors
   // saveCompany() above. Writes via the existing /api/save-convention/:id
   // endpoint, which safely merges into conventionData.
+  /* CIVILITY_REQUIRED (2026-09-03): never guess a civility. Empty = red border on both
+     selects; the server refuses proposition / convention / convocation until set. */
+  function civilityFlag() {
+    ['propCivility', 'idCivility'].forEach(function(sid) {
+      var el = document.getElementById(sid); if (!el) return;
+      el.style.borderColor = el.value ? '#e2e8f0' : '#dc2626';
+      el.style.background = el.value ? '' : '#fef2f2';
+    });
+  }
   function autoSaveConventionField(inputId, dataKey) {
     var input = document.getElementById(inputId);
     if (!input) return;
@@ -1804,7 +1814,8 @@
     // idCivility's explicit 'Monsieur' fallback on the Donnees tab. Now
     // uses the identical fallback expression so the two tabs can never
     // show different values for the same missing data.
-    document.getElementById('propCivility').value = cd.civility || 'Monsieur';
+    document.getElementById('propCivility').value = cd.civility || ''; // CIVILITY_REQUIRED
+    civilityFlag();
     document.getElementById('propPrice').value = cd.price || od.edofPrice || od.price || '';
     document.getElementById('propDateStart').value = cd.dateStart || od.dateStart || '';
     document.getElementById('propDateEnd').value = cd.dateEnd || od.dateEnd || '';
