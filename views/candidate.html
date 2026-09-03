@@ -898,6 +898,28 @@
       document.getElementById('idCivility').value = civ;
     }
     document.getElementById('profileBadge').innerHTML = c.isRenewal ? '<span class="badge" style="background:#ede9fe;color:#5b21b6">Renouvellement</span>' : statusBadge(c.status);
+    /* CAJA_RENEWAL_FROM_CANDIDATE (2026-09-03): launch a CAJA Module 2 from the Module 1
+       record itself, and cross-link the two dossiers so a lawyer appearing
+       twice in the list is visibly one person / two parcours. */
+    (function(){
+      var badge = document.getElementById('profileBadge');
+      var od1 = c.oralData || {};
+      var isLegal1 = c.courseType === 'legal' || od1.cpfType === 'E360_LEGAL';
+      if (c.isRenewal && c.renewedFromId) {
+        badge.innerHTML += '<div style="margin-top:6px"><a href="/candidates/' + c.renewedFromId + '" style="font-size:12px;color:#5b21b6">\u2190 Dossier Module 1</a></div>';
+      }
+      if (!c.isRenewal && isLegal1) {
+        fetch('/candidates/api/list').then(function(r){ return r.json(); }).then(function(list){
+          var kids = (list || []).filter(function(x){ return x.renewedFromId === c.id && x.isRenewal; });
+          var html = '<div style="margin-top:8px;display:flex;flex-direction:column;gap:4px;align-items:flex-end">';
+          kids.forEach(function(k){
+            html += '<a href="/candidates/' + k.id + '" style="font-size:12px;color:#5b21b6">Module 2 CAJA existant \u2192</a>';
+          });
+          html += '<a href="/candidates/new-renewal-caja?from=' + c.id + '" style="font-size:12px;padding:4px 10px;border-radius:6px;background:#fef3c7;color:#92400e;text-decoration:none;font-weight:600">' + (kids.length ? '+ Nouveau renouvellement CAJA' : 'Renouvellement CAJA \u2192') + '</a></div>';
+          badge.innerHTML += html;
+        }).catch(function(){});
+      }
+    })();
     /* coherence-badge */
     (function(){
       var od = c.oralData || {}, cd = c.conventionData || {};

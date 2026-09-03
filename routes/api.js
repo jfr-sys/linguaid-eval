@@ -1676,6 +1676,13 @@ router.post('/new-renewal-caja', function(req, res) {
     var d = req.body || {};
     if (!d.name || !d.email) return res.status(400).json({ error: 'Name and email required' });
     if (!d.dateStart || !d.dateEnd) return res.status(400).json({ error: 'dateStart and dateEnd required' });
+    /* RENEWAL_EMAIL_LOOKUP_GUARD (2026-09-03): one CAJA renewal per source record unless the
+       UI explicitly confirms a second one. */
+    if (d.renewedFromId && !d.force) {
+      var _all = JSON.parse(fs.readFileSync(path.join(dataDir, 'candidates.json'), 'utf8'));
+      var _dup = _all.find(function(x) { return x.isRenewal && x.renewedFromId === d.renewedFromId; });
+      if (_dup) return res.status(409).json({ error: 'Renouvellement CAJA deja existant', existingId: _dup.id });
+    }
 
     var action = getAction('CAJA', 'CAJA-20H');
     if (!action) return res.status(500).json({ error: 'CAJA-20H action missing from catalogue' });
@@ -2113,7 +2120,7 @@ router.post('/hec-webhook', function(req, res) {
   var candidates = JSON.parse(fs.readFileSync(path.join(dataDir, 'candidates.json'), 'utf8'));
 
   // Deduplicate by email
-  var existing = candidates.find(function(x) { return x.email && x.email.toLowerCase() === email.toLowerCase(); });
+  var existing = candidates.find(function(x) { return !x.isRenewal && x.email && x.email.toLowerCase() === email.toLowerCase(); }); // RENEWAL_EMAIL_LOOKUP_GUARD
   /* HEC_MERGE_FIX_20260901: same silent-drop guard as the general webhook. Every HEC
      learner is invited before testing, so this path is the more exposed of
      the two. Merge unless the record already holds real test evidence. */
@@ -3159,7 +3166,7 @@ router.post('/calendly-webhook', express.json(), function(req, res) {
     var dataPath = require('path').join(dataDir, 'candidates.json');
     var candidates = JSON.parse(require('fs').readFileSync(dataPath, 'utf8'));
     var idx = candidates.findIndex(function(c) {
-      return (c.email || '').toLowerCase() === email;
+      return !c.isRenewal && (c.email || '').toLowerCase() === email; // RENEWAL_EMAIL_LOOKUP_GUARD
     });
     if (idx === -1) {
       console.log('calendly-webhook: no candidate found for email', email);

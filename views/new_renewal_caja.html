@@ -108,7 +108,14 @@ async function checkExisting() {
   try {
     var resp = await fetch('/candidates/api/list');
     var list = await resp.json();
-    var match = list.find(function(c) { return c.email && c.email.toLowerCase() === email; });
+    /* CAJA_RENEWAL_FROM_PARAM: prefer the non-renewal (Module 1) record, most recent first,
+       so a lawyer already holding a CAJA dossier links back to the E360 one. */
+    var pool = list.filter(function(c) { return c.email && c.email.toLowerCase() === email; });
+    pool.sort(function(a, b) {
+      if (!!a.isRenewal !== !!b.isRenewal) return a.isRenewal ? 1 : -1;
+      return String(b.createdAt || '').localeCompare(String(a.createdAt || ''));
+    });
+    var match = pool[0];
     if (match) {
       matchedId = match.id;
       if (!document.getElementById('f_name').value) document.getElementById('f_name').value = match.name || '';
@@ -144,13 +151,23 @@ async function createAndGenerate() {
     company: document.getElementById('f_company').value.trim(),
     dateStart: dateStart,
     dateEnd: dateEnd,
-    renewedFromId: matchedId
+    renewedFromId: matchedId,
+    force: false
   };
 
   try {
     setStatus('loading', 'Création du candidat…');
     var resp = await fetch('/api/new-renewal-caja', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
     var data = await resp.json();
+    if (resp.status === 409 && data.existingId) {
+      if (!confirm('Un renouvellement CAJA existe d\u00e9j\u00e0 pour ce dossier (' + data.existingId + '). Cr\u00e9er un second dossier CAJA quand m\u00eame ?')) {
+        setStatus('error', 'Annul\u00e9 \u2014 dossier existant : /candidates/' + data.existingId);
+        btn.disabled = false; return;
+      }
+      payload.force = true;
+      resp = await fetch('/api/new-renewal-caja', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+      data = await resp.json();
+    }
     if (!resp.ok || !data.success) throw new Error(data.error || 'Erreur de création');
     var id = data.id;
 
@@ -178,6 +195,32 @@ async function createAndGenerate() {
 }
 
 document.getElementById('f_email').addEventListener('blur', checkExisting);
+
+/* CAJA_RENEWAL_FROM_PARAM (2026-09-03): opened from a candidate page with ?from=<id>. */
+(async function() {
+  var from = new URLSearchParams(window.location.search).get('from');
+  if (!from) return;
+  try {
+    var r = await fetch('/candidates/api/' + from);
+    if (!r.ok) return;
+    var c = await r.json();
+    matchedId = c.id;
+    document.getElementById('f_name').value = c.name || '';
+    document.getElementById('f_email').value = c.email || '';
+    document.getElementById('f_company').value = c.company || '';
+    document.getElementById('f_phone').value = c.phone || '';
+    var note = document.getElementById('matchNote');
+    note.textContent = '\u2713 Renouvellement du dossier ' + (c.name || c.email) + ' (' + c.id + ') \u2014 lien Module 1 \u2192 Module 2 conserv\u00e9.';
+    note.style.display = 'block';
+    var lr = await fetch('/candidates/api/list');
+    var list = await lr.json();
+    var kids = (list || []).filter(function(x){ return x.renewedFromId === c.id && x.isRenewal; });
+    if (kids.length) {
+      note.innerHTML += '<br><span style="color:#b45309">\u26a0 Un renouvellement CAJA existe d\u00e9j\u00e0 pour ce dossier : <a href="/candidates/' + kids[0].id + '">ouvrir</a>. Cr\u00e9er un second dossier vous sera demand\u00e9 de confirmer.</span>';
+    }
+    document.getElementById('f_email').removeEventListener('blur', checkExisting);
+  } catch (e) { /* prefill is a convenience */ }
+})();
 </script>
 </body>
 </html>
