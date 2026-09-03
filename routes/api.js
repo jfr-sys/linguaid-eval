@@ -2704,7 +2704,9 @@ router.post('/send-convocation/:id', function(req, res) {
     }
 
     var _tc = require('../lib/trainerContracts');
-    var ccList = (_tc.TRAINER_EMAILS_ENABLED ? [trainer.email] : []).concat(['jfr@linguaid.net', 'cfr@linguaid.net']);
+    // convocation-cc-trainer-always: the trainer is ALWAYS in copy of the
+    // convocation. TRAINER_EMAILS_ENABLED only gates trainer contract/devis mails.
+    var ccList = [trainer.email].concat(['jfr@linguaid.net', 'cfr@linguaid.net']);
     if (ccExtra) ccList.push(ccExtra);
 
     // Generate ICS calendar attachment if session date+time provided
