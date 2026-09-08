@@ -740,7 +740,7 @@
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
       <div style="grid-column:1/-1">
         <label style="font-size:12px;color:#64748b;display:block;margin-bottom:4px">Civilité</label>
-        <select id="idCivility" style="width:180px;font-size:13px;padding:7px 10px;border:1px solid #e2e8f0;border-radius:6px;background:#fff">
+        <select id="idCivility" onchange="civilityFlag()" style="width:180px;font-size:13px;padding:7px 10px;border:1px solid #e2e8f0;border-radius:6px;background:#fff">
           <option value="">— Civilité ? —</option>
           <option value="Monsieur">Monsieur</option>
           <option value="Madame">Madame</option>
@@ -2539,6 +2539,7 @@ async function saveIdentity() {
         if (ce) ce.value = payload.company;
         var pc = document.getElementById('propCivility');
         if (pc) pc.value = payload.civility;
+        civilityFlag(); /* CIVILITY_FLAG_SYNC_20260908: clear/set the red border after an identity save */
         status.style.color = '#10b981';
         status.textContent = '✅ Enregistré';
         setTimeout(() => status.textContent = '', 2500);
