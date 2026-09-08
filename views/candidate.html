@@ -288,16 +288,6 @@
     [style*="grid-template-columns: 1fr 1fr"] { grid-template-columns: 1fr !important; }
   }
 </style>
-<!-- ADMIN_APP_V1 (2026-09-07): installable app shell + mobile layer -->
-<link rel="manifest" href="/app.webmanifest">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Linguaid">
-<meta name="theme-color" content="#1F4E79">
-<link rel="apple-touch-icon" href="/app-icon-192.png">
-<link rel="stylesheet" href="/admin-app.css?v=1">
-<script defer src="/admin-app.js?v=1"></script>
 </head>
 <body>
 <nav class="nav">
@@ -1872,7 +1862,11 @@
       else if (cd.recipientType === 'learner') { mLearner.checked = true; mThird.checked = false; }
       else {
         var co0 = (c.company || '').trim();
-        if (co0 && co0.toLowerCase() !== 'particulier') { mThird.checked = true; mLearner.checked = false; }
+        /* CPF_LEARNER_DEFAULT_20260908: a CPF dossier is always addressed to
+           the learner (their own CPF account) - tiers stays a manual override. */
+        var isCpf0 = !!(c.oralData && c.oralData.isCPF);
+        if (!isCpf0 && co0 && co0.toLowerCase() !== 'particulier') { mThird.checked = true; mLearner.checked = false; }
+        else { mLearner.checked = true; mThird.checked = false; }
       }
     }
     // Sync recipient picker (field visibility + confirmation banner) with
@@ -1928,7 +1922,7 @@
          defaulting to the learner. Learner-name default is now flagged so the
          company-level prefill can override it. */
       var tiersModeConv = (cd.recipientType === 'hr') || (cd.isThirdParty === true) ||
-        (cd.recipientType !== 'learner' && cd.isThirdParty !== false && !!(c.company || '').trim() && (c.company || '').trim().toLowerCase() !== 'particulier');
+        (cd.recipientType !== 'learner' && cd.isThirdParty !== false && !(c.oralData && c.oralData.isCPF) && !!(c.company || '').trim() && (c.company || '').trim().toLowerCase() !== 'particulier');
       var tiersName = [cd.thirdPartyPrenom, cd.thirdPartyNom].filter(Boolean).join(' ').trim();
       var tiersEmail = cd.thirdPartyEmail || (cd.isThirdParty && cd.proposalRecipient) || '';
       var convSigEl = document.getElementById('convSignatory');
