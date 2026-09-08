@@ -1932,6 +1932,7 @@
       var convSemEl = document.getElementById('convSignatoryEmail');
       if (cd.signatoryEmail) convSemEl.value = cd.signatoryEmail;
       else if (tiersModeConv && tiersEmail) convSemEl.value = tiersEmail;
+      else if (!tiersModeConv && c.email) convSemEl.value = c.email; /* LEARNER_SIG_EMAIL_20260908: learner mode - the signing link goes to the learner */
       /* LEARNER_PHONE_SYNC_20260902: the Donnees identity phone is the source of
          truth for the learner number, but Step 8 read only its own
          conventionData.learnerTel and showed an empty field whenever the number
@@ -1972,10 +1973,13 @@
       }
       var cpfLabel = document.querySelector('#conventionForm label');
       if (cpfLabel) {
-        if (cpfType === 'CAJA') cpfLabel.textContent = 'Formation CPF — Certification CAJA (RS6810)';
-        else if (cpfType === 'E360_LEGAL') cpfLabel.textContent = 'Formation CPF — Certification English 360 (RS6341) — parcours juridique';
-        else if (cpfType === 'E360') cpfLabel.textContent = 'Formation CPF — Certification English 360 (RS6341)';
-        else if (isCPF) cpfLabel.textContent = 'Formation CPF (RS6341)';
+        /* RS_LABEL_20260908: read the stamped referential (oralData.rsCode)
+           rather than hardcoding - E360 moved from RS6341 to RS7637 on 2026-07-27. */
+        var rsLbl = od.rsCode || (cpfType === 'CAJA' ? 'RS6810' : (cpfType ? 'RS7637' : ''));
+        if (cpfType === 'CAJA') cpfLabel.textContent = 'Formation CPF — Certification CAJA (' + rsLbl + ')';
+        else if (cpfType === 'E360_LEGAL') cpfLabel.textContent = 'Formation CPF — Certification English 360 (' + rsLbl + ') — parcours juridique';
+        else if (cpfType === 'E360') cpfLabel.textContent = 'Formation CPF — Certification English 360 (' + rsLbl + ')';
+        else if (isCPF) cpfLabel.textContent = 'Formation CPF' + (rsLbl ? ' (' + rsLbl + ')' : '');
         else cpfLabel.textContent = 'Formation non-CPF';
       }
       if (cd.signedAt) {
