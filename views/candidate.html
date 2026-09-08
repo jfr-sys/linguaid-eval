@@ -1820,6 +1820,13 @@
     document.getElementById('propDateStart').value = cd.dateStart || od.dateStart || '';
     document.getElementById('propDateEnd').value = cd.dateEnd || od.dateEnd || '';
     document.getElementById('propRecipient').value = c.email || '';
+    /* TIERS_PREFILL_20260908: restore the tiers contact saved at generation /
+       send time (company-level fallback is applied by prefillFromCompany). */
+    (function(){
+      var tp = { propThirdCivility: cd.thirdPartyCivility, propThirdPrenom: cd.thirdPartyPrenom,
+                 propThirdNom: cd.thirdPartyNom, propThirdEmail: cd.thirdPartyEmail || ((cd.isThirdParty && cd.proposalRecipient) || '') };
+      Object.keys(tp).forEach(function(elId){ var el = document.getElementById(elId); if (el && tp[elId]) { el.value = tp[elId]; el.dataset.userSet = '1'; } });
+    })();
     if (od.edofMCFLink) document.getElementById('propCpfLien').value = od.edofMCFLink;
     var isLegal = c.courseType === 'legal' || od.cpfType === 'E360_LEGAL' || od.cpfType === 'CAJA';
     // CPF_EMAIL_FIX (2026-07-03): cpfType alone is sufficient - a set
@@ -1906,9 +1913,21 @@
       document.getElementById('conventionForm').style.display = 'block';
 
       if (cd.siret) document.getElementById('convSiret').value = cd.siret;
-      if (cd.signatory) document.getElementById('convSignatory').value = cd.signatory;
-      else if (c.name) document.getElementById('convSignatory').value = c.name;
-      if (cd.signatoryEmail) document.getElementById('convSignatoryEmail').value = cd.signatoryEmail;
+      /* TIERS_PREFILL_20260908: in tiers mode the convention signatory IS the
+         tiers contact - reuse what Step 6 already captured instead of
+         defaulting to the learner. Learner-name default is now flagged so the
+         company-level prefill can override it. */
+      var tiersModeConv = (cd.recipientType === 'hr') || (cd.isThirdParty === true) ||
+        (cd.recipientType !== 'learner' && cd.isThirdParty !== false && !!(c.company || '').trim() && (c.company || '').trim().toLowerCase() !== 'particulier');
+      var tiersName = [cd.thirdPartyPrenom, cd.thirdPartyNom].filter(Boolean).join(' ').trim();
+      var tiersEmail = cd.thirdPartyEmail || (cd.isThirdParty && cd.proposalRecipient) || '';
+      var convSigEl = document.getElementById('convSignatory');
+      if (cd.signatory) convSigEl.value = cd.signatory;
+      else if (tiersModeConv && tiersName) convSigEl.value = tiersName;
+      else if (c.name) { convSigEl.value = c.name; convSigEl.dataset.learnerDefault = '1'; }
+      var convSemEl = document.getElementById('convSignatoryEmail');
+      if (cd.signatoryEmail) convSemEl.value = cd.signatoryEmail;
+      else if (tiersModeConv && tiersEmail) convSemEl.value = tiersEmail;
       /* LEARNER_PHONE_SYNC_20260902: the Donnees identity phone is the source of
          truth for the learner number, but Step 8 read only its own
          conventionData.learnerTel and showed an empty field whenever the number
@@ -2017,8 +2036,44 @@
   }
   fetch('/candidates/api/' + id)
     .then(r => r.json())
-    .then(function(data){render(data);showPropositionStep(data);})
+    .then(function(data){render(data);showPropositionStep(data);prefillFromCompany(data);})
     .catch(err => document.getElementById('profileName').textContent = 'Error loading candidate');
+
+  /* TIERS_PREFILL_20260908: fill any still-blank company-level fields (tiers
+     contact in Step 6, SIRET / address / signatory in Step 7) from the company
+     registry, i.e. from the last convention done for this company. Never
+     overwrites a value the user or the candidate record already supplied. */
+  function prefillFromCompany(c) {
+    var co = String((c && c.company) || '').trim();
+    if (!co || co.toLowerCase() === 'particulier') return;
+    fetch('/api/companies/info?company=' + encodeURIComponent(co))
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(d){
+        var info = (d && d.info) || {};
+        if (!Object.keys(info).length) return;
+        function fill(elId, v, allowLearnerDefault) {
+          var el = document.getElementById(elId);
+          if (!el || !v) return;
+          var blank = (el.tagName === 'SELECT') ? el.dataset.userSet !== '1' : !el.value;
+          if (blank || (allowLearnerDefault && el.dataset.learnerDefault === '1')) {
+            el.value = v; if (allowLearnerDefault) delete el.dataset.learnerDefault;
+          }
+        }
+        var third = document.getElementById('propModeThird') && document.getElementById('propModeThird').checked;
+        if (third) {
+          fill('propThirdCivility', info.signatoryCivility);
+          fill('propThirdPrenom', info.signatoryPrenom);
+          fill('propThirdNom', info.signatoryNom);
+          fill('propThirdEmail', info.signatoryEmail);
+          if (typeof updateRecipientBanner === 'function') updateRecipientBanner();
+          fill('convSignatory', info.signatory, true);
+          fill('convSignatoryEmail', info.signatoryEmail);
+        }
+        fill('convSiret', info.siret);
+        fill('convCompanyAddress', info.address);
+      })
+      .catch(function(){});
+  }
 
   function cefrLabel(level) {
     if (!level) return '';
@@ -2319,7 +2374,7 @@ function onRecipientModeChange() {
     var status = document.getElementById('propSendStatus');
     status.textContent = 'G\xe9n\xe9ration de la proposition et du message...';
 
-    fetch('/api/generate-proposition/' + id, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ price: document.getElementById('propPrice').value, dateStart: document.getElementById('propDateStart').value, dateEnd: document.getElementById('propDateEnd').value, civility: document.getElementById('propCivility').value, /* TIERS_WORDING_FIX_V2 (2026-07-03): this second button into the same route was missing recipientType entirely - always fell back to server default 'learner', so tiers candidates kept getting learner-directed wording regardless of the picker. */ recipientType: (document.getElementById('propModeThird') && document.getElementById('propModeThird').checked) ? 'hr' : 'learner' }) })
+    fetch('/api/generate-proposition/' + id, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ price: document.getElementById('propPrice').value, dateStart: document.getElementById('propDateStart').value, dateEnd: document.getElementById('propDateEnd').value, civility: document.getElementById('propCivility').value, /* TIERS_WORDING_FIX_V2 (2026-07-03): this second button into the same route was missing recipientType entirely - always fell back to server default 'learner', so tiers candidates kept getting learner-directed wording regardless of the picker. */ recipientType: (document.getElementById('propModeThird') && document.getElementById('propModeThird').checked) ? 'hr' : 'learner', /* TIERS_PREFILL_20260908 */ thirdPartyCivility: document.getElementById('propThirdCivility').value, thirdPartyPrenom: document.getElementById('propThirdPrenom').value, thirdPartyNom: document.getElementById('propThirdNom').value, thirdPartyEmail: document.getElementById('propThirdEmail').value }) })
       .then(function(r) { return r.json(); })
       .then(function(d) {
         btn.disabled = false;
@@ -2404,7 +2459,10 @@ function onRecipientModeChange() {
         dateStart: accVal('propDateStart'),
         dateEnd: accVal('propDateEnd'),
         civility: accVal('propCivility'),
-        recipientType: accThird ? 'hr' : 'learner'
+        recipientType: accThird ? 'hr' : 'learner',
+        /* TIERS_PREFILL_20260908 */
+        thirdPartyCivility: accVal('propThirdCivility'), thirdPartyPrenom: accVal('propThirdPrenom'),
+        thirdPartyNom: accVal('propThirdNom'), thirdPartyEmail: accVal('propThirdEmail')
       })
     }).then(function(r){ return r.json().then(function(d){ return { ok: r.ok, d: d || {} }; }); })
       .then(function(res){

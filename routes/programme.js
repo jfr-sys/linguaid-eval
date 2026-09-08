@@ -9,6 +9,37 @@ const { execFile } = require('child_process');
 const { assertValidCpfType, getAction, CATALOGUE, getRsCode } = require('../config/catalogue');
 const { isContratCadre } = require('../lib/contratCadre');
 const coherence = require('../lib/coherence'); /* coherence-gate */
+const { updateCompanyInfo } = require('../lib/companies'); /* TIERS_PREFILL_20260908 */
+
+/* TIERS_PREFILL_20260908: persist the recipient picker state and the tiers
+   contact (civility, prenom, nom, email) on the candidate, and remember the
+   contact at company level. Non-empty values only - a blank payload never
+   erases stored data. */
+function persistTiers(cands, id, body) {
+  body = body || {};
+  var i = cands.findIndex(function(x) { return x.id === id; });
+  if (i === -1) return false;
+  var cd = cands[i].conventionData = cands[i].conventionData || {};
+  var changed = false;
+  if (body.recipientType === 'hr' || body.recipientType === 'learner') {
+    if (cd.recipientType !== body.recipientType) { cd.recipientType = body.recipientType; changed = true; }
+  }
+  var map = { thirdPartyCivility: 'thirdPartyCivility', thirdPartyPrenom: 'thirdPartyPrenom',
+              thirdPartyNom: 'thirdPartyNom', thirdPartyEmail: 'thirdPartyEmail' };
+  Object.keys(map).forEach(function(k) {
+    var v = String(body[k] || '').trim();
+    if (v && cd[k] !== v) { cd[k] = v; changed = true; }
+  });
+  if (body.recipientType === 'hr') {
+    var co = String(cands[i].company || '').trim();
+    var full = [cd.thirdPartyPrenom, cd.thirdPartyNom].filter(Boolean).join(' ').trim();
+    try {
+      updateCompanyInfo(co, { signatoryCivility: cd.thirdPartyCivility, signatoryPrenom: cd.thirdPartyPrenom,
+        signatoryNom: cd.thirdPartyNom, signatory: full, signatoryEmail: cd.thirdPartyEmail });
+    } catch (e) { console.error('company info save error:', e.message); }
+  }
+  return changed;
+}
 
 
 function calc5SkillLevel(c) {
@@ -494,6 +525,9 @@ router.post('/api/generate-proposition/:id', async function(req, res) {
     }
   }
 
+  /* TIERS_PREFILL_20260908 */
+  try { if (persistTiers(candidates, req.params.id, req.body)) saveCandidates(candidates); } catch (eT) { console.error('persistTiers:', eT.message); }
+
   // AI-generated needs summary
   let resumeSituation = '';
   // CAJA_RENEWAL_RESUME_FIX (2026-07-30): skip the AI call for CAJA
@@ -774,6 +808,7 @@ router.post('/api/send-proposition-email/:id', async function(req, res) {
       cands3[ci3].conventionData.proposalSentAt = new Date().toISOString();
       cands3[ci3].conventionData.proposalRecipient = recipientEmail;
       cands3[ci3].conventionData.isThirdParty = !!(req.body && req.body.thirdPartyEmail);
+      try { persistTiers(cands3, req.params.id, req.body); } catch (eT) { console.error('persistTiers:', eT.message); } /* TIERS_PREFILL_20260908 */
       saveCandidates(cands3);
     }
 

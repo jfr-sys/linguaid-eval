@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { canonicalCompany, listCompanies } = require('../lib/companies');
+const { canonicalCompany, listCompanies, getCompanyInfo, updateCompanyInfo } = require('../lib/companies'); /* TIERS_PREFILL_20260908 */
 const { isContratCadre } = require('../lib/contratCadre');
 const { getRsCode, getAction } = require('../config/catalogue');
 const coherence = require('../lib/coherence'); /* coherence-gate */
@@ -1047,6 +1047,22 @@ router.post('/save-convention/:id', function(req, res) {
   var existing = candidates[idx].conventionData || {};
   candidates[idx].conventionData = Object.assign(existing, req.body);
   saveCandidates(candidates);
+  /* TIERS_PREFILL_20260908: remember company-level convention details so the
+     next learner of the same company starts with them filled in. Signatory
+     details are company memory only in tiers mode (a learner-mode signatory
+     is the learner, not a company contact). */
+  try {
+    var cdSave = candidates[idx].conventionData || {};
+    var coSave = String(candidates[idx].company || '').trim();
+    if (coSave && coSave.toLowerCase() !== 'particulier') {
+      var infoSave = { siret: cdSave.siret, address: cdSave.companyAddress };
+      if (cdSave.isThirdParty === true) {
+        infoSave.signatory = cdSave.signatory;
+        infoSave.signatoryEmail = cdSave.signatoryEmail;
+      }
+      updateCompanyInfo(coSave, infoSave);
+    }
+  } catch (eInfo) { console.error('company info save error:', eInfo.message); }
   res.json({ success: true });
 });
 
@@ -3652,6 +3668,17 @@ router.get('/download-report-pdf-fr/:id', function(req, res) {
 
 
 // ── Company registry: list canonical company names ──────────────────────────
+/* TIERS_PREFILL_20260908: company-level convention memory (siret, address,
+   signatory contact) for prefill on the candidate page. Session required. */
+router.get('/companies/info', function(req, res) {
+  try {
+    if (!crRequireSession(req, res)) return;
+    res.json({ company: String(req.query.company || ''), info: getCompanyInfo(req.query.company) });
+  } catch (err) {
+    console.error('companies info error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
 router.get('/companies', function(req, res) {
   try {
     /* SECURITY_P1 (2026-07-27): client-company list - session required
