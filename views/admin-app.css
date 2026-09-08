@@ -1,0 +1,158 @@
+/* ADMIN_APP_V1 (2026-09-07)
+   App-shell layer for the admin views (candidates, candidate, suivi,
+   relances, company_report). Desktop layout is untouched: everything
+   below is scoped to the mobile breakpoints or to elements this layer
+   creates itself (aa-*). Loaded after each page's own <style>, so it
+   wins ties without !important except where an inline style must be
+   overridden. */
+
+:root { --aa-navy: #1F4E79; --aa-bg: #f0f4f8; --aa-line: #e2e8f0; --aa-muted: #94a3b8; --aa-nav-h: 60px; }
+
+/* ── Bottom navigation (mobile only) ─────────────────────────────── */
+.aa-nav { display: none; }
+.aa-fab, .aa-sheet, .aa-chips, .aa-stepstrip { display: none; }
+.aa-sticky { display: contents; }
+
+@media (max-width: 900px) {
+  body { padding-bottom: calc(var(--aa-nav-h) + env(safe-area-inset-bottom, 0px)) !important; }
+  .aa-nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 900;
+    display: flex; height: calc(var(--aa-nav-h) + env(safe-area-inset-bottom, 0px));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    background: #fff; border-top: 1px solid var(--aa-line);
+    box-shadow: 0 -2px 12px rgba(0,0,0,0.06); }
+  .aa-nav a { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 3px; text-decoration: none; color: #64748b; font-size: 10.5px; font-weight: 600; letter-spacing: 0.01em;
+    -webkit-tap-highlight-color: transparent; }
+  .aa-nav a svg { width: 22px; height: 22px; stroke: currentColor; }
+  .aa-nav a.active { color: var(--aa-navy); }
+  .aa-nav a.active svg { stroke-width: 2.4; }
+
+  /* Top bar: keep the logo, drop the long title, shrink height */
+  .nav { padding: 0 1rem !important; height: 50px !important; }
+  .nav .nav-logo > span, .nav-right .hdr-divider, .nav-right #userName { display: none !important; }
+  .nav-logo img { height: 26px !important; }
+  .aa-sticky .header h1 { display: none; }
+
+  /* Floating "+" and the action sheet behind it (candidates list) */
+  .aa-fab { display: flex; position: fixed; right: 16px; bottom: calc(var(--aa-nav-h) + 16px + env(safe-area-inset-bottom, 0px));
+    z-index: 901; width: 54px; height: 54px; border-radius: 50%; border: none; background: var(--aa-navy); color: #fff;
+    font-size: 30px; line-height: 1; align-items: center; justify-content: center; box-shadow: 0 6px 18px rgba(31,78,121,0.4);
+    cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .aa-sheet { position: fixed; inset: 0; z-index: 950; background: rgba(15,23,42,0.45); align-items: flex-end; }
+  .aa-sheet.open { display: flex; }
+  .aa-sheet-panel { width: 100%; background: #fff; border-radius: 18px 18px 0 0; padding: 8px 12px calc(16px + env(safe-area-inset-bottom, 0px));
+    box-shadow: 0 -8px 30px rgba(0,0,0,0.2); }
+  .aa-sheet-grip { width: 40px; height: 4px; border-radius: 2px; background: #cbd5e1; margin: 4px auto 12px; }
+  .aa-sheet-panel a, .aa-sheet-panel button { display: flex; align-items: center; gap: 12px; width: 100%; padding: 13px 10px;
+    border: none; background: none; border-radius: 10px; font-size: 15px; font-weight: 500; color: #1e293b; text-decoration: none;
+    font-family: inherit; text-align: left; cursor: pointer; }
+  .aa-sheet-panel a:active, .aa-sheet-panel button:active { background: #f1f5f9; }
+  .aa-sheet-panel svg { width: 20px; height: 20px; flex: 0 0 auto; }
+  .aa-sheet-cancel { justify-content: center !important; color: var(--aa-muted) !important; margin-top: 4px; border-top: 1px solid #f1f5f9; border-radius: 0 !important; }
+}
+
+/* ── Candidates list: sticky search + tabs, chips, cards ───────────── */
+@media (max-width: 900px) {
+  .aa-sticky { display: block; position: sticky; top: 0; z-index: 40; background: var(--aa-bg);
+    margin: 0 -0.75rem; padding: 8px 0.75rem 0; }
+  .aa-sticky .header { margin-bottom: 8px; }
+  .aa-sticky .header > div { width: 100%; }
+  .aa-sticky .header > div > *:not(#searchBox) { display: none !important; }
+  #searchBox { width: 100% !important; font-size: 16px !important; padding: 11px 14px !important; border-radius: 12px !important; }
+  .aa-sticky .aa-tabs { margin-bottom: 0 !important; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .aa-sticky .aa-tabs::-webkit-scrollbar { display: none; }
+  .cand-tab { white-space: nowrap; padding: 10px 12px; font-size: 13px; }
+  .aa-chips { display: flex; gap: 6px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+    padding: 8px 0 10px; margin: 0; }
+  .aa-chips::-webkit-scrollbar { display: none; }
+  .aa-chip { flex: 0 0 auto; border: 1px solid var(--aa-line); background: #fff; color: #475569; border-radius: 999px;
+    padding: 6px 12px; font-size: 12px; font-weight: 600; font-family: inherit; cursor: pointer; white-space: nowrap;
+    display: inline-flex; align-items: center; gap: 6px; -webkit-tap-highlight-color: transparent; }
+  .aa-chip .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .aa-chip.active { background: var(--aa-navy); border-color: var(--aa-navy); color: #fff; }
+  .aa-chip.active .dot { background: #fff !important; }
+  .aa-dist { display: none !important; }
+  #statsBar { flex-wrap: wrap; gap: 6px 14px !important; padding: 8px 12px !important; }
+  #bulkBar { flex-wrap: wrap; }
+}
+
+/* ── Table → card rendering (phones) ──────────────────────────────── */
+@media (max-width: 700px) {
+  .aa-cards { border-collapse: separate !important; border-spacing: 0; background: transparent !important; box-shadow: none !important; }
+  .aa-cards, .aa-cards tbody, .aa-cards tr, .aa-cards td { display: block; width: 100%; }
+  .aa-cards thead { display: none; }
+  .aa-cards tr { background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); padding: 12px 14px; margin-bottom: 10px; }
+  .aa-cards tr:hover, .aa-cards tr:hover td { background: #fff; }
+  .aa-cards td { border: 0 !important; padding: 4px 0 !important; display: flex; justify-content: space-between; align-items: center;
+    gap: 12px; font-size: 14px; min-width: 0; max-width: none !important; white-space: normal !important; }
+  .aa-cards td::before { content: attr(data-label); flex: 0 0 38%; font-size: 10.5px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.05em; color: var(--aa-muted); }
+  .aa-cards td:not([data-label])::before, .aa-cards td[data-label=""]::before { display: none; }
+  .aa-cards td[colspan] { display: block; text-align: center; }
+  .aa-cards td > .docs-cell { flex-direction: row; flex-wrap: wrap; justify-content: flex-end; }
+  .aa-cards td .notes-input { width: 100%; }
+  .aa-cards td.check-cell { justify-content: space-between; }
+
+  /* Card container on the candidates page loses its white box: rows are the cards */
+  .aa-cardbox { background: transparent !important; box-shadow: none !important; overflow: visible !important; }
+  .aa-cardbox > div { overflow: visible !important; }
+  #candidateList tr { position: relative; cursor: pointer; padding-left: 14px; border-left: 4px solid var(--aa-line); }
+  #candidateList tr.aa-b0 { border-left-color: #378ADD; }
+  #candidateList tr.aa-b1 { border-left-color: #EF9F27; }
+  #candidateList tr.aa-b2 { border-left-color: #639922; }
+  #candidateList td:nth-child(1):empty { display: none; }
+  #candidateList td:nth-child(1) { justify-content: flex-start; }
+  #candidateList td:nth-child(2) { padding-bottom: 2px !important; }
+  #candidateList td:nth-child(2) a { font-size: 16.5px; font-weight: 600; }
+  #candidateList td:nth-child(3), #candidateList td:nth-child(4) { display: inline-flex; width: auto; margin-right: 10px; font-size: 12.5px; color: #64748b; }
+  #candidateList td:nth-child(3)::before, #candidateList td:nth-child(4)::before { display: none; }
+  #candidateList td:nth-child(5) { font-size: 12px; color: var(--aa-muted); }
+  #candidateList td:nth-child(6) { display: block; padding-top: 8px !important; }
+  #candidateList td:nth-child(6)::before { display: none; }
+  #candidateList td:nth-child(7) { justify-content: space-between; }
+  #candidateList td:nth-child(8) { justify-content: flex-end !important; padding-top: 8px !important; }
+  #candidateList td:nth-child(8)::before { display: none; }
+  #candidateList .company-cell { max-width: none; }
+}
+
+/* ── Candidate detail: compact step strip + sticky tabs ────────────── */
+@media (max-width: 900px) {
+  .progress-card { display: none; }
+  .aa-stepstrip { display: block; background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    padding: 12px 14px; margin-bottom: 12px; }
+  .aa-stepstrip .aa-dots { display: flex; gap: 4px; margin-bottom: 10px; }
+  .aa-stepstrip .aa-dots span { flex: 1; height: 5px; border-radius: 3px; background: #e5e7eb; }
+  .aa-stepstrip .aa-dots span.done { background: #10b981; }
+  .aa-stepstrip .aa-dots span.active { background: var(--aa-navy); }
+  .aa-stepstrip .aa-dots span.na { background: #f1f5f9; }
+  .aa-stepstrip .aa-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .aa-stepstrip .aa-k { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--aa-muted); }
+  .aa-stepstrip .aa-t { font-size: 15px; font-weight: 600; color: var(--aa-navy); margin-top: 2px; }
+  .aa-stepstrip .aa-s { font-size: 12px; color: #64748b; }
+  .aa-stepstrip .aa-go { flex: 0 0 auto; border: none; background: var(--aa-navy); color: #fff; border-radius: 10px;
+    padding: 10px 14px; font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer; white-space: nowrap; }
+  .aa-stepstrip .aa-go.done { background: #10b981; }
+  .tabs-bar { position: sticky; top: 0; z-index: 40; border-radius: 0 !important; margin: 0 -0.75rem 1rem !important; padding: 0 0.5rem !important; }
+  .profile { padding: 1rem 1rem !important; }
+  .profile-name { font-size: 19px; }
+  .back { margin-bottom: 8px; }
+  .stage { padding: 1rem !important; }
+  .stage select, .stage input[type=text], .stage input[type=email], .stage input[type=date], .stage textarea { max-width: 100%; }
+  .stage select[style*="min-width"] { min-width: 0 !important; width: 100%; }
+}
+
+/* ── Suivi / relances / company report tweaks ─────────────────────── */
+@media (max-width: 900px) {
+  .header.aa-page-header { padding: 12px 16px !important; }
+  .header.aa-page-header h1 { font-size: 0.95rem !important; }
+  .summary { display: grid !important; grid-template-columns: 1fr 1fr; gap: 8px !important; }
+  .summary .stat { padding: 10px 12px !important; }
+  .toolbar { flex-wrap: wrap; }
+  #companySelect { width: 100%; font-size: 16px; }
+}
+
+/* Standalone (installed) mode: nothing else needed, but keep the status
+   bar area from overlapping the top bar on notched iPhones. */
+@media (display-mode: standalone) {
+  .nav, .header.aa-page-header { padding-top: env(safe-area-inset-top, 0px) !important; height: auto !important; min-height: 50px; }
+}

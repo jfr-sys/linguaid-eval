@@ -24,3 +24,8 @@ data/candidates.json.bak*
 data/pendingReminders.json
 data/missions/
 embed_sig_mission_readonly.txt
+
+# never commit backup copies (may contain secrets)
+*.bak_*
+*.bak
+.env.bak*
