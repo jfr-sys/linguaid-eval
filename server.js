@@ -158,6 +158,7 @@ cron.schedule('0 9 * * *', function() {
     const oralPending = [];
 
     candidates.forEach(function(c) {
+      if (c.obsoleteAt) return; /* OBSOLETE_20260909 */
       // Only chase candidates who: have a link sent, haven't booked, and aren't oral_done+
       if (!c.oralLinkSentAt) return;
       if (c.oralBookedAt) return;
@@ -269,7 +270,7 @@ function dueQuizNudges(candidates, now) {
 cron.schedule('30 8 * * *', function() {
   try {
     const dataPath = path.join(__dirname, 'data/candidates.json');
-    const candidates = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
+    const candidates = JSON.parse(fs.readFileSync(dataPath, 'utf8')).filter(function(c) { return !c.obsoleteAt; }); /* OBSOLETE_20260909 */
     const cazHtml = buildCazDigest(candidates);
     if (cazHtml) transporterCron.sendMail({ from: 'eval@linguaid.net', replyTo: require('./lib/mailer').replyTo(), /* MAILER_REPLYTO */ to: 'cfr@linguaid.net', cc: 'jfr@linguaid.net',
       subject: 'Commandes en attente de convocation', html: cazHtml },
@@ -289,8 +290,11 @@ cron.schedule('45 8 * * *', function() {
     const now = Date.now();
     let updated = false;
     const holdPending = [];
+    /* OBSOLETE_20260909: selectors see live candidates only; the full array is
+       what gets written back, so obsolete records are never dropped. */
+    const liveCandidates = candidates.filter(function(c) { return !c.obsoleteAt; });
 
-    dueConventionNudges(candidates, now).forEach(function(c) {
+    dueConventionNudges(liveCandidates, now).forEach(function(c) {
       const cd = c.conventionData;
       const url = 'https://eval.linguaid.net/sign/' + cd.signingToken;
       if (!c.progressToken) { c.progressToken = require('crypto').randomBytes(16).toString('hex'); updated = true; }
@@ -311,7 +315,7 @@ cron.schedule('45 8 * * *', function() {
         subject: 'Rappel : convention de formation \u00e0 signer \u2014 ' + c.name, html: html });
     });
 
-    dueQuizNudges(candidates, now).forEach(function(c) {
+    dueQuizNudges(liveCandidates, now).forEach(function(c) {
       const url = 'https://eval.linguaid.net/quiz/' + c.quizToken;
       if (!c.progressToken) { c.progressToken = require('crypto').randomBytes(16).toString('hex'); updated = true; }
       const progressUrl = 'https://eval.linguaid.net/mon-parcours/' + c.progressToken;

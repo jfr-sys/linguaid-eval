@@ -302,8 +302,13 @@
       <div class="profile-sub" id="profileSub"></div>
       <div style="display:flex;align-items:center;gap:8px;margin-top:6px"><span style="font-size:12px;color:#94a3b8;min-width:70px">Entreprise</span><input id="profileCompany" type="text" placeholder="Ajouter l'entreprise..." onblur="saveCompany(this)" style="font-size:13px;padding:4px 8px;border:1px solid #e2e8f0;border-radius:6px;width:240px;color:#334155"></div>
       <div class="profile-meta" id="profileMeta"></div>
+      <!-- OBSOLETE_20260909 -->
+      <div id="obsoleteBanner" style="display:none;margin-top:8px;padding:6px 10px;background:#fef3c7;border:1px solid #fcd34d;border-radius:6px;font-size:12px;color:#92400e"></div>
     </div>
-    <div id="profileBadge"></div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+      <div id="profileBadge"></div>
+      <button id="obsoleteBtn" onclick="toggleObsolete()" style="display:none;font-size:12px;padding:5px 12px;border-radius:6px;cursor:pointer;font-family:inherit"></button>
+    </div>
   </div>
 
   <div class="progress-card">
@@ -883,6 +888,7 @@
     companyEl.value = c.company || '';
     companyEl.dataset.id = c.id;
     document.getElementById('profileMeta').textContent = c.email + (c.testdate ? ' · Test: ' + c.testdate : '');
+    renderObsolete(c); /* OBSOLETE_20260909 */
     if (document.getElementById('idFirstName')) {
       var parts = (c.name || '').split(' ');
       // Convention: stored as "PRÉNOM NOM" — first word is prénom, rest is nom
@@ -2051,6 +2057,35 @@
      contact in Step 6, SIRET / address / signatory in Step 7) from the company
      registry, i.e. from the last convention done for this company. Never
      overwrites a value the user or the candidate record already supplied. */
+  /* OBSOLETE_20260909: header banner + toggle button */
+  function renderObsolete(c) {
+    var b = document.getElementById('obsoleteBanner'), btn = document.getElementById('obsoleteBtn');
+    if (!b || !btn) return;
+    if (c.obsoleteAt) {
+      var d = c.obsoleteAt.slice(0, 10).split('-');
+      b.textContent = '\u26A0\uFE0F Dossier obsol\u00e8te depuis le ' + d[2] + '/' + d[1] + '/' + d[0] + ' \u2014 hors listes actives et alertes quotidiennes' + (c.obsoleteReason ? ' \u2014 ' + c.obsoleteReason : '');
+      b.style.display = 'block';
+      btn.textContent = 'R\u00e9activer le dossier';
+      btn.style.cssText += ';background:#dcfce7;color:#166534;border:1px solid #86efac;display:inline-block';
+    } else {
+      b.style.display = 'none';
+      btn.textContent = 'Marquer obsol\u00e8te';
+      btn.style.cssText += ';background:#fef3c7;color:#92400e;border:1px solid #fcd34d;display:inline-block';
+    }
+  }
+  function toggleObsolete() {
+    var id = window.candidateId; if (!id) return;
+    var b = document.getElementById('obsoleteBanner');
+    var on = !(b && b.style.display === 'block');
+    var reason = '';
+    if (on) {
+      reason = prompt('Marquer ce dossier comme obsol\u00e8te ?\n\nIl reste ouvert mais sort des listes actives et des alertes quotidiennes.\nMotif (facultatif) :', 'Ne r\u00e9pond plus');
+      if (reason === null) return;
+    }
+    fetch('/candidates/api/' + id + '/obsolete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ obsolete: on, reason: reason }) })
+      .then(function(r) { return r.json(); })
+      .then(function(d) { if (!d.success) { alert(d.error || 'Erreur'); return; } renderObsolete({ obsoleteAt: d.obsoleteAt, obsoleteReason: reason }); });
+  }
   function prefillFromCompany(c) {
     var co = String((c && c.company) || '').trim();
     if (!co || co.toLowerCase() === 'particulier') return;

@@ -381,6 +381,25 @@ router.post('/api/:id/cpf', function(req, res) {
   res.json({ success: true });
 });
 
+/* OBSOLETE_20260909: park a non-responding candidate. The record stays intact
+   and openable; it moves to the Obsolete tab and is excluded from every daily
+   digest / reminder cron. Reversible with {obsolete:false}. */
+router.post('/api/:id/obsolete', (req, res) => {
+  const candidates = getCandidates();
+  const idx = candidates.findIndex(c => c.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: 'Not found' });
+  const on = !(req.body && req.body.obsolete === false);
+  if (on) {
+    candidates[idx].obsoleteAt = new Date().toISOString();
+    if (req.body && req.body.reason) candidates[idx].obsoleteReason = String(req.body.reason).slice(0, 300);
+  } else {
+    delete candidates[idx].obsoleteAt;
+    delete candidates[idx].obsoleteReason;
+  }
+  saveCandidates(candidates);
+  res.json({ success: true, obsoleteAt: candidates[idx].obsoleteAt || null });
+});
+
 module.exports = router;
 
 router.delete('/api/:id', (req, res) => {

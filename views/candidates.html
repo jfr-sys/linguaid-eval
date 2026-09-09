@@ -153,6 +153,8 @@
     <button class="cand-tab active" id="tabActiveBtn" onclick="setCandTab('active')">En cours</button>
     <button class="cand-tab" id="tabCatherineBtn" onclick="setCandTab('catherine')">Envoyé à Catherine</button>
     <button class="cand-tab" id="tabDoneBtn" onclick="setCandTab('done')">Terminé</button>
+    <!-- OBSOLETE_20260909: parked, non-responding candidates - kept, not chased -->
+    <button class="cand-tab" id="tabObsoleteBtn" onclick="setCandTab('obsolete')" style="margin-left:auto;color:#b45309">Obsolète</button>
   </div>
   <div id="statsBar" style="display:flex;gap:1.5rem;align-items:center;justify-content:space-between;margin-bottom:0.5rem;padding:10px 16px;background:white;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.06);font-size:13px;color:#475569"><div style="display:flex;gap:1.5rem;align-items:center"><span><strong id="statCount">—</strong> candidates</span><span style="color:#e2e8f0">|</span><span>Total budget : <strong id="statBudget" style="color:#1F4E79">—</strong></span></div><div><button class="mode-btn" id="modeCompactBtn" onclick="setTableMode('compact')">Compact</button><button class="mode-btn" id="modeDetailedBtn" onclick="setTableMode('detailed')">Detailed</button></div></div>
   <div style="margin-bottom:1rem;padding:10px 16px;background:white;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.06)"><div id="stageDistBar" style="display:flex;height:10px;border-radius:5px;overflow:hidden;background:#f1f5f9;margin-bottom:8px"></div><div id="stageDistLegend" style="display:flex;gap:16px;font-size:12px;color:#64748b"></div></div>
@@ -237,14 +239,16 @@
     if (st.sk) sk = st.sk;
     if (st.sd === 1 || st.sd === -1) sd = st.sd;
 
-    if (st.tab === 'active' || st.tab === 'catherine' || st.tab === 'done') {
+    if (st.tab === 'active' || st.tab === 'catherine' || st.tab === 'done' || st.tab === 'obsolete') {
       candTab = st.tab;
       var ab = document.getElementById('tabActiveBtn'),
           cb = document.getElementById('tabCatherineBtn'),
-          db = document.getElementById('tabDoneBtn');
+          db = document.getElementById('tabDoneBtn'),
+          ob = document.getElementById('tabObsoleteBtn');
       if (ab) ab.classList.toggle('active', candTab === 'active');
       if (cb) cb.classList.toggle('active', candTab === 'catherine');
       if (db) db.classList.toggle('active', candTab === 'done');
+      if (ob) ob.classList.toggle('active', candTab === 'obsolete');
     }
 
     if (st.q) {
@@ -378,15 +382,19 @@
     candTab = t;
     var ab = document.getElementById('tabActiveBtn'),
         cb = document.getElementById('tabCatherineBtn'),
-        db = document.getElementById('tabDoneBtn');
+        db = document.getElementById('tabDoneBtn'),
+        ob = document.getElementById('tabObsoleteBtn');
     if (ab) ab.classList.toggle('active', t === 'active');
     if (cb) cb.classList.toggle('active', t === 'catherine');
     if (db) db.classList.toggle('active', t === 'done');
+    if (ob) ob.classList.toggle('active', t === 'obsolete');
     render();
   }
   /* CANDIDATES_TABS_THREE_20260902: one place deciding which tab a row belongs
      to, so the counters and the row filter can never drift apart. */
   function candTabOf(idx) { return idx >= 10 ? 'done' : (idx === 9 ? 'catherine' : 'active'); }
+  /* OBSOLETE_20260909: obsolete wins over stage - the row lives only in the Obsolete tab. */
+  function candTabOfRow(x) { return x.obsoleteAt ? 'obsolete' : candTabOf(computeStage(x).idx); }
   function computeStage(x) {
     var cd = x.conventionData || {};
     // STAGE_PROPOSITION_GENERATED_FIX (2026-07-03): mirrors the same fix in
@@ -440,8 +448,10 @@
       for (var f in activeFilters) { if (!activeFilters[f].has(getFieldVal(x,f))) return false; }
       return true;
     });
-    var tabCounts = { active: 0, catherine: 0, done: 0 };
-    preTabRows.forEach(function(x) { tabCounts[candTabOf(computeStage(x).idx)]++; });
+    var tabCounts = { active: 0, catherine: 0, done: 0, obsolete: 0 };
+    preTabRows.forEach(function(x) { tabCounts[candTabOfRow(x)]++; });
+    var tabObsoleteBtnEl = document.getElementById('tabObsoleteBtn');
+    if (tabObsoleteBtnEl) tabObsoleteBtnEl.textContent = 'Obsol\u00e8te \u00b7 ' + tabCounts.obsolete;
     var tabActiveBtnEl = document.getElementById('tabActiveBtn'),
         tabCatherineBtnEl = document.getElementById('tabCatherineBtn'),
         tabDoneBtnEl = document.getElementById('tabDoneBtn');
@@ -449,7 +459,7 @@
     if (tabCatherineBtnEl) tabCatherineBtnEl.textContent = 'Envoy\u00e9 \u00e0 Catherine \u00b7 ' + tabCounts.catherine;
     if (tabDoneBtnEl) tabDoneBtnEl.textContent = 'Termin\u00e9 \u00b7 ' + tabCounts.done;
     var rows=preTabRows.filter(function(x){
-      return candTabOf(computeStage(x).idx) === candTab;
+      return candTabOfRow(x) === candTab;
     });
     rows.sort(function(a,b){
       var aPin = a.email==='jossfrimond@hotmail.com'?1:0;
@@ -467,7 +477,7 @@
     });
     if(!rows.length){tb.innerHTML='<tr><td colspan="5" class="empty">'+(q?'No results.':'No candidates yet.')+'</td></tr>';return;}
     tb.innerHTML=rows.map(function(x){
-      return '<tr><td style="text-align:center">'+(x.status==='written_report_done'?'<input type="checkbox" class="row-chk" data-id="'+x.id+'" data-name="'+esc(x.name)+'" onchange="updateBulkBar()">':'')+'</td><td><a href="/candidates/'+x.id+'" class="name-link">'+esc(x.name)+'</a></td><td>'+(x.courseType==='legal'?'<span style="font-size:11px;background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:10px;font-weight:600">Juridique</span>':'<span style="font-size:11px;background:#dbeafe;color:#1e40af;padding:2px 8px;border-radius:10px;font-weight:600">Business</span>')+'</td><td class="company-cell" title="'+esc(x.company||'')+'">'+esc(x.company||'')+'</td><td>'+(x.createdAt?(function(d){var p=d.slice(0,10).split('-');return p[2]+'/'+p[1]+'/'+p[0];})(x.createdAt):'')+'</td><td>'+stageHtml(x, tableMode)+'</td><td style="text-align:right;font-size:13px;color:#1F4E79;font-weight:500">'+((x.conventionData&&x.conventionData.price)?x.conventionData.price+' €':'')+'</td><td style="display:flex;gap:8px"><a href="/candidates/'+x.id+'" class="name-link">View</a>&nbsp;<button data-id="'+x.id+'" data-name="'+esc(x.name)+'" onclick="doDel(this)" style="background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer">Delete</button></td></tr>';
+      return '<tr><td style="text-align:center">'+(x.status==='written_report_done'?'<input type="checkbox" class="row-chk" data-id="'+x.id+'" data-name="'+esc(x.name)+'" onchange="updateBulkBar()">':'')+'</td><td><a href="/candidates/'+x.id+'" class="name-link">'+esc(x.name)+'</a></td><td>'+(x.courseType==='legal'?'<span style="font-size:11px;background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:10px;font-weight:600">Juridique</span>':'<span style="font-size:11px;background:#dbeafe;color:#1e40af;padding:2px 8px;border-radius:10px;font-weight:600">Business</span>')+'</td><td class="company-cell" title="'+esc(x.company||'')+'">'+esc(x.company||'')+'</td><td>'+(x.createdAt?(function(d){var p=d.slice(0,10).split('-');return p[2]+'/'+p[1]+'/'+p[0];})(x.createdAt):'')+'</td><td>'+stageHtml(x, tableMode)+'</td><td style="text-align:right;font-size:13px;color:#1F4E79;font-weight:500">'+((x.conventionData&&x.conventionData.price)?x.conventionData.price+' €':'')+'</td><td style="display:flex;gap:8px"><a href="/candidates/'+x.id+'" class="name-link">View</a>&nbsp;<button data-id="'+x.id+'" data-name="'+esc(x.name)+'" onclick="doDel(this)" style="background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer">Delete</button>'+(x.obsoleteAt?'<button data-id="'+x.id+'" data-on="0" onclick="doObsolete(this)" title="Remettre dans les listes actives" style="background:#dcfce7;color:#166534;border:1px solid #86efac;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer">R\u00e9activer</button>':'<button data-id="'+x.id+'" data-name="'+esc(x.name)+'" data-on="1" onclick="doObsolete(this)" title="Ne r\u00e9pond plus - sortir des listes et des alertes" style="background:#fef3c7;color:#92400e;border:1px solid #fcd34d;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer">Obsol\u00e8te</button>')+'</td></tr>';
     }).join('');
     (function() {
       var buckets = [0, 0, 0];
@@ -483,6 +493,17 @@
     var sb=document.getElementById('statBudget'); if(sb) sb.textContent=_hasp?(_tot.toLocaleString('fr-FR')+' €'):'—';});
   }
   function sortBy(k){sk===k?sd=-sd:(sk=k,sd=1);render();}
+  /* OBSOLETE_20260909 */
+  function doObsolete(btn){
+    var id=btn.getAttribute('data-id'), on=btn.getAttribute('data-on')==='1';
+    if(on && !confirm('Marquer '+btn.getAttribute('data-name')+' comme obsol\u00e8te ?\n\nLe dossier reste ouvert mais sort des listes actives et des alertes quotidiennes.'))return;
+    fetch('/candidates/api/'+id+'/obsolete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({obsolete:on})})
+      .then(function(r){return r.json();}).then(function(d){
+        if(!d.success){alert(d.error||'Erreur');return;}
+        all.forEach(function(x){ if(x.id===id){ if(on) x.obsoleteAt=d.obsoleteAt; else delete x.obsoleteAt; } });
+        render();
+      });
+  }
   function doDel(btn){
     var id=btn.getAttribute('data-id'),name=btn.getAttribute('data-name');
     if(!confirm('Delete '+name+'?'))return;
