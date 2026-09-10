@@ -1916,7 +1916,11 @@
 
     // Step 7: unlock if proposition accepted
     var s7 = document.getElementById('stage7');
-    if (cd.proposalAcceptedAt || isCadre) {
+    /* STEP7_EXISTING_CONV_20260910: a convention that already exists (generated,
+       sent for signature or signed) must always be shown, even when the
+       dossier predates the proposalAcceptedAt stamp - Step 8 already used
+       this rule, Step 7 did not, so signed conventions were greyed out. */
+    if (cd.proposalAcceptedAt || isCadre || cd.signedAt || cd.generatedAt || cd.pdfPath || cd.signingToken) {
       s7.style.opacity = '1'; s7.style.pointerEvents = 'auto';
       s7.style.borderTopColor = '#2E75B6';
       document.getElementById('stage7status').textContent = 'Remplissez les détails pour générer la convention';
