@@ -30,7 +30,7 @@ function calc5SkillLevel(c) {
   var cefrMap = {'A1':0,'A1+':0.5,'A2':1,'A2+':1.5,'B1':2,'B1+':2.5,'B2':3,'B2+':3.5,'C1':4,'C1+':4.5,'C2':5};
   var cefrRev = {0:'A1',0.5:'A1+',1:'A2',1.5:'A2+',2:'B1',2.5:'B1+',3:'B2',3.5:'B2+',4:'C1',4.5:'C1+',5:'C2'};
   var levels = [rs.grammarLevel, rs.writingLevel, rs.readingLevel, od.listeningLevel, od.speakingLevel]
-    .map(function(l){ return cefrMap[l]; })
+    .map(function(l){ return cefrMap[normaliseCefr(l)]; }) /* CEFR_NORMALISE_20260910 */
     .filter(function(n){ return typeof n === 'number'; });
   /* PREREQ_LEVEL_PERSIST (2026-08-24): the overallLevel fallback used to be
      returned unvalidated. A report generated from an empty test can contain
@@ -69,6 +69,22 @@ const dataDir = path.join(__dirname, '../data');
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 
+/* CEFR_NORMALISE_20260910: the written-report prompt asks the model to write
+   levels as "B1 (2)"; those strings were saved raw into reportSummary, so the
+   level selects on candidate.html stayed blank and calc5SkillLevel dropped
+   them. Reduce any "B1 (2)", "A2+/B1", "b1" to a bare valid CEFR token. */
+function normaliseCefr(v) {
+  if (v == null) return '';
+  var m = String(v).toUpperCase().match(/\b([ABC][12]\+?)/);
+  return m ? m[1] : '';
+}
+function normaliseSummaryLevels(rs) {
+  if (!rs || typeof rs !== 'object') return rs;
+  ['grammarLevel','writingLevel','readingLevel','overallLevel'].forEach(function(k){
+    if (rs[k] != null && rs[k] !== '') rs[k] = normaliseCefr(rs[k]);
+  });
+  return rs;
+}
 function cefrLabel(level) {
   if (!level) return '';
   var map = {
@@ -348,6 +364,7 @@ Also add a clearly delimited JSON block:
     const jsonMatch = fullText.match(/---SUMMARY_JSON---\s*([\s\S]*?)\s*---END_SUMMARY_JSON---/);
     if (jsonMatch) {
       try { reportSummary = JSON.parse(jsonMatch[1].trim().replace(/^```[a-z]*\n?/,'').replace(/```$/,'').trim()); } catch(e) { console.error('JSON parse error:', e); }
+      reportSummary = normaliseSummaryLevels(reportSummary); /* CEFR_NORMALISE_20260910 */
     }
     const cleanReport = fullText.replace(/---SUMMARY_JSON---[\s\S]*?---END_SUMMARY_JSON---/, '').trim();
 

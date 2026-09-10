@@ -1090,7 +1090,7 @@
       var cefrMap = {'A1':0,'A1+':0.5,'A2':1,'A2+':1.5,'B1':2,'B1+':2.5,'B2':3,'B2+':3.5,'C1':4,'C1+':4.5,'C2':5};
       var cefrRevMap = {0:'A1',0.5:'A1+',1:'A2',1.5:'A2+',2:'B1',2.5:'B1+',3:'B2',3.5:'B2+',4:'C1',4.5:'C1+',5:'C2'};
       var levels = [summary.grammarLevel, summary.writingLevel, summary.readingLevel, oral.listeningLevel, oral.speakingLevel]
-        .map(function(l){ return cefrMap[l]; }).filter(function(n){ return n !== undefined; });
+        .map(function(l){ return cefrMap[normCefr(l)]; }) /* CEFR_NORMALISE_20260910 */.filter(function(n){ return n !== undefined; });
       if (levels.length) {
         var avg = levels.reduce(function(a,b){return a+b;},0) / levels.length;
         var rounded = Math.round(avg * 2) / 2;
@@ -1240,12 +1240,19 @@
     note.textContent = "\u26a0\ufe0f Parcours sans test \u00e9crit \u2014 niveau recueilli en entretien.";
   }
 
+  /* CEFR_NORMALISE_20260910 */
+  function normCefr(v) {
+    if (v == null) return '';
+    var m = String(v).toUpperCase().match(/\b([ABC][12]\+?)/);
+    return m ? m[1] : '';
+  }
+
   function showLevelsEditor(c) {
     window.__levelsManuallyEdited = !!c.levelsManuallyEditedAt; /* LEVELS_PRESERVE_FIX (2026-08-24) */
     var b = document.getElementById('btnEditLevels'); if (b) b.style.display = 'inline-block';
     var rs = c.reportSummary || {}, od = c.oralData || {};
     var map = { lvGrammar: rs.grammarLevel, lvWriting: rs.writingLevel, lvReading: rs.readingLevel, lvListening: od.listeningLevel, lvSpeaking: od.speakingLevel };
-    Object.keys(map).forEach(function(k){ var el = document.getElementById(k); if (el && map[k]) el.value = map[k]; });
+    Object.keys(map).forEach(function(k){ var el = document.getElementById(k); var v = normCefr(map[k]); if (el && v) el.value = v; }); /* CEFR_NORMALISE_20260910 */
   }
 
   function toggleLevelsPanel() {
