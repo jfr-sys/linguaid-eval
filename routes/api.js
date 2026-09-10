@@ -2826,6 +2826,12 @@ router.post('/send-convocation/:id', function(req, res) {
         });
         saveCandidates(cands5);
 
+        /* CAJA_SHEET (2026-09-10): mirror the convocation to the Suivi CAJA sheet.
+           Fire-and-forget, CAJA only, never blocks the convocation. */
+        try {
+          require('../lib/cajaSheet').pushConvocation(cands5[ci5], trainerKey);
+        } catch (sheetErr) { console.error('CAJA sheet push error:', sheetErr); }
+
         // Generate convocation PDF for Qualiopi/DREETS record-keeping
         // Uses fpdf2 (generate_convocation_pdf.py) for faithful, styled rendering
         try {
