@@ -340,6 +340,82 @@ router.get('/api/generate-programme/:id', async function(req, res) {
   });
 });
 
+/* == PARCOURS_CAJA_20260911 =================================================
+   GET /api/generate-programme-m2/:id
+   Module 2 (CAJA, RS6810) programme for a parcours candidate. Same generator
+   and template as Module 1; referential objectives only (no AI suffixes);
+   hours/dates/price from the parcours object; catalogue action matched on
+   total hours. Saved as data/programmes/<id>_m2.{docx,pdf}; the candidate's
+   own programme fields (Module 1) are NOT touched. */
+router.get('/api/generate-programme-m2/:id', function(req, res) {
+  var candidates = getCandidates();
+  var c = candidates.find(function(cand) { return cand.id === req.params.id; });
+  if (!c) return res.status(404).json({ error: 'Not found' });
+  if (!(c.parcours && c.parcours.enabled)) return res.status(400).json({ error: 'Parcours CAJA non activ\u00e9 pour ce candidat.' });
+  var pc = parcoursLib.compute(c.parcours);
+  var m2 = pc.modules[1];
+  var od = c.oralData || {};
+  var action = (CATALOGUE.CAJA || []).find(function(a) { return a.totalHours === m2.totalHours; }) || null;
+  var CAJA_OBJECTIVES = ["Se pr\u00e9senter dans un cadre professionnel et \u00e9tablir un bon contact avec un client, un coll\u00e8gue ou un confr\u00e8re", "Mener un premier entretien pour comprendre la situation, poser les bonnes questions et identifier les attentes", "Expliquer une probl\u00e9matique juridique, proposer des options et aider \u00e0 la prise de d\u00e9cision", "R\u00e9diger des documents professionnels adapt\u00e9s au contexte : emails, lettres, notes d\u2019avocat", "Corriger ou r\u00e9diger des clauses contractuelles claires, pr\u00e9cises et structur\u00e9es", "Conduire une n\u00e9gociation, formuler ou r\u00e9pondre \u00e0 des propositions, et d\u00e9fendre les int\u00e9r\u00eats de son client"];
+  var payload = {
+    candidateName: c.name, jobtitle: c.jobtitle || '', dept: c.dept || '', company: c.company || '',
+    prereqLevel: od.targetLevel || 'B2',
+    targetLevel: 'C1',
+    totalHours: String(m2.totalHours), coachingHours: String(m2.coachingHours), homeworkHours: String(m2.homeworkHours),
+    isCPF: true, cpfType: 'CAJA', rsCode: 'RS6810',
+    edofActionId: action ? action.id : null, edofPrice: action ? action.price : m2.price, edofMCFLink: action ? action.link : null,
+    topics: [], objectives: CAJA_OBJECTIVES,
+    dateStart: m2.dateStart || '', dateEnd: m2.dateEnd || '',
+    trainingTitle: 'Formation en Anglais Juridique \u2013 Module 2 du parcours CAJA',
+    courseType: 'legal', parcoursModule: 2
+  };
+  var dateStr = 'Dates \u00e0 d\u00e9finir (\u00e0 l\u2019issue du Module 1)';
+  if (payload.dateStart && payload.dateEnd) {
+    var ds = new Date(payload.dateStart), de = new Date(payload.dateEnd);
+    var months = ['janvier', 'f\u00e9vrier', 'mars', 'avril', 'mai', 'juin', 'juillet', 'ao\u00fbt', 'septembre', 'octobre', 'novembre', 'd\u00e9cembre'];
+    dateStr = 'Du ' + ds.getDate() + ' ' + months[ds.getMonth()] + ' ' + ds.getFullYear() + ' au ' + de.getDate() + ' ' + months[de.getMonth()] + ' ' + de.getFullYear();
+  }
+  payload.dateStr = dateStr;
+  var tmpJson = '/tmp/prog_' + req.params.id + '_m2.json';
+  var tmpOut  = '/tmp/prog_' + req.params.id + '_m2.docx';
+  var template = path.join(__dirname, '../views/template_programme.docx');
+  var script   = '/home/debian/fill_programme_final.py';
+  fs.writeFileSync(tmpJson, JSON.stringify(payload));
+  execFile('python3', [script, tmpJson, template, tmpOut], function(err, stdout, stderr) {
+    if (err) { console.error('Programme M2 script error:', stderr); return res.status(500).json({ error: 'Programme Module 2 generation failed: ' + stderr }); }
+    try {
+      var progDir = path.join(__dirname, '../data/programmes');
+      if (!fs.existsSync(progDir)) fs.mkdirSync(progDir, { recursive: true });
+      var permDocx = path.join(progDir, req.params.id + '_m2.docx');
+      var permPdf  = path.join(progDir, req.params.id + '_m2.pdf');
+      fs.copyFileSync(tmpOut, permDocx);
+      var buffer = fs.readFileSync(tmpOut);
+      var safeName = (payload.candidateName || 'Candidat').replace(/\s+/g, '_');
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+      res.setHeader('Content-Disposition', 'attachment; filename="Programme_Module2_CAJA_' + safeName + '.docx"');
+      res.send(buffer);
+      try { fs.unlinkSync(tmpJson); fs.unlinkSync(tmpOut); } catch (e) {}
+      execFile('soffice', ['--headless', '--convert-to', 'pdf', '--outdir', progDir, permDocx], function(pdfErr) {
+        if (pdfErr) { console.error('Programme M2 PDF conversion failed:', pdfErr); return; }
+        var cands3 = getCandidates();
+        var ci3 = cands3.findIndex(function(x) { return x.id === req.params.id; });
+        if (ci3 > -1 && cands3[ci3].parcours) {
+          cands3[ci3].parcours.modules = cands3[ci3].parcours.modules || [];
+          cands3[ci3].parcours.modules[1] = Object.assign({}, cands3[ci3].parcours.modules[1] || {}, { programmePdfPath: permPdf, programmeGeneratedAt: new Date().toISOString(), edofActionId: payload.edofActionId, edofMCFLink: payload.edofMCFLink });
+          saveCandidates(cands3);
+        }
+      });
+    } catch (e) { res.status(500).json({ error: 'Failed to read output: ' + e.message }); }
+  });
+});
+/* download the Module 2 programme PDF */
+router.get('/api/download-programme-m2/:id', function(req, res) {
+  var p = path.join(__dirname, '../data/programmes/' + req.params.id + '_m2.pdf');
+  if (!fs.existsSync(p)) return res.status(404).json({ error: 'Programme Module 2 non g\u00e9n\u00e9r\u00e9' });
+  res.download(p, 'Programme_Module2_CAJA.pdf');
+});
+/* == END PARCOURS_CAJA_20260911 ============================================ */
+
 // ---------------------------------------------------------------------------
 // GET /generate-programme-legal/:id
 // Redirects to programme page (legal courses use same flow)
@@ -776,6 +852,11 @@ router.post('/api/send-proposition-email/:id', async function(req, res) {
   const progPdf = path.join(__dirname, '../data/programmes/' + c.id + '.pdf');
   if (fs.existsSync(progPdf)) {
     attachments.push({ filename: 'programme_formation_' + safeName + '.pdf', path: progPdf });
+  }
+  /* PARCOURS_CAJA_20260911: Module 2 (CAJA) programme travels with the proposition too */
+  const progPdfM2 = path.join(__dirname, '../data/programmes/' + c.id + '_m2.pdf');
+  if (c.parcours && c.parcours.enabled && fs.existsSync(progPdfM2)) {
+    attachments.push({ filename: 'programme_formation_module2_CAJA_' + safeName + '.pdf', path: progPdfM2 });
   }
 
   // 3. Rapport d'évaluation (FR preferred)
