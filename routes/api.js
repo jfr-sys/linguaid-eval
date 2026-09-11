@@ -4061,4 +4061,76 @@ function sendWrittenPdf(req, res, lang) {
 router.get('/download-written-pdf/:id', function (req, res) { sendWrittenPdf(req, res, 'en'); });
 router.get('/download-written-pdf-fr/:id', function (req, res) { sendWrittenPdf(req, res, 'fr'); });
 
+/* == SALES_STATS_20260911 ===================================================
+   GET /api/sales-data — sales statistics for /candidates/sales (session).
+   A "vente" is a candidate whose order is confirmed: convention signed OR
+   order sent to Catherine OR convocation sent (contrat-cadre companies never
+   sign, so signature alone would undercount). Sale date = signedAt, else
+   sentToCatherineAt, else convocationSentAt. Amount = cd.price, else
+   od.edofPrice, else od.price. Contract value at order, not cash received.
+   ========================================================================== */
+function ssNum(v) { var n = parseFloat(String(v == null ? '' : v).replace(/[^0-9.,-]/g, '').replace(',', '.')); return isFinite(n) ? n : null; }
+function ssDay(v) { if (!v) return null; var s = String(v); var m = s.match(/^(\d{4}-\d{2}-\d{2})/); if (m) return m[1]; var d = new Date(s); return isNaN(d) ? null : d.toISOString().slice(0, 10); }
+function ssDays(a, b) { var da = ssDay(a), db = ssDay(b); if (!da || !db) return null; return Math.round((new Date(db) - new Date(da)) / 86400000); }
+function ssBuildSalesRows() {
+  var candidates = getCandidates();
+  var today = new Date().toISOString().slice(0, 10);
+  return candidates.map(function(c) {
+    var cd = c.conventionData || {};
+    var od = c.oralData || {};
+    var isCPF = !!(cd.isCPF || od.isCPF);
+    var cpfType = od.cpfType || '';
+    var isLegal = c.courseType === 'legal' || cpfType === 'E360_LEGAL' || cpfType === 'CAJA';
+    var company = String(c.company || '').trim();
+    var isParticulier = company.toLowerCase() === 'particulier';
+    var cadre = company ? isContratCadre(company) : false;
+    var saleAt = cd.signedAt || cd.sentToCatherineAt || cd.convocationSentAt || null;
+    var isSale = !!saleAt;
+    var isObsolete = !!c.obsoleteAt;
+    var proposalAt = cd.proposalSentAt || cd.generatedAt || null;
+    var isPipeline = !isSale && !isObsolete && !!(proposalAt || cd.signingToken || cd.pdfPath);
+    var price = ssNum(cd.price); if (price == null) price = ssNum(od.edofPrice); if (price == null) price = ssNum(od.price);
+    var hours = parseInt(od.totalHours, 10); if (!isFinite(hours)) hours = null;
+    var trainerKey = cd.convocTrainer || '';
+    var trainer = cd.trainerName || (trainerKey && CONVOC_TRAINERS[trainerKey] ? CONVOC_TRAINERS[trainerKey].name : (trainerKey || ''));
+    var funding = isCPF ? 'CPF' : (isParticulier ? 'Particulier' : 'Entreprise');
+    var product = isCPF ? (cpfType || 'CPF (type ?)') : (isLegal ? 'Legal (hors CPF)' : 'Business (hors CPF)');
+    var phase = 'prospect';
+    if (isObsolete) phase = 'obsolete';
+    else if (isSale) {
+      if (od.dateEnd && today > od.dateEnd) phase = 'terminee';
+      else if (od.dateStart && today >= od.dateStart) phase = 'en_cours';
+      else phase = 'vendue';
+    } else if (isPipeline) phase = 'pipeline';
+    var gaps = [];
+    if (isSale && price == null) gaps.push('prix manquant');
+    if (isSale && hours == null) gaps.push('heures manquantes');
+    if (isSale && !od.dateStart) gaps.push('date de d\u00e9but manquante');
+    if (isCPF && !cpfType) gaps.push('type CPF manquant');
+    if (isSale && !trainer) gaps.push('formateur non attribu\u00e9');
+    return {
+      id: c.id, name: c.name || '', company: company, isParticulier: isParticulier, cadre: cadre,
+      funding: funding, product: product, isLegal: isLegal, isCPF: isCPF, cpfType: cpfType,
+      price: price, hours: hours, trainer: trainer, trainerKey: trainerKey,
+      createdAt: ssDay(c.createdAt || c.invitedAt), proposalAt: ssDay(proposalAt), acceptedAt: ssDay(cd.proposalAcceptedAt),
+      signedAt: ssDay(cd.signedAt), saleAt: ssDay(saleAt), saleVia: cd.signedAt ? 'signature' : (cd.sentToCatherineAt ? 'ordre' : (cd.convocationSentAt ? 'convocation' : '')),
+      dateStart: od.dateStart || null, dateEnd: od.dateEnd || null,
+      isSale: isSale, isPipeline: isPipeline, isObsolete: isObsolete, obsoleteAt: ssDay(c.obsoleteAt), obsoleteReason: c.obsoleteReason || '',
+      leadDays: isSale ? ssDays(c.createdAt || c.invitedAt, saleAt) : null,
+      proposalDays: (isSale && proposalAt) ? ssDays(proposalAt, saleAt) : null,
+      phase: phase, status: c.status || '', gaps: gaps
+    };
+  });
+}
+router.get('/sales-data', function(req, res) {
+  try {
+    if (!crRequireSession(req, res)) return;
+    res.json({ generatedAt: new Date().toISOString(), rows: ssBuildSalesRows() });
+  } catch (err) {
+    console.error('sales-data error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+/* == END SALES_STATS_20260911 ============================================== */
+
 module.exports = router;

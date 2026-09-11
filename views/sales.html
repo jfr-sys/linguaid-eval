@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Statistiques de vente — Linguaid</title>
+  <!-- SALES_STATS_20260911 -->
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: "Segoe UI", Arial, sans-serif; background: #f5f6fa; color: #222; }
+    .header { background: #1F4E79; color: white; padding: 18px 32px; display: flex; justify-content: space-between; align-items: center; }
+    .header h1 { font-size: 1.1rem; font-weight: 600; }
+    .header a { color: white; text-decoration: none; font-size: 0.9rem; opacity: 0.85; }
+    .container { max-width: 1500px; margin: 28px auto; padding: 0 20px 60px; }
+    .toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 18px; flex-wrap: wrap; }
+    .toolbar label { font-size: 0.85rem; font-weight: 600; color: #1F4E79; }
+    .seg { display: inline-flex; border: 1px solid #c9d3e0; border-radius: 6px; overflow: hidden; background: white; }
+    .seg button { border: none; background: white; padding: 7px 12px; font-size: 0.82rem; cursor: pointer; color: #1F4E79; font-weight: 600; }
+    .seg button.on { background: #1F4E79; color: white; }
+    .toolbar input[type=date], .toolbar select { padding: 6px 8px; border: 1px solid #ccc; border-radius: 6px; font-size: 0.82rem; background: white; }
+    .btn { padding: 7px 12px; border-radius: 6px; border: none; background: #1F4E79; color: white; font-size: 0.82rem; font-weight: 600; cursor: pointer; }
+    .note { font-size: 0.75rem; color: #888; margin-left: auto; }
+    .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px; }
+    .kpi { background: white; border-radius: 8px; padding: 14px 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+    .kpi .num { font-size: 1.35rem; font-weight: 700; color: #1F4E79; white-space: nowrap; }
+    .kpi .label { font-size: 0.74rem; color: #888; margin-top: 2px; }
+    .kpi .sub { font-size: 0.72rem; color: #aaa; margin-top: 2px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 16px; margin-bottom: 20px; }
+    .card { background: white; border-radius: 10px; padding: 16px 18px; box-shadow: 0 1px 6px rgba(0,0,0,0.07); }
+    .card h2 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.04em; color: #1F4E79; margin-bottom: 10px; }
+    .card.wide { grid-column: 1 / -1; }
+    .chart-box { position: relative; height: 260px; }
+    table { width: 100%; border-collapse: collapse; background: white; font-size: 0.82rem; }
+    th { background: #1F4E79; color: white; text-align: left; padding: 8px 10px; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.03em; white-space: nowrap; }
+    td { padding: 7px 10px; border-bottom: 1px solid #eee; vertical-align: top; }
+    tr:last-child td { border-bottom: none; }
+    td.r, th.r { text-align: right; white-space: nowrap; }
+    .mini th { background: #eef2f7; color: #1F4E79; }
+    .funnel-row { display: flex; align-items: center; gap: 10px; margin: 6px 0; font-size: 0.82rem; }
+    .funnel-row .lbl { width: 190px; color: #444; }
+    .funnel-row .bar { height: 18px; background: #1F4E79; border-radius: 4px; min-width: 2px; }
+    .funnel-row .val { font-weight: 600; color: #1F4E79; white-space: nowrap; }
+    .funnel-row .conv { font-size: 0.72rem; color: #888; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; font-weight: 600; white-space: nowrap; }
+    .b-vendue { background: #dcfce7; color: #166534; } .b-en_cours { background: #dbeafe; color: #1e40af; }
+    .b-terminee { background: #e5e7eb; color: #374151; } .b-pipeline { background: #fef3c7; color: #92400e; }
+    .b-obsolete { background: #fee2e2; color: #991b1b; } .b-prospect { background: #f3f4f6; color: #6b7280; }
+    a.nm { color: #1F4E79; text-decoration: none; font-weight: 600; } a.nm:hover { text-decoration: underline; }
+    .gap { color: #b45309; font-size: 0.76rem; }
+    .empty { color: #999; font-size: 0.85rem; padding: 12px 0; }
+    .tabs { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
+    .tabs button { border: 1px solid #c9d3e0; background: white; border-radius: 14px; padding: 4px 12px; font-size: 0.78rem; cursor: pointer; color: #1F4E79; }
+    .tabs button.on { background: #1F4E79; color: white; border-color: #1F4E79; }
+    @media (max-width: 700px) {
+      .container { padding: 0 12px 40px; margin: 16px auto; }
+      .grid { grid-template-columns: 1fr; }
+      .funnel-row .lbl { width: 120px; font-size: 0.74rem; }
+      .chart-box { height: 220px; }
+    }
+  </style>
+<link rel="manifest" href="/app.webmanifest">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Linguaid">
+<meta name="theme-color" content="#1F4E79">
+<link rel="apple-touch-icon" href="/app-icon-192.png">
+<link rel="stylesheet" href="/admin-app.css?v=1">
+<script defer src="/admin-app.js?v=2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+</head>
+<body>
+<div class="header">
+  <h1 id="pageTitle">Linguaid — Statistiques de vente</h1>
+  <a href="/candidates" id="backLink">&larr; Retour aux candidats</a>
+</div>
+<div class="container">
+  <div class="toolbar" id="toolbar">
+    <label>Période :</label>
+    <div class="seg" id="periodSeg">
+      <button data-p="ytd">Année civile</button>
+      <button data-p="12m" class="on">12 mois glissants</button>
+      <button data-p="all">Tout</button>
+      <button data-p="custom">Personnalisée</button>
+    </div>
+    <span id="customRange" style="display:none;gap:6px;align-items:center">
+      <input type="date" id="dFrom"> <span style="font-size:0.8rem">→</span> <input type="date" id="dTo">
+    </span>
+    <label style="margin-left:6px">Financement :</label>
+    <select id="fundingSel"><option value="">Tous</option><option>CPF</option><option>Entreprise</option><option>Particulier</option></select>
+    <label>Type :</label>
+    <select id="typeSel"><option value="">Tous</option><option value="business">Business</option><option value="legal">Legal</option></select>
+    <button class="btn" id="csvBtn">Exporter CSV</button>
+    <span class="note" id="note"></span>
+  </div>
+
+  <div class="kpis" id="kpis"></div>
+
+  <div class="grid">
+    <div class="card wide"><h2>Chiffre d'affaires par mois (valeur des commandes confirmées)</h2><div class="chart-box"><canvas id="chMonth"></canvas></div></div>
+    <div class="card"><h2>Entonnoir commercial</h2><div id="funnel"></div></div>
+    <div class="card"><h2>Répartition du CA</h2>
+      <div class="tabs" id="splitTabs"><button data-k="funding" class="on">Financement</button><button data-k="product">Produit</button><button data-k="trainer">Formateur</button></div>
+      <div class="chart-box" style="height:220px"><canvas id="chSplit"></canvas></div>
+    </div>
+    <div class="card"><h2>Top entreprises</h2><div id="topCompanies"></div></div>
+    <div class="card"><h2>Délais</h2><div id="delays"></div></div>
+    <div class="card"><h2>En cours / à surveiller</h2><div id="watch"></div></div>
+    <div class="card"><h2>Données à compléter</h2><div id="gaps"></div></div>
+    <div class="card wide"><h2>Ventes de la période</h2><div style="overflow-x:auto"><table id="salesTable"><thead><tr>
+      <th>Date</th><th>Candidat</th><th>Entreprise</th><th>Financement</th><th>Produit</th><th>Formateur</th><th class="r">Heures</th><th class="r">Montant</th><th>Phase</th><th>Via</th>
+    </tr></thead><tbody id="salesBody"></tbody></table></div></div>
+  </div>
+</div>
+<script>
+var ALL = [];
+var period = '12m', splitKey = 'funding';
+var chMonth = null, chSplit = null;
+
+function eur(n) { if (n == null || !isFinite(n)) return '—'; return Math.round(n).toLocaleString('fr-FR') + ' \u20ac'; }
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+function fr(d) { if (!d) return ''; var p = d.slice(0, 10).split('-'); return p[2] + '/' + p[1] + '/' + p[0]; }
+function median(arr) { var a = arr.filter(function(x) { return x != null && isFinite(x); }).sort(function(x, y) { return x - y; }); if (!a.length) return null; var m = Math.floor(a.length / 2); return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2; }
+function sum(arr, f) { return arr.reduce(function(s, x) { var v = f(x); return s + (v == null ? 0 : v); }, 0); }
+function monthKey(d) { return d ? d.slice(0, 7) : null; }
+function monthLabel(k) { var m = ['janv.', 'f\u00e9vr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'ao\u00fbt', 'sept.', 'oct.', 'nov.', 'd\u00e9c.']; return m[parseInt(k.slice(5, 7), 10) - 1] + ' ' + k.slice(2, 4); }
+
+function range() {
+  var today = new Date(); var to = today.toISOString().slice(0, 10); var from;
+  if (period === 'ytd') from = to.slice(0, 4) + '-01-01';
+  else if (period === '12m') { var d = new Date(today); d.setMonth(d.getMonth() - 11); d.setDate(1); from = d.toISOString().slice(0, 10); }
+  else if (period === 'all') { from = '2000-01-01'; }
+  else { from = document.getElementById('dFrom').value || '2000-01-01'; to = document.getElementById('dTo').value || to; }
+  return { from: from, to: to };
+}
+function filters(r) {
+  var f = document.getElementById('fundingSel').value, t = document.getElementById('typeSel').value;
+  if (f && r.funding !== f) return false;
+  if (t === 'legal' && !r.isLegal) return false;
+  if (t === 'business' && r.isLegal) return false;
+  return true;
+}
+function monthsBetween(from, to) {
+  var out = [], a = from.slice(0, 7), b = to.slice(0, 7); var y = +a.slice(0, 4), m = +a.slice(5, 7);
+  while (true) { var k = y + '-' + (m < 10 ? '0' : '') + m; out.push(k); if (k >= b) break; m++; if (m > 12) { m = 1; y++; } if (out.length > 240) break; }
+  return out;
+}
+
+function render() {
+  var R = range();
+  var base = ALL.filter(filters);
+  var sales = base.filter(function(r) { return r.isSale && r.saleAt >= R.from && r.saleAt <= R.to; });
+  var pipeline = base.filter(function(r) { return r.isPipeline; });
+  var lost = base.filter(function(r) { return r.isObsolete && r.obsoleteAt && r.obsoleteAt >= R.from && r.obsoleteAt <= R.to; });
+  var ca = sum(sales, function(r) { return r.price; });
+  var hours = sum(sales, function(r) { return r.hours; });
+  var priced = sales.filter(function(r) { return r.price != null; });
+  var pipeVal = sum(pipeline, function(r) { return r.price; });
+  var enCours = base.filter(function(r) { return r.phase === 'en_cours'; });
+
+  document.getElementById('note').textContent = 'P\u00e9riode ' + fr(R.from) + ' \u2192 ' + fr(R.to) + ' \u00b7 ' + ALL.length + ' dossiers';
+
+  var kp = [
+    { n: eur(ca), l: 'CA command\u00e9', s: sales.length + ' vente' + (sales.length > 1 ? 's' : '') },
+    { n: priced.length ? eur(ca / priced.length) : '\u2014', l: 'Panier moyen', s: priced.length + ' avec prix' },
+    { n: hours ? hours + ' h' : '\u2014', l: 'Heures vendues', s: hours && ca ? eur(ca / hours) + ' / h' : '' },
+    { n: eur(pipeVal), l: 'Pipeline (propositions ouvertes)', s: pipeline.length + ' dossier' + (pipeline.length > 1 ? 's' : '') },
+    { n: enCours.length, l: 'Formations en cours', s: eur(sum(enCours, function(r) { return r.price; })) },
+    { n: lost.length, l: 'Dossiers obsol\u00e8tes (p\u00e9riode)', s: eur(sum(lost, function(r) { return r.price; })) + ' non concr\u00e9tis\u00e9s' }
+  ];
+  document.getElementById('kpis').innerHTML = kp.map(function(k) { return '<div class="kpi"><div class="num">' + k.n + '</div><div class="label">' + k.l + '</div>' + (k.s ? '<div class="sub">' + k.s + '</div>' : '') + '</div>'; }).join('');
+
+  // Monthly chart
+  var months = monthsBetween(R.from, R.to);
+  if (period === 'all') { var first = sales.map(function(r) { return r.saleAt; }).sort()[0]; if (first) months = monthsBetween(first, R.to); }
+  var byM = {}, byMcpf = {}, cntM = {};
+  sales.forEach(function(r) { var k = monthKey(r.saleAt); if (!k) return; cntM[k] = (cntM[k] || 0) + 1; if (r.price == null) return; if (r.funding === 'CPF') byMcpf[k] = (byMcpf[k] || 0) + r.price; else byM[k] = (byM[k] || 0) + r.price; });
+  drawMonth(months.map(monthLabel), months.map(function(k) { return byM[k] || 0; }), months.map(function(k) { return byMcpf[k] || 0; }), months.map(function(k) { return cntM[k] || 0; }));
+
+  // Funnel (all filtered records regardless of period, since stages are cumulative)
+  var f = {
+    'Dossiers cr\u00e9\u00e9s': base.length,
+    'Programme cr\u00e9\u00e9': base.filter(function(r) { return r.status === 'programme_done' || r.isSale || r.isPipeline; }).length,
+    'Proposition envoy\u00e9e / cr\u00e9\u00e9e': base.filter(function(r) { return r.proposalAt || r.isSale; }).length,
+    'Proposition accept\u00e9e': base.filter(function(r) { return r.acceptedAt || r.isSale; }).length,
+    'Commande confirm\u00e9e (vente)': base.filter(function(r) { return r.isSale; }).length,
+    'Formation d\u00e9marr\u00e9e': base.filter(function(r) { return r.phase === 'en_cours' || r.phase === 'terminee'; }).length,
+    'Formation termin\u00e9e': base.filter(function(r) { return r.phase === 'terminee'; }).length
+  };
+  var keys = Object.keys(f), max = f[keys[0]] || 1, prev = null, html = '';
+  keys.forEach(function(k) {
+    var v = f[k]; var conv = prev ? Math.round(v / prev * 100) + ' %' : '';
+    html += '<div class="funnel-row"><div class="lbl">' + k + '</div><div class="bar" style="width:' + Math.max(2, v / max * 100) + '%;max-width:45%"></div><div class="val">' + v + '</div>' + (conv ? '<div class="conv">' + conv + '</div>' : '') + '</div>';
+    prev = v;
+  });
+  var obs = base.filter(function(r) { return r.isObsolete; }).length;
+  html += '<div class="funnel-row" style="margin-top:10px"><div class="lbl" style="color:#991b1b">Obsol\u00e8tes (perdus)</div><div class="val" style="color:#991b1b">' + obs + '</div><div class="conv">taux de conversion global ' + (base.length ? Math.round(f['Commande confirm\u00e9e (vente)'] / base.length * 100) : 0) + ' %</div></div>';
+  document.getElementById('funnel').innerHTML = html;
+
+  // Split
+  var sp = {};
+  sales.forEach(function(r) { var k = splitKey === 'funding' ? r.funding : (splitKey === 'product' ? r.product : (r.trainer || 'Non attribu\u00e9')); sp[k] = (sp[k] || 0) + (r.price || 0); });
+  var spk = Object.keys(sp).sort(function(a, b) { return sp[b] - sp[a]; });
+  drawSplit(spk, spk.map(function(k) { return sp[k]; }));
+
+  // Top companies
+  var co = {};
+  sales.forEach(function(r) { var k = r.company || '(sans entreprise)'; co[k] = co[k] || { n: 0, ca: 0, h: 0 }; co[k].n++; co[k].ca += (r.price || 0); co[k].h += (r.hours || 0); });
+  var cok = Object.keys(co).sort(function(a, b) { return co[b].ca - co[a].ca; }).slice(0, 10);
+  document.getElementById('topCompanies').innerHTML = cok.length ? '<table class="mini"><tr><th>Entreprise</th><th class="r">Ventes</th><th class="r">Heures</th><th class="r">CA</th></tr>' + cok.map(function(k) { return '<tr><td>' + esc(k) + '</td><td class="r">' + co[k].n + '</td><td class="r">' + co[k].h + '</td><td class="r">' + eur(co[k].ca) + '</td></tr>'; }).join('') + '</table>' : '<div class="empty">Aucune vente sur la p\u00e9riode.</div>';
+
+  // Delays
+  var lead = median(sales.map(function(r) { return r.leadDays; }));
+  var prop = median(sales.map(function(r) { return r.proposalDays; }));
+  var ages = pipeline.map(function(r) { return r.proposalAt ? Math.round((new Date() - new Date(r.proposalAt)) / 86400000) : null; });
+  var stale = pipeline.filter(function(r, i) { return ages[i] != null && ages[i] > 30; });
+  document.getElementById('delays').innerHTML = '<table class="mini">' +
+    '<tr><td>D\u00e9lai m\u00e9dian cr\u00e9ation du dossier \u2192 vente</td><td class="r">' + (lead == null ? '\u2014' : lead + ' j') + '</td></tr>' +
+    '<tr><td>D\u00e9lai m\u00e9dian proposition \u2192 vente</td><td class="r">' + (prop == null ? '\u2014' : prop + ' j') + '</td></tr>' +
+    '<tr><td>\u00c2ge m\u00e9dian des propositions ouvertes</td><td class="r">' + (median(ages) == null ? '\u2014' : median(ages) + ' j') + '</td></tr>' +
+    '<tr><td>Propositions ouvertes depuis plus de 30 jours</td><td class="r">' + stale.length + '</td></tr></table>';
+
+  // Watch
+  var noConv = base.filter(function(r) { return r.isSale && r.saleVia !== 'convocation' && !r.trainer; });
+  var w = '';
+  if (stale.length) w += '<div style="margin-bottom:8px"><strong>Propositions &gt; 30 j sans r\u00e9ponse</strong><br>' + stale.map(function(r) { return '<a class="nm" href="/candidates/' + r.id + '">' + esc(r.name) + '</a> <span style="color:#888;font-size:0.76rem">' + esc(r.company) + ' \u00b7 ' + fr(r.proposalAt) + (r.price != null ? ' \u00b7 ' + eur(r.price) : '') + '</span>'; }).join('<br>') + '</div>';
+  if (noConv.length) w += '<div><strong>Vendues sans formateur / convocation</strong><br>' + noConv.map(function(r) { return '<a class="nm" href="/candidates/' + r.id + '">' + esc(r.name) + '</a> <span style="color:#888;font-size:0.76rem">' + esc(r.company) + '</span>'; }).join('<br>') + '</div>';
+  document.getElementById('watch').innerHTML = w || '<div class="empty">Rien \u00e0 signaler.</div>';
+
+  // Gaps
+  var g = base.filter(function(r) { return r.gaps.length; });
+  document.getElementById('gaps').innerHTML = g.length ? '<div style="font-size:0.78rem;color:#888;margin-bottom:6px">' + g.length + ' dossier' + (g.length > 1 ? 's' : '') + ' \u2014 les montants manquants ne sont pas compt\u00e9s dans le CA.</div>' + g.slice(0, 25).map(function(r) { return '<div style="margin:3px 0"><a class="nm" href="/candidates/' + r.id + '">' + esc(r.name) + '</a> <span class="gap">' + r.gaps.join(', ') + '</span></div>'; }).join('') + (g.length > 25 ? '<div class="empty">\u2026 et ' + (g.length - 25) + ' autres</div>' : '') : '<div class="empty">Toutes les ventes ont un prix, des heures, une date et un formateur.</div>';
+
+  // Table
+  sales.sort(function(a, b) { return (b.saleAt || '').localeCompare(a.saleAt || ''); });
+  var PH = { vendue: 'Vendue', en_cours: 'En cours', terminee: 'Termin\u00e9e', pipeline: 'Pipeline', obsolete: 'Obsol\u00e8te', prospect: 'Prospect' };
+  document.getElementById('salesBody').innerHTML = sales.length ? sales.map(function(r) {
+    return '<tr><td>' + fr(r.saleAt) + '</td><td><a class="nm" href="/candidates/' + r.id + '">' + esc(r.name) + '</a></td><td>' + esc(r.company) + (r.cadre ? ' <span class="badge b-terminee">cadre</span>' : '') + '</td><td>' + esc(r.funding) + '</td><td>' + esc(r.product) + '</td><td>' + esc(r.trainer || '\u2014') + '</td><td class="r">' + (r.hours == null ? '\u2014' : r.hours) + '</td><td class="r">' + eur(r.price) + '</td><td><span class="badge b-' + r.phase + '">' + PH[r.phase] + '</span></td><td style="font-size:0.74rem;color:#888">' + esc(r.saleVia) + '</td></tr>';
+  }).join('') : '<tr><td colspan="10" class="empty">Aucune vente sur la p\u00e9riode.</td></tr>';
+  window.__salesRows = sales;
+}
+
+function drawMonth(labels, ent, cpf, counts) {
+  if (!window.Chart) return;
+  if (chMonth) chMonth.destroy();
+  chMonth = new Chart(document.getElementById('chMonth'), {
+    type: 'bar',
+    data: { labels: labels, datasets: [
+      { label: 'Entreprise / Particulier', data: ent, backgroundColor: '#1F4E79', stack: 's' },
+      { label: 'CPF', data: cpf, backgroundColor: '#7fa4cc', stack: 's' }
+    ] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' }, tooltip: { callbacks: { footer: function(items) { var i = items[0].dataIndex; return counts[i] + ' vente' + (counts[i] > 1 ? 's' : ''); } } } },
+      scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, beginAtZero: true, ticks: { callback: function(v) { return (v / 1000) + ' k\u20ac'; } } } } }
+  });
+}
+function drawSplit(labels, data) {
+  if (!window.Chart) return;
+  if (chSplit) chSplit.destroy();
+  var cols = ['#1F4E79', '#7fa4cc', '#b7791f', '#0f6e56', '#993c1d', '#534ab7', '#9d174d', '#6b7280', '#185fa5', '#92400e'];
+  chSplit = new Chart(document.getElementById('chSplit'), {
+    type: 'doughnut',
+    data: { labels: labels, datasets: [{ data: data, backgroundColor: labels.map(function(_, i) { return cols[i % cols.length]; }) }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' }, tooltip: { callbacks: { label: function(c) { var t = c.dataset.data.reduce(function(a, b) { return a + b; }, 0); return ' ' + eur(c.parsed) + ' (' + (t ? Math.round(c.parsed / t * 100) : 0) + ' %)'; } } } } }
+  });
+}
+
+function exportCsv() {
+  var rows = window.__salesRows || [];
+  var head = ['Date', 'Candidat', 'Entreprise', 'Financement', 'Produit', 'Formateur', 'Heures', 'Montant', 'Phase', 'Via', 'Debut', 'Fin', 'Cree le'];
+  var lines = [head.join(';')].concat(rows.map(function(r) {
+    return [fr(r.saleAt), r.name, r.company, r.funding, r.product, r.trainer, r.hours == null ? '' : r.hours, r.price == null ? '' : r.price, r.phase, r.saleVia, fr(r.dateStart), fr(r.dateEnd), fr(r.createdAt)]
+      .map(function(v) { return '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"'; }).join(';');
+  }));
+  var blob = new Blob(['\ufeff' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+  var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'ventes_linguaid_' + new Date().toISOString().slice(0, 10) + '.csv'; a.click();
+}
+
+document.getElementById('periodSeg').addEventListener('click', function(e) {
+  var b = e.target.closest('button'); if (!b) return;
+  period = b.getAttribute('data-p');
+  Array.prototype.forEach.call(this.querySelectorAll('button'), function(x) { x.classList.toggle('on', x === b); });
+  document.getElementById('customRange').style.display = period === 'custom' ? 'inline-flex' : 'none';
+  render();
+});
+document.getElementById('splitTabs').addEventListener('click', function(e) {
+  var b = e.target.closest('button'); if (!b) return;
+  splitKey = b.getAttribute('data-k');
+  Array.prototype.forEach.call(this.querySelectorAll('button'), function(x) { x.classList.toggle('on', x === b); });
+  render();
+});
+['dFrom', 'dTo', 'fundingSel', 'typeSel'].forEach(function(id) { document.getElementById(id).addEventListener('change', render); });
+document.getElementById('csvBtn').addEventListener('click', exportCsv);
+
+fetch('/api/sales-data').then(function(r) { if (r.status === 401) { location.href = '/login'; return null; } return r.json(); }).then(function(d) {
+  if (!d) return;
+  ALL = d.rows || [];
+  render();
+}).catch(function(e) { document.getElementById('kpis').innerHTML = '<div class="empty">Erreur de chargement : ' + esc(e.message) + '</div>'; });
+</script>
+</body>
+</html>

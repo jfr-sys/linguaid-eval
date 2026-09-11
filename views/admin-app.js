@@ -23,6 +23,7 @@
     legal: '<svg viewBox="0 0 24 24" fill="none" stroke="#993C1D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><path d="M5 7l-3 6a3 3 0 0 0 6 0l-3-6"/><path d="M19 7l-3 6a3 3 0 0 0 6 0l-3-6"/><path d="M5 7h14"/><path d="M9 21h6"/></svg>',
     mail: '<svg viewBox="0 0 24 24" fill="none" stroke="#0F6E56" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 6l-10 7L2 6"/></svg>',
     renew: '<svg viewBox="0 0 24 24" fill="none" stroke="#534AB7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>',
+    sales: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>',
     caja: '<svg viewBox="0 0 24 24" fill="none" stroke="#B7791F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><path d="M5 7l-3 6a3 3 0 0 0 6 0l-3-6"/><path d="M19 7l-3 6a3 3 0 0 0 6 0l-3-6"/><path d="M5 7h14"/><path d="M9 21h6"/><circle cx="12" cy="3" r="2"/></svg>'
   };
 
@@ -30,10 +31,11 @@
   function buildNav() {
     if (IS_PUBLIC || $('.aa-nav')) return;
     var items = [
-      { href: '/candidates', label: 'Candidats', icon: 'list', match: function (p) { return p === '/candidates' || /^\/candidates\/(?!suivi|relances|company-report)/.test(p); } },
+      { href: '/candidates', label: 'Candidats', icon: 'list', match: function (p) { return p === '/candidates' || /^\/candidates\/(?!suivi|relances|company-report|sales)/.test(p); } },
       { href: '/candidates/suivi', label: 'Suivi', icon: 'suivi', match: function (p) { return p.indexOf('/candidates/suivi') === 0; } },
       { href: '/candidates/relances', label: 'Relances', icon: 'relance', match: function (p) { return p.indexOf('/candidates/relances') === 0; } },
-      { href: '/candidates/company-report', label: 'Clients', icon: 'client', match: function (p) { return p.indexOf('/candidates/company-report') === 0; } }
+      { href: '/candidates/company-report', label: 'Clients', icon: 'client', match: function (p) { return p.indexOf('/candidates/company-report') === 0; } },
+      { href: '/candidates/sales', label: 'Ventes', icon: 'sales', match: function (p) { return p.indexOf('/candidates/sales') === 0; } } /* SALES_STATS_20260911 */
     ];
     var nav = document.createElement('nav');
     nav.className = 'aa-nav';

@@ -152,6 +152,11 @@ router.get('/company-report', (req, res) => {
   res.sendFile(path.join(__dirname, '../views/company_report.html'));
 });
 
+/* SALES_STATS_20260911 */
+router.get('/sales', (req, res) => {
+  res.sendFile(path.join(__dirname, '../views/sales.html'));
+});
+
 router.get('/new', (req, res) => {
   res.sendFile(path.join(__dirname, '../views/upload.html'));
 });
