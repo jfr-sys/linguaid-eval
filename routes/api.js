@@ -4092,7 +4092,7 @@ function ssBuildSalesRows() {
     var price = ssNum(cd.price); if (price == null) price = ssNum(od.edofPrice); if (price == null) price = ssNum(od.price);
     var hours = parseInt(od.totalHours, 10); if (!isFinite(hours)) hours = null;
     var trainerKey = cd.convocTrainer || '';
-    var trainer = cd.trainerName || (trainerKey && CONVOC_TRAINERS[trainerKey] ? CONVOC_TRAINERS[trainerKey].name : (trainerKey || ''));
+    var trainer = (trainerKey && CONVOC_TRAINERS[trainerKey]) ? CONVOC_TRAINERS[trainerKey].name : (cd.trainerName || trainerKey || ''); /* key first so one trainer = one label */
     var funding = isCPF ? 'CPF' : (isParticulier ? 'Particulier' : 'Entreprise');
     var product = isCPF ? (cpfType || 'CPF (type ?)') : (isLegal ? 'Legal (hors CPF)' : 'Business (hors CPF)');
     var phase = 'prospect';
