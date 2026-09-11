@@ -108,7 +108,16 @@ FORMATEUR_LEGAL = (
 )
 
 # ── Certification strings ────────────────────────────────────────────────────
-CERTIFICATION_E360 = "English 360 \u2013 Communiquer en anglais professionnel (RS6341)"
+# RS7637 registry (2026-07-27): the E360 RS code is no longer hardcoded here.
+# It is read per-candidate from data['rsCode'], stamped by
+# routes/programme.js at the moment cpfType is chosen (see config/catalogue.js
+# REFERENTIALS). Candidates already in flight before the cutover were
+# grandfathered onto RS6341 by patch_rs7637_data_migration_v1.py, so a
+# missing rsCode here should never silently happen for a real candidate —
+# the RS7637 fallback below is a last-resort safety net only.
+def certification_e360(rs_code):
+    return u"English 360 \u2013 Communiquer en anglais professionnel (%s)" % rs_code
+
 CERTIFICATION_CAJA = "CAJA \u2013 Communiquer en anglais juridique des affaires (RS6810)"
 CERTIFICATION_NONE = "Aucune (formation non certifiante)"
 
@@ -153,6 +162,9 @@ def fill_proposition(data, template_path, output_path):
         # ── Extract data fields ──────────────────────────────────────────────
         isCPF       = data.get('isCPF', False)
         cpfType     = data.get('cpfType', '')        # 'E360', 'E360_LEGAL', 'CAJA'
+        # RS7637 registry (2026-07-27): fallback only fires if Node forgot
+        # to send rsCode - should not happen for any real candidate record.
+        rsCode      = data.get('rsCode', 'RS7637')
         courseType  = data.get('courseType', '')     # 'legal' or ''
         isLegal     = courseType == 'legal' or cpfType in ('E360_LEGAL', 'CAJA')
 
@@ -181,6 +193,11 @@ def fill_proposition(data, template_path, output_path):
         dateEnd     = data.get('dateEnd', 'À définir')
         objectives  = data.get('objectives', [])
         resumeSituation = data.get('resumeSituation', '')  # AI-generated needs summary
+        # RENEWAL_PROPOSITION_FIX (2026-07-30): renewals (known returning
+        # clients, no fresh evaluation on record) get a different profile
+        # section and CPF-funding presentation - see the block before the
+        # substitution loop below.
+        isRenewal   = bool(data.get('isRenewal'))
 
         price       = data.get('price', '')
         edofMCFLink = data.get('edofMCFLink', '')
@@ -194,6 +211,18 @@ def fill_proposition(data, template_path, output_path):
             price_int = 0
             cpf_montant = 1500
             reste_charge = 0
+
+        # PARCOURS_CAJA_20260911: two-module parcours -> Module 1 funding split
+        # comes from lib/parcours.js (CPF cap per dossier, forfait, remainder).
+        parcours = data.get('parcours') or None
+        if parcours and parcours.get('calc') and parcours['calc'].get('modules'):
+            _m1 = parcours['calc']['modules'][0]
+            try:
+                cpf_montant = int(round(float(_m1.get('cpfPart') or 0)))
+                reste_charge = int(round(float(_m1.get('learnerPays') or 0)))
+                price_int = int(round(float(_m1.get('price') or price_int)))
+            except (ValueError, TypeError):
+                pass
 
         # Non-CPF price calc if not provided
         if not price and not isCPF:
@@ -216,11 +245,11 @@ def fill_proposition(data, template_path, output_path):
                 formateur = FORMATEUR_LEGAL
             elif cpfType == 'E360_LEGAL':
                 titre = TITRE_E360_LEGAL
-                certification = CERTIFICATION_E360
+                certification = certification_e360(rsCode)
                 formateur = FORMATEUR_LEGAL
             else:  # E360
                 titre = TITRE_E360
-                certification = CERTIFICATION_E360
+                certification = certification_e360(rsCode)
                 formateur = FORMATEUR_BUSINESS
             intro = INTRO_CPF
         else:
@@ -259,6 +288,28 @@ def fill_proposition(data, template_path, output_path):
             '{{RESTE_CHARGE}}':   str(reste_charge),
             '{{CPF_LIEN}}':       edofMCFLink,
         }
+
+        # RENEWAL_PROPOSITION_FIX (2026-07-30): for renewals -
+        # (a) remove the "Niveau actuel / Niveau vise" line entirely: no
+        #     fresh evaluation on record, so any levels shown would be
+        #     stale or dangling ("Niveau vise :" with nothing after it).
+        # (b) the CPF funding split cannot be asserted: coverage depends on
+        #     the credit remaining in the learner's own account. Replace
+        #     the fixed amounts with credit-dependent wording. Runs BEFORE
+        #     the generic substitution loop and rewrites the placeholder
+        #     paragraphs directly (label and amount are separate paragraphs
+        #     inside each table cell).
+        if isRenewal:
+            niveau_p = find_para_with(root, '{{NIVEAU_ACTUEL}}')
+            if niveau_p is not None:
+                remove_para(niveau_p)
+            cpf_amount_p = find_para_with(root, '{{CPF_MONTANT}}')
+            if cpf_amount_p is not None:
+                set_para_text(cpf_amount_p,
+                    'Jusqu\u2019\u00e0 1\u00a0500\u00a0\u20ac (selon le cr\u00e9dit dans votre compte)')
+            reste_amount_p = find_para_with(root, '{{RESTE_CHARGE}}')
+            if reste_amount_p is not None:
+                set_para_text(reste_amount_p, 'Selon votre cr\u00e9dit')
 
         for p in root.iter(q('p')):
             for placeholder, value in substitutions.items():
@@ -314,6 +365,19 @@ def fill_proposition(data, template_path, output_path):
                         tr.getparent().remove(tr)
 
         # ── {{ETAPE_2}} block ────────────────────────────────────────────────
+        etape2_p = find_para_with(root, '{{ETAPE_2}}')
+        if etape2_p is not None and parcours and parcours.get('lines'):
+            # PARCOURS_CAJA_20260911: replace the optional Etape 2 line with the
+            # full parcours breakdown (one paragraph per line, same formatting).
+            _lines = [u'Parcours CAJA en deux modules \u2013 convention globale sur ' + str(parcours['calc'].get('maxMonths', 12)) + u' mois'] + list(parcours['lines'])
+            set_para_text(etape2_p, _lines[0])
+            _prev = etape2_p
+            for _ln in _lines[1:]:
+                _np = deepcopy(etape2_p)
+                set_para_text(_np, _ln)
+                _prev.addnext(_np)
+                _prev = _np
+            etape2_p = None
         etape2_p = find_para_with(root, '{{ETAPE_2}}')
         if etape2_p is not None:
             if cpfType == 'E360_LEGAL':

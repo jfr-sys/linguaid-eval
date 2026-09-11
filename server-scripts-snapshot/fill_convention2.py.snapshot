@@ -10,6 +10,7 @@ TEMPLATES = {
     'CPF':     os.path.join(VIEWS, 'CONVENTION_CPF_E360.docx'),
     'CAJA':    os.path.join(VIEWS, 'CONVENTION_CPF_CAJA.docx'),
     'E360':    os.path.join(VIEWS, 'CONVENTION_CPF_E360.docx'),
+    'PARCOURS': os.path.join(VIEWS, 'CONVENTION_PARCOURS_CAJA.docx'),  # PARCOURS_CAJA_20260911
 }
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
@@ -74,9 +75,78 @@ def payment_terms(data):
     return ('payables en ' + str(n) + ' \u00e9ch\u00e9ances mensuelles' + detail +
             ', la premi\u00e8re \u00e0 r\u00e9ception de facture')
 
+# PARCOURS_CAJA_20260911: placeholders for CONVENTION_PARCOURS_CAJA.docx.
+# data['parcours'] = { calc: <lib/parcours.js compute()>, lines: [...], fmt: {...} }
+def _pc_eur(n):
+    try:
+        n = float(n)
+    except Exception:
+        return '\u2014'
+    s = ('%.2f' % n)
+    if s.endswith('.00'):
+        s = s[:-3]
+    whole, _, dec = s.partition('.')
+    whole = '{:,}'.format(int(whole)).replace(',', '\u00a0')
+    return (whole + (',' + dec if dec else '')) + '\u00a0\u20ac'
+def _pc_date_str(m, fmt_date):
+    ds, de = m.get('dateStart') or '', m.get('dateEnd') or ''
+    if ds and de:
+        return 'du ' + fmt_date(ds) + ' au ' + fmt_date(de)
+    if ds:
+        return '\u00e0 partir du ' + fmt_date(ds)
+    return 'dates \u00e0 convenir entre les parties'
+def parcours_reps(data):
+    pc = (data.get('parcours') or {}).get('calc') or {}
+    if not pc:
+        return {}
+    MFR = {1:'janvier',2:'f\u00e9vrier',3:'mars',4:'avril',5:'mai',6:'juin',7:'juillet',8:'ao\u00fbt',9:'septembre',10:'octobre',11:'novembre',12:'d\u00e9cembre'}
+    def fmt_date(iso):
+        try:
+            y, mo, d = str(iso)[:10].split('-')
+            return str(int(d)) + ' ' + MFR[int(mo)] + ' ' + y
+        except Exception:
+            return str(iso)
+    mods = pc.get('modules') or [{}, {}]
+    m1, m2 = mods[0], mods[1]
+    tot = pc.get('totals') or {}
+    balance = pc.get('cpfBalance')
+    if pc.get('balanceKnown') and balance is not None:
+        funding = ('Sur la base du cr\u00e9dit CPF constat\u00e9 \u00e0 la signature (' + _pc_eur(balance) + '), la prise en charge pr\u00e9visionnelle est de '
+                   + _pc_eur(m1.get('cpfPart')) + ' pour le Module 1 et ' + _pc_eur(m2.get('cpfPart')) + ' pour le Module 2, soit '
+                   + _pc_eur(tot.get('learner')) + ' restant \u00e0 la charge du stagiaire pour l\u2019ensemble du parcours (compl\u00e9ments et participations forfaitaires compris).')
+    else:
+        funding = ('La prise en charge par le CPF est plafonn\u00e9e \u00e0 ' + _pc_eur(pc.get('cpfCap')) + ' par module et d\u00e9pend du cr\u00e9dit disponible sur le compte du stagiaire au moment de chaque inscription\u00a0; '
+                   + 'sur la base d\u2019une prise en charge maximale, ' + _pc_eur(tot.get('learner')) + ' resteraient \u00e0 la charge du stagiaire pour l\u2019ensemble du parcours.')
+    n_inst = int(m2.get('instalments') or 4)
+    if n_inst < 2:
+        n_inst = 4
+    try:
+        m2_price = float(m2.get('price') or 0)
+    except Exception:
+        m2_price = 0
+    base = round(m2_price / n_inst, 2)
+    direct_terms = ('payable en ' + str(n_inst) + ' \u00e9ch\u00e9ances mensuelles de ' + _pc_eur(base) + ', la premi\u00e8re \u00e0 r\u00e9ception de facture')
+    dedit = '30\u00a0% du prix du Module 2, soit ' + _pc_eur(round(m2_price * 0.3, 2))
+    return {
+        '{{M1_TITLE}}':            m1.get('title', ''),
+        '{{M2_TITLE}}':            m2.get('title', ''),
+        '{{M1_TOTAL_HOURS}}':      str(m1.get('totalHours', '')),
+        '{{M2_TOTAL_HOURS}}':      str(m2.get('totalHours', '')),
+        '{{PARCOURS_TOTAL_HOURS}}': str(tot.get('totalHours', '')),
+        '{{M1_DATE_STR}}':         _pc_date_str(m1, fmt_date),
+        '{{M2_DATE_STR}}':         _pc_date_str(m2, fmt_date),
+        '{{M1_PRICE}}':            str(int(float(m1.get('price') or 0))),
+        '{{M2_PRICE}}':            str(int(float(m2.get('price') or 0))),
+        '{{PARCOURS_TOTAL}}':      str(int(float(tot.get('price') or 0))),
+        '{{PARCOURS_MONTHS}}':     str(pc.get('maxMonths', 12)),
+        '{{PARCOURS_FUNDING}}':    funding,
+        '{{M2_DIRECT_TERMS}}':     direct_terms,
+        '{{M2_DEDIT}}':            dedit,
+    }
+
 def fill_convention(data):
     tt = data.get('trainingType', 'NON_CPF')
-    tpl_key = 'CAJA' if tt == 'CAJA' else 'E360' if tt == 'E360' else 'CPF' if tt == 'CPF' else 'NON_CPF'
+    tpl_key = 'PARCOURS' if tt == 'PARCOURS' else 'CAJA' if tt == 'CAJA' else 'E360' if tt == 'E360' else 'CPF' if tt == 'CPF' else 'NON_CPF'  # PARCOURS_CAJA_20260911
     tpl = TEMPLATES[tpl_key]
     if not os.path.exists(tpl):
         raise FileNotFoundError('Template not found: ' + tpl)
@@ -115,7 +185,55 @@ def fill_convention(data):
         '{{RS_CODE}}':            data.get('rsCode') or 'RS7637',
         '{{PAYMENT_TERMS}}':    payment_terms(data),
     }
+    reps.update(parcours_reps(data))  # PARCOURS_CAJA_20260911
     rep_doc(doc, reps)
+
+    # ARTICLE4_DELIVERY (2026-08-25): Article 4 carried a fixed
+    # "et, le cas echeant, des activites de travail guide en autonomie".
+    # For a blended parcours those hours are contractual, not conditional;
+    # for a coaching-only parcours they must not appear at all. Rewritten
+    # here from coachingHours / homeworkHours. Paragraph-level replacement
+    # because the sentence is split across runs in the template.
+    def _art4_hours(v):
+        try:
+            return int(float(str(v).strip() or 0))
+        except Exception:
+            return 0
+
+    _a4_coach = _art4_hours(data.get('coachingHours'))
+    _a4_home = _art4_hours(data.get('homeworkHours'))
+    _a4_text = None
+    if _a4_home > 0 and _a4_coach > 0:
+        _a4_text = (
+            'Formation individuelle \u00e0 distance en modalit\u00e9 mixte, comprenant '
+            + str(_a4_coach) + ' heures de coaching individuel en visioconf\u00e9rence et '
+            + str(_a4_home) + ' heures de travail guid\u00e9 en autonomie. Les s\u00e9ances '
+            'sont organis\u00e9es selon un calendrier convenu entre le formateur et le '
+            'stagiaire. Le suivi de l\u2019ex\u00e9cution est assur\u00e9 par des feuilles '
+            'd\u2019\u00e9margement \u00e9lectroniques ou relev\u00e9s de connexion sign\u00e9s '
+            '\u00e0 l\u2019issue de chaque s\u00e9ance et, pour les activit\u00e9s r\u00e9alis\u00e9es '
+            'en autonomie, par les travaux rendus et leur validation par le formateur.'
+        )
+    elif _a4_coach > 0:
+        _a4_text = (
+            'Formation individuelle \u00e0 distance comprenant '
+            + str(_a4_coach) + ' heures de s\u00e9ances de coaching en visioconf\u00e9rence. '
+            'Les s\u00e9ances sont organis\u00e9es selon un calendrier convenu entre le '
+            'formateur et le stagiaire. Le suivi de l\u2019ex\u00e9cution est assur\u00e9 par '
+            'des feuilles d\u2019\u00e9margement \u00e9lectroniques ou relev\u00e9s de connexion '
+            'sign\u00e9s \u00e0 l\u2019issue de chaque s\u00e9ance.'
+        )
+
+    if _a4_text:
+        for _p in doc.paragraphs:
+            _t = ''.join(_r.text for _r in _p.runs)
+            if 'Formation individuelle' in _t and 'coaching en visioconf' in _t:
+                if _p.runs:
+                    _p.runs[0].text = _a4_text
+                    for _r in _p.runs[1:]:
+                        _r.text = ''
+                break
+
     token = data.get('signingToken', 'draft')
     docx_path = os.path.join(OUTPUT_DIR, 'convention_' + token + '.docx')
     # Remove 'Niveau vise' bullet for legal candidates
@@ -152,3 +270,4 @@ if __name__ == '__main__':
         import traceback
         print(json.dumps({'error': str(e), 'trace': traceback.format_exc()}))
         sys.exit(1)
+

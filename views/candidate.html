@@ -465,6 +465,24 @@
   </div><!-- /tab-eval -->
 
   <div class="tab-pane" id="tab-dossier">
+  <!-- PARCOURS_CAJA_20260911: two-module parcours under one global convention -->
+  <div class="stage" id="parcoursPanel" style="display:none;background:white;border-radius:12px;padding:1.5rem;box-shadow:0 2px 8px rgba(0,0,0,0.06);border-top:4px solid #B7791F;margin-bottom:1.5rem">
+    <div class="stage-num">Parcours</div>
+    <div class="stage-title">Parcours CAJA — Module 1 + Module 2 (convention globale)</div>
+    <div style="display:flex;gap:14px;align-items:end;flex-wrap:wrap;margin-top:0.75rem">
+      <label style="font-size:12px;color:#666">Parcours activé<br><select id="pcEnabled" style="font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"><option value="0">Non</option><option value="1">Oui</option></select></label>
+      <label style="font-size:12px;color:#666">Solde CPF (€)<br><input id="pcBalance" type="number" min="0" step="1" placeholder="inconnu" style="font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px;width:120px"></label>
+      <label style="font-size:12px;color:#666">Prix Module 1 (€)<br><input id="pcPrice1" type="number" min="0" step="1" style="font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px;width:110px"></label>
+      <label style="font-size:12px;color:#666">Prix Module 2 (€)<br><input id="pcPrice2" type="number" min="0" step="1" style="font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px;width:110px"></label>
+      <label style="font-size:12px;color:#666">Début Module 1<br><input id="pcStart1" type="date" style="font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></label>
+      <label style="font-size:12px;color:#666">Début Module 2<br><input id="pcStart2" type="date" style="font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></label>
+      <label style="font-size:12px;color:#666">Durée max (mois)<br><input id="pcMonths" type="number" min="1" max="24" step="1" style="font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px;width:80px"></label>
+      <button class="btn btn-primary" onclick="saveParcours()" style="font-size:12px">Enregistrer et recalculer</button>
+      <span id="pcStatus" style="font-size:12px;color:#666"></span>
+    </div>
+    <div id="pcTable" style="margin-top:12px;overflow-x:auto"></div>
+    <div id="pcNote" style="margin-top:8px;font-size:12px;color:#64748b"></div>
+  </div>
   <!-- STEP 6: PROPOSITION -->
   <div class="stage" id="stage6" style="background:white;border-radius:12px;padding:1.5rem;box-shadow:0 2px 8px rgba(0,0,0,0.06);border-top:4px solid #e5e7eb;margin-bottom:1.5rem">
     <div class="stage-num">Step 6</div>
@@ -886,6 +904,7 @@
     // CONTRAT CADRE (2026-07-03)
     var isCadre = isContratCadre(c.company);
     window.candidateId = c.id;
+    if (typeof loadParcours === 'function') loadParcours(c); /* PARCOURS_CAJA_20260911 */
     document.getElementById('profileName').textContent = c.name;
     document.getElementById('profileSub').textContent = [c.jobtitle, c.dept].filter(Boolean).join(' — ');
     var companyEl = document.getElementById('profileCompany');
@@ -2936,6 +2955,61 @@ function updateTabDots(c) {
     });
   }
 })();
+
+/* == PARCOURS_CAJA_20260911 ================================================= */
+function pcEur(n) { if (n == null || !isFinite(n)) return '\u2014'; return Math.round(n).toLocaleString('fr-FR') + '\u00a0\u20ac'; }
+function loadParcours(c) {
+  var panel = document.getElementById('parcoursPanel'); if (!panel) return;
+  var isLegal = c.courseType === 'legal' || (c.oralData && (c.oralData.cpfType === 'E360_LEGAL' || c.oralData.cpfType === 'CAJA'));
+  if (!isLegal && !(c.parcours && c.parcours.enabled)) { panel.style.display = 'none'; return; }
+  panel.style.display = 'block';
+  fetch('/candidates/api/' + c.id + '/parcours').then(function(r){ return r.json(); }).then(renderParcours).catch(function(){});
+}
+function renderParcours(d) {
+  var calc = d.calc, st = d.stored || {};
+  document.getElementById('pcEnabled').value = calc.enabled ? '1' : '0';
+  document.getElementById('pcBalance').value = calc.balanceKnown ? calc.cpfBalance : '';
+  document.getElementById('pcPrice1').value = calc.modules[0].price;
+  document.getElementById('pcPrice2').value = calc.modules[1].price;
+  document.getElementById('pcStart1').value = calc.modules[0].dateStart || '';
+  document.getElementById('pcStart2').value = calc.modules[1].dateStart || '';
+  document.getElementById('pcMonths').value = calc.maxMonths;
+  var h = '<table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr style="background:#f1f5f9">'
+    + ['', 'Module 1', 'Module 2', 'Parcours'].map(function(x){ return '<th style="text-align:left;padding:6px 8px">' + x + '</th>'; }).join('') + '</tr></thead><tbody>';
+  function row(lbl, a, b, c, bold) { return '<tr' + (bold ? ' style="font-weight:600;background:#fffbeb"' : '') + '><td style="padding:5px 8px;border-top:1px solid #eee">' + lbl + '</td><td style="padding:5px 8px;border-top:1px solid #eee">' + a + '</td><td style="padding:5px 8px;border-top:1px solid #eee">' + b + '</td><td style="padding:5px 8px;border-top:1px solid #eee">' + c + '</td></tr>'; }
+  var m1 = calc.modules[0], m2 = calc.modules[1], t = calc.totals;
+  h += row('Formation', m1.cpfType + ' \u2013 ' + m1.totalHours + ' h', m2.cpfType + ' \u2013 ' + m2.totalHours + ' h', t.totalHours + ' h');
+  h += row('Prix', pcEur(m1.price), pcEur(m2.price), pcEur(t.price));
+  h += row('Voie', m1.route === 'CPF' ? 'CPF' : 'Direct (' + m1.instalments + ' \u00e9ch\u00e9ances)', m2.route === 'CPF' ? 'CPF' : 'Direct (' + m2.instalments + ' \u00e9ch\u00e9ances de ' + pcEur(m2.instalmentAmount) + ')', '');
+  h += row('Pris en charge CPF (max ' + pcEur(calc.cpfCap) + ')', pcEur(m1.cpfPart), pcEur(m2.cpfPart), pcEur(t.cpf));
+  h += row('Compl\u00e9ment au-del\u00e0 du CPF', pcEur(m1.remainder), pcEur(m2.remainder), pcEur(t.remainder));
+  h += row('Participation forfaitaire', pcEur(m1.forfait), pcEur(m2.forfait), pcEur(t.forfait));
+  h += row('\u00c0 la charge du candidat', pcEur(m1.learnerPays), pcEur(m2.learnerPays), pcEur(t.learner), true);
+  h += row('Solde CPF apr\u00e8s', calc.balanceKnown ? pcEur(m1.balanceAfter) : 'inconnu', calc.balanceKnown ? pcEur(m2.balanceAfter) : 'inconnu', '');
+  h += '</tbody></table>';
+  document.getElementById('pcTable').innerHTML = h;
+  var n = (calc.balanceKnown ? '' : 'Solde CPF inconnu : calcul sur l\u2019hypoth\u00e8se de 1\u00a0500\u00a0\u20ac disponibles par module. ')
+    + 'Comparaison achat direct hors certification : ' + pcEur(calc.direct.comparator) + ' \u2192 \u00e9conomie de ' + pcEur(calc.direct.saving) + ' avec le parcours. '
+    + (calc.enabled ? 'Le dossier CPF de ce candidat = Module 1 ; la proposition et la convention globale reprennent ce tableau.' : 'Parcours non activ\u00e9 : la proposition et la convention restent celles d\u2019un module unique.');
+  document.getElementById('pcNote').textContent = n;
+}
+function saveParcours() {
+  var st = document.getElementById('pcStatus'); st.textContent = 'Enregistrement\u2026';
+  var body = {
+    enabled: document.getElementById('pcEnabled').value === '1',
+    cpfBalance: document.getElementById('pcBalance').value,
+    maxMonths: document.getElementById('pcMonths').value,
+    modules: [ { price: document.getElementById('pcPrice1').value, dateStart: document.getElementById('pcStart1').value },
+               { price: document.getElementById('pcPrice2').value, dateStart: document.getElementById('pcStart2').value } ]
+  };
+  fetch('/candidates/api/' + window.candidateId + '/parcours', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+    .then(function(r){ return r.json(); }).then(function(d) {
+      if (!d.success) throw new Error(d.error || 'Erreur');
+      renderParcours(d); st.textContent = 'Enregistr\u00e9.';
+      var pe = document.getElementById('convIsCPF'); if (pe && d.calc.enabled) pe.checked = true;
+    }).catch(function(e){ st.textContent = 'Erreur : ' + e.message; });
+}
+/* == END PARCOURS_CAJA_20260911 ============================================= */
 </script>
 </body>
 </html>

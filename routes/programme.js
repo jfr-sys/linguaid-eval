@@ -1,4 +1,5 @@
 'use strict';
+const parcoursLib = require('../lib/parcours'); /* PARCOURS_CAJA_20260911 */
 
 const express = require('express');
 const router = express.Router();
@@ -607,7 +608,10 @@ router.post('/api/generate-proposition/:id', async function(req, res) {
     // RENEWAL_PROPDATA_FLAG (2026-07-30): lets fill_proposition.py apply
     // the renewal-specific layout (no niveau line, credit-dependent CPF
     // funding wording).
-    isRenewal: !!c.isRenewal
+    isRenewal: !!c.isRenewal,
+    /* PARCOURS_CAJA_20260911: global two-module parcours -> fill_proposition.py
+       replaces the optional Etape 2 paragraph with the full parcours breakdown. */
+    parcours: (c.parcours && c.parcours.enabled) ? (function(){ var pc = parcoursLib.compute(c.parcours); return { calc: pc, lines: parcoursLib.describe(pc) }; })() : null
   };
 
   // Paths

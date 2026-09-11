@@ -4,6 +4,7 @@ const { canonicalCompany, listCompanies, getCompanyInfo, updateCompanyInfo } = r
 const { isContratCadre } = require('../lib/contratCadre');
 const { getRsCode, getAction } = require('../config/catalogue');
 const coherence = require('../lib/coherence'); /* coherence-gate */
+const parcoursLib = require('../lib/parcours'); /* PARCOURS_CAJA_20260911 */
 
 // Helper: 5-skill CEFR average
 /* STALE_WRITE_FIX (2026-08-24)
@@ -1145,6 +1146,11 @@ router.post('/generate-convention/:id', function(req, res) {
   var isCPF = !!(cd.isCPF || od.isCPF);
   var tt = od.legalTrainingType || (isCPF ? 'CPF' : 'NON_CPF');
   var tplKey = tt === 'CAJA' ? 'CAJA' : tt === 'E360' ? 'E360' : tt === 'CPF' ? 'CPF' : 'NON_CPF';
+  /* PARCOURS_CAJA_20260911: an enabled parcours always signs the global
+     two-module convention, whatever the single-module type says. */
+  var pcEnabled = !!(c.parcours && c.parcours.enabled);
+  var pcCalc = pcEnabled ? parcoursLib.compute(c.parcours) : null;
+  if (pcEnabled) tplKey = 'PARCOURS';
   // Format dates as French string - prefer oralData (updated when programme regenerated)
   var MONTHS_FR = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
   function fmtDateFr(iso) {
@@ -1199,7 +1205,9 @@ router.post('/generate-convention/:id', function(req, res) {
     rsCode: getRsCode(od.cpfType, od.rsCode) || '',
     trainingTitle: od.trainingTitle || (isCPF ? 'Communiquer en anglais professionnel - English 360 - Niveau B2' : (c.courseType === 'legal' ? 'Formation en Anglais Juridique' : 'Formation en Anglais Professionnel')),
     /* INSTALMENTS_20260911: 1-4; CPF is always invoiced to the platform in one go */
-    instalments: isCPF ? 1 : (parseInt(cd.instalments, 10) || 1)
+    instalments: isCPF ? 1 : (parseInt(cd.instalments, 10) || 1),
+    /* PARCOURS_CAJA_20260911 */
+    parcours: pcEnabled ? { calc: pcCalc, lines: parcoursLib.describe(pcCalc), fmt: { m1: parcoursLib.fmtEur(pcCalc.modules[0].price), m2: parcoursLib.fmtEur(pcCalc.modules[1].price), total: parcoursLib.fmtEur(pcCalc.totals.price), cpf: parcoursLib.fmtEur(pcCalc.totals.cpf), learner: parcoursLib.fmtEur(pcCalc.totals.learner) } } : null
   };
 
   /* CONVENTION_MATCH_CHECK (2026-07-27): convention generation IS the send
