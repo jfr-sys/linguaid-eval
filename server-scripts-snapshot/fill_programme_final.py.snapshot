@@ -282,7 +282,7 @@ def fill_programme(data, template_path, output_path):
         if sujets_anchor is None:
             sujets_anchor = find_para(root, 'Les sujets suivants')
         if sujets_anchor is not None:
-            replace_text_in_para(sujets_anchor, 'La formation couvre les 6 comp\xe9tences du r\xe9f\xe9rentiel RS6810 (CAJA)\u00a0:')
+            replace_text_in_para(sujets_anchor, 'La formation couvre les 6 comp\xe9tences du r\xe9f\xe9rentiel RS6810 (Communiquer en Anglais Juridique des Affaires)\u00a0:')
 
         caja_items = [
             'C1 \u2014 Initier un premier contact et se pr\xe9senter professionnellement en anglais juridique',
@@ -303,15 +303,32 @@ def fill_programme(data, template_path, output_path):
 
             sujets_anchor2 = find_para(root, 'La formation couvre les 6')
             bullet_template2 = None
+            stale_zone = []
+            # CAJA_PLACEHOLDER_FIX (2026-07-29): CAJA candidates always send
+            # an empty topics list (the earlier '--- Topics ---' block is a
+            # no-op for them by design), so the template's leftover E360
+            # sample content (Se presenter/Small talk/.../ + its blank
+            # leading and trailing spacer bullets) is still sitting in this
+            # zone untouched. Harvest ONE bulleted paragraph that actually
+            # HAS TEXT as the style template (the old code grabbed the
+            # first bulleted paragraph regardless of text, which is the
+            # template's blank leading bullet - producing empty copies),
+            # then remove the WHOLE contiguous placeholder zone before
+            # inserting the real CAJA competences.
             if sujets_anchor2 is not None and sujets_anchor2 in paras:
                 sa2_idx = paras.index(sujets_anchor2)
                 for pp3 in paras[sa2_idx+1:travail_idx]:
+                    stale_zone.append(pp3)
                     ppr3 = pp3.find(q('pPr'))
-                    if ppr3 is not None and ppr3.find(q('numPr')) is not None:
+                    if (bullet_template2 is None and ppr3 is not None
+                            and ppr3.find(q('numPr')) is not None
+                            and para_text(pp3).strip()):
                         bullet_template2 = pp3
-                        break
 
-            insert_idx2 = travail_idx
+            for sp in stale_zone:
+                parent.remove(sp)
+
+            insert_idx2 = list(parent).index(travail_para)
             for item in caja_items:
                 if bullet_template2 is not None:
                     new_p = copy.deepcopy(bullet_template2)
@@ -379,6 +396,19 @@ def fill_programme(data, template_path, output_path):
                 for t2 in p2.iter(q('t')):
                     if t2.text and 'RS6341' in t2.text:
                         t2.text = t2.text.replace('RS6341', rs_code)
+        # CAJA_CERT_LABEL_FIX (2026-07-29): the template hardcodes the cert
+        # name "English 360" next to the RS code. Correct for E360 /
+        # E360_LEGAL (same cert family, per NIVEAU_VISE_FIX_V2 above) but
+        # CAJA is a genuinely different certification - swap the name too,
+        # not just the RS digits, or the doc reads "Certification English
+        # 360 (RS6810)", a contradiction. Matches at the run level (not
+        # paragraph level) since "Certification" and "English 360" are
+        # separate <w:t> runs in the template.
+        if cpfType == 'CAJA':
+            for p2 in root.iter(q('p')):
+                for t2 in p2.iter(q('t')):
+                    if t2.text and 'English 360' in t2.text:
+                        t2.text = t2.text.replace('English 360', 'Communiquer en Anglais Juridique des Affaires')
 
     # Remove 'Production de livrables' bullet when no autonomous work
     homework_val = str(data.get('homeworkHours', '0'))
