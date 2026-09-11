@@ -42,6 +42,38 @@ def rep_doc(doc, reps):
                     if any(t in ''.join(r.text for r in p.runs) for t in reps):
                         rep_para(p, reps)
 
+# INSTALMENTS_20260911: payment schedule wording for Article 3.
+# instalments 1 = legacy wording; 2-4 = monthly instalments, first one on
+# receipt of invoice. Amounts split to the cent, last instalment absorbs
+# the rounding so the total always equals the price.
+def payment_terms(data):
+    try:
+        n = int(str(data.get('instalments') or 1))
+    except Exception:
+        n = 1
+    n = max(1, min(4, n))
+    if n == 1:
+        return '\u00e0 payer \u00e0 r\u00e9ception de facture'
+    try:
+        price = float(str(data.get('price', '')).replace('\u20ac', '').replace(' ', '').replace(',', '.'))
+    except Exception:
+        price = 0
+    def fmt(x):
+        s = ('%.2f' % x)
+        if s.endswith('.00'):
+            s = s[:-3]
+        return s.replace('.', ',') + ' \u20ac'
+    detail = ''
+    if price > 0:
+        base = round(price / n, 2)
+        amounts = [base] * (n - 1) + [round(price - base * (n - 1), 2)]
+        if len(set(amounts)) == 1:
+            detail = ' de ' + fmt(base) + ' chacune'
+        else:
+            detail = ' (' + ', '.join(fmt(a) for a in amounts[:-1]) + ' et ' + fmt(amounts[-1]) + ')'
+    return ('payables en ' + str(n) + ' \u00e9ch\u00e9ances mensuelles' + detail +
+            ', la premi\u00e8re \u00e0 r\u00e9ception de facture')
+
 def fill_convention(data):
     tt = data.get('trainingType', 'NON_CPF')
     tpl_key = 'CAJA' if tt == 'CAJA' else 'E360' if tt == 'E360' else 'CPF' if tt == 'CPF' else 'NON_CPF'
@@ -81,6 +113,7 @@ def fill_convention(data):
         # threaded in from routes/api.js generate-convention. Fallback only
         # covers a payload that somehow never got an rsCode field.
         '{{RS_CODE}}':            data.get('rsCode') or 'RS7637',
+        '{{PAYMENT_TERMS}}':    payment_terms(data),
     }
     rep_doc(doc, reps)
     token = data.get('signingToken', 'draft')

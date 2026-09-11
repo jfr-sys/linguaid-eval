@@ -1056,6 +1056,23 @@ router.get('/download-convention/:id', (req, res) => {
   res.sendFile(pdfPath);
 });
 
+/* INSTALMENTS_20260911: payment schedule wording, mirrors payment_terms()
+   in /home/debian/fill_convention2.py so emails and the convention agree. */
+function paymentTermsFr(price, instalments) {
+  var n = parseInt(instalments, 10); if (!(n > 1)) return '\u00e0 payer \u00e0 r\u00e9ception de facture';
+  n = Math.min(4, n);
+  var p = parseFloat(String(price || '').replace(/[\u20ac\s]/g, '').replace(',', '.'));
+  function fmt(x) { var s = x.toFixed(2); if (/\.00$/.test(s)) s = s.slice(0, -3); return s.replace('.', ',') + ' \u20ac'; }
+  var detail = '';
+  if (p > 0) {
+    var base = Math.round(p / n * 100) / 100;
+    var last = Math.round((p - base * (n - 1)) * 100) / 100;
+    detail = (last === base) ? (' de ' + fmt(base) + ' chacune')
+      : (' (' + Array(n - 1).fill(fmt(base)).join(', ') + ' et ' + fmt(last) + ')');
+  }
+  return 'payables en ' + n + ' \u00e9ch\u00e9ances mensuelles' + detail + ', la premi\u00e8re \u00e0 r\u00e9ception de facture';
+}
+
 // POST /api/save-convention/:id
 router.post('/save-convention/:id', function(req, res) {
   var candidates = getCandidates();
@@ -1180,7 +1197,9 @@ router.post('/generate-convention/:id', function(req, res) {
        rsCode was somehow never stamped (should not happen for a real
        CPF candidate after the 2026-07-27 migration). */
     rsCode: getRsCode(od.cpfType, od.rsCode) || '',
-    trainingTitle: od.trainingTitle || (isCPF ? 'Communiquer en anglais professionnel - English 360 - Niveau B2' : (c.courseType === 'legal' ? 'Formation en Anglais Juridique' : 'Formation en Anglais Professionnel'))
+    trainingTitle: od.trainingTitle || (isCPF ? 'Communiquer en anglais professionnel - English 360 - Niveau B2' : (c.courseType === 'legal' ? 'Formation en Anglais Juridique' : 'Formation en Anglais Professionnel')),
+    /* INSTALMENTS_20260911: 1-4; CPF is always invoiced to the platform in one go */
+    instalments: isCPF ? 1 : (parseInt(cd.instalments, 10) || 1)
   };
 
   /* CONVENTION_MATCH_CHECK (2026-07-27): convention generation IS the send
@@ -1220,7 +1239,7 @@ router.post('/generate-convention/:id', function(req, res) {
       from: 'jfr@linguaid.net',
       to: isThirdParty ? cd.signatoryEmail : (cd.signatoryEmail || c.email),
       subject: 'Convention de formation - ' + c.name + ' - Linguaid France',
-      html: '<div style="font-family:Arial,sans-serif;font-size:14px;color:#222;line-height:1.6">' + convGreeting + '<ul><li><strong>Formation :</strong> ' + convTitle + '</li><li><strong>Durée :</strong> ' + (od.totalHours || '—') + 'h</li><li><strong>Dates :</strong> du ' + (dateStart ? fmtDateFr(dateStart) : '—') + ' au ' + (dateEnd ? fmtDateFr(dateEnd) : '—') + '</li><li><strong>Tarif HT :</strong> ' + (cd.price || '—') + ' €</li></ul><p>Pour valider cette convention, veuillez cliquer sur le lien ci-dessous et signer électroniquement :</p><p><a href="' + signingUrl + '" style="background:#1F4E79;color:white;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:bold">Signer la convention</a></p><p>Ou copiez ce lien dans votre navigateur : <a href="' + signingUrl + '">' + signingUrl + '</a></p><p>N’hésitez pas à nous contacter pour toute question.</p><p>Bien cordialement,</p><img src="https://eval.linguaid.net/signature_joss.png" style="max-width:400px"></div>'
+      html: '<div style="font-family:Arial,sans-serif;font-size:14px;color:#222;line-height:1.6">' + convGreeting + '<ul><li><strong>Formation :</strong> ' + convTitle + '</li><li><strong>Durée :</strong> ' + (od.totalHours || '—') + 'h</li><li><strong>Dates :</strong> du ' + (dateStart ? fmtDateFr(dateStart) : '—') + ' au ' + (dateEnd ? fmtDateFr(dateEnd) : '—') + '</li><li><strong>Tarif HT :</strong> ' + (cd.price || '—') + ' €</li>' + (data.instalments > 1 ? '<li><strong>R\u00e8glement :</strong> ' + paymentTermsFr(data.price, data.instalments) + '</li>' : '') + '</ul><p>Pour valider cette convention, veuillez cliquer sur le lien ci-dessous et signer électroniquement :</p><p><a href="' + signingUrl + '" style="background:#1F4E79;color:white;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:bold">Signer la convention</a></p><p>Ou copiez ce lien dans votre navigateur : <a href="' + signingUrl + '">' + signingUrl + '</a></p><p>N’hésitez pas à nous contacter pour toute question.</p><p>Bien cordialement,</p><img src="https://eval.linguaid.net/signature_joss.png" style="max-width:400px"></div>'
     }, function(mailErr) {
       if (mailErr) console.error('Mail error:', mailErr);
       res.json({ success: true, signingUrl: signingUrl, pdfPath: result.pdfPath });
@@ -2029,6 +2048,7 @@ router.post('/send-to-catherine/:id', function(req, res) {
       '<tr><td style="padding:6px 12px;background:#f1f5f9;font-weight:600">Heures</td><td style="padding:6px 12px;border-bottom:1px solid #e2e8f0">' + (od.totalHours || '—') + 'h (' + (od.coachingHours || od.totalHours || '—') + 'h coaching + ' + (od.homeworkHours || 0) + 'h autonome)</td></tr>' +
       '<tr><td style="padding:6px 12px;background:#f1f5f9;font-weight:600">Dates</td><td style="padding:6px 12px;border-bottom:1px solid #e2e8f0">du ' + fmtDate(od.dateStart || cd.dateStart) + ' au ' + fmtDate(od.dateEnd || cd.dateEnd) + '</td></tr>' +
       '<tr><td style="padding:6px 12px;background:#f1f5f9;font-weight:600">Prix HT</td><td style="padding:6px 12px;border-bottom:1px solid #e2e8f0">' + (cd.price || '—') + ' €</td></tr>' +
+      '<tr><td style="padding:6px 12px;background:#f1f5f9;font-weight:600">R\u00e8glement</td><td style="padding:6px 12px;border-bottom:1px solid #e2e8f0">' + ((!cd.isCPF && parseInt(cd.instalments, 10) > 1) ? paymentTermsFr(cd.price, cd.instalments) : 'en une fois, \u00e0 r\u00e9ception de facture') + '</td></tr>' +
       '<tr><td style="padding:6px 12px;background:#f1f5f9;font-weight:600">CPF</td><td style="padding:6px 12px;border-bottom:1px solid #e2e8f0">' + (cd.isCPF ? 'Oui' : 'Non') + '</td></tr>' +
       '<tr><td style="padding:6px 12px;background:#f1f5f9;font-weight:600">Signataire</td><td style="padding:6px 12px;border-bottom:1px solid #e2e8f0">' + (cd.signatory || '—') + '</td></tr>' +
       '<tr><td style="padding:6px 12px;background:#f1f5f9;font-weight:600">Tél apprenant</td><td style="padding:6px 12px;border-bottom:1px solid #e2e8f0">' + (learnerTel || '—') + '</td></tr>' +

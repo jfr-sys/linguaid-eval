@@ -64,6 +64,7 @@
       dateStart: document.getElementById("propDateStart").value,
       dateEnd: document.getElementById("propDateEnd").value,
       isCPF: document.getElementById("convIsCPF") ? document.getElementById("convIsCPF").checked : false,
+      instalments: document.getElementById("convInstalments") ? document.getElementById("convInstalments").value : "1",
       notes: document.getElementById("convNotes") ? document.getElementById("convNotes").value : '',
       learnerTel: document.getElementById("convLearnerTel") ? document.getElementById("convLearnerTel").value : '',
       orderNumber: document.getElementById("convOrderNumber") ? document.getElementById("convOrderNumber").value : '',
@@ -109,6 +110,7 @@
       dateStart: document.getElementById("propDateStart").value,
       dateEnd: document.getElementById("propDateEnd").value,
       isCPF: document.getElementById("convIsCPF") ? document.getElementById("convIsCPF").checked : false,
+      instalments: document.getElementById("convInstalments") ? document.getElementById("convInstalments").value : "1",
       signatoryEmail: document.getElementById("convSignatoryEmail") ? document.getElementById("convSignatoryEmail").value : '',
       isThirdParty: !!(document.getElementById("propModeThird") && document.getElementById("propModeThird").checked),
       notes: document.getElementById("convNotes") ? document.getElementById("convNotes").value : '',
@@ -575,6 +577,8 @@
         <div id="convSiretRow"><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">SIRET entreprise</label><input id="convSiret" type="text" placeholder="123 456 789 00012" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
         <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Signataire entreprise</label><input id="convSignatory" type="text" placeholder="Prenom NOM" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
         <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Email signataire</label><input id="convSignatoryEmail" type="email" placeholder="signataire@entreprise.com" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px"></div>
+        <!-- INSTALMENTS_20260911 -->
+        <div id="convInstalmentsRow"><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Règlement</label><select id="convInstalments" onchange="autoSaveConventionField('convInstalments','instalments')" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px;background:white"><option value="1">En une fois, à réception de facture</option><option value="2">2 échéances mensuelles</option><option value="3">3 échéances mensuelles</option><option value="4">4 échéances mensuelles</option></select></div>
 
       </div>
       <button class="btn btn-primary" onclick="downloadConvention()">Télécharger la convention</button>
@@ -1934,6 +1938,8 @@
       document.getElementById('conventionForm').style.display = 'block';
 
       if (cd.siret) document.getElementById('convSiret').value = cd.siret;
+      var instEl = document.getElementById('convInstalments'); if (instEl) instEl.value = String(parseInt(cd.instalments, 10) || 1);
+      var instRow = document.getElementById('convInstalmentsRow'); if (instRow) instRow.style.display = isCPF ? 'none' : 'block';
       /* TIERS_PREFILL_20260908: in tiers mode the convention signatory IS the
          tiers contact - reuse what Step 6 already captured instead of
          defaulting to the learner. Learner-name default is now flagged so the
@@ -2058,6 +2064,7 @@
     var coTog = ((document.getElementById('profileCompany')||{}).value || '').trim().toLowerCase();
     var partTog = (!coTog || coTog === 'particulier');
     if (siretRow) siretRow.style.display = (isCPF || partTog) ? 'none' : 'block';
+    var instRowT = document.getElementById('convInstalmentsRow'); if (instRowT) instRowT.style.display = isCPF ? 'none' : 'block';
   }
   fetch('/candidates/api/' + id)
     .then(r => r.json())
