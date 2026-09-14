@@ -51,12 +51,38 @@
     .tabs { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
     .tabs button { border: 1px solid #c9d3e0; background: white; border-radius: 14px; padding: 4px 12px; font-size: 0.78rem; cursor: pointer; color: #1F4E79; }
     .tabs button.on { background: #1F4E79; color: white; border-color: #1F4E79; }
+    .month { border-top: 3px solid #1F4E79; margin-bottom: 18px; }
+    .month-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .month-head h2 { margin: 0; }
+    .goal-edit { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: #555; white-space: nowrap; }
+    .goal-edit input { width: 90px; padding: 6px 8px; border: 1px solid #ccc; border-radius: 6px; font-size: 0.85rem; text-align: right; }
+    .goal-edit .btn { padding: 6px 10px; }
+    #goalStatus { font-size: 0.72rem; color: #888; }
+    .month-grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: 20px; margin-top: 12px; align-items: start; }
+    .goal-big { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+    #goalDone { font-size: clamp(1.5rem, 6vw, 2.2rem); font-weight: 700; color: #1F4E79; white-space: nowrap; line-height: 1.1; }
+    .goal-of { color: #666; font-size: 0.85rem; }
+    .goal-track { position: relative; background: #e5e7eb; border-radius: 8px; height: 18px; margin: 10px 0 6px; overflow: hidden; }
+    #goalBar { height: 100%; width: 0; background: #1F4E79; border-radius: 8px; transition: width .6s; }
+    #goalPct { position: absolute; left: 50%; top: 0; transform: translateX(-50%); line-height: 18px; font-size: 0.74rem; font-weight: 700; color: #fff; mix-blend-mode: difference; }
+    .goal-note { font-size: 0.8rem; color: #555; line-height: 1.4; }
+    .month-grid .mini td { padding: 5px 6px; }
     @media (max-width: 700px) {
       .container { padding: 0 12px 40px; margin: 16px auto; }
       .grid { grid-template-columns: 1fr; }
       .funnel-row .lbl { width: 120px; font-size: 0.74rem; }
       .chart-box { height: 220px; }
-      #monthGrid { grid-template-columns: 1fr !important; }
+      .month-grid { grid-template-columns: 1fr; gap: 12px; }
+      .month-head { flex-direction: column; align-items: stretch; }
+      .goal-edit { justify-content: space-between; }
+      .goal-edit input { flex: 1; width: auto; min-width: 0; }
+      .toolbar { gap: 8px; }
+      .toolbar .seg { width: 100%; }
+      .toolbar .seg button { flex: 1; padding: 7px 4px; font-size: 0.76rem; }
+      .toolbar label { display: none; }
+      .toolbar select { flex: 1; }
+      .note { margin-left: 0; width: 100%; }
+      .kpi .num { font-size: 1.1rem; }
     }
   </style>
 <link rel="manifest" href="/app.webmanifest">
@@ -96,21 +122,21 @@
   </div>
 
   <!-- SALES_GOAL_20260914: current month + objective -->
-  <div class="card" id="monthCard" style="margin-bottom:18px;border-top:4px solid #B7791F">
-    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
-      <h2 style="margin:0" id="monthTitle">Mois en cours</h2>
-      <div style="display:flex;align-items:center;gap:8px;font-size:0.8rem">
-        <label style="color:#1F4E79;font-weight:600">Objectif du mois (propositions accept\u00e9es)</label>
-        <input type="number" id="goalInput" min="0" step="500" style="width:110px;padding:6px 8px;border:1px solid #ccc;border-radius:6px;font-size:0.82rem;text-align:right"> <span>\u20ac</span>
-        <button class="btn" id="goalSave">Enregistrer</button>
-        <span id="goalStatus" style="color:#888"></span>
+  <div class="card month" id="monthCard">
+    <div class="month-head">
+      <h2 id="monthTitle">Mois en cours</h2>
+      <div class="goal-edit">
+        <span class="goal-lbl">Objectif du mois</span>
+        <input type="number" id="goalInput" min="0" step="500" inputmode="numeric">
+        <button class="btn" id="goalSave">OK</button>
+        <span id="goalStatus"></span>
       </div>
     </div>
-    <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:20px;margin-top:12px" id="monthGrid">
-      <div>
-        <div style="display:flex;align-items:baseline;gap:10px"><span id="goalDone" style="font-size:2rem;font-weight:700;color:#1F4E79">\u2014</span><span id="goalOf" style="color:#888;font-size:0.9rem"></span></div>
-        <div style="background:#e5e7eb;border-radius:10px;height:22px;margin:10px 0 6px;overflow:hidden;position:relative"><div id="goalBar" style="height:100%;width:0;background:#1F4E79;border-radius:10px;transition:width .6s"></div><span id="goalPct" style="position:absolute;left:50%;top:0;transform:translateX(-50%);line-height:22px;font-size:0.78rem;font-weight:700;color:#111"></span></div>
-        <div id="goalNote" style="font-size:0.8rem;color:#555"></div>
+    <div class="month-grid" id="monthGrid">
+      <div class="month-goal">
+        <div class="goal-big"><span id="goalDone">—</span><span class="goal-of" id="goalOf"></span></div>
+        <div class="goal-track"><div id="goalBar"></div><span id="goalPct"></span></div>
+        <div class="goal-note" id="goalNote"></div>
       </div>
       <div id="monthStats"></div>
     </div>
@@ -195,7 +221,6 @@ function renderMonth() {
   document.getElementById('goalDone').textContent = eur(done);
   document.getElementById('goalOf').textContent = 'sur ' + eur(goal) + ' d\u2019objectif \u2014 ' + acc.length + ' proposition' + (acc.length > 1 ? 's' : '') + ' accept\u00e9e' + (acc.length > 1 ? 's' : '');
   var bar = document.getElementById('goalBar'); bar.style.width = pct + '%';
-  bar.style.background = pct >= 100 ? '#16a34a' : pct >= 60 ? '#1F4E79' : pct >= 30 ? '#b7791f' : '#991b1b';
   document.getElementById('goalPct').textContent = pct + ' %';
   var left = Math.max(0, goal - done), wd = workingDaysLeft(), lastDay = new Date(t.getFullYear(), t.getMonth() + 1, 0).getDate();
   var note = pct >= 100 ? 'Objectif atteint \u2014 ' + eur(done - goal) + ' au-dessus.' : eur(left) + ' restants, ' + (lastDay - t.getDate()) + ' jour' + (lastDay - t.getDate() > 1 ? 's' : '') + ' (' + wd + ' ouvr\u00e9' + (wd > 1 ? 's' : '') + ')' + (wd ? ' \u2192 ' + eur(left / wd) + ' par jour ouvr\u00e9' : '') + '.';
