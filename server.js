@@ -4,6 +4,41 @@ const path = require('path');
 const fs = require('fs');
 require('dotenv').config({ path: path.join(__dirname, '.env') }); /* DOTENV_PATH_20260914: load .env relative to server.js, not process.cwd (Passenger cwd is the app root) */
 
+/* STARTUP_GUARD_20260914: refuse to come up half-working.
+   On 14 Sep 2026 the app was moved to Plesk Passenger under a new system
+   user: data/ was read-only, .env was not loaded and python3 had no pypdf,
+   yet /login answered 200 all morning while every oral submit and
+   e-signature failed with a 500. This guard makes such a state fatal at
+   boot instead of discovered by evaluators and clients.
+   Set STARTUP_GUARD=off in .env to bypass (local dev only). */
+(function startupGuard() {
+  if (process.env.STARTUP_GUARD === 'off') return;
+  var fsg = require('fs');
+  var problems = [];
+  var dataDirG = path.join(__dirname, 'data');
+  try { fsg.mkdirSync(dataDirG, { recursive: true }); fsg.accessSync(dataDirG, fsg.constants.W_OK); }
+  catch (e) { problems.push('data/ is not writable by user ' + (process.env.USER || process.getuid()) + ': ' + e.message); }
+  var candG = path.join(dataDirG, 'candidates.json');
+  if (fsg.existsSync(candG)) {
+    try { fsg.accessSync(candG, fsg.constants.R_OK | fsg.constants.W_OK); }
+    catch (e) { problems.push('data/candidates.json is not writable: ' + e.message); }
+  }
+  if (!process.env.ANTHROPIC_API_KEY) problems.push('ANTHROPIC_API_KEY missing - .env not loaded or incomplete (cwd=' + process.cwd() + ')');
+  if (!process.env.SESSION_SECRET) console.warn('[startup-guard] SESSION_SECRET missing - using default secret');
+  try {
+    require('child_process').execFileSync('python3', ['-c', 'import pypdf, reportlab, PIL, docx, fpdf, lxml'], { stdio: 'pipe', timeout: 20000 });
+  } catch (e) {
+    problems.push('python3 cannot import the PDF/docx libraries needed by /home/debian/*.py (pypdf, reportlab, PIL, docx, fpdf, lxml): ' + String(e.stderr || e.message).trim().split('\n').pop());
+  }
+  if (problems.length) {
+    console.error('\n[startup-guard] FATAL - refusing to start eval.linguaid.net half-working:');
+    problems.forEach(function (m) { console.error('  - ' + m); });
+    console.error('[startup-guard] fix the above, then touch <app root>/tmp/restart.txt (Passenger) to restart.\n');
+    process.exit(1);
+  }
+  console.log('[startup-guard] OK - data writable, env loaded, python deps present');
+})();
+
 /* MAILER_BOOT_LOG (2026-08-31): announce the active outbound mail mode at startup.
    If this ever prints "unauthenticated", mail is going out unsigned and
    Plesk DKIM will refuse to sign it. */
