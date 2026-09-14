@@ -2,7 +2,7 @@ const express = require('express');
 const session = require('express-session');
 const path = require('path');
 const fs = require('fs');
-require('dotenv').config();
+require('dotenv').config({ path: path.join(__dirname, '.env') }); /* DOTENV_PATH_20260914: load .env relative to server.js, not process.cwd (Passenger cwd is the app root) */
 
 /* MAILER_BOOT_LOG (2026-08-31): announce the active outbound mail mode at startup.
    If this ever prints "unauthenticated", mail is going out unsigned and
