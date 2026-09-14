@@ -4141,6 +4141,28 @@ router.get('/sales-data', function(req, res) {
     res.status(500).json({ error: err.message });
   }
 });
+/* SALES_GOAL_20260914: monthly objective (value of accepted proposals), editable per month.
+   Stored in data/salesGoals.json as { "default": 50000, "2026-09": 50000, ... }. */
+var SALES_GOALS_FILE = path.join(dataDir, 'salesGoals.json');
+function ssReadGoals() { try { return JSON.parse(fs.readFileSync(SALES_GOALS_FILE, 'utf8')); } catch (e) { return { default: 50000 }; } }
+function ssGoalFor(goals, month) { var g = goals[month]; if (g == null) g = goals.default; return parseFloat(g) || 50000; }
+router.get('/sales-goal', function(req, res) {
+  if (!crRequireSession(req, res)) return;
+  var goals = ssReadGoals();
+  var month = String(req.query.month || new Date().toISOString().slice(0, 7));
+  res.json({ month: month, goal: ssGoalFor(goals, month), isDefault: goals[month] == null, default: parseFloat(goals.default) || 50000 });
+});
+router.post('/sales-goal', function(req, res) {
+  if (!crRequireSession(req, res)) return;
+  var month = String((req.body || {}).month || '');
+  var goal = parseFloat((req.body || {}).goal);
+  if (!/^\d{4}-\d{2}$/.test(month) || !isFinite(goal) || goal < 0) return res.status(400).json({ error: 'month (YYYY-MM) et goal requis' });
+  var goals = ssReadGoals();
+  goals[month] = goal;
+  if ((req.body || {}).setDefault) goals.default = goal;
+  fs.writeFileSync(SALES_GOALS_FILE, JSON.stringify(goals, null, 2));
+  res.json({ success: true, month: month, goal: goal, default: parseFloat(goals.default) || 50000 });
+});
 /* == END SALES_STATS_20260911 ============================================== */
 
 module.exports = router;

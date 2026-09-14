@@ -56,6 +56,7 @@
       .grid { grid-template-columns: 1fr; }
       .funnel-row .lbl { width: 120px; font-size: 0.74rem; }
       .chart-box { height: 220px; }
+      #monthGrid { grid-template-columns: 1fr !important; }
     }
   </style>
 <link rel="manifest" href="/app.webmanifest">
@@ -94,6 +95,26 @@
     <span class="note" id="note"></span>
   </div>
 
+  <!-- SALES_GOAL_20260914: current month + objective -->
+  <div class="card" id="monthCard" style="margin-bottom:18px;border-top:4px solid #B7791F">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+      <h2 style="margin:0" id="monthTitle">Mois en cours</h2>
+      <div style="display:flex;align-items:center;gap:8px;font-size:0.8rem">
+        <label style="color:#1F4E79;font-weight:600">Objectif du mois (propositions accept\u00e9es)</label>
+        <input type="number" id="goalInput" min="0" step="500" style="width:110px;padding:6px 8px;border:1px solid #ccc;border-radius:6px;font-size:0.82rem;text-align:right"> <span>\u20ac</span>
+        <button class="btn" id="goalSave">Enregistrer</button>
+        <span id="goalStatus" style="color:#888"></span>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:20px;margin-top:12px" id="monthGrid">
+      <div>
+        <div style="display:flex;align-items:baseline;gap:10px"><span id="goalDone" style="font-size:2rem;font-weight:700;color:#1F4E79">\u2014</span><span id="goalOf" style="color:#888;font-size:0.9rem"></span></div>
+        <div style="background:#e5e7eb;border-radius:10px;height:22px;margin:10px 0 6px;overflow:hidden;position:relative"><div id="goalBar" style="height:100%;width:0;background:#1F4E79;border-radius:10px;transition:width .6s"></div><span id="goalPct" style="position:absolute;left:50%;top:0;transform:translateX(-50%);line-height:22px;font-size:0.78rem;font-weight:700;color:#111"></span></div>
+        <div id="goalNote" style="font-size:0.8rem;color:#555"></div>
+      </div>
+      <div id="monthStats"></div>
+    </div>
+  </div>
   <div class="kpis" id="kpis"></div>
 
   <div class="grid">
@@ -146,8 +167,62 @@ function monthsBetween(from, to) {
   return out;
 }
 
+/* SALES_GOAL_20260914 */
+var GOAL = null, MONTH_KEY = new Date().toISOString().slice(0, 7);
+var MONTHS_FR = ['janvier','f\u00e9vrier','mars','avril','mai','juin','juillet','ao\u00fbt','septembre','octobre','novembre','d\u00e9cembre'];
+function loadGoal() {
+  return fetch('/api/sales-goal?month=' + MONTH_KEY).then(function(r){ return r.json(); }).then(function(g){ GOAL = g; document.getElementById('goalInput').value = g.goal; renderMonth(); }).catch(function(){});
+}
+function workingDaysLeft() {
+  var t = new Date(); var y = t.getFullYear(), m = t.getMonth(); var last = new Date(y, m + 1, 0).getDate(); var n = 0;
+  for (var d = t.getDate() + 1; d <= last; d++) { var wd = new Date(y, m, d).getDay(); if (wd !== 0 && wd !== 6) n++; }
+  return n;
+}
+function renderMonth() {
+  var base = ALL.filter(filters);
+  var inM = function(d) { return d && d.slice(0, 7) === MONTH_KEY; };
+  var acc = base.filter(function(r){ return inM(r.acceptedAt) || (inM(r.saleAt) && !r.acceptedAt); });
+  var sent = base.filter(function(r){ return inM(r.proposalAt); });
+  var sold = base.filter(function(r){ return r.isSale && inM(r.saleAt); });
+  var started = base.filter(function(r){ return inM(r.dateStart) && r.isSale; });
+  var lost = base.filter(function(r){ return inM(r.obsoleteAt); });
+  var created = base.filter(function(r){ return inM(r.createdAt); });
+  var done = sum(acc, function(r){ return r.price; });
+  var goal = GOAL ? GOAL.goal : 50000;
+  var pct = goal ? Math.min(100, Math.round(done / goal * 100)) : 0;
+  var t = new Date();
+  document.getElementById('monthTitle').textContent = 'Mois en cours \u2014 ' + MONTHS_FR[t.getMonth()] + ' ' + t.getFullYear();
+  document.getElementById('goalDone').textContent = eur(done);
+  document.getElementById('goalOf').textContent = 'sur ' + eur(goal) + ' d\u2019objectif \u2014 ' + acc.length + ' proposition' + (acc.length > 1 ? 's' : '') + ' accept\u00e9e' + (acc.length > 1 ? 's' : '');
+  var bar = document.getElementById('goalBar'); bar.style.width = pct + '%';
+  bar.style.background = pct >= 100 ? '#16a34a' : pct >= 60 ? '#1F4E79' : pct >= 30 ? '#b7791f' : '#991b1b';
+  document.getElementById('goalPct').textContent = pct + ' %';
+  var left = Math.max(0, goal - done), wd = workingDaysLeft(), lastDay = new Date(t.getFullYear(), t.getMonth() + 1, 0).getDate();
+  var note = pct >= 100 ? 'Objectif atteint \u2014 ' + eur(done - goal) + ' au-dessus.' : eur(left) + ' restants, ' + (lastDay - t.getDate()) + ' jour' + (lastDay - t.getDate() > 1 ? 's' : '') + ' (' + wd + ' ouvr\u00e9' + (wd > 1 ? 's' : '') + ')' + (wd ? ' \u2192 ' + eur(left / wd) + ' par jour ouvr\u00e9' : '') + '.';
+  var pipe = base.filter(function(r){ return r.isPipeline; }); var pipeVal = sum(pipe, function(r){ return r.price; });
+  if (pct < 100 && pipeVal) note += ' Pipeline ouvert : ' + eur(pipeVal) + (pipeVal >= left ? ' \u2014 suffisant si tout se signe.' : ' \u2014 il manque ' + eur(left - pipeVal) + ' de nouvelles propositions.');
+  document.getElementById('goalNote').textContent = note;
+  var rows = [
+    ['Dossiers cr\u00e9\u00e9s', created.length, ''],
+    ['Propositions envoy\u00e9es', sent.length, eur(sum(sent, function(r){ return r.price; }))],
+    ['Propositions accept\u00e9es', acc.length, eur(done)],
+    ['Commandes confirm\u00e9es (ventes)', sold.length, eur(sum(sold, function(r){ return r.price; }))],
+    ['Formations d\u00e9marr\u00e9es', started.length, ''],
+    ['Dossiers obsol\u00e8tes', lost.length, eur(sum(lost, function(r){ return r.price; }))]
+  ];
+  document.getElementById('monthStats').innerHTML = '<table class="mini">' + rows.map(function(r){ return '<tr><td>' + r[0] + '</td><td class="r">' + r[1] + '</td><td class="r">' + r[2] + '</td></tr>'; }).join('') + '</table>';
+}
+document.getElementById('goalSave').addEventListener('click', function() {
+  var v = parseFloat(document.getElementById('goalInput').value); var st = document.getElementById('goalStatus');
+  if (!isFinite(v) || v < 0) { st.textContent = 'Valeur invalide'; return; }
+  st.textContent = 'Enregistrement\u2026';
+  fetch('/api/sales-goal', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ month: MONTH_KEY, goal: v }) })
+    .then(function(r){ return r.json(); }).then(function(g){ if (!g.success) throw new Error(g.error || 'Erreur'); GOAL = { goal: g.goal }; st.textContent = 'Objectif enregistr\u00e9 pour ' + MONTHS_FR[new Date().getMonth()] + '.'; renderMonth(); }).catch(function(e){ st.textContent = 'Erreur : ' + e.message; });
+});
+
 function render() {
   var R = range();
+  renderMonth();
   var base = ALL.filter(filters);
   var sales = base.filter(function(r) { return r.isSale && r.saleAt >= R.from && r.saleAt <= R.to; });
   var pipeline = base.filter(function(r) { return r.isPipeline; });
@@ -295,6 +370,7 @@ fetch('/api/sales-data').then(function(r) { if (r.status === 401) { location.hre
   if (!d) return;
   ALL = d.rows || [];
   render();
+  loadGoal();
 }).catch(function(e) { document.getElementById('kpis').innerHTML = '<div class="empty">Erreur de chargement : ' + esc(e.message) + '</div>'; });
 </script>
 </body>
