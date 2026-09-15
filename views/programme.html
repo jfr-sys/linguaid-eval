@@ -537,6 +537,22 @@ fetch("/candidates/api/" + id)
     renderObjectives();
     renderTopics();
 
+    /* AUTO_SUGGEST_20260915: on first visit (no topics saved yet) tick the
+       core business curriculum immediately and run the AI suggestion
+       without waiting for a click. A candidate with saved topics is left
+       exactly as saved - the user's edits always win. */
+    var savedTopicsOnLoad = (c.oralData && Array.isArray(c.oralData.topics)) ? c.oralData.topics : [];
+    if (!savedTopicsOnLoad.length) {
+      if (c.courseType !== 'legal') {
+        var CORE_TOPICS_CLIENT = ['Se pr\u00e9senter', 'Small talk', 'T\u00e9l\u00e9phoner', 'Emails professionnels', 'R\u00e9unions et visioconf\u00e9rences'];
+        document.querySelectorAll('#topicsGrid .topic-item').forEach(function(el) {
+          var lbl = el.querySelector('label').textContent.trim();
+          if (CORE_TOPICS_CLIENT.indexOf(lbl) > -1) { el.classList.add('selected'); el.querySelector('input[type=checkbox]').checked = true; }
+        });
+      }
+      if (c.finalReport || c.writtenReport) suggestTopics(true);
+    }
+
     var level = rs.overallLevel || "";
     if (["A1-","A1","A2"].includes(level)) document.getElementById("cpfWarning").style.display = "block";
   });
@@ -879,7 +895,7 @@ function generateProgramme() {
 }
 
 // ── AI SUGGESTION ─────────────────────────────────────────────────────────────
-function suggestTopics() {
+function suggestTopics(silent) {
   var btn = document.getElementById('btnSuggest');
   var btn2 = document.getElementById('btnSuggest2');
   btn.textContent = '\u23f3 Analyse...'; btn.disabled = true;
@@ -897,10 +913,10 @@ function suggestTopics() {
         var lbl=el.querySelector('label').textContent.trim();
         if(d.topics&&d.topics.indexOf(lbl)>-1){el.classList.add('selected');el.querySelector('input[type=checkbox]').checked=true;}
       });
-    } else { alert('Erreur: '+d.error); }
+    } else if (!silent) { alert('Erreur: '+d.error); }
     btn.textContent='\u2728 Suggestion IA'; btn.disabled=false;
     btn2.textContent='\u2728 Suggestion IA'; btn2.disabled=false;
-  }).catch(function(e){alert(e.message);btn.textContent='\u2728 Suggestion IA';btn.disabled=false;btn2.textContent='\u2728 Suggestion IA';btn2.disabled=false;});
+  }).catch(function(e){if(!silent)alert(e.message);btn.textContent='\u2728 Suggestion IA';btn.disabled=false;btn2.textContent='\u2728 Suggestion IA';btn2.disabled=false;});
 }
 
 
