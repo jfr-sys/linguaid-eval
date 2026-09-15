@@ -1741,6 +1741,17 @@
         btn.textContent = '✅ Envoyé à Catherine';
         btn.style.background = '#059669';
         setTimeout(function(){ btn.textContent = '📧 Envoyer à Catherine'; btn.style.background = '#7c3aed'; btn.disabled = false; }, 3000);
+        /* STEPS_UNLOCK_AFTER_ORDER_20260915: steps 9 (mission) and 10
+           (convocation) are gated on sentToCatherineAt, but this handler
+           never re-rendered them, so they stayed greyed out until a reload. */
+        fetch('/candidates/api/' + id).then(function(r){ return r.json(); }).then(function(c){
+          var cd = c.conventionData || {};
+          var s8s = document.getElementById('stage8status'); if (s8s) s8s.textContent = 'Ordre envoyé ✓';
+          var s8 = document.getElementById('stage8'); if (s8) s8.style.borderTopColor = '#10b981';
+          showStep9(c);
+          if (typeof updateTabDots === 'function') updateTabDots(c);
+          updateProgressBar(c.status, !!cd.proposalSentAt, !!(cd.generatedAt || cd.pdfPath || cd.signingToken), !!cd.signedAt, !!cd.sentToCatherineAt, !!cd.convocationSentAt, isContratCadre(c.company), !!(c.missionData && c.missionData.devisUploadedAt), !!(c.missionData && c.missionData.confirmationSignedAt));
+        }).catch(function(){});
       } else {
         alert('Erreur: ' + d.error);
         btn.disabled = false;
