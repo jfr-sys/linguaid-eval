@@ -166,15 +166,40 @@ router.post('/api/suggest-topics/:id', async function(req, res) {
   if (!c) return res.status(404).json({ error: 'Not found' });
   var topics = req.body.topics || [];
   var objectives = req.body.objectives || [];
-  var report = (c.finalReport || c.writtenReport || '').substring(0, 3000);
+  /* SUGGEST_TOPICS_COVERAGE_20260915: the previous prompt handed the
+     objectives to the model as a menu to pick from and cut the report at
+     3000 chars, so a negotiation objective could come back without
+     "Negociation" ticked. Now: (1) a fixed core curriculum is always
+     included for business English, (2) every objective the user has on
+     screen must be covered by at least one topic, (3) the full report is
+     sent. Objectives are returned untouched (the page does not apply them). */
+  var CORE_TOPICS = ['Se pr\u00e9senter', 'Small talk', 'T\u00e9l\u00e9phoner', 'Emails professionnels', 'R\u00e9unions et visioconf\u00e9rences'];
+  var isLegal = (c.courseType === 'legal') || ((c.oralData || {}).cpfType === 'E360_LEGAL') || ((c.oralData || {}).cpfType === 'CAJA');
+  var core = isLegal ? [] : CORE_TOPICS.filter(function(t) { return topics.indexOf(t) > -1; });
+  var report = (c.finalReport || c.writtenReport || '');
   if (!report) return res.status(400).json({ error: 'No report available' });
   var topicList = topics.map(function(t, i) { return (i + 1) + '. ' + t; }).join('\n');
   var objList = objectives.map(function(o, i) { return (i + 1) + '. ' + o; }).join('\n');
-  var prompt = 'Based on this English evaluation report, select the most relevant training topics and suggest 3 learning objectives.\n\nAVAILABLE TOPICS:\n' + topicList + '\n\nAVAILABLE OBJECTIVES:\n' + objList + '\n\nREPORT:\n' + report + '\n\nRespond ONLY with valid JSON: {"topics": ["exact topic name"], "objectives": ["exact objective"]}';
+  var prompt = 'You are building the content of an English training programme for a French professional.\n\n'
+    + 'AVAILABLE TOPICS (use the exact names):\n' + topicList + '\n\n'
+    + (core.length ? 'CORE TOPICS - always included, do not remove them:\n' + core.map(function(t, i) { return (i + 1) + '. ' + t; }).join('\n') + '\n\n' : '')
+    + (objectives.length ? 'CONFIRMED LEARNING OBJECTIVES of this learner (these are decided, not optional):\n' + objList + '\n\n' : '')
+    + 'EVALUATION REPORT:\n' + report + '\n\n'
+    + 'TASK: select the topics for the programme. Rules:\n'
+    + '- Every confirmed objective MUST be covered by at least one selected topic (e.g. an objective about negotiating requires "N\u00e9gociation", presenting requires "Pr\u00e9sentations orales", meetings requires "R\u00e9unions et visioconf\u00e9rences", writing reports requires "Rapports et comptes rendus").\n'
+    + '- Add any further topic the report shows the learner needs for their job.\n'
+    + '- Keep the core topics.\n'
+    + '- Do not select topics with no basis in the objectives or the report.\n'
+    + 'Also propose 3 learning objectives (may reuse the confirmed ones).\n'
+    + 'Respond ONLY with valid JSON: {"topics": ["exact topic name"], "objectives": ["objective"]}';
   try {
     var msg = await client.messages.create({ model: 'claude-sonnet-4-6', max_tokens: 1000, messages: [{ role: 'user', content: prompt }] });
     var text = msg.content[0].text.trim().replace(/^```[a-z]*\n?/, '').replace(/```$/, '').trim();
-    res.json({ success: true, ...JSON.parse(text) });
+    var out = JSON.parse(text);
+    var picked = Array.isArray(out.topics) ? out.topics : [];
+    var merged = core.slice();
+    picked.forEach(function(t) { if (topics.indexOf(t) > -1 && merged.indexOf(t) === -1) merged.push(t); });
+    res.json({ success: true, topics: merged, objectives: out.objectives || [], core: core });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
