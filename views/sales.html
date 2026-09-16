@@ -59,7 +59,8 @@
     .goal-edit .btn { padding: 6px 10px; }
     #goalStatus { font-size: 0.72rem; color: #888; }
     .month-grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: 20px; margin-top: 12px; align-items: start; }
-    .goal-big { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+    .goal-big { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; min-width: 0; }
+    .month-grid > div { min-width: 0; }
     #goalDone { font-size: clamp(1.5rem, 6vw, 2.2rem); font-weight: 700; color: #1F4E79; white-space: nowrap; line-height: 1.1; }
     .goal-of { color: #666; font-size: 0.85rem; }
     .goal-track { position: relative; background: #e5e7eb; border-radius: 8px; height: 18px; margin: 10px 0 6px; overflow: hidden; }
@@ -67,6 +68,14 @@
     #goalPct { position: absolute; left: 50%; top: 0; transform: translateX(-50%); line-height: 18px; font-size: 0.74rem; font-weight: 700; color: #fff; mix-blend-mode: difference; }
     .goal-note { font-size: 0.8rem; color: #555; line-height: 1.4; }
     .month-grid .mini td { padding: 5px 6px; }
+    #monthStats { min-width: 0; overflow: hidden; }
+    #monthStats table { table-layout: fixed; width: 100%; }
+    #monthStats td { word-break: break-word; }
+    #monthStats td.r { width: 3.2em; }
+    #monthStats td.r + td.r { width: 6.5em; }
+    .todo-head { background: #eef2f7; color: #1F4E79; font-weight: 700; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.03em; }
+    .todo-head span { font-weight: 600; text-transform: none; letter-spacing: 0; color: #555; margin-left: 6px; }
+    .todo-list td { white-space: normal; }
     @media (max-width: 700px) {
       .container { padding: 0 12px 40px; margin: 16px auto; }
       .grid { grid-template-columns: 1fr; }
@@ -242,7 +251,7 @@ function renderMonth() {
     { k: 'conv', l: 'Command\u00e9es, convocation non envoy\u00e9e', rows: base.filter(function(r){ return r.isSale && !r.convocAt; }), amt: true }
   ];
   var lowHanging = sum(todo[1].rows.concat(todo[2].rows), function(r){ return r.price; });
-  var th = '<table class="mini"><tr><th colspan="3">\u00c0 relancer \u2014 ' + eur(lowHanging) + ' convertibles (propositions + accept\u00e9es)</th></tr>' + todo.map(function(t){
+  var th = '<table class="mini todo"><tr><td colspan="3" class="todo-head">\u00c0 relancer <span>' + eur(lowHanging) + ' convertibles</span></td></tr>' + todo.map(function(t){
     var n = t.rows.length; var v = t.amt ? eur(sum(t.rows, function(r){ return r.price; })) : '';
     var list = t.rows.map(function(r){ return '<a class="nm" href="/candidates/' + r.id + '">' + esc(r.name) + '</a> <span style="color:#888;font-size:0.74rem">' + esc(r.company) + (r.proposalAt ? ' \u00b7 ' + fr(r.proposalAt) : '') + (r.price != null ? ' \u00b7 ' + eur(r.price) : '') + '</span>'; }).join('<br>');
     return '<tr class="todo-row" data-k="' + t.k + '" style="cursor:pointer"><td>' + t.l + '</td><td class="r">' + n + '</td><td class="r">' + v + '</td></tr>' +
