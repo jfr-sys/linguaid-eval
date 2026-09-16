@@ -208,7 +208,6 @@ function renderMonth() {
   var base = ALL.filter(filters);
   var inM = function(d) { return d && d.slice(0, 7) === MONTH_KEY; };
   var acc = base.filter(function(r){ return inM(r.acceptedAt) || (inM(r.saleAt) && !r.acceptedAt); });
-  var sent = base.filter(function(r){ return inM(r.proposalAt); });
   var sold = base.filter(function(r){ return r.isSale && inM(r.saleAt); });
   var started = base.filter(function(r){ return inM(r.dateStart) && r.isSale; });
   var lost = base.filter(function(r){ return inM(r.obsoleteAt); });
@@ -229,13 +228,28 @@ function renderMonth() {
   document.getElementById('goalNote').textContent = note;
   var rows = [
     ['Dossiers cr\u00e9\u00e9s', created.length, ''],
-    ['Propositions envoy\u00e9es', sent.length, eur(sum(sent, function(r){ return r.price; }))],
-    ['Propositions accept\u00e9es', acc.length, eur(done)],
     ['Commandes confirm\u00e9es (ventes)', sold.length, eur(sum(sold, function(r){ return r.price; }))],
     ['Formations d\u00e9marr\u00e9es', started.length, ''],
     ['Dossiers obsol\u00e8tes', lost.length, eur(sum(lost, function(r){ return r.price; }))]
   ];
-  document.getElementById('monthStats').innerHTML = '<table class="mini">' + rows.map(function(r){ return '<tr><td>' + r[0] + '</td><td class="r">' + r[1] + '</td><td class="r">' + r[2] + '</td></tr>'; }).join('') + '</table>';
+  /* SALES_TODO_20260916: stock of open work by stage (not month-bound) — what can still be converted */
+  var open = base.filter(function(r){ return !r.isSale && !r.isObsolete; });
+  var todo = [
+    { k: 'noprop', l: 'Dossiers sans proposition (\u00e9valuation en cours)', rows: open.filter(function(r){ return !r.proposalAt && !r.hasConvention; }), amt: false },
+    { k: 'sent', l: 'Propositions envoy\u00e9es, sans r\u00e9ponse', rows: open.filter(function(r){ return r.proposalAt && !r.acceptedAt && !r.hasConvention; }), amt: true },
+    { k: 'acc', l: 'Accept\u00e9es, convention non sign\u00e9e', rows: open.filter(function(r){ return r.acceptedAt || r.hasConvention; }), amt: true },
+    { k: 'ord', l: 'Sign\u00e9es, ordre non transmis \u00e0 Catherine', rows: base.filter(function(r){ return r.isSale && r.signedAt && !r.orderedAt && !r.convocAt; }), amt: true },
+    { k: 'conv', l: 'Command\u00e9es, convocation non envoy\u00e9e', rows: base.filter(function(r){ return r.isSale && !r.convocAt; }), amt: true }
+  ];
+  var lowHanging = sum(todo[1].rows.concat(todo[2].rows), function(r){ return r.price; });
+  var th = '<table class="mini"><tr><th colspan="3">\u00c0 relancer \u2014 ' + eur(lowHanging) + ' convertibles (propositions + accept\u00e9es)</th></tr>' + todo.map(function(t){
+    var n = t.rows.length; var v = t.amt ? eur(sum(t.rows, function(r){ return r.price; })) : '';
+    var list = t.rows.map(function(r){ return '<a class="nm" href="/candidates/' + r.id + '">' + esc(r.name) + '</a> <span style="color:#888;font-size:0.74rem">' + esc(r.company) + (r.proposalAt ? ' \u00b7 ' + fr(r.proposalAt) : '') + (r.price != null ? ' \u00b7 ' + eur(r.price) : '') + '</span>'; }).join('<br>');
+    return '<tr class="todo-row" data-k="' + t.k + '" style="cursor:pointer"><td>' + t.l + '</td><td class="r">' + n + '</td><td class="r">' + v + '</td></tr>' +
+      '<tr class="todo-list" id="todo_' + t.k + '" style="display:none"><td colspan="3" style="padding:4px 6px 8px 14px;line-height:1.6">' + (list || '<span class="empty">Aucun</span>') + '</td></tr>';
+  }).join('') + '</table>';
+  document.getElementById('monthStats').innerHTML = '<table class="mini">' + rows.map(function(r){ return '<tr><td>' + r[0] + '</td><td class="r">' + r[1] + '</td><td class="r">' + r[2] + '</td></tr>'; }).join('') + '</table><div style="height:10px"></div>' + th;
+  Array.prototype.forEach.call(document.querySelectorAll('#monthStats .todo-row'), function(tr){ tr.addEventListener('click', function(){ var l = document.getElementById('todo_' + tr.getAttribute('data-k')); l.style.display = l.style.display === 'none' ? '' : 'none'; }); });
 }
 document.getElementById('goalSave').addEventListener('click', function() {
   var v = parseFloat(document.getElementById('goalInput').value); var st = document.getElementById('goalStatus');

@@ -4123,7 +4123,7 @@ function ssBuildSalesRows() {
       funding: funding, product: product, isLegal: isLegal, isCPF: isCPF, cpfType: cpfType,
       price: price, hours: hours, trainer: trainer, trainerKey: trainerKey,
       createdAt: ssDay(c.createdAt || c.invitedAt), proposalAt: ssDay(proposalAt), acceptedAt: ssDay(cd.proposalAcceptedAt),
-      signedAt: ssDay(cd.signedAt), saleAt: ssDay(saleAt), saleVia: cd.signedAt ? 'signature' : (cd.sentToCatherineAt ? 'ordre' : (cd.convocationSentAt ? 'convocation' : '')),
+      signedAt: ssDay(cd.signedAt), orderedAt: ssDay(cd.sentToCatherineAt), convocAt: ssDay(cd.convocationSentAt), hasConvention: !!(cd.signingToken || cd.pdfPath || cd.generatedAt), /* SALES_TODO_20260916 */ saleAt: ssDay(saleAt), saleVia: cd.signedAt ? 'signature' : (cd.sentToCatherineAt ? 'ordre' : (cd.convocationSentAt ? 'convocation' : '')),
       dateStart: od.dateStart || null, dateEnd: od.dateEnd || null,
       isSale: isSale, isPipeline: isPipeline, isObsolete: isObsolete, obsoleteAt: ssDay(c.obsoleteAt), obsoleteReason: c.obsoleteReason || '',
       leadDays: isSale ? ssDays(c.createdAt || c.invitedAt, saleAt) : null,
