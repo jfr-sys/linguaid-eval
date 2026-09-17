@@ -23,6 +23,13 @@
     .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.72rem; font-weight: 600; }
     .badge.cpf { background: #fef3c7; color: #92400e; }
     .badge.non-cpf { background: #e0e7ff; color: #3730a3; }
+    /* URGENT_ORDER_20260917 */
+    .badge.urgent { background: #dc2626; color: #fff; cursor: pointer; margin-left: 6px; letter-spacing: .3px; }
+    .badge.urgent-off { background: #f1f5f9; color: #94a3b8; cursor: pointer; margin-left: 6px; opacity: .6; }
+    .badge.urgent-off:hover { opacity: 1; }
+    tr.urgent-row td { background: #fef2f2 !important; border-left: 3px solid #dc2626; }
+    tr.urgent-row td + td { border-left: none; }
+    .stat.urgent .num { color: #dc2626; }
     .date-cell { font-size: 0.8rem; color: #555; }
     .date-cell.missing { color: #bbb; font-style: italic; }
     .check-cell { text-align: center; }
@@ -107,7 +114,9 @@ async function load() {
   const orderCount = rows.filter(r => r.orderSentAt).length;
   const pendingManageAll = rows.filter(r => r.orderSentAt && !r.manageAllDone).length;
   const pendingDrive = rows.filter(r => r.orderSentAt && !r.driveFolderDone).length;
+  const urgentCount = rows.filter(r => r.urgent).length;
   summary.innerHTML = `
+    <div class="stat urgent"><div class="num">${urgentCount}</div><div class="label">🔴 Urgents</div></div>
     <div class="stat"><div class="num">${convocCount}</div><div class="label">Convocations envoyées</div></div>
     <div class="stat"><div class="num">${orderCount}</div><div class="label">Commandes envoyées</div></div>
     <div class="stat"><div class="num">${pendingManageAll}</div><div class="label">ManageAll en attente</div></div>
@@ -120,9 +129,9 @@ async function load() {
     return;
   }
   tbody.innerHTML = rows.map(r => `
-    <tr data-id="${r.id}">
+    <tr data-id="${r.id}" class="${r.urgent ? 'urgent-row' : ''}">
       <td>
-        <div class="name-cell">${r.name}</div>
+        <div class="name-cell">${r.name}<span class="badge ${r.urgent ? 'urgent' : 'urgent-off'} badge-urgent-toggle" title="${r.urgent ? 'Cliquer pour retirer le drapeau urgent' : 'Cliquer pour marquer urgent'}">${r.urgent ? '🔴 URGENT' : 'urgent'}</span></div>
         <div class="company-cell">${r.company || ''}</div>
       </td>
       <td>${r.trainingTitle}</td>
@@ -172,6 +181,16 @@ async function load() {
 
     cbManageAll.addEventListener('change', () => save({ manageAllDone: cbManageAll.checked }));
     cbDrive.addEventListener('change', () => save({ driveFolderDone: cbDrive.checked }));
+    const urgentBadge = tr.querySelector('.badge-urgent-toggle');
+    if (urgentBadge) {
+      urgentBadge.addEventListener('click', () => {
+        const nowUrgent = !tr.classList.contains('urgent-row');
+        fetch('/api/tracker-checklist/' + id, {
+          method: 'POST', headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ urgent: nowUrgent })
+        }).then(() => load());
+      });
+    }
     let notesTimeout;
     notesInput.addEventListener('input', () => {
       clearTimeout(notesTimeout);

@@ -637,6 +637,8 @@
       </div>
       <div style="margin-bottom:0.75rem"><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Disponibilités apprenant</label><input id="convAvailabilities" type="text" style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px" placeholder="Ex: Lundi soir, Vendredi midi-14h"></div>
       <div style="margin-bottom:0.75rem"><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Notes pour Catherine (ManageAll)</label><textarea id="convNotes" placeholder="Ex: CPF, OPCO, modalités particulières..." style="width:100%;font-size:13px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px;min-height:60px;resize:vertical"></textarea></div>
+      <!-- URGENT_ORDER_20260917 -->
+      <label style="display:inline-flex;align-items:center;gap:6px;margin-right:14px;font-size:13px;font-weight:600;color:#b91c1c;cursor:pointer"><input type="checkbox" id="convUrgent" style="width:16px;height:16px;accent-color:#dc2626"> 🔴 Urgent</label>
       <button class="btn btn-secondary" id="btnSendCatherine" onclick="sendToCatherine()" style="background:#7c3aed;color:white">📧 Envoyer à Catherine</button>
     </div>
   </div>
@@ -1739,6 +1741,7 @@
     var orderNumber = document.getElementById('convOrderNumber') ? document.getElementById('convOrderNumber').value : '';
     var companyAddress = document.getElementById('convCompanyAddress') ? document.getElementById('convCompanyAddress').value : '';
     var availabilities = document.getElementById('convAvailabilities') ? document.getElementById('convAvailabilities').value : '';
+    var urgent = !!(document.getElementById('convUrgent') && document.getElementById('convUrgent').checked);
     // Save step 8 fields to conventionData first, then send
     fetch('/api/save-convention/' + id, {
       method: 'POST',
@@ -1747,7 +1750,7 @@
     }).then(function(){ return fetch('/api/send-to-catherine/' + id, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ notes: notes, learnerTel: learnerTel, orderNumber: orderNumber, companyAddress: companyAddress, availabilities: availabilities })
+      body: JSON.stringify({ notes: notes, learnerTel: learnerTel, orderNumber: orderNumber, companyAddress: companyAddress, availabilities: availabilities, urgent: urgent })
     }); })
     .then(function(r){ return r.json(); })
     .then(function(d){
@@ -2096,6 +2099,7 @@
       if (cd.notes) noteParts.push(cd.notes);
       if (od.schedNotes && !(cd.notes && cd.notes.includes(od.schedNotes))) noteParts.push('Créneaux idéaux : ' + od.schedNotes);
       if (noteParts.length) document.getElementById('convNotes').value = noteParts.join('\n');
+      if (document.getElementById('convUrgent')) document.getElementById('convUrgent').checked = !!cd.urgent;
       if (cd.sentToCatherineAt) {
         s8.style.borderTopColor = '#10b981';
         document.getElementById('stage8status').textContent = 'Ordre envoyé ✓';

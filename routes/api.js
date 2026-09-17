@@ -2043,10 +2043,15 @@ router.post('/send-to-catherine/:id', function(req, res) {
       return d.getUTCDate() + ' ' + MONTHS_FR[d.getUTCMonth()] + ' ' + d.getUTCFullYear();
     }
 
-    var subject = 'Nouveau contrat ManageAll — ' + c.name;
+    /* URGENT_ORDER_20260917: optional urgent flag on the order to Catherine -
+       subject prefix + high-priority mail headers + red banner, persisted in
+       conventionData.urgent so the suivi tracker can show it. */
+    var urgent = !!(req.body && (req.body.urgent === true || req.body.urgent === 'true' || req.body.urgent === 1));
+    var subject = (urgent ? '\ud83d\udd34 URGENT - ' : '') + 'Nouveau contrat ManageAll — ' + c.name;
     var signed = cd.signedAt ? ' (SIGNEE le ' + fmtDate(cd.signedAt) + ')' : ' (en attente de signature)';
 
     var html = '<div style="font-family:sans-serif;max-width:700px">' +
+      (urgent ? '<div style="background:#dc2626;color:#fff;font-weight:700;font-size:16px;padding:10px 14px;border-radius:6px;margin-bottom:12px">\ud83d\udd34 URGENT - contrat a traiter en priorite</div>' : '') +
       '<h2 style="color:#1F4E79">Nouveau contrat a saisir dans ManageAll</h2>' +
       '<table style="width:100%;border-collapse:collapse;margin-bottom:20px">' +
       '<tr><td style="padding:6px 12px;background:#f1f5f9;font-weight:600;width:200px">Apprenant</td><td style="padding:6px 12px;border-bottom:1px solid #e2e8f0">' + c.name + '</td></tr>' +
@@ -2097,14 +2102,22 @@ router.post('/send-to-catherine/:id', function(req, res) {
     var cands4 = getCandidates();
     var ci4 = cands4.findIndex(function(x){ return x.id === req.params.id; });
     if (ci4 > -1) {
-      cands4[ci4].conventionData = Object.assign(cands4[ci4].conventionData || {}, { sentToCatherineAt: new Date().toISOString() });
+      var prevUrgentAt = (cands4[ci4].conventionData || {}).urgentAt;
+      cands4[ci4].conventionData = Object.assign(cands4[ci4].conventionData || {}, {
+        sentToCatherineAt: new Date().toISOString(),
+        urgent: urgent,
+        urgentAt: urgent ? (prevUrgentAt || new Date().toISOString()) : null
+      });
       saveCandidates(cands4);
     }
+    var mailHeaders = urgent ? { 'X-Priority': '1 (Highest)', 'X-MSMail-Priority': 'High', 'Importance': 'High' } : {};
     transporter.sendMail({
       from: 'nouvellecommande@linguaid.net',
       to: 'cfr@linguaid.net',
       cc: 'jfr@linguaid.net',
       subject: subject,
+      priority: urgent ? 'high' : 'normal',
+      headers: mailHeaders,
       html: html,
       attachments: attachments
     }, function(err) {
@@ -3277,6 +3290,7 @@ router.get('/tracker-data', function(req, res) {
         company: c.company || c.dept || '',
         trainingTitle: od.trainingTitle || (c.courseType === 'legal' ? 'Formation en Anglais Juridique' : 'Formation en Anglais Professionnel'),
         isCPF: !!cd.isCPF,
+        urgent: !!cd.urgent,
         price: cd.price || null,
         convocationSentAt: cd.convocationSentAt || null,
         orderSentAt: cd.sentToCatherineAt || null,
@@ -3291,6 +3305,7 @@ router.get('/tracker-data', function(req, res) {
         convocationPdfUrl: cd.convocationPdfPath ? ('/api/download-convocation/' + c.id) : null
       };
     }).sort(function(a, b) {
+      if (a.urgent !== b.urgent) return a.urgent ? -1 : 1;
       var da = a.orderSentAt || a.convocationSentAt || '';
       var db = b.orderSentAt || b.convocationSentAt || '';
       return db.localeCompare(da);
@@ -3313,6 +3328,12 @@ router.post('/tracker-checklist/:id', function(req, res) {
       driveFolderDone: body.driveFolderDone !== undefined ? !!body.driveFolderDone : (candidates[idx].catherineTracker || {}).driveFolderDone,
       notes: body.notes !== undefined ? body.notes : (candidates[idx].catherineTracker || {}).notes
     });
+    if (body.urgent !== undefined) {
+      var cdU = candidates[idx].conventionData || {};
+      cdU.urgent = !!body.urgent;
+      cdU.urgentAt = cdU.urgent ? (cdU.urgentAt || new Date().toISOString()) : null;
+      candidates[idx].conventionData = cdU;
+    }
     saveCandidates(candidates);
     res.json({ success: true });
   } catch(err) {
