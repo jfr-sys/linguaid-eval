@@ -548,6 +548,19 @@
         <button id="btnPropAccepted" class="btn btn-secondary" onclick="markPropositionAccepted()" style="">✅ Acceptée</button>
       </div>
       <div style="margin-top:6px"><a href="#" onclick="downloadProposition(event);return false;" style="font-size:12px;color:#64748b;text-decoration:underline">Télécharger la proposition (PDF)</a></div>
+      <!-- OVH_SMS_20260917: optional SMS notification to the learner -->
+      <div id="propSmsBlock" style="margin-top:10px;padding:10px 12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px">
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#1e293b;cursor:pointer">
+          <input type="checkbox" id="propSmsCheck" onchange="onPropSmsToggle()" style="cursor:pointer">
+          <span>📱 Envoyer aussi un SMS &agrave; l&rsquo;apprenant</span>
+          <span id="propSmsPhone" style="font-size:12px;color:#64748b"></span>
+        </label>
+        <div id="propSmsBody" style="display:none;margin-top:8px">
+          <textarea id="propSmsText" rows="3" maxlength="320" oninput="updatePropSmsCount()" style="width:100%;font-size:13px;padding:6px 8px;border:1px solid #e2e8f0;border-radius:6px;box-sizing:border-box;font-family:inherit;line-height:1.5"></textarea>
+          <div id="propSmsCount" style="font-size:11px;color:#94a3b8;margin-top:3px"></div>
+        </div>
+        <div id="propSmsNote" style="font-size:11px;color:#94a3b8;margin-top:4px"></div>
+      </div>
       <!-- devis-opco -->
       <div style="margin-top:10px;padding-top:8px;border-top:1px dashed #e2e8f0">
         <a href="#" onclick="toggleDevisOpco(event);return false;" style="font-size:12px;color:#0f766e;text-decoration:underline;font-weight:600">📄 Devis OPCO / entreprise…</a>
@@ -925,6 +938,7 @@
       /* LEARNER_PHONE */
       var _ph = document.getElementById('idPhone');
       if (_ph) _ph.value = c.phone || '';
+      initPropSms(); /* OVH_SMS_20260917 */
       document.getElementById('idCourseType').value = (c.courseType === 'legal') ? 'legal' : 'business';
       var civ = (c.conventionData && c.conventionData.civility) || ''; // CIVILITY_REQUIRED
       document.getElementById('idCivility').value = civ;
@@ -2303,6 +2317,11 @@ function onRecipientModeChange() {
       status.textContent = 'Génération et envoi...';
       var p = buildPropositionPayload();
       p.learnerOverride = propLearnerOverride;
+      /* OVH_SMS_20260917 */
+      var smsChk = document.getElementById('propSmsCheck');
+      p.sendSms = !!(smsChk && smsChk.checked && !smsChk.disabled);
+      p.smsMessage = p.sendSms ? (document.getElementById('propSmsText').value || '') : '';
+      if (p.sendSms && !p.smsMessage.trim()) { alert('Le texte du SMS est vide.'); btn.disabled=false; btn.textContent='Envoyer la proposition'; status.textContent=''; return; }
     fetch('/api/send-proposition-email/'+id, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(p)})
     .then(function(r){return r.json();}).then(function(d){
       btn.disabled=false; btn.textContent='Envoyer la proposition'; status.textContent='';
@@ -2311,10 +2330,70 @@ function onRecipientModeChange() {
         document.getElementById('propositionSentText').textContent='Envoyée le '+new Date().toLocaleDateString('fr-FR')+' à '+(d.to||p.recipientEmail);
         var sb=document.getElementById('propSendStatus');
         sb.style.color='#065f46'; sb.textContent='✅ Email envoyé avec succès';
-        setTimeout(function(){sb.textContent='';},4000);
+        /* OVH_SMS_20260917 */
+        if (d.sms) {
+          if (d.sms.ok) { sb.textContent += ' — 📱 SMS envoyé au ' + d.sms.to; setPropSmsNote('SMS envoyé le ' + new Date().toLocaleDateString('fr-FR') + ' au ' + d.sms.to, '#065f46'); }
+          else { sb.style.color='#b45309'; sb.textContent += ' — ⚠️ SMS non envoyé : ' + d.sms.error; setPropSmsNote('Échec SMS : ' + d.sms.error, '#b45309'); }
+        }
+        setTimeout(function(){sb.textContent='';},8000);
       } else { alert('Erreur : '+(d.error||'inconnue')); }
     }).catch(function(){ alert('Erreur réseau'); btn.disabled=false; btn.textContent='Envoyer la proposition'; status.textContent=''; });
     }).catch(function(){ alert('Erreur réseau'); });
+  }
+  /* OVH_SMS_20260917 --------------------------------------------------- */
+  function setPropSmsNote(txt, color) {
+    var n = document.getElementById('propSmsNote'); if (!n) return;
+    n.textContent = txt || ''; n.style.color = color || '#94a3b8';
+  }
+  function updatePropSmsCount() {
+    var t = (document.getElementById('propSmsText') || {value:''}).value || '';
+    var gsm = /^[A-Za-z0-9 @\u00a3$\u00a5\u00e8\u00e9\u00f9\u00ec\u00f2\u00c7\n\u00d8\u00f8\r\u00c5\u00e5\u00c6\u00e6\u00df\u00c9!"#\u00a4%&'()*+,\-.\/:;<=>?\u00a1\u00c4\u00d6\u00d1\u00dc\u00a7\u00bf\u00e4\u00f6\u00f1\u00fc\u00e0^{}\\\[~\]|\u20ac]*$/.test(t);
+    var per = gsm ? 160 : 70, perMulti = gsm ? 153 : 67;
+    var segs = t.length === 0 ? 0 : (t.length <= per ? 1 : Math.ceil(t.length / perMulti));
+    var el = document.getElementById('propSmsCount');
+    if (el) el.textContent = t.length + ' caract\u00e8res \u2014 ' + segs + ' SMS' + (gsm ? '' : ' (caract\u00e8res sp\u00e9ciaux : segments courts)');
+  }
+  function defaultPropSmsText() {
+    var c = candidate || {};
+    var first = ((document.getElementById('idFirstName') || {}).value || (c.name || '').split(/\s+/)[0] || '').trim();
+    var isThird = document.getElementById('propModeThird') && document.getElementById('propModeThird').checked;
+    var hello = 'Bonjour' + (first ? ' ' + first : '') + ', ';
+    if (isThird) {
+      return hello + 'la proposition de formation Linguaid vous concernant a \u00e9t\u00e9 envoy\u00e9e \u00e0 votre entreprise. Joss Frimond - Linguaid';
+    }
+    return hello + 'votre proposition de formation Linguaid a \u00e9t\u00e9 envoy\u00e9e par email \u00e0 ' + (c.email || 'votre adresse') + '. Pensez \u00e0 v\u00e9rifier vos spams. Joss Frimond - Linguaid';
+  }
+  function onPropSmsToggle() {
+    var chk = document.getElementById('propSmsCheck');
+    var body = document.getElementById('propSmsBody');
+    if (!chk || !body) return;
+    body.style.display = chk.checked ? 'block' : 'none';
+    if (chk.checked && !document.getElementById('propSmsText').value) {
+      document.getElementById('propSmsText').value = defaultPropSmsText();
+    }
+    updatePropSmsCount();
+  }
+  function initPropSms() {
+    var chk = document.getElementById('propSmsCheck'); if (!chk) return;
+    fetch('/api/sms-status/' + id).then(function(r){ return r.json(); }).then(function(d) {
+      var ph = document.getElementById('propSmsPhone');
+      if (!d.configured) {
+        chk.disabled = true; chk.checked = false;
+        ph.textContent = '';
+        setPropSmsNote('Service SMS non configur\u00e9 (cl\u00e9s OVH manquantes dans .env)', '#b45309');
+        return;
+      }
+      if (!d.phone) {
+        chk.disabled = true; chk.checked = false;
+        ph.textContent = d.phoneRaw ? '(num\u00e9ro invalide : ' + d.phoneRaw + ')' : '(aucun num\u00e9ro dans l\u2019onglet Donn\u00e9es)';
+        setPropSmsNote('Renseignez un num\u00e9ro de t\u00e9l\u00e9phone dans l\u2019onglet Donn\u00e9es pour activer le SMS.', '#94a3b8');
+        return;
+      }
+      chk.disabled = false;
+      ph.textContent = '(' + d.phone + ')';
+      if (d.smsSentAt) setPropSmsNote('SMS d\u00e9j\u00e0 envoy\u00e9 le ' + new Date(d.smsSentAt).toLocaleDateString('fr-FR'), '#065f46');
+      else setPropSmsNote('', '');
+    }).catch(function(){ chk.disabled = true; setPropSmsNote('Statut SMS indisponible', '#b45309'); });
   }
   function openEmailModal() {
     document.getElementById('propBodyModal').value = document.getElementById('propBody').value;

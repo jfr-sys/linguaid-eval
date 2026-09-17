@@ -11,6 +11,7 @@ const { assertValidCpfType, getAction, CATALOGUE, getRsCode } = require('../conf
 const { isContratCadre } = require('../lib/contratCadre');
 const coherence = require('../lib/coherence'); /* coherence-gate */
 const { updateCompanyInfo } = require('../lib/companies'); /* TIERS_PREFILL_20260908 */
+const sms = require('../lib/sms'); /* OVH_SMS_20260917 */
 
 /* TIERS_PREFILL_20260908: persist the recipient picker state and the tiers
    contact (civility, prenom, nom, email) on the candidate, and remember the
@@ -922,7 +923,46 @@ router.post('/api/send-proposition-email/:id', async function(req, res) {
       saveCandidates(cands3);
     }
 
-    res.json({ success: true, to: recipientEmail, attachments: attachments.map(a => a.filename) });
+    /* OVH_SMS_20260917: optional SMS to the learner (phone from the Donnees
+       tab, c.phone) once the email has gone out. The email is already sent
+       and recorded at this point, so an SMS failure is reported in the
+       response but never fails the request. */
+    var wantSms = !!(req.body && req.body.sendSms);
+    var smsMsg = ((req.body && req.body.smsMessage) || '').trim();
+    var basePayload = { success: true, to: recipientEmail, attachments: attachments.map(a => a.filename) };
+    if (!wantSms) return res.json(basePayload);
+    var smsTo = c.phone || '';
+    sms.sendSms({ to: smsTo, message: smsMsg, tag: 'prop-' + String(c.id).slice(0, 15) })
+      .then(function(r) {
+        var cands4 = getCandidates();
+        var ci4 = cands4.findIndex(x => x.id === req.params.id);
+        if (ci4 > -1) {
+          cands4[ci4].conventionData = cands4[ci4].conventionData || {};
+          cands4[ci4].conventionData.proposalSmsSentAt = new Date().toISOString();
+          cands4[ci4].conventionData.proposalSmsTo = r.to;
+          saveCandidates(cands4);
+        }
+        basePayload.sms = { ok: true, to: r.to, credits: r.credits };
+        res.json(basePayload);
+      })
+      .catch(function(eS) {
+        console.error('send-proposition-email SMS error:', eS.message);
+        basePayload.sms = { ok: false, error: eS.message };
+        res.json(basePayload);
+      });
+  });
+});
+
+/* OVH_SMS_20260917: lets the UI know whether SMS is configured and which
+   number the learner has on file (normalised), without exposing OVH keys. */
+router.get('/api/sms-status/:id', function(req, res) {
+  var c = getCandidates().find(x => x.id === req.params.id);
+  if (!c) return res.status(404).json({ error: 'Not found' });
+  res.json({
+    configured: sms.isConfigured(),
+    phoneRaw: c.phone || '',
+    phone: sms.normalisePhone(c.phone || ''),
+    smsSentAt: (c.conventionData && c.conventionData.proposalSmsSentAt) || null
   });
 });
 
