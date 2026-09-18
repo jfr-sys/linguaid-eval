@@ -707,6 +707,17 @@ router.post('/api/generate-proposition/:id', async function(req, res) {
     // third-person prose for non-CPF proposals addressed to a third party.
     // (firstName/lastName are already sent above - not duplicated here.)
     recipientType: req.body.recipientType || 'learner',
+    /* TIERS_HEADER_20260918: in tiers mode the proposition header (civilite,
+       nom, email) must name the company contact, not the learner. The contact
+       comes from the picker on this request, falling back to what
+       persistTiers stored on the candidate. Node passes it through;
+       fill_proposition.py decides how to use it. */
+    tiers: (req.body.recipientType === 'hr') ? (function(){
+      var cdT = c.conventionData || {};
+      function pick(k) { return String((req.body[k] || cdT[k] || '')).trim(); }
+      return { civility: pick('thirdPartyCivility'), prenom: pick('thirdPartyPrenom'),
+               nom: pick('thirdPartyNom'), email: pick('thirdPartyEmail') };
+    })() : null,
     // RENEWAL_PROPDATA_FLAG (2026-07-30): lets fill_proposition.py apply
     // the renewal-specific layout (no niveau line, credit-dependent CPF
     // funding wording).

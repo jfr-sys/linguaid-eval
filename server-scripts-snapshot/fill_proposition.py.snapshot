@@ -179,6 +179,10 @@ def fill_proposition(data, template_path, output_path):
         # reader to act on THEIR OWN CPF account - only makes sense addressed
         # to the candidate).
         recipientType = data.get('recipientType', 'learner')
+        # TIERS_HEADER_20260918: company contact for the address block in
+        # tiers mode (sent by routes/programme.js from the picker / persisted
+        # thirdParty* fields). Empty dict when absent or in learner mode.
+        tiers = data.get('tiers') or {}
         company     = data.get('company', '')
         email       = data.get('email', '')
 
@@ -266,12 +270,25 @@ def fill_proposition(data, template_path, output_path):
                 intro = INTRO_NON_CPF
 
         # ── Simple placeholder substitutions ─────────────────────────────────
+        # TIERS_HEADER_20260918: non-CPF proposal addressed to a third party ->
+        # header names the company contact; learner fields are the fallback
+        # whenever the contact is incomplete, so nothing is ever left blank.
+        hdr_civility, hdr_name, hdr_email = civility, fullName, email
+        if (not isCPF) and recipientType == 'hr' and tiers:
+            _tn = ((tiers.get('prenom') or '') + ' ' + (tiers.get('nom') or '')).strip()
+            if _tn:
+                hdr_name = _tn
+                hdr_civility = (tiers.get('civility') or '').strip()
+            if (tiers.get('email') or '').strip():
+                hdr_email = tiers['email'].strip()
+
         substitutions = {
             '{{TITRE}}':          titre,
-            '{{CIVILITE}}':       civility,
-            '{{NOM_COMPLET}}':    fullName,
+            '{{CIVILITE}} {{NOM_COMPLET}}': (hdr_civility + ' ' + hdr_name).strip(),
+            '{{CIVILITE}}':       hdr_civility,
+            '{{NOM_COMPLET}}':    hdr_name,
             '{{ENTREPRISE}}':     company,
-            '{{EMAIL}}':          email,
+            '{{EMAIL}}':          hdr_email,
             '{{INTRO_LIGNE}}':    intro,
             '{{NIVEAU_ACTUEL}}':  prereqLevel,
             '{{NIVEAU_VISE}}':    targetLevel,
@@ -333,6 +350,15 @@ def fill_proposition(data, template_path, output_path):
                 replace_in_para(capable_heading, 'vous serez capable de', fullName + ' sera capable de')
             else:
                 sys.stderr.write('TIERS_WORDING_FIX: heading "vous serez capable de" not found - left unchanged\n')
+            # TIERS_HEADER_20260918: the two "Votre ..." section headings read
+            # as addressed to the learner - reword for a third-party reader.
+            for _old, _new in (('Votre profil', 'Profil de ' + fullName),
+                               ('Votre programme sur mesure', 'Programme sur mesure')):
+                _hp = find_para_with(root, _old)
+                if _hp is not None:
+                    replace_in_para(_hp, _old, _new)
+                else:
+                    sys.stderr.write('TIERS_HEADER_20260918: heading %r not found - left unchanged\n' % _old)
 
         # Remove unused objective placeholders
         for i in range(len(objectives) + 1, 7):
