@@ -385,15 +385,15 @@
   function updateSaveButton() {
     const btn = document.getElementById('saveBtn');
     if (isRenewal) {
-      btn.textContent = 'Cr\u00e9er et acc\u00e9der au programme \u2192';
+      btn.textContent = 'Créer et accéder au programme →';
       btn.classList.add('renewal');
     } else {
-      btn.textContent = 'Cr\u00e9er le candidat \u2192';
+      btn.textContent = 'Créer le candidat →';
       btn.classList.remove('renewal');
     }
   }
 
-  // ── Drag & drop helpers ──────────────────────────────────────────────────
+  // ── Drag & drop helpers ────────────────────────────────────────────────────
   function handleDrag(e, zoneId) {
     e.preventDefault();
     document.getElementById(zoneId).classList.add('dragover');
@@ -422,7 +422,7 @@
     document.getElementById(btnId).disabled = false;
   }
 
-  // ── PDF parsing (report or programme) ───────────────────────────────────
+  // ── PDF parsing (report or programme) ───────────────────────────────────────
   async function parsePDF(type) {
     const inputId  = type === 'report' ? 'reportFile'       : 'progFile';
     const statusId = type === 'report' ? 'reportParseStatus': 'progParseStatus';
@@ -437,7 +437,7 @@
     const status = document.getElementById(statusId);
     btn.disabled = true;
     status.className = 'parse-status loading';
-    status.textContent = 'Lecture du PDF en cours\u2026';
+    status.textContent = 'Lecture du PDF en cours…';
 
     try {
       // Read as base64
@@ -448,43 +448,43 @@
         r.readAsDataURL(file);
       });
 
-      status.textContent = 'Analyse par Claude en cours\u2026';
+      status.textContent = 'Analyse par Claude en cours…';
 
       const systemPrompt = type === 'report'
-        ? `Tu es un assistant qui extrait des informations structur\u00e9es d'un rapport de fin de formation en anglais professionnel. 
-Extrais uniquement ce qui est explicitement pr\u00e9sent dans le document.
-R\u00e9ponds UNIQUEMENT en JSON valide, sans markdown ni backticks, avec exactement ces champs:
+        ? `Tu es un assistant qui extrait des informations structurées d'un rapport de fin de formation en anglais professionnel. 
+Extrais uniquement ce qui est explicitement présent dans le document.
+Réponds UNIQUEMENT en JSON valide, sans markdown ni backticks, avec exactement ces champs:
 {
-  "name": "pr\u00e9nom et nom du candidat",
-  "email": "email si pr\u00e9sent, sinon null",
-  "jobtitle": "poste si pr\u00e9sent, sinon null",
-  "company": "employeur si pr\u00e9sent, sinon null",
-  "prereqLevel": "niveau de d\u00e9part CECRL (ex: B1, B2)",
+  "name": "prénom et nom du candidat",
+  "email": "email si présent, sinon null",
+  "jobtitle": "poste si présent, sinon null",
+  "company": "employeur si présent, sinon null",
+  "prereqLevel": "niveau de départ CECRL (ex: B1, B2)",
   "levelReached": "niveau atteint en fin de formation CECRL",
-  "targetLevel": "niveau cible recommand\u00e9 pour la suite CECRL — si non explicit\u00e9, propose le niveau sup\u00e9rieur au niveau atteint",
-  "totalHours": "nombre d'heures de la formation pr\u00e9c\u00e9dente (entier)",
-  "coachingHours": "heures de coaching (entier, ou \u00e9gal \u00e0 totalHours si non pr\u00e9cis\u00e9)",
-  "homeworkHours": "heures travail autonome (entier, 0 si non pr\u00e9cis\u00e9)",
-  "completedObjectives": ["liste des objectifs r\u00e9alis\u00e9s"],
-  "suggestedObjectives": ["liste de 3 objectifs sugg\u00e9r\u00e9s pour la suite bas\u00e9s sur les lacunes identifi\u00e9es"],
-  "keyGaps": "lacunes principales identifi\u00e9es dans le rapport",
+  "targetLevel": "niveau cible recommandé pour la suite CECRL — si non explicité, propose le niveau supérieur au niveau atteint",
+  "totalHours": "nombre d'heures de la formation précédente (entier)",
+  "coachingHours": "heures de coaching (entier, ou égal à totalHours si non précisé)",
+  "homeworkHours": "heures travail autonome (entier, 0 si non précisé)",
+  "completedObjectives": ["liste des objectifs réalisés"],
+  "suggestedObjectives": ["liste de 3 objectifs suggérés pour la suite basés sur les lacunes identifiées"],
+  "keyGaps": "lacunes principales identifiées dans le rapport",
   "otherNeeds": "autres informations pertinentes pour la suite"
 }`
-        : `Tu es un assistant qui extrait des informations structur\u00e9es d'un programme de formation professionnelle en anglais.
-Extrais uniquement ce qui est explicitement pr\u00e9sent dans le document.
-R\u00e9ponds UNIQUEMENT en JSON valide, sans markdown ni backticks, avec exactement ces champs:
+        : `Tu es un assistant qui extrait des informations structurées d'un programme de formation professionnelle en anglais.
+Extrais uniquement ce qui est explicitement présent dans le document.
+Réponds UNIQUEMENT en JSON valide, sans markdown ni backticks, avec exactement ces champs:
 {
-  "name": "pr\u00e9nom et nom du candidat",
+  "name": "prénom et nom du candidat",
   "email": null,
-  "jobtitle": "poste si pr\u00e9sent, sinon null",
-  "company": "employeur si pr\u00e9sent, sinon null",
-  "prereqLevel": "niveau pr\u00e9requis indiqu\u00e9 dans le programme CECRL",
-  "targetLevel": "propose le niveau sup\u00e9rieur au pr\u00e9requis (ex: si B2 alors C1)",
+  "jobtitle": "poste si présent, sinon null",
+  "company": "employeur si présent, sinon null",
+  "prereqLevel": "niveau prérequis indiqué dans le programme CECRL",
+  "targetLevel": "propose le niveau supérieur au prérequis (ex: si B2 alors C1)",
   "totalHours": "nombre total d'heures (entier)",
-  "coachingHours": "heures de coaching (entier, \u00e9gal \u00e0 totalHours si non pr\u00e9cis\u00e9)",
-  "homeworkHours": "heures travail autonome (entier, 0 si non pr\u00e9cis\u00e9)",
-  "previousObjectives": ["liste des objectifs p\u00e9dagogiques du programme pr\u00e9c\u00e9dent"],
-  "suggestedObjectives": ["3 objectifs sugg\u00e9r\u00e9s pour le renouvellement, plus ambitieux que les pr\u00e9c\u00e9dents"],
+  "coachingHours": "heures de coaching (entier, égal à totalHours si non précisé)",
+  "homeworkHours": "heures travail autonome (entier, 0 si non précisé)",
+  "previousObjectives": ["liste des objectifs pédagogiques du programme précédent"],
+  "suggestedObjectives": ["3 objectifs suggérés pour le renouvellement, plus ambitieux que les précédents"],
   "otherNeeds": "autres informations pertinentes"
 }`;
 
@@ -517,11 +517,11 @@ R\u00e9ponds UNIQUEMENT en JSON valide, sans markdown ni backticks, avec exactem
       // Show extraction preview
       const previewFields = [
         ['Candidat',          data.name],
-        ['Niveau pr\u00e9requis',    data.prereqLevel],
-        ['Niveau atteint',    data.levelReached || '(non pr\u00e9cis\u00e9)'],
+        ['Niveau prérequis',    data.prereqLevel],
+        ['Niveau atteint',    data.levelReached || '(non précisé)'],
         ['Niveau cible',      data.targetLevel],
         ['Heures',            data.totalHours ? data.totalHours + 'h' : null],
-        ['Objectifs sugg\u00e9r\u00e9s', objectives.slice(0,2).join(' / ')],
+        ['Objectifs suggérés', objectives.slice(0,2).join(' / ')],
       ].filter(([,v]) => v);
 
       document.getElementById(gridId).innerHTML = previewFields.map(([k,v]) =>
@@ -542,7 +542,7 @@ R\u00e9ponds UNIQUEMENT en JSON valide, sans markdown ni backticks, avec exactem
       showOralPrefill(renewalOralData, objectives);
 
       status.className = 'parse-status success';
-      status.textContent = '\u2713 Informations extraites \u2014 v\u00e9rifiez et compl\u00e9tez si n\u00e9cessaire.';
+      status.textContent = '✓ Informations extraites — vérifiez et complétez si nécessaire.';
       document.getElementById('fieldsSection').style.display = 'block';
       document.getElementById('fieldsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
       updateSaveButton();
@@ -558,10 +558,10 @@ R\u00e9ponds UNIQUEMENT en JSON valide, sans markdown ni backticks, avec exactem
     const panel = document.getElementById('oralPrefillPanel');
     const grid  = document.getElementById('oralPrefillGrid');
     const rows = [
-      ['Niveau pr\u00e9requis',  oral.prereqLevel],
+      ['Niveau prérequis',  oral.prereqLevel],
       ['Niveau cible',      oral.targetLevel],
       ['Heures formation',  oral.coachingHours + 'h coaching + ' + oral.homeworkHours + 'h autonome = ' + oral.totalHours + 'h total'],
-      ['Objectifs (×' + objectives.length + ')', objectives.join(' \u2022 ')],
+      ['Objectifs (×' + objectives.length + ')', objectives.join(' • ')],
     ].filter(([,v]) => v);
     grid.innerHTML = rows.map(([k,v]) =>
       `<div class="pk">${k}</div><div class="pv">${v}</div>`
@@ -577,7 +577,7 @@ R\u00e9ponds UNIQUEMENT en JSON valide, sans markdown ni backticks, avec exactem
     const status = document.getElementById('parseStatus');
     btn.disabled = true;
     status.className = 'parse-status loading';
-    status.textContent = 'Analyse en cours\u2026';
+    status.textContent = 'Analyse en cours…';
     try {
       const resp = await fetch('/api/parse-legal-questionnaire', {
         method: 'POST',
@@ -590,7 +590,7 @@ R\u00e9ponds UNIQUEMENT en JSON valide, sans markdown ni backticks, avec exactem
       fillFields(parsedData);
       showPreview(parsedData);
       status.className = 'parse-status success';
-      status.textContent = '\u2713 Informations extraites \u2014 v\u00e9rifiez et compl\u00e9tez si n\u00e9cessaire.';
+      status.textContent = '✓ Informations extraites — vérifiez et complétez si nécessaire.';
       document.getElementById('fieldsSection').style.display = 'block';
       document.getElementById('parsedPreview').style.display = 'block';
       document.getElementById('fieldsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -631,7 +631,7 @@ R\u00e9ponds UNIQUEMENT en JSON valide, sans markdown ni backticks, avec exactem
     const fields = [
       ['Nom',         d.name],
       ['Email',       d.email],
-      ['T\u00e9l\u00e9phone',  d.phone],
+      ['Téléphone',  d.phone],
       ['Profil',      d.lawyerType],
       ['Employeur',   d.company],
       ['Domaines',    d.legalDomains],
@@ -644,7 +644,7 @@ R\u00e9ponds UNIQUEMENT en JSON valide, sans markdown ni backticks, avec exactem
     ).join('');
   }
 
-  // ── Save ─────────────────────────────────────────────────────────────────
+  // ── Save ───────────────────────────────────────────────────────────────────
   async function saveCandidate() {
     const name  = document.getElementById('f_name').value.trim();
     const email = document.getElementById('f_email').value.trim();
@@ -652,12 +652,12 @@ R\u00e9ponds UNIQUEMENT en JSON valide, sans markdown ni backticks, avec exactem
 
     const btn = document.getElementById('saveBtn');
     btn.disabled = true;
-    btn.textContent = 'Cr\u00e9ation en cours\u2026';
+    btn.textContent = 'Création en cours…';
 
     const goals = [];
     const goalType = document.getElementById('f_goalType').value;
     const mainGoal = document.getElementById('f_mainGoal').value.trim();
-    if (goalType) goals.push(goalType === 'les deux' ? 'Am\u00e9liorer l\u2019anglais juridique \u00e0 l\u2019oral et \u00e0 l\u2019\u00e9crit' : `Am\u00e9liorer l\u2019anglais juridique ${goalType}`);
+    if (goalType) goals.push(goalType === 'les deux' ? 'Améliorer l’anglais juridique à l’oral et à l’écrit' : `Améliorer l’anglais juridique ${goalType}`);
     if (mainGoal) goals.push(mainGoal);
 
     const payload = {
@@ -704,24 +704,24 @@ R\u00e9ponds UNIQUEMENT en JSON valide, sans markdown ni backticks, avec exactem
       const actEl   = document.getElementById('successActions');
 
       if (isRenewal) {
-        titleEl.textContent = name + ' \u2014 renouvellement cr\u00e9\u00e9';
+        titleEl.textContent = name + ' — renouvellement créé';
         titleEl.classList.add('renewal');
-        subEl.innerHTML = `Le candidat a \u00e9t\u00e9 cr\u00e9\u00e9 avec le statut <strong>Renouvellement</strong>.<br>Le programme peut \u00eatre g\u00e9n\u00e9r\u00e9 imm\u00e9diatement.`;
+        subEl.innerHTML = `Le candidat a été créé avec le statut <strong>Renouvellement</strong>.<br>Le programme peut être généré immédiatement.`;
         actEl.innerHTML = `
-          <a href="/candidates/${data.candidateId}/programme" class="action-link primary">\ud83d\udccb Aller au programme</a>
-          <a href="/candidates" class="action-link secondary">\u2190 Retour aux candidats</a>`;
+          <a href="/candidates/${data.candidateId}/programme" class="action-link primary">📋 Aller au programme</a>
+          <a href="/candidates" class="action-link secondary">← Retour aux candidats</a>`;
       } else {
-        titleEl.textContent = name + ' \u2014 candidat cr\u00e9\u00e9';
-        subEl.innerHTML = `Le candidat a \u00e9t\u00e9 cr\u00e9\u00e9 avec le statut <strong>Anglais Juridique</strong>.<br>Partagez le lien d\u2019entretien avec l\u2019\u00e9valuateur.`;
-        const oralUrl = `${window.location.origin}/oral/${data.oralToken}`;
+        titleEl.textContent = name + ' — candidat créé';
+        subEl.innerHTML = `Le candidat a été créé avec le statut <strong>Anglais Juridique</strong>.<br>Partagez le lien d’entretien avec l’évaluateur.`;
+        const oralUrl = `${window.location.origin}/oral/intake/${data.intakeToken}`; /* INTAKE_LINK_20260922 */
         actEl.innerHTML = `
-          <a href="${oralUrl}" class="action-link primary" id="oralLinkBtn">\ud83d\udd17 Copier le lien entretien</a>
-          <a href="/candidates" class="action-link secondary">\u2190 Retour aux candidats</a>`;
+          <a href="${oralUrl}" class="action-link primary" id="oralLinkBtn">🔗 Copier le lien entretien</a>
+          <a href="/candidates" class="action-link secondary">← Retour aux candidats</a>`;
         document.getElementById('oralLinkBtn').onclick = (e) => {
           e.preventDefault();
           navigator.clipboard.writeText(oralUrl).then(() => {
-            document.getElementById('oralLinkBtn').textContent = '\u2713 Lien copi\u00e9 !';
-            setTimeout(() => { document.getElementById('oralLinkBtn').textContent = '\ud83d\udd17 Copier le lien entretien'; }, 2000);
+            document.getElementById('oralLinkBtn').textContent = '✓ Lien copié !';
+            setTimeout(() => { document.getElementById('oralLinkBtn').textContent = '🔗 Copier le lien entretien'; }, 2000);
           });
         };
       }
