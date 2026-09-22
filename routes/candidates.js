@@ -367,12 +367,17 @@ router.post('/api/new-legal', (req, res) => {
       finalReport:     null,
       conventionData:  null,
       oralToken:       generateId(),
+      /* INTAKE_LINK_20260922: legal candidates are interviewed through
+         /oral/intake/:intakeToken (oral_intake.html), not /oral/:oralToken.
+         Generate the token here so the success screen can show the right link
+         (same format as /api/send-intake-link, which reuses it). */
+      intakeToken:     require('crypto').randomBytes(8).toString('hex'),
       createdAt:       new Date().toISOString()
     };
 
     candidates.push(candidate);
     saveCandidates(candidates);
-    res.json({ success: true, id: candidate.id, candidateId: candidate.id, oralToken: candidate.oralToken });
+    res.json({ success: true, id: candidate.id, candidateId: candidate.id, oralToken: candidate.oralToken, intakeToken: candidate.intakeToken });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
