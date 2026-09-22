@@ -1,2 +1,0 @@
-      btn.textContent = 'Créer et accéder au programme →';
-  // ── Drag & drop helpers ──────────
