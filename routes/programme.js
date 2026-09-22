@@ -674,6 +674,7 @@ router.post('/api/generate-proposition/:id', async function(req, res) {
       'Commence par \u00ab\u00a0j\u2019ai bien not\xe9\u00a0\u00bb ou expression similaire, en fran\xe7ais.',
       'Ne mentionne pas de niveaux CECRL, pas de certifications, pas de pr\xe9nom.',
       'Ne dis jamais que les informations sont insuffisantes : r\xe9sume ce qui est fourni.',
+      'Adresse-toi directement au candidat \xe0 la deuxi\xe8me personne (vous, votre), jamais \xe0 la troisi\xe8me personne.', /* LEGAL_RESUME_VOUS_20260922 */
       '',
       'Poste : ' + (c.jobtitle || 'non pr\xe9cis\xe9'),
       'Entreprise : ' + (c.company || 'non pr\xe9cis\xe9e')
