@@ -1,1 +1,2 @@
-A:\u00e9|B:\\u00e9|C:\s|D:é|E:\\\\u00e9
+      btn.textContent = 'Créer et accéder au programme →';
+  // ── Drag & drop helpers ──────────
