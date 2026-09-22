@@ -645,19 +645,42 @@ router.post('/api/generate-proposition/:id', async function(req, res) {
   try {
     const goals = (od.validatedGoals || []).map(g => g.goal || g).join(', ');
     const criteria = (od.criteria || []).map(cr => typeof cr === 'object' ? (cr.comment || '') : cr).filter(Boolean).join('. ');
+    /* LEGAL_RESUME_INTAKE_20260922: the legal intake form (oral_intake.html)
+       never sends validatedGoals/criteria - it sends legalDomains,
+       dominantSkills, blockers, priorityGaps, notes, usagePct, lawyerType -
+       and the candidate record carries the prospect questionnaire (goals,
+       legalDocs, currentUsage, upcomingEvent). Feeding only the classic
+       fields made the AI write "informations insuffisantes" for every
+       legal candidate. */
+    const isLegalIntake = (od.intakeType === 'legal_intake') || (c.courseType === 'legal' && !goals && !criteria);
+    const legalLines = isLegalIntake ? [
+      'Profil : ' + (od.lawyerType || c.lawyerType || 'non pr\xe9cis\xe9'),
+      'Domaines juridiques : ' + (od.legalDomains || c.legalDomains || 'non pr\xe9cis\xe9s'),
+      'Documents r\xe9dig\xe9s : ' + (c.legalDocs || 'non pr\xe9cis\xe9s'),
+      'Usage actuel de l\u2019anglais : ' + (c.currentUsage || 'non pr\xe9cis\xe9') + (od.usagePct ? ' (' + od.usagePct + '% du temps)' : ''),
+      'Comp\xe9tences dominantes : ' + (od.dominantSkills || 'non pr\xe9cis\xe9es'),
+      'Objectifs d\xe9clar\xe9s : ' + ((Array.isArray(c.goals) && c.goals.length) ? c.goals.join(', ') : (c.mainGoal || 'non pr\xe9cis\xe9s')),
+      'Points bloquants : ' + (od.blockers || 'non pr\xe9cis\xe9s'),
+      'Lacunes prioritaires : ' + (od.priorityGaps || 'non pr\xe9cis\xe9es'),
+      'Ech\xe9ance / \xe9v\xe9nement : ' + (c.upcomingEvent || 'aucun'),
+      'Notes entretien : ' + (od.notes || 'aucune')
+    ] : [
+      'Objectifs valid\xe9s : ' + (goals || 'non pr\xe9cis\xe9s'),
+      'Observations \xe9valuateur : ' + (criteria || 'non pr\xe9cis\xe9es')
+    ];
     const prompt = [
       'Tu es expert en formation professionnelle en anglais.',
       "R\xe9dige 1 \xe0 2 phrases courtes (max 40 mots total) qui r\xe9sument les besoins et objectifs du candidat, \xe0 partir des informations suivantes.",
       'Commence par \u00ab\u00a0j\u2019ai bien not\xe9\u00a0\u00bb ou expression similaire, en fran\xe7ais.',
       'Ne mentionne pas de niveaux CECRL, pas de certifications, pas de pr\xe9nom.',
+      'Ne dis jamais que les informations sont insuffisantes : r\xe9sume ce qui est fourni.',
       '',
       'Poste : ' + (c.jobtitle || 'non pr\xe9cis\xe9'),
-      'Entreprise : ' + (c.company || 'non pr\xe9cis\xe9e'),
-      'Objectifs valid\xe9s : ' + (goals || 'non pr\xe9cis\xe9s'),
-      'Observations \xe9valuateur : ' + (criteria || 'non pr\xe9cis\xe9es'),
+      'Entreprise : ' + (c.company || 'non pr\xe9cis\xe9e')
+    ].concat(legalLines).concat([
       '',
       'R\xe9ponds uniquement avec les 1-2 phrases, sans pr\xe9ambule ni ponctuation finale superflue.'
-    ].join('\n');
+    ]).join('\n');
 
     const msg = await client.messages.create({
       model: 'claude-sonnet-4-6',

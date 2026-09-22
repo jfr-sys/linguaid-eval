@@ -2449,7 +2449,7 @@ function onRecipientModeChange() {
       : '';
     var opening = thirdParty
       ? 'Suite \xe0 l\u2019\xe9valuation linguistique de ' + (cand.name || '') + ' et \xe0 nos \xe9changes, ' + resumeLine.toLowerCase() + 'Vous trouverez en pi\xe8ce jointe une proposition ainsi que le programme de formation et le rapport de l\u2019\xe9valuation, con\xe7us pour y r\xe9pondre.'
-      : 'Suite \xe0 notre \xe9change, ' + resumeLine + 'Vous trouverez en pi\xe8ce jointe une proposition ainsi que le programme de formation et le rapport de l\u2019\xe9valuation, con\xe7us pour y r\xe9pondre' + (isCPF ? ' tout en permettant une prise en charge via le CPF.' : '.');
+      : 'Suite \xe0 notre \xe9change, ' + (resumeLine ? resumeLine.charAt(0).toLowerCase() + resumeLine.slice(1) : '') + 'Vous trouverez en pi\xe8ce jointe une proposition ainsi que le programme de formation et le rapport de l\u2019\xe9valuation, con\xe7us pour y r\xe9pondre' + (isCPF ? ' tout en permettant une prise en charge via le CPF.' : '.');
 
     // CAJA_RENEWAL_OPENING_FIX (2026-07-30): quick CAJA renewals (E360_LEGAL
     // graduate going straight into CAJA) get a fixed opening paragraph - the
@@ -2525,6 +2525,27 @@ function onRecipientModeChange() {
     if (cpfType === 'E360_LEGAL') {
       etape2 = '**\xc9tape 2 (facultative)**\n\n'
         + '\xc0 l\u2019issue de cette formation, vous disposerez de l\u2019attestation de niveau B2 requise comme pr\xe9requis \xe0 notre certification \u00ab\u00a0CAJA \u2013 Communiquer en anglais juridique des affaires\u00a0\u00bb (RS6810), si vous souhaitez aller plus loin dans votre ma\xeetrise de l\u2019anglais juridique.';
+    }
+
+    /* PARCOURS_EMAIL_20260922: when the two-module parcours is enabled the
+       proposition PDF already carries the M1 + M2 breakdown (lib/parcours.js
+       describe()). The e-mail kept saying "Budget 1650" + "Etape 2
+       (facultative)", contradicting the PDF. Reuse the same lines here. */
+    var pcd = window.__parcoursData;
+    var pcOn = !!(pcd && pcd.calc && pcd.calc.enabled && !thirdParty);
+    if (pcOn) {
+      var pc = pcd.calc, m1 = pc.modules[0], m2 = pc.modules[1], tt = pc.totals;
+      formationBlock = '**Parcours CAJA en deux modules \u2014 convention globale sur ' + pc.maxMonths + ' mois**\n'
+        + '\u2013 Module 1\u00a0: ' + m1.title + ' \u2014 ' + m1.totalHours + ' heures (' + m1.coachingHours + ' h de coaching individuel' + (m1.homeworkHours ? ' + ' + m1.homeworkHours + ' h de travail guid\xe9' : '') + ')\n'
+        + '\u2013 Module 2\u00a0: ' + m2.title + ' \u2014 ' + m2.totalHours + ' heures (' + m2.coachingHours + ' h de coaching individuel' + (m2.homeworkHours ? ' + ' + m2.homeworkHours + ' h de travail guid\xe9' : '') + ')\n'
+        + 'Chaque s\xe9ance de coaching se d\xe9roule en visioconf\xe9rence avec ' + formateur + '.';
+      budgetBlock = '**Budget du parcours\u00a0: ' + pcEur(tt.price) + '**\n'
+        + '\u2013 Module 1\u00a0: ' + pcEur(m1.price) + (m1.route === 'CPF' ? ' (dont ' + pcEur(m1.cpfPart) + ' financ\xe9s via le CPF)' : ' (r\xe8glement direct en ' + m1.instalments + ' \xe9ch\xe9ances)') + '\n'
+        + '\u2013 Module 2\u00a0: ' + pcEur(m2.price) + (m2.route === 'CPF' ? ' (dont ' + pcEur(m2.cpfPart) + ' financ\xe9s via le CPF)' : ' (r\xe8glement direct en ' + m2.instalments + ' \xe9ch\xe9ances)') + '\n'
+        + '\u2013 Reste \xe0 votre charge sur l\u2019ensemble du parcours\u00a0: ' + pcEur(tt.learner) + (tt.forfait ? ' (participation forfaitaire de 150\u00a0\u20ac par module inscrit au CPF incluse)' : '')
+        + (pc.direct && pc.direct.saving > 0 ? '\n\n\xc0 titre de comparaison, les m\xeames ' + tt.coachingHours + ' heures de coaching achet\xe9es directement, hors certification, co\xfbteraient ' + pcEur(pc.direct.comparator) + '\u00a0: le parcours vous fait \xe9conomiser ' + pcEur(pc.direct.saving) + ' et inclut deux certifications.' : '');
+      etape2 = '**Deux certifications, une seule convention**\n\n'
+        + '\xc0 l\u2019issue du Module 1, vous disposerez de l\u2019attestation de niveau B2 requise comme pr\xe9requis \xe0 la certification \u00ab\u00a0CAJA \u2013 Communiquer en anglais juridique des affaires\u00a0\u00bb (RS6810), que vous pr\xe9parerez et passerez dans le cadre du Module 2. Les deux modules font l\u2019objet d\u2019une convention globale unique\u00a0; l\u2019inscription CPF ci-dessous concerne le Module 1, l\u2019inscription du Module 2 se fera \xe0 l\u2019issue du premier.';
     }
 
     // Assemble
@@ -3063,6 +3084,7 @@ function loadParcours(c) {
 }
 function renderParcours(d) {
   var calc = d.calc, st = d.stored || {};
+  window.__parcoursData = d; /* PARCOURS_EMAIL_20260922: shared with buildEmailBody */
   document.getElementById('pcEnabled').value = calc.enabled ? '1' : '0';
   document.getElementById('pcBalance').value = calc.balanceKnown ? calc.cpfBalance : '';
   document.getElementById('pcPrice1').value = calc.modules[0].price;
