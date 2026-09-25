@@ -486,6 +486,18 @@ router.post('/api/personalise-objectives/:id', async function(req, res) {
     '- Departement: ' + (c.dept || 'non precise'),
     '- Entreprise: ' + (c.company || 'non precisee'),
     '- Objectifs valides lors du bilan oral: ' + (goals || 'non precises'),
+    /* REMISE_NIVEAU_JURIDIQUE_20260925: legal professionals (incl. remise a niveau on E360) -
+       anchor the suffixes in their legal working environment, from Joss's interview */
+    ...((function () {
+      if (c.courseType !== 'legal') return [];
+      var iv = require('../lib/needsAnalysis').getInterview(c) || {};
+      return [
+        '- Public: professionnel du droit (' + (iv.lawyerType || c.lawyerType || 'juriste / avocat') + ')' + (cpfType === 'E360' ? ' - formation generale de remise a niveau, contextualisee a son environnement juridique (ne pas en faire une formation d anglais juridique)' : ''),
+        '- Domaines juridiques: ' + (iv.legalDomains || c.legalDomains || 'non precises'),
+        '- Competences dominantes (entretien): ' + (iv.dominantSkills || 'non precisees'),
+        '- Besoins exprimes (entretien): ' + String(iv.blockers || c.mainGoal || 'non precises').replace(/\s+/g, ' ').slice(0, 400)
+      ];
+    })()),
     '- Themes de coaching selectionnes: ' + (topicList || 'non selectionnes'),
     '- Niveau cible: ' + (targetLevel || 'non precise'),
     '',

@@ -786,6 +786,8 @@ function renderTopics() {
     var sel = savedTopics.indexOf(t) !== -1;
     // Pre-tick "Anglais juridique" for E360_LEGAL
     if (currentCpfType === 'E360_LEGAL' && t === 'Anglais juridique') sel = true;
+    /* REMISE_NIVEAU_JURIDIQUE_20260925: legal public on general E360 - suggest it on a fresh programme only */
+    if (currentCpfType === 'E360' && candData && candData.courseType === 'legal' && !savedTopics.length && t === 'Anglais juridique') sel = true;
     var chk = sel ? ' checked' : '';
     return '<div class="topic-item' + (sel ? ' selected' : '') + '" onclick="toggleTopic(this)">' +
       '<input type="checkbox"' + chk + ' onchange="this.parentElement.classList.toggle(\'selected\',this.checked)">' +

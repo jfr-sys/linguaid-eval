@@ -477,6 +477,18 @@ def fill_programme(data, template_path, output_path):
             fRef = sectPr.makeelement(q('footerReference'), attrs)
             sectPr.insert(pos, fRef)
 
+    # REMISE_NIVEAU_JURIDIQUE_20260925: legal public on the general E360 course
+    if data.get('courseType') == 'legal' and data.get('cpfType') == 'E360':
+        _p = find_para(root, 'Chaque cours sera pr\xe9par\xe9 sur mesure')
+        if _p is not None:
+            replace_text_in_para(_p, u'Chaque cours est pr\xe9par\xe9 sur mesure par un coach habitu\xe9 \xe0 travailler avec des avocats et des juristes\u00a0: les mises en situation, \xe0 l\u2019\xe9crit comme \xe0 l\u2019oral, s\u2019appuient sur l\u2019environnement professionnel juridique de l\u2019apprenant.')
+        _p = find_para(root, u'Moyens d\u2019encadrement')
+        if _p is not None:
+            _ts = [t for t in _p.iter(q('t')) if t.text]
+            if _ts:
+                _ts[-1].text = _ts[-1].text.rstrip() + u' Pour ce parcours, le coach est habitu\xe9 \xe0 accompagner des professionnels du droit (avocats, juristes).'
+                _ts[-1].set('{http://www.w3.org/XML/1998/namespace}space', 'preserve')
+
     # Save and repack
     tree.write(doc_path, xml_declaration=True, encoding='UTF-8', standalone=True)
     with zipfile.ZipFile(output_path, 'w', zipfile.ZIP_DEFLATED) as zout:
