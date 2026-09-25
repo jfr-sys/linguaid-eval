@@ -4186,7 +4186,8 @@ router.post('/generate-devis-opco/:id', function(req, res) {
     return intPart + ',' + parts[1] + ' \u20ac';
   }
   var od = c.oralData || {};
-  var isLegal = (c.courseType === 'legal') || od.cpfType === 'E360_LEGAL' || od.cpfType === 'CAJA';
+  var isRemiseO = (c.courseType === 'legal') && od.cpfType === 'E360'; /* REMISE_NIVEAU_JURIDIQUE_20260925 */
+  var isLegal = !isRemiseO && ((c.courseType === 'legal') || od.cpfType === 'E360_LEGAL' || od.cpfType === 'CAJA');
   var today = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
   var yr = new Date().getFullYear();
   var devisNumber = String(b.devisNumber || '').trim() || ('DEV-' + yr + '-' + String(c.id).slice(-4).toUpperCase());
@@ -4203,7 +4204,9 @@ router.post('/generate-devis-opco/:id', function(req, res) {
     modalite: '\u00c0 distance \u2014 visioconf\u00e9rence (cours individuels)',
     periode: String(b.periode || '').trim(),
     duree: hoursStr + ' heures',
-    formateur: isLegal
+    formateur: isRemiseO
+      ? 'coach anglophone natif de haut niveau, habitu\u00e9 \u00e0 travailler avec des avocats et des juristes'
+      : isLegal
       ? 'formateur anglophone natif, ancien avocat, sp\u00e9cialis\u00e9 dans l\u2019enseignement de l\u2019anglais juridique des affaires'
       : 'formateur anglophone natif exp\u00e9riment\u00e9',
     refsOpco: String(b.refsOpco || '').trim(),

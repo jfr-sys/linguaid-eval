@@ -2564,6 +2564,10 @@ function onRecipientModeChange() {
     var cpfType = oral.cpfType || '';
     var isCPF = !!(oral.isCPF) || !!cpfType;
     var isLegal = cand.courseType === 'legal' || cpfType === 'E360_LEGAL' || cpfType === 'CAJA';
+    /* REMISE_NIVEAU_JURIDIQUE_20260925: legal professional on the GENERAL E360
+       course (remise a niveau). Coach is NOT a former lawyer - a high-level
+       coach used to working with lawyers. */
+    var isRemise = cand.courseType === 'legal' && cpfType === 'E360';
     var thirdParty = document.getElementById('propModeThird') && document.getElementById('propModeThird').checked;
     var civility = conv.civility || (isLegal ? 'Ma\xeetre' : 'Madame');
     var civ = civility === 'Monsieur' ? 'Cher' : civility === 'Ma\xeetre' ? 'Cher Ma\xeetre' : 'Ch\xe8re';
@@ -2609,7 +2613,9 @@ function onRecipientModeChange() {
     }
 
     // Trainer line
-    var formateur = (isLegal)
+    var formateur = isRemise
+      ? 'un coach anglophone natif de haut niveau, habitu\xe9 \xe0 travailler avec des avocats et des juristes'
+      : (isLegal)
       ? 'un formateur anglophone natif, ancien avocat, sp\xe9cialis\xe9 exclusivement dans l\u2019enseignement de l\u2019anglais juridique des affaires \u2014 un profil rare en France'
       : 'un formateur expert en anglais professionnel';
 
@@ -2620,7 +2626,7 @@ function onRecipientModeChange() {
 
     // Formation block
     var homeworkLine = hasHomework
-      ? '\n\u2013 ' + homeworkH + ' heures de travail guid\xe9 en autonomie (travaux dirig\xe9s ou e-learning), comprenant des activit\xe9s p\xe9dagogiques structur\xe9es avec production de livrables' + (isLegal ? ' (notamment des enregistrements audio r\xe9alis\xe9s \xe0 partir de mises en situation juridiques professionnelles)' : '')
+      ? '\n\u2013 ' + homeworkH + ' heures de travail guid\xe9 en autonomie (travaux dirig\xe9s ou e-learning), comprenant des activit\xe9s p\xe9dagogiques structur\xe9es avec production de livrables' + ((isLegal && !isRemise) ? ' (notamment des enregistrements audio r\xe9alis\xe9s \xe0 partir de mises en situation juridiques professionnelles)' : '')
       : '';
 
     var coachDesc = isLegal
@@ -2695,6 +2701,12 @@ function onRecipientModeChange() {
     }
 
     // Assemble
+    if (isRemise) { /* REMISE_NIVEAU_JURIDIQUE_20260925 */
+      var p1 = thirdParty ? (prenom || 'l\u2019apprenant') : 'vous';
+      coachDesc = 'Il s\u2019agit d\u2019une remise \xe0 niveau de l\u2019anglais professionnel : l\u2019objectif est d\u2019abord de consolider les bases et surtout de gagner en aisance \xe0 l\u2019oral. Le coaching est enti\xe8rement personnalis\xe9, avec un suivi p\xe9dagogique individualis\xe9.';
+      contextLine = (thirdParty ? 'Le coach' : 'Votre coach') + ' conna\xeet bien l\u2019univers juridique : les mises en situation s\u2019inspirent ' + (thirdParty ? 'de la pratique de ' + p1 : 'de votre pratique') + ' (\xe9changes avec des interlocuteurs internationaux, r\xe9unions, entretiens), afin que chaque s\xe9ance soit directement utile. '
+        + 'Une fois ces bases consolid\xe9es, ' + (thirdParty ? p1 + ' pourra' : 'vous pourrez') + ', si ' + (thirdParty ? 'elle ou il le souhaite' : 'vous le souhaitez') + ', poursuivre vers l\u2019anglais juridique proprement dit (E360 parcours juridique, puis la certification CAJA).';
+    }
     var parts = [greeting, '', opening, '', formationBlock, '', coachDesc, '', contextLine];
     if (cpfType === 'CAJA' || cpfType === 'E360_LEGAL') {
       // CAJA adds certification mention

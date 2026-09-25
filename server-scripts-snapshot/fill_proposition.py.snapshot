@@ -102,6 +102,11 @@ def keep_block_remove_markers(root, start_marker, end_marker):
 FORMATEUR_BUSINESS = (
     "Formateur expert en anglais professionnel, \u00e0 distance en visioconf\u00e9rence individuelle"
 )
+# REMISE_NIVEAU_JURIDIQUE_20260925: legal public on the general E360 course
+FORMATEUR_REMISE_JURIDIQUE = (
+    "Coach anglophone natif de haut niveau, habitu\u00e9 \u00e0 travailler avec des avocats "
+    "et des juristes, \u00e0 distance en visioconf\u00e9rence individuelle"
+)
 FORMATEUR_LEGAL = (
     "Formateur anglophone natif, ancien avocat, sp\u00e9cialis\u00e9 exclusivement dans l\u2019enseignement "
     "de l\u2019anglais juridique des affaires \u2014 un profil rare en France"
@@ -310,6 +315,8 @@ def fill_proposition(data, template_path, output_path):
                 titre = TITRE_E360
                 certification = certification_e360(rsCode)
                 formateur = FORMATEUR_BUSINESS
+                if courseType == 'legal':  # REMISE_NIVEAU_JURIDIQUE_20260925
+                    formateur = FORMATEUR_REMISE_JURIDIQUE
             intro = INTRO_CPF
         else:
             titre = TITRE_NON_CPF_LEGAL if isLegal else TITRE_NON_CPF_BUSINESS
