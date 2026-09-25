@@ -280,6 +280,14 @@ function candidateHasEmail(c, email) {
   return (c.emailAliases || []).some(function (a) { return String(a || '').trim().toLowerCase() === key; });
 }
 
+/* ORAL_TIMELINE_20260925: append one dated event to c.oralLinkHistory */
+function pushOralEvent(c, kind, extra) {
+  if (!c) return;
+  if (!Array.isArray(c.oralLinkHistory)) c.oralLinkHistory = [];
+  c.oralLinkHistory.push(Object.assign({ at: new Date().toISOString(), kind: kind }, extra || {}));
+  if (c.oralLinkHistory.length > 50) c.oralLinkHistory = c.oralLinkHistory.slice(-50);
+}
+
 function hasWrittenTestEvidence(c) {
   if (!c) return false;
   var sc = c.scores || {};
@@ -1323,7 +1331,7 @@ router.post('/send-oral-link/:id', function(req, res) {
   transporter.sendMail({ from: 'eval@linguaid.net', replyTo: require('../lib/mailer').replyTo(), /* MAILER_REPLYTO */ to: toEmail, subject: 'Oral assessment - ' + c.name, text: body }, function(err) {
     if (err) { console.error('sendMail error:', err); return res.status(500).json({ error: err.message }); }
     /* STALE_WRITE_FIX (2026-08-24) */
-    applyToCandidate(req.params.id, function (fc) { fc.oralEmailSentTo = evaluator; });
+    applyToCandidate(req.params.id, function (fc) { fc.oralEmailSentTo = evaluator; fc.oralEvaluatorLinkSentAt = new Date().toISOString(); if (!fc.oralEvaluator) fc.oralEvaluator = evaluator; pushOralEvent(fc, 'evaluator_link', { evaluator: evaluator }); }); /* ORAL_TIMELINE_20260925 */
     res.json({ ok: true });
   });
 });
@@ -2034,9 +2042,14 @@ router.post('/send-calendly-link/:id', function(req, res) {
     // Record when link was sent and which evaluator was assigned
     var cidx2 = candidates.findIndex(function(x){ return x.id === req.params.id; });
     if (cidx2 !== -1) {
-      candidates[cidx2].oralLinkSentAt = new Date().toISOString();
-      candidates[cidx2].oralLastReminderAt = new Date().toISOString();
-      if (evaluator) candidates[cidx2].oralEvaluator = evaluator;
+      /* ORAL_TIMELINE_20260925: first send keeps its date; later sends are resends */
+      var nowC = new Date().toISOString(); var cc2 = candidates[cidx2];
+      var isResend = !!cc2.oralLinkSentAt;
+      if (!isResend) cc2.oralLinkSentAt = nowC; else { cc2.oralLinkResentAt = nowC; cc2.oralReminderCount = (cc2.oralReminderCount || 0) + 1; }
+      cc2.oralLastReminderAt = nowC;
+      cc2.oralLinkSentTo = candidate.email;
+      if (evaluator) cc2.oralEvaluator = evaluator;
+      pushOralEvent(cc2, isResend ? 'calendly_resend' : 'calendly_sent', { to: candidate.email, evaluator: evaluator || cc2.oralEvaluator || '', by: 'joss' });
       require('fs').writeFileSync(require('path').join(dataDir, 'candidates.json'), JSON.stringify(candidates, null, 2));
     }
     res.json({ ok: true });
@@ -2728,6 +2741,9 @@ router.post('/mark-oral-booked/:id', (req, res) => {
   if (idx === -1) return res.status(404).json({ error: 'Not found' });
   candidates[idx].status = 'oral_booked';
   candidates[idx].oralBookedAt = new Date().toISOString();
+  candidates[idx].oralBookedBy = 'manual'; /* ORAL_TIMELINE_20260925 */
+  candidates[idx].oralBookedWith = candidates[idx].oralBookedWith || candidates[idx].oralEvaluator || '';
+  pushOralEvent(candidates[idx], 'booked', { with: candidates[idx].oralBookedWith, by: 'manual' });
   fs.writeFileSync(dataPath, JSON.stringify(candidates, null, 2));
   res.json({ ok: true });
 });
@@ -3333,6 +3349,12 @@ router.post('/calendly-webhook', express.json(), function(req, res) {
     }
     candidates[idx].oralBookedAt = bookedAt;
     candidates[idx].oralBookedDate = bookedAt;
+    /* ORAL_TIMELINE_20260925: parse_booking.py passes the Calendly host when it can read it */
+    candidates[idx].oralBookedBy = 'calendly';
+    var withWho = String(req.body.evaluator || req.body.host || req.body.owner || '').trim();
+    if (withWho) candidates[idx].oralBookedWith = withWho;
+    if (req.body.eventStart) candidates[idx].oralSlotAt = req.body.eventStart;
+    pushOralEvent(candidates[idx], 'booked', { with: withWho || candidates[idx].oralEvaluator || '', slot: req.body.eventStart || '' });
     require('fs').writeFileSync(dataPath, JSON.stringify(candidates, null, 2));
     console.log('calendly-webhook: booked', candidates[idx].name, bookedAt);
     res.json({ ok: true, matched: true, name: candidates[idx].name });
@@ -3869,7 +3891,7 @@ function approveReminders(req, res, match) {
       e.sentAt = new Date().toISOString();
       if (e.type === 'convention') { c.conventionData = c.conventionData || {}; c.conventionData.conventionLastReminderAt = e.sentAt; }
       else if (e.type === 'quiz') { c.quizLastReminderAt = e.sentAt; }
-      else if (e.type === 'oral') { c.oralLastReminderAt = e.sentAt; }
+      else if (e.type === 'oral') { c.oralLastReminderAt = e.sentAt; c.oralReminderCount = (c.oralReminderCount || 0) + 1; pushOralEvent(c, 'auto_reminder', { at: e.sentAt, to: e.to }); } /* ORAL_TIMELINE_20260925 */
       sent.push((e.candidateName || '?') + ' \u2192 ' + e.to);
     });
     fs.writeFileSync(cPath, JSON.stringify(cands, null, 2));

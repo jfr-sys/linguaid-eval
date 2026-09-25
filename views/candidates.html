@@ -425,9 +425,13 @@
       } else if (x.status === 'oral_done') {
         oralNote = '<div style="font-size:11px;font-weight:600;color:#16a34a;margin-top:3px">\u2713 Oral effectu\u00e9 \u2014 rapport final possible</div>';
       } else if (x.oralBookedAt) {
-        oralNote = '<div style="font-size:11px;font-weight:600;color:#d97706;margin-top:3px">\ud83d\udcc5 Cr\u00e9neau r\u00e9serv\u00e9 \u2014 oral \u00e0 venir</div>';
+        /* ORAL_TIMELINE_20260925 */
+        oralNote = '<div style="font-size:11px;font-weight:600;color:#d97706;margin-top:3px">\ud83d\udcc5 R\u00e9serv\u00e9 le ' + new Date(x.oralBookedAt).toLocaleDateString('fr-FR') + (x.oralBookedWith || x.oralEvaluator ? ' \u00b7 ' + esc(x.oralBookedWith || x.oralEvaluator) : '') + ' \u2014 oral \u00e0 venir</div>';
+      } else if (x.oralLinkSentAt) {
+        var rc = x.oralReminderCount || 0;
+        oralNote = '<div style="font-size:11px;color:#1e40af;margin-top:3px">\ud83d\udcc5 Calendly envoy\u00e9 le ' + new Date(x.oralLinkSentAt).toLocaleDateString('fr-FR') + (x.oralEvaluator ? ' \u00b7 ' + esc(x.oralEvaluator) : '') + ' \u2014 en attente' + (rc ? ' \u00b7 ' + rc + ' relance' + (rc > 1 ? 's' : '') : '') + '</div>';
       } else {
-        oralNote = '<div style="font-size:11px;color:#94a3b8;margin-top:3px">En attente de r\u00e9servation</div>';
+        oralNote = '<div style="font-size:11px;color:#94a3b8;margin-top:3px">Lien Calendly non envoy\u00e9</div>';
       }
     }
     /* NEEDS_ANALYSIS_20260925 */

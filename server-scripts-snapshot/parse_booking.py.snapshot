@@ -1,0 +1,80 @@
+#!/usr/bin/env python3
+"""
+Reads a raw email from stdin, extracts the invitee (To:) email,
+POSTs to the local LinguAid webhook.
+Called by Postfix pipe transport.
+"""
+import sys, re, urllib.request, urllib.parse, json, logging
+
+logging.basicConfig(filename='/home/debian/booking_pipe.log', level=logging.INFO,
+                    format='%(asctime)s %(message)s')
+
+raw = sys.stdin.read()
+logging.info('Received email, length=%d', len(raw))
+
+# Extract To: header — this is the invitee/candidate email
+to_match = re.search(r'^To:\s*(.+?)\s*$', raw, re.MULTILINE | re.IGNORECASE)
+if not to_match:
+    logging.error('No To: header found')
+    sys.exit(0)
+
+to_addr = to_match.group(1).strip()
+# Handle "Name <email>" format
+email_match = re.search(r'[\w.+%-]+@[\w.-]+\.[a-z]{2,}', to_addr, re.IGNORECASE)
+if not email_match:
+    logging.error('Could not parse email from To: %s', to_addr)
+    sys.exit(0)
+
+email = email_match.group(0).lower()
+logging.info('Invitee email: %s', email)
+
+# Only process Calendly booking confirmations
+# Check subject contains expected Calendly keywords
+subject_match = re.search(r'^Subject:\s*(.+?)\s*$', raw, re.MULTILINE | re.IGNORECASE)
+subject = subject_match.group(1) if subject_match else ''
+logging.info('Subject: %s', subject)
+
+# Filter: must look like a Calendly confirmation (not cancellation)
+if 'cancel' in subject.lower():
+    logging.info('Skipping cancellation email')
+    sys.exit(0)
+
+if 'calendly' not in raw.lower() and 'oral' not in subject.lower():
+    logging.info('Does not look like a Calendly booking, skipping')
+    sys.exit(0)
+
+# POST to local webhook
+# ORAL_TIMELINE_20260925: identify the Calendly host (our evaluator) and the slot.
+# Calendly confirmations name the host in the body ("Hannah Durant", "with Anna ...")
+# and the invitee is in To:, so the first evaluator first name found in the text
+# that is NOT the invitee's own name is the host. Best effort - blank when unsure.
+EVALUATORS = ['Hannah', 'Anna', 'Louise', 'Joss']
+low = raw.lower()
+host = ''
+for _ev in EVALUATORS:
+    if re.search(r'\b' + _ev.lower() + r'\b', low):
+        host = _ev
+        break
+slot = ''
+_m = re.search(r'(?:Event\s*Date/Time|Date/Time|When|Quand|Date et heure)\s*[:\-]\s*(.+)', raw, re.IGNORECASE)
+if _m:
+    slot = _m.group(1).strip()[:120]
+else:
+    _m = re.search(r'(\d{1,2}:\d{2}\s*(?:am|pm)?[^\n]{0,60}\b20\d{2})', raw, re.IGNORECASE)
+    if _m:
+        slot = _m.group(1).strip()[:120]
+logging.info('Host guess: %s | slot: %s', host, slot)
+payload = json.dumps({'email': email, 'bookedAt': '', 'evaluator': host, 'eventStart': slot}).encode('utf-8')
+req = urllib.request.Request(
+    'http://localhost:3001/api/calendly-webhook',
+    data=payload,
+    headers={'Content-Type': 'application/json'}
+)
+try:
+    with urllib.request.urlopen(req, timeout=10) as resp:
+        body = resp.read().decode()
+        logging.info('Webhook response: %s', body)
+except Exception as e:
+    logging.error('Webhook POST failed: %s', e)
+
+sys.exit(0)

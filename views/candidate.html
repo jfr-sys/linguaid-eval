@@ -1033,97 +1033,10 @@
       </div>
     `;
 
-    const oralUrl = window.location.origin + '/oral/' + c.oralToken;
-    const isLegalIntake = c.courseType === 'legal';
-    const sentTo = c.oralEmailSentTo ? `<div style="font-size:12px;color:#166534;margin-top:8px;">\u2713 Link sent to ${c.oralEmailSentTo}</div>` : '';
-    const intakeSent = c.intakeToken ? `<div style="font-size:12px;color:#5b21b6;margin-top:6px;">\u2713 Lien entretien généré</div>` : '';
-
-    if (c.oralData) {
-      // Assessment/intake done — show compact resend
-      // Key on the data: only a legal INTAKE submission shows the intake resend;
-      // a legal candidate tested via the classic form gets the standard resend.
-      if (c.oralData.intakeType === 'legal_intake') {
-        document.getElementById('oralLinkArea').innerHTML = `
-          <div style="font-size:12px;color:#5b21b6;margin-top:2px;">\u2713 Entretien de positionnement enregistré</div>
-          <button class="btn btn-primary" onclick="sendIntakeLink('${c.id}')" style="font-size:11px;padding:3px 8px;margin-top:6px;background:#7c3aed;border:none;">↩ Renvoyer le lien</button>
-        `;
-      } else {
-        document.getElementById('oralLinkArea').innerHTML = `
-          <div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;margin-top:2px">
-            <select id="evaluatorSelect" style="font-size:11px;padding:3px 6px;border:1px solid #bfdbfe;border-radius:4px;background:white;color:#1e3a8a;">
-              <option value="">— Évaluateur —</option>
-              <option value="Louise">Louise</option>
-              <option value="Hannah">Hannah</option>
-              <option value="Anna">Anna</option>
-              <option value="Joss">Joss</option>
-            </select>
-            <button class="btn btn-primary" onclick="sendOralLink('${c.id}')" style="font-size:11px;padding:3px 8px">↩ Renvoyer</button>
-            ${sentTo}
-          </div>
-        `;
-      }
-    } else {
-      // Not yet assessed
-      if (isLegalIntake) {
-        /* NEEDS_ANALYSIS_20260925: interview already recorded -> compact line, evaluator box becomes the main action */
-        var naDone = !!(c.needsAnalysis && (c.needsAnalysis.approxLevel || c.needsAnalysis.notes || c.needsAnalysis.blockers));
-        document.getElementById('oralLinkArea').innerHTML = (naDone ? `
-          <div style="font-size:12px;color:#5b21b6;margin-top:2px;">\u2713 Analyse des besoins enregistrée (${c.needsAnalysis.interviewDate || ''}) — oral de niveau par l’évaluateur ci-dessous</div>
-          <button class="btn" onclick="sendIntakeLink('${c.id}')" style="font-size:11px;padding:3px 8px;margin:4px 0 8px;background:#ede9fe;color:#5b21b6;border:1px solid #c4b5fd;align-self:flex-start">↩ Renvoyer le lien entretien</button>` : `
-          <div class="oral-link-box" style="border-color:#c4b5fd;background:#faf5ff;">
-            <label style="color:#5b21b6;">Entretien de positionnement — Anglais juridique (par Joss)</label>
-            <p style="font-size:12px;color:#6b7280;margin-bottom:10px;line-height:1.5;">
-              Envoyez-vous le lien de l’entretien pour remplir le formulaire après votre appel.
-            </p>
-            <button class="btn btn-primary" style="width:100%;background:#7c3aed;border:none;" onclick="sendIntakeLink('${c.id}')">
-              📋 Envoyer le lien entretien
-            </button>
-            ${intakeSent}
-          </div>
-          <div style="text-align:center;font-size:11px;color:#94a3b8;margin:10px 0;text-transform:uppercase;letter-spacing:0.06em">ou — évaluation classique par un évaluateur</div>`) + `
-          <div class="oral-link-box">
-            <label>Send classic oral assessment link to evaluator</label>
-            <select id="evaluatorSelect" style="width:100%;padding:8px 10px;border:1px solid #bfdbfe;border-radius:6px;font-size:13px;margin-bottom:8px;background:white;color:#1e3a8a;">
-              <option value="">— Choose evaluator —</option>
-              <option value="Louise">Louise</option>
-              <option value="Hannah">Hannah</option>
-              <option value="Anna">Anna</option>
-            </select>
-            <div style="display:flex;gap:8px;">
-              <input type="text" id="oralLinkInput" value="${oralUrl}" readonly style="flex:1;font-size:12px;padding:8px 10px;border:1px solid #bfdbfe;border-radius:6px;background:white;color:#1e3a8a;">
-              <button class="btn btn-secondary copy-btn" onclick="copyLink()" style="white-space:nowrap;">Copy</button>
-            </div>
-            <button class="btn btn-primary" style="width:100%;margin-top:8px;" onclick="sendOralLink('${c.id}')">Send link by email</button>
-            <button class="btn" style="width:100%;margin-top:8px;background:#7c3aed;color:white;" onclick="sendCalendlyLink('${c.id}')">📅 Send Calendly link to candidate</button>
-            <button class="btn" style="width:100%;margin-top:8px;background:#dcfce7;color:#166534;border:1px solid #86efac;" onclick="markBooked('${c.id}')">\u2705 Mark as booked</button>
-            <div id="calendlyStatus_${c.id}" style="font-size:12px;color:#166534;margin-top:6px;display:none"></div>
-            ${sentTo}
-          </div>
-        `;
-      } else {
-        document.getElementById('oralLinkArea').innerHTML = `
-          <div class="oral-link-box">
-            <label>Send oral assessment link to evaluator</label>
-            <select id="evaluatorSelect" style="width:100%;padding:8px 10px;border:1px solid #bfdbfe;border-radius:6px;font-size:13px;margin-bottom:8px;background:white;color:#1e3a8a;">
-              <option value="">— Choose evaluator —</option>
-              <option value="Louise">Louise</option>
-              <option value="Hannah">Hannah</option>
-              <option value="Anna">Anna</option>
-              <option value="Joss">Joss</option>
-            </select>
-            <div style="display:flex;gap:8px;">
-              <input type="text" id="oralLinkInput" value="${oralUrl}" readonly style="flex:1;font-size:12px;padding:8px 10px;border:1px solid #bfdbfe;border-radius:6px;background:white;color:#1e3a8a;">
-              <button class="btn btn-secondary copy-btn" onclick="copyLink()" style="white-space:nowrap;">Copy</button>
-            </div>
-            <button class="btn btn-primary" style="width:100%;margin-top:8px;" onclick="sendOralLink('${c.id}')">Send link by email</button>
-            <button class="btn" style="width:100%;margin-top:8px;background:#7c3aed;color:white;" onclick="sendCalendlyLink('${c.id}')">📅 Send Calendly link to candidate</button>
-            <button class="btn" style="width:100%;margin-top:8px;background:#dcfce7;color:#166534;border:1px solid #86efac;" onclick="markBooked('${c.id}')">\u2705 Mark as booked</button>
-            <div id="calendlyStatus_${c.id}" style="font-size:12px;color:#166534;margin-top:6px;display:none"></div>
-            ${sentTo}
-          </div>
-        `;
-      }
-    }
+    /* ORAL_TIMELINE_20260925: Step 2 = status pill + dated timeline + one action row.
+       Replaces the stacked boxes. Same helpers as before (sendCalendlyLink,
+       sendOralLink, markBooked, copyLink, sendIntakeLink) - ids kept. */
+    renderOralStep(c);
 
     applyWrittenTestGate(c); /* NO_TEST_NO_WRITTEN_REPORT (2026-08-24) */
     if (c.writtenReport) {
@@ -1143,7 +1056,7 @@
 
     if (c.oralData) {
       document.getElementById('stage2').classList.add('done');
-      document.getElementById('stage2status').textContent = oralIsLegacyIntakeOnly(c) ? 'Entretien Joss enregistré — pas d’oral évaluateur (parcours sans test)' : 'Oral assessment submitted ✓'; /* NEEDS_ANALYSIS_20260925 */
+      document.getElementById('stage2status').textContent = ''; /* ORAL_TIMELINE_20260925: pill carries the status */
       showLevelsEditor(c); /* edit-levels */
       document.getElementById('btnFinal').disabled = false;
       document.getElementById('stage3').classList.add('active');
@@ -1282,6 +1195,86 @@
     if (c.isRenewal) return false;
     if (oralIsLegacyIntakeOnly(c)) return false;
     return true;
+  }
+
+
+  /* ORAL_TIMELINE_20260925 ----------------------------------------------- */
+  function fmtDT(iso, withTime) {
+    if (!iso) return '';
+    var d = new Date(iso); if (isNaN(d)) return String(iso).slice(0, 10);
+    var ds = d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
+    return withTime === false ? ds : ds + ' ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+  }
+  function renderOralStep(c) {
+    var area = document.getElementById('oralLinkArea'); if (!area) return;
+    var od = c.oralData || null;
+    var legacyIntake = oralIsLegacyIntakeOnly(c);
+    var oralDone = !!(od && !legacyIntake);
+    var na = (c.needsAnalysis && Object.keys(c.needsAnalysis).length) ? c.needsAnalysis : (legacyIntake ? od : null);
+    var naDone = !!(na && (na.approxLevel || na.notes || na.blockers));
+    var evaluator = c.oralEvaluator || c.oralEmailSentTo || '';
+    var oralUrl = window.location.origin + '/oral/' + c.oralToken;
+    var hist = Array.isArray(c.oralLinkHistory) ? c.oralLinkHistory : [];
+    var reminders = hist.filter(function (h) { return h.kind === 'auto_reminder' || h.kind === 'calendly_resend'; });
+    var reminderCount = c.oralReminderCount || reminders.length;
+    var esc = function (x) { return String(x == null ? '' : x).replace(/&/g, '&amp;').replace(/</g, '&lt;'); };
+
+    /* status pill */
+    var pill, pillBg, pillFg;
+    if (oralDone) { pill = 'Oral effectué' + (od.sessionDate ? ' le ' + fmtDT(od.sessionDate, false) : '') + (od.evaluator ? ' · ' + esc(od.evaluator) : ''); pillBg = '#dcfce7'; pillFg = '#166534'; }
+    else if (c.oralBookedAt) { pill = 'Créneau réservé le ' + fmtDT(c.oralBookedAt) + (c.oralBookedWith ? ' · ' + esc(c.oralBookedWith) : ''); pillBg = '#fef3c7'; pillFg = '#92400e'; }
+    else if (c.oralLinkSentAt) { pill = 'En attente de réservation'; pillBg = '#dbeafe'; pillFg = '#1e40af'; }
+    else if (legacyIntake) { pill = 'Parcours entretien seul — pas d’oral évaluateur'; pillBg = '#ede9fe'; pillFg = '#5b21b6'; }
+    else { pill = 'Aucun lien envoyé'; pillBg = '#f1f5f9'; pillFg = '#475569'; }
+
+    /* timeline rows: [done, when, label] */
+    var rows = [];
+    if (naDone) rows.push([true, fmtDT(na.submittedAt || na.interviewDate, !!na.submittedAt), 'Analyse des besoins (Joss)' + (na.approxLevel ? ' — est. ' + esc(na.approxLevel) : '')]);
+    if (c.oralEvaluatorLinkSentAt || c.oralEmailSentTo) rows.push([true, c.oralEvaluatorLinkSentAt ? fmtDT(c.oralEvaluatorLinkSentAt) : 'date n/c', 'Lien d’évaluation envoyé à l’évaluateur' + (c.oralEmailSentTo ? ' · ' + esc(c.oralEmailSentTo) : '')]);
+    if (c.oralLinkSentAt) rows.push([true, fmtDT(c.oralLinkSentAt), 'Lien Calendly envoyé à ' + (c.oralLinkSentTo ? esc(c.oralLinkSentTo) : 'l’apprenant') + (evaluator ? ' · ' + esc(evaluator) + ' en copie' : '')]);
+    else if (!legacyIntake) rows.push([false, '', 'Lien Calendly non envoyé']);
+    if (c.oralLinkSentAt && !c.oralBookedAt && !oralDone) {
+      var last = c.oralLastReminderAt || c.oralLinkSentAt;
+      var next = new Date(new Date(last).getTime() + 3 * 86400000);
+      rows.push([reminderCount > 0, reminderCount > 0 ? fmtDT(c.oralLastReminderAt) : '', reminderCount > 0
+        ? reminderCount + ' relance' + (reminderCount > 1 ? 's' : '') + ' (dernière ' + fmtDT(c.oralLastReminderAt, false) + ') · prochaine proposée le ' + fmtDT(next, false)
+        : 'Relance auto tous les 3 j (soumise à votre validation) · prochaine le ' + fmtDT(next, false)]);
+    } else if (reminderCount > 0) rows.push([true, fmtDT(c.oralLastReminderAt), reminderCount + ' relance' + (reminderCount > 1 ? 's' : '')]);
+    if (c.oralBookedAt) rows.push([true, fmtDT(c.oralBookedAt), 'Créneau réservé' + (c.oralBookedWith ? ' avec ' + esc(c.oralBookedWith) : '') + (c.oralBookedBy === 'manual' ? ' (marqué manuellement)' : c.oralBookedBy === 'calendly' ? ' (Calendly)' : '')]);
+    else if (!legacyIntake) rows.push([false, '', 'Créneau réservé']);
+    if (oralDone) rows.push([true, fmtDT(od.submittedAt || od.sessionDate, !!od.submittedAt), 'Oral effectué' + (od.evaluator ? ' · ' + esc(od.evaluator) : '') + (od.listeningLevel || od.speakingLevel ? ' — CO ' + esc(od.listeningLevel || '–') + ' / EO ' + esc(od.speakingLevel || '–') : '')]);
+    else if (!legacyIntake) rows.push([false, '', 'Oral effectué']);
+
+    var tl = rows.map(function (r) {
+      return '<div style="display:flex;gap:7px;align-items:flex-start;font-size:11.5px;line-height:1.35;color:' + (r[0] ? '#1f2937' : '#94a3b8') + '">'
+        + '<span style="flex:none;width:10px;height:10px;border-radius:50%;margin-top:3px;' + (r[0] ? 'background:#16a34a' : 'border:1.5px solid #cbd5e1;background:white') + '"></span>'
+        + '<span style="flex:none;width:78px;color:#64748b;font-variant-numeric:tabular-nums">' + (r[1] || '—') + '</span>'
+        + '<span>' + r[2] + '</span></div>';
+    }).join('');
+
+    var evOpts = ['Hannah', 'Anna', 'Louise', 'Joss'].map(function (n) { return '<option value="' + n + '"' + (evaluator === n ? ' selected' : '') + '>' + n + '</option>'; }).join('');
+    var evSel = '<select id="evaluatorSelect" title="Évaluateur (Calendly + copie e-mail)" style="font-size:11px;padding:2px 6px;border:1px solid #bfdbfe;border-radius:4px;background:white;color:#1e3a8a"><option value="">— Évaluateur —</option>' + evOpts + '</select>';
+
+    var actions = '';
+    if (!oralDone) {
+      actions += '<button class="btn" onclick="sendCalendlyLink(\'' + c.id + '\')" style="font-size:11px;padding:3px 8px;background:#7c3aed;color:white;border:none">📅 ' + (c.oralLinkSentAt ? 'Renvoyer Calendly' : 'Envoyer Calendly') + '</button>';
+      if (!c.oralBookedAt) actions += '<button class="btn" onclick="markBooked(\'' + c.id + '\')" style="font-size:11px;padding:3px 8px;background:#dcfce7;color:#166534;border:1px solid #86efac">✅ Marquer réservé</button>';
+    } else {
+      actions += '<button class="btn btn-primary" onclick="sendOralLink(\'' + c.id + '\')" style="font-size:11px;padding:3px 8px">↩ Renvoyer à l’évaluateur</button>';
+    }
+    var more = ''
+      + (naDone || c.intakeToken ? '<button class="btn" onclick="sendIntakeLink(\'' + c.id + '\')" style="font-size:11px;padding:3px 8px;background:#ede9fe;color:#5b21b6;border:1px solid #c4b5fd">📋 ' + (naDone ? 'Renvoyer le lien entretien (Joss)' : 'Envoyer le lien entretien (Joss)') + '</button>' : '')
+      + (!oralDone ? '<button class="btn btn-primary" onclick="sendOralLink(\'' + c.id + '\')" style="font-size:11px;padding:3px 8px">✉ Envoyer le lien d’évaluation à l’évaluateur</button>' : '')
+      + '<div style="display:flex;gap:4px;align-items:center"><input type="text" id="oralLinkInput" value="' + oralUrl + '" readonly style="flex:1;font-size:11px;padding:3px 6px;border:1px solid #bfdbfe;border-radius:4px;background:white;color:#1e3a8a"><button class="btn btn-secondary copy-btn" onclick="copyLink()" style="font-size:11px;padding:3px 8px">Copier</button></div>';
+
+    area.innerHTML = ''
+      + '<div style="display:flex;justify-content:space-between;align-items:center;gap:6px;margin:2px 0 6px">'
+      +   '<span style="font-size:11px;font-weight:600;padding:2px 9px;border-radius:10px;background:' + pillBg + ';color:' + pillFg + '">' + pill + '</span>' + evSel + '</div>'
+      + '<div style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px">' + tl + '</div>'
+      + '<div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center">' + actions
+      +   '<button class="btn" onclick="var m=document.getElementById(\'oralMore\');m.style.display=m.style.display===\'none\'?\'flex\':\'none\'" title="Plus d’actions" style="font-size:11px;padding:3px 8px;background:#f1f5f9;color:#475569;border:1px solid #e2e8f0">⋯</button></div>'
+      + '<div id="oralMore" style="display:none;flex-direction:column;gap:4px;margin-top:6px;padding-top:6px;border-top:1px dashed #e2e8f0">' + more + '</div>'
+      + '<div id="calendlyStatus_' + c.id + '" style="font-size:11px;color:#166534;margin-top:4px;display:none"></div>';
   }
 
   /* NEEDS_ANALYSIS_20260925: read-only panel of Joss's interview */
