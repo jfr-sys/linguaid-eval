@@ -652,18 +652,31 @@ router.post('/api/generate-proposition/:id', async function(req, res) {
        legalDocs, currentUsage, upcomingEvent). Feeding only the classic
        fields made the AI write "informations insuffisantes" for every
        legal candidate. */
-    const isLegalIntake = (od.intakeType === 'legal_intake') || (c.courseType === 'legal' && !goals && !criteria);
+    /* RESUME_NEEDS_ANALYSIS_20260925: since NEEDS_ANALYSIS_20260925 the interview
+       lives in c.needsAnalysis, not on oralData - this prompt was reading empty
+       fields and fell back on the prospect questionnaire alone (Axelle
+       Mesquida: "0 %" became "vous utilisez l'anglais lors de vos
+       deplacements"). Read the interview wherever it is; it outranks the
+       questionnaire; the weekly-practice figure is stated explicitly. */
+    const iv = require('../lib/needsAnalysis').getInterview(c) || {};
+    const ivv = function (k) { return (iv[k] !== undefined && iv[k] !== null && String(iv[k]).trim() !== '') ? iv[k] : od[k]; };
+    const hasIv = !!(require('../lib/needsAnalysis').getInterview(c));
+    const pct = ivv('usagePct');
+    const isLegalIntake = hasIv || (od.intakeType === 'legal_intake') || (c.courseType === 'legal' && !goals && !criteria);
     const legalLines = isLegalIntake ? [
-      'Profil : ' + (od.lawyerType || c.lawyerType || 'non pr\xe9cis\xe9'),
-      'Domaines juridiques : ' + (od.legalDomains || c.legalDomains || 'non pr\xe9cis\xe9s'),
+      '=== ENTRETIEN DE POSITIONNEMENT (Joss) - source prioritaire ===',
+      'Profil : ' + (ivv('lawyerType') || c.lawyerType || 'non pr\xe9cis\xe9'),
+      'Domaines juridiques : ' + (ivv('legalDomains') || c.legalDomains || 'non pr\xe9cis\xe9s'),
+      'Pratique de l\u2019anglais par semaine (not\xe9e en entretien) : ' + ((pct !== undefined && pct !== null && String(pct).trim() !== '') ? String(pct).replace(/%$/, '') + ' %' : 'non pr\xe9cis\xe9e'),
+      'Comp\xe9tences dominantes requises : ' + (ivv('dominantSkills') || 'non pr\xe9cis\xe9es'),
+      'Points bloquants : ' + (ivv('blockers') || 'non pr\xe9cis\xe9s'),
+      'Lacunes prioritaires : ' + (ivv('priorityGaps') || 'non pr\xe9cis\xe9es'),
+      'Notes entretien : ' + (ivv('notes') || 'aucune'),
+      '=== QUESTIONNAIRE DU CANDIDAT (secondaire, d\xe9claratif) ===',
+      'Usage de l\u2019anglais d\xe9clar\xe9 : ' + (c.currentUsage || 'non pr\xe9cis\xe9'),
       'Documents r\xe9dig\xe9s : ' + (c.legalDocs || 'non pr\xe9cis\xe9s'),
-      'Usage actuel de l\u2019anglais : ' + (c.currentUsage || 'non pr\xe9cis\xe9') + (od.usagePct ? ' (' + od.usagePct + '% du temps)' : ''),
-      'Comp\xe9tences dominantes : ' + (od.dominantSkills || 'non pr\xe9cis\xe9es'),
       'Objectifs d\xe9clar\xe9s : ' + ((Array.isArray(c.goals) && c.goals.length) ? c.goals.join(', ') : (c.mainGoal || 'non pr\xe9cis\xe9s')),
-      'Points bloquants : ' + (od.blockers || 'non pr\xe9cis\xe9s'),
-      'Lacunes prioritaires : ' + (od.priorityGaps || 'non pr\xe9cis\xe9es'),
-      'Ech\xe9ance / \xe9v\xe9nement : ' + (c.upcomingEvent || 'aucun'),
-      'Notes entretien : ' + (od.notes || 'aucune')
+      'Ech\xe9ance / \xe9v\xe9nement : ' + (c.upcomingEvent || 'aucun')
     ] : [
       'Objectifs valid\xe9s : ' + (goals || 'non pr\xe9cis\xe9s'),
       'Observations \xe9valuateur : ' + (criteria || 'non pr\xe9cis\xe9es')
@@ -675,6 +688,8 @@ router.post('/api/generate-proposition/:id', async function(req, res) {
       'Ne mentionne pas de niveaux CECRL, pas de certifications, pas de pr\xe9nom.',
       'Ne dis jamais que les informations sont insuffisantes : r\xe9sume ce qui est fourni.',
       'Adresse-toi directement au candidat \xe0 la deuxi\xe8me personne (vous, votre), jamais \xe0 la troisi\xe8me personne.', /* LEGAL_RESUME_VOUS_20260922 */
+      /* RESUME_NEEDS_ANALYSIS_20260925 */
+      'Quand l\u2019entretien et le questionnaire diff\xe8rent, l\u2019entretien fait foi. Ne minimise ni n\u2019embellis la pratique : si elle est de 0 % ou quasi nulle, dis clairement que l\u2019anglais n\u2019est pas pratiqu\xe9 au quotidien ; ne pr\xe9sente jamais un usage occasionnel (quelques voyages par an) comme un usage courant.',
       '',
       'Poste : ' + (c.jobtitle || 'non pr\xe9cis\xe9'),
       'Entreprise : ' + (c.company || 'non pr\xe9cis\xe9e')
