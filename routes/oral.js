@@ -198,13 +198,49 @@ router.post('/submit-intake/:token', express.json(), async (req, res) => {
   const idx = candidates.findIndex(c => c.intakeToken === req.params.token);
   if (idx === -1) return res.status(404).json({ error: 'Not found' });
 
-  /* ORAL_SUBMIT_MERGE (2026-08-24): merge, never replace */
-  candidates[idx].oralData = mergeOralSubmission(candidates[idx].oralData, req.body);
-  candidates[idx].status = 'oral_done';
+  /* NEEDS_ANALYSIS_20260925: the interview is a needs analysis, stored in
+     c.needsAnalysis. nextStep decides the pathway:
+       report_only  -> legacy shape kept (oralData intake stamp, oral_done) so the
+                       interview-only report and programme routes work as before;
+       written_test -> oralData untouched, status stays csv_uploaded, the in-house
+                       written test is sent now, evaluator oral follows via Calendly. */
+  const needsLib = require('../lib/needsAnalysis');
+  const writtenTest = require('../lib/writtenTest');
+  const body = Object.assign({}, req.body || {});
+  const nextStep = (body.nextStep === 'written_test') ? 'written_test' : 'report_only';
+  delete body.nextStep; delete body.intakeType;
+  const nowIso = new Date().toISOString();
+  const naMerged = needsLib.mergeNeeds(candidates[idx].needsAnalysis, body);
+  naMerged.nextStep = nextStep;
+  naMerged.submittedAt = nowIso;
+  candidates[idx].needsAnalysis = naMerged;
+
+  let testSent = false, testErr = null;
+  if (nextStep === 'report_only') {
+    /* ORAL_SUBMIT_MERGE (2026-08-24): merge, never replace */
+    candidates[idx].oralData = mergeOralSubmission(candidates[idx].oralData, Object.assign({}, body, { intakeType: 'legal_intake' }));
+    candidates[idx].status = 'oral_done';
+  } else {
+    if (needsLib.oralIsLegacyIntakeOnly(candidates[idx])) needsLib.detachIntakeFromOral(candidates[idx]);
+    if (!candidates[idx].status || candidates[idx].status === 'invited') candidates[idx].status = 'csv_uploaded';
+    const hasEvidence = !!(candidates[idx].scores && candidates[idx].scores.total > 0)
+      || !!(candidates[idx].freewriting && Object.values(candidates[idx].freewriting).some(v => v && String(v).trim()));
+    if (!hasEvidence && candidates[idx].email) {
+      await new Promise(resolve => writtenTest.sendInvite(candidates[idx], { afterInterview: true }, function (err) {
+        if (err) { testErr = err.message; console.error('intake written-test invite error:', err); }
+        else { testSent = true; writtenTest.stampSent(candidates[idx], nowIso); }
+        resolve();
+      }));
+    }
+  }
   saveCandidates(candidates);
 
   const candidate = candidates[idx];
   const candidateUrl = 'https://eval.linguaid.net/candidates/' + candidate.id;
+  const nextLine = (nextStep === 'written_test')
+    ? (testSent ? 'Le test \u00e9crit a \u00e9t\u00e9 envoy\u00e9 \u00e0 ' + candidate.email + '. Ensuite : oral \u00e9valuateur via Calendly, puis rapport final combin\u00e9.'
+                : 'Parcours avec test \u00e9crit choisi' + (testErr ? ' \u2014 ENVOI DU TEST EN \u00c9CHEC (' + testErr + '), renvoyez-le depuis la fiche.' : '.'))
+    : 'Le rapport final est pr\u00eat \u00e0 \u00eatre g\u00e9n\u00e9r\u00e9.';
 
   try {
     await transporter.sendMail({
@@ -220,7 +256,7 @@ router.post('/submit-intake/:token', express.json(), async (req, res) => {
             <h2 style="color:#1F4E79;font-size:18px;margin:0 0 16px">Entretien de positionnement enregistr\u00e9</h2>
             <p style="color:#334155;font-size:15px;margin:0 0 24px">
               L\u2019entretien de positionnement pour <strong>${candidate.name}</strong> a \u00e9t\u00e9 enregistr\u00e9.
-              Le rapport final est pr\u00eat \u00e0 \u00eatre g\u00e9n\u00e9r\u00e9.
+              ${nextLine}
             </p>
             <table style="width:100%;border-collapse:collapse;margin-bottom:24px">
               <tr><td style="padding:8px 0;color:#64748b;font-size:13px;border-bottom:1px solid #e2e8f0">Candidat</td><td style="padding:8px 0;font-size:13px;font-weight:600;border-bottom:1px solid #e2e8f0">${candidate.name}</td></tr>
@@ -228,7 +264,7 @@ router.post('/submit-intake/:token', express.json(), async (req, res) => {
               <tr><td style="padding:8px 0;color:#64748b;font-size:13px;border-bottom:1px solid #e2e8f0">Entreprise</td><td style="padding:8px 0;font-size:13px;border-bottom:1px solid #e2e8f0">${candidate.company || '\u2014'}</td></tr>
               <tr><td style="padding:8px 0;color:#64748b;font-size:13px">Programme recommand\u00e9</td><td style="padding:8px 0;font-size:13px">${req.body.recommendedProgramme || '\u2014'}</td></tr>
             </table>
-            <a href="${candidateUrl}" style="display:inline-block;background:#1F4E79;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-size:14px;font-weight:500">G\u00e9n\u00e9rer le rapport final \u2192</a>
+            <a href="${candidateUrl}" style="display:inline-block;background:#1F4E79;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-size:14px;font-weight:500">${nextStep === 'written_test' ? 'Ouvrir la fiche candidat \u2192' : 'G\u00e9n\u00e9rer le rapport final \u2192'}</a>
           </div>
         </div>
       `
@@ -237,7 +273,7 @@ router.post('/submit-intake/:token', express.json(), async (req, res) => {
     console.error('Intake email error:', err.message);
   }
 
-  res.json({ success: true });
+  res.json({ success: true, nextStep: nextStep, testSent: testSent, testError: testErr });
 });
 
 

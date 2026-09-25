@@ -295,8 +295,10 @@ router.post('/generate-written/:id', async (req, res) => {
     });
   }
 
+  /* NEEDS_ANALYSIS_20260925 */
+  const naBlockW = require('../lib/needsAnalysis').promptBlock(c);
   const prompt = `You are an expert English language evaluator for Linguaid France. Generate a detailed Initial English Language Evaluation Report based on the following written placement test data.
-
+${naBlockW ? '\nThe candidate is a legal professional. ' + naBlockW + '\nUse this ONLY to angle your analysis of the writing samples and your recommendations towards legal-English needs. It is reported information: never present the interviewer estimate as a result, never invent legal-vocabulary errors that do not appear in the samples.\n' : ''}
 CANDIDATE:
 Name: ${c.name}
 Email: ${c.email}
@@ -444,7 +446,9 @@ function insertNoTestCaveat(report) {
 
 async function generateLegalIntakeReport(req, res, candidates, idx) {
   const c = candidates[idx];
-  const oral = c.oralData;
+  /* NEEDS_ANALYSIS_20260925: interview fields live in needsAnalysis (new) or
+     on oralData (legacy report_only shape) - same content either way. */
+  const oral = Object.assign({}, c.oralData || {}, require('../lib/needsAnalysis').hasNeedsAnalysis(c) ? c.needsAnalysis : {});
   const wr = c.writtenReport || '';
 
   const prompt = `You are an expert English language consultant for Linguaid France, specialising in legal English coaching for French legal professionals.
@@ -570,6 +574,9 @@ router.post('/generate-final/:id', async (req, res) => {
            + 'via le bouton Niveaux (Step 2), puis relancez la generation du rapport final.'
     });
   }
+  /* NEEDS_ANALYSIS_20260925: Joss's interview, when present, becomes a
+     "Professional Context & Needs" section. Reported, never measured. */
+  const naBlockF = require('../lib/needsAnalysis').promptBlock(c);
   const validatedGoals = (oral.validatedGoals || []).map(g => `${g.goal} [${g.status}]`).join('\n');
   const validatedAvail = (Array.isArray(oral.validatedAvail) ? oral.validatedAvail : Object.values(oral.validatedAvail || {})).map(a => `${a.day} ${a.time} [${a.status}]`).join(', ');
 
@@ -621,6 +628,7 @@ VALIDATED AVAILABILITY: ${validatedAvail}
 Confirmed Format: ${oral.confirmedFormat || ''}
 Scheduling Notes: ${oral.schedNotes || ''}
 
+${naBlockF ? naBlockF + '\n\nRULES FOR THE NEEDS-ANALYSIS DATA: it is what the candidate REPORTED and what the interviewer OBSERVED in conversation. Cite it as such ("reports", "described", "the interviewer noted"). The measured levels are the written test and the oral assessment ONLY; where the interviewer estimate differs from the measured levels, state the measured level and may mention the estimate as context. Never invent legal-vocabulary gaps or examples beyond what the notes say.\n' : ''}
 EVALUATOR NOTES:
 Professional Context: ${oral.contextObs || ''}
 Learning Priorities: ${oral.prioritiesObs || ''}
@@ -636,7 +644,7 @@ Homework Hours: ${oral.homeworkHours || ''}
 Additional Notes: ${oral.additionalNotes || ''}
 
 Generate a complete professional Final Evaluation Report with markdown formatting (## headers, ### subheaders, **bold**, - bullets) covering:
-1. Executive summary with overall CEFR level across all 5 skills
+1. Executive summary with overall CEFR level across all 5 skills${naBlockF ? '\n1b. A section titled "## Professional Context & Needs" built from the needs-analysis interview: profile, legal domains, dominant skills, blockers as described, priority gaps as ticked, interviewer notes' : ''}
 2. Skill-by-skill assessment (Reading, Writing, Grammar, Listening, Speaking) with strengths and development areas
 3. Exactly 3 SMART learning objectives in French. Format: bold action verb + context/content (max 10 words) followed by 'afin de' or 'pour' + the finalité (max 8 words). One sentence each, no sub-clauses, no percentages, no rubrics, no portfolios. Example: '**Rédiger des emails professionnels clairs et structurés** afin de gérer les échanges écrits de manière autonome.'
 4. Training plan with hours breakdown, priority content areas, and confirmed scheduling
@@ -1552,6 +1560,21 @@ router.post('/invite-candidate', function(req, res) {
 
   var candidates = JSON.parse(fs.readFileSync(path.join(dataDir, 'candidates.json'), 'utf8'));
   // Allow re-inviting - only block if currently in active pipeline (not yet finished)
+  /* NEEDS_ANALYSIS_20260925: never create a twin of a record that is still
+     waiting for its written test (this is exactly how the de Bastard /
+     Florentine duplicates were born). Point at the existing record instead. */
+  var emailKeyInv = email.toLowerCase();
+  var twin = candidates.find(function (x) {
+    return String(x.email || '').trim().toLowerCase() === emailKeyInv && !hasWrittenTestEvidence(x)
+      && ['final_report_done', 'programme_done'].indexOf(x.status) === -1;
+  });
+  if (twin) {
+    return res.status(409).json({
+      error: 'Une fiche existe deja pour ' + email + ' (' + (twin.name || '?') + ', sans resultat de test). '
+           + 'Utilisez le bouton « Envoyer le test ecrit » sur cette fiche plutot que de creer un doublon.',
+      existingId: twin.id
+    });
+  }
 
   var now = new Date().toISOString();
   var newId = require('crypto').randomBytes(6).toString('hex');
@@ -1613,10 +1636,50 @@ router.post('/invite-candidate', function(req, res) {
 function onWrittenTestPathway(c) {
   if (!c) return false;
   if (c.isRenewal) return false;
-  if (c.courseType === 'legal') return false;
-  if ((c.oralData || {}).intakeType === 'legal_intake') return false;
+  /* NEEDS_ANALYSIS_20260925: legal candidates DO sit the in-house written test
+     when Joss decides so at the end of his needs-analysis interview. Only the
+     legacy "interview-only" shape (intake stamped on oralData, no evaluator
+     levels) is off the pathway - POST /api/send-written-test/:id converts it. */
+  if (require('../lib/needsAnalysis').oralIsLegacyIntakeOnly(c)) return false;
   return true;
 }
+
+/* NEEDS_ANALYSIS_20260925
+   POST /api/send-written-test/:id - send (or resend) the in-house written test
+   to a candidate whose level is to be measured. If the record is still in the
+   legacy interview-only shape, the interview is first moved to needsAnalysis
+   (verbatim, asserted) and the status returns to csv_uploaded. Refused when the
+   record already holds written-test evidence. */
+router.post('/send-written-test/:id', function(req, res) {
+  var needsLib = require('../lib/needsAnalysis');
+  var writtenTest = require('../lib/writtenTest');
+  var candidates = getCandidates();
+  var idx = candidates.findIndex(function(x) { return x.id === req.params.id; });
+  if (idx === -1) return res.status(404).json({ error: 'Not found' });
+  var c = candidates[idx];
+  if (c.isRenewal) return res.status(400).json({ error: 'Renouvellement : pas de test ecrit.' });
+  if (hasWrittenTestEvidence(c)) return res.status(400).json({ error: 'Ce candidat a deja des resultats de test ecrit.' });
+  if (!c.email) return res.status(400).json({ error: 'Pas d adresse email sur la fiche.' });
+  var detached = { changed: false };
+  if (needsLib.oralIsLegacyIntakeOnly(c)) {
+    detached = needsLib.detachIntakeFromOral(c);
+    if (detached.error) return res.status(500).json({ error: 'Conversion refusee, rien modifie : ' + detached.error });
+  }
+  if (c.needsAnalysis) c.needsAnalysis.nextStep = 'written_test';
+  if (!c.status || c.status === 'invited') c.status = 'csv_uploaded';
+  writtenTest.sendInvite(c, { afterInterview: !!needsLib.getInterview(c) }, function(err, url) {
+    if (err) { console.error('send-written-test error:', err); return res.status(500).json({ error: err.message }); }
+    var now = new Date().toISOString();
+    var saved = applyToCandidate(req.params.id, function (fc) {
+      if (detached.changed) { fc.needsAnalysis = c.needsAnalysis; fc.oralData = null; fc.status = c.status; }
+      else if (fc.needsAnalysis) fc.needsAnalysis.nextStep = 'written_test';
+      if (!fc.status || fc.status === 'invited') fc.status = 'csv_uploaded';
+      writtenTest.stampSent(fc, now);
+    });
+    if (!saved) return res.status(404).json({ error: 'Candidate no longer exists' });
+    res.json({ ok: true, url: url, detached: detached.changed, preserved: detached.preserved || [] });
+  });
+});
 
 router.post('/resend-invite/:id', function(req, res) {
   var candidates = getCandidates();

@@ -419,13 +419,21 @@
     var b = stageBucket(s.idx);
     var oralNote = '';
     if (s.idx === 3) { // stage 3 is ambiguous: booked vs questionnaire submitted
-      if (x.status === 'oral_done') {
+      if (x.status === 'oral_done' && x.oralData && x.oralData.intakeType === 'legal_intake' && !(x.oralData.listeningLevel || x.oralData.speakingLevel)) {
+        /* NEEDS_ANALYSIS_20260925: Joss's interview is a needs analysis, not the oral */
+        oralNote = '<div style="font-size:11px;font-weight:600;color:#7c3aed;margin-top:3px">\ud83d\udccb Entretien Joss enregistr\u00e9 \u2014 rapport d\u2019entretien possible (pas de test)</div>';
+      } else if (x.status === 'oral_done') {
         oralNote = '<div style="font-size:11px;font-weight:600;color:#16a34a;margin-top:3px">\u2713 Oral effectu\u00e9 \u2014 rapport final possible</div>';
       } else if (x.oralBookedAt) {
         oralNote = '<div style="font-size:11px;font-weight:600;color:#d97706;margin-top:3px">\ud83d\udcc5 Cr\u00e9neau r\u00e9serv\u00e9 \u2014 oral \u00e0 venir</div>';
       } else {
         oralNote = '<div style="font-size:11px;color:#94a3b8;margin-top:3px">En attente de r\u00e9servation</div>';
       }
+    }
+    /* NEEDS_ANALYSIS_20260925 */
+    if (s.idx <= 2 && x.writtenTestSentAt && !((x.scores || {}).total > 0)) {
+      var naTag = (x.needsAnalysis && x.needsAnalysis.approxLevel) ? ' \u00b7 entretien Joss fait (est. ' + x.needsAnalysis.approxLevel + ')' : '';
+      oralNote += '<div style="font-size:11px;color:#b45309;margin-top:3px">\ud83d\udce7 Test \u00e9crit envoy\u00e9 le ' + new Date(x.writtenTestSentAt).toLocaleDateString('fr-FR') + ' \u2014 en attente' + naTag + '</div>';
     }
     if (mode === 'compact') {
       return '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:' + BUCKET_COLORS[b] + ';margin-right:6px"></span>'

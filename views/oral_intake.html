@@ -266,6 +266,19 @@
       </div>
     </div>
 
+    <!-- NEEDS_ANALYSIS_20260925: Section 5 — suite du parcours -->
+    <div class="card" id="nextStepCard">
+      <div class="section-label">Section 5</div>
+      <h2>Suite du parcours</h2>
+      <div class="pill-group">
+        <div class="pill-option"><input type="radio" name="nextStep" id="ns_report" value="report_only" checked onchange="updateNextStepUI()"><label for="ns_report">Rapport d’entretien seul</label></div>
+        <div class="pill-option"><input type="radio" name="nextStep" id="ns_test" value="written_test" onchange="updateNextStepUI()"><label for="ns_test">Test écrit + oral évaluateur</label></div>
+      </div>
+      <p id="nextStepHelp" style="font-size:12px;color:#6b7280;margin-top:10px;line-height:1.5">
+        Le rapport final sera généré à partir de cet entretien uniquement (analyse des besoins, niveau estimé).
+      </p>
+    </div>
+
     <div class="error-msg" id="errorMsg"></div>
 
     <div class="submit-area">
@@ -279,7 +292,7 @@
   <div class="success-screen" id="successScreen">
     <div class="success-icon">✅</div>
     <div class="success-title">Entretien enregistré</div>
-    <div class="success-sub">Le rapport final est prêt à être généré depuis la fiche candidat.</div>
+    <div class="success-sub" id="successSub">Le rapport final est prêt à être généré depuis la fiche candidat.</div>
   </div>
 
 </div><!-- /container -->
@@ -368,9 +381,14 @@
       totalHours: parseInt(hours, 10),
       dateStart: document.getElementById('f_dateStart').value,
       financing: financing ? financing.value : '',
-      // Mark as intake type so generate-final knows the data shape
-      intakeType: 'legal_intake'
+      /* NEEDS_ANALYSIS_20260925: the server decides the data shape from nextStep */
+      nextStep: (document.querySelector('input[name=nextStep]:checked') || {}).value || 'report_only'
     };
+
+    if (payload.nextStep === 'written_test') {
+      const who = document.getElementById('f_name').value || 'ce candidat';
+      if (!confirm('Le test écrit sera envoyé maintenant à ' + who + ' (email de la fiche).\n\nL’entretien est conservé comme analyse des besoins ; le niveau sera mesuré par le test puis par l’oral évaluateur.\n\nConfirmer ?')) return;
+    }
 
     btn.disabled = true;
     btn.textContent = 'Enregistrement…';
@@ -383,6 +401,13 @@
     .then(r => r.json())
     .then(data => {
       if (data.success) {
+        /* NEEDS_ANALYSIS_20260925 */
+        var sub = document.getElementById('successSub');
+        if (data.nextStep === 'written_test') {
+          sub.textContent = data.testSent
+            ? 'Analyse des besoins enregistrée. Le test écrit a été envoyé au candidat ; l’oral évaluateur suivra via Calendly.'
+            : 'Analyse des besoins enregistrée. Le test écrit n’a PAS pu être envoyé' + (data.testError ? ' (' + data.testError + ')' : '') + ' — utilisez « Envoyer le test écrit » sur la fiche candidat.';
+        }
         document.getElementById('mainForm').style.display = 'none';
         document.getElementById('successScreen').style.display = 'block';
       } else {
@@ -396,6 +421,15 @@
       btn.disabled = false;
       btn.textContent = 'Enregistrer et générer le rapport final →';
     });
+  }
+
+  /* NEEDS_ANALYSIS_20260925 */
+  function updateNextStepUI() {
+    var test = document.getElementById('ns_test').checked;
+    document.getElementById('nextStepHelp').textContent = test
+      ? 'L’entretien est enregistré comme analyse des besoins. Le test écrit (questionnaire Linguaid) est envoyé au candidat dès l’enregistrement ; l’oral est ensuite réalisé par un évaluateur (Hannah / Anna) via Calendly. Le rapport final combine les trois.'
+      : 'Le rapport final sera généré à partir de cet entretien uniquement (analyse des besoins, niveau estimé).';
+    document.getElementById('btnSubmit').textContent = test ? 'Enregistrer et envoyer le test écrit →' : 'Enregistrer et générer le rapport final →';
   }
 
   function showErr(msg) {

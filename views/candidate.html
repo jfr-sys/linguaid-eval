@@ -383,6 +383,8 @@
     <button class="tab-btn" onclick="switchTab('data',this)">Données</button>
   </div>
   <div class="tab-pane active" id="tab-eval">
+  <!-- NEEDS_ANALYSIS_20260925: Joss's positioning interview, read-only, visible at every stage -->
+  <div id="needsAnalysisPanel" style="display:none;background:#faf5ff;border:1px solid #c4b5fd;border-radius:12px;padding:0.9rem 1.5rem;margin-bottom:1rem"></div>
   <div id="stepsCompact" style="background:white;border-radius:12px;padding:1rem 1.5rem;box-shadow:0 2px 8px rgba(0,0,0,0.06);margin-bottom:1rem">
     <div style="display:flex;align-items:flex-start;gap:0;flex-wrap:wrap">
       <!-- Step 1 -->
@@ -990,6 +992,22 @@
     updateProgressBar(c.status, !!(c.conventionData && c.conventionData.proposalSentAt), !!(c.conventionData && (c.conventionData.generatedAt || c.conventionData.pdfPath || c.conventionData.signingToken)), !!(c.conventionData && c.conventionData.signedAt), !!(c.conventionData && c.conventionData.sentToCatherineAt), !!(c.conventionData && c.conventionData.convocationSentAt), isCadre, !!(c.missionData && c.missionData.devisUploadedAt), !!(c.missionData && c.missionData.confirmationSignedAt));
     (function(){ var ra = document.getElementById('resendInviteArea'); if (ra) ra.style.display = 'block'; })();
     applyResendGate(c); /* NO_TEST_PATHWAY_NO_RESEND (2026-08-24) */
+    renderNeedsAnalysis(c); /* NEEDS_ANALYSIS_20260925 */
+    (function(){ /* NEEDS_ANALYSIS_20260925: Step 1 wording for the written-test pathway */
+      var st = document.getElementById('stage1status');
+      var btn = document.getElementById('btnResendInvite');
+      if (!st || !btn) return;
+      var evidence = hasWrittenTestEvidence(c);
+      if (c.courseType === 'legal' || c.needsAnalysis) {
+        btn.textContent = evidence ? '📧 Renvoyer le test écrit' : (c.writtenTestSentAt ? '📧 Renvoyer le test écrit' : '📧 Envoyer le test écrit');
+        if (evidence) btn.style.display = 'none';
+      }
+      if (!evidence && c.writtenTestSentAt) {
+        st.innerHTML = '<span style="color:#b45309;font-weight:600">Test écrit envoyé le ' + new Date(c.writtenTestSentAt).toLocaleDateString('fr-FR') + ' — en attente</span>';
+      } else if (!evidence && oralIsLegacyIntakeOnly(c)) {
+        st.innerHTML = '<span style="color:#5b21b6">Pas de test — parcours entretien seul</span>';
+      }
+    })();
 
     const p = Math.round(100 * c.scores.total / (c.scores.max || 30));
     document.getElementById('testDataBlock').innerHTML = `
@@ -1047,7 +1065,11 @@
     } else {
       // Not yet assessed
       if (isLegalIntake) {
-        document.getElementById('oralLinkArea').innerHTML = `
+        /* NEEDS_ANALYSIS_20260925: interview already recorded -> compact line, evaluator box becomes the main action */
+        var naDone = !!(c.needsAnalysis && (c.needsAnalysis.approxLevel || c.needsAnalysis.notes || c.needsAnalysis.blockers));
+        document.getElementById('oralLinkArea').innerHTML = (naDone ? `
+          <div style="font-size:12px;color:#5b21b6;margin-top:2px;">\u2713 Analyse des besoins enregistrée (${c.needsAnalysis.interviewDate || ''}) — oral de niveau par l’évaluateur ci-dessous</div>
+          <button class="btn" onclick="sendIntakeLink('${c.id}')" style="font-size:11px;padding:3px 8px;margin:4px 0 8px;background:#ede9fe;color:#5b21b6;border:1px solid #c4b5fd;align-self:flex-start">↩ Renvoyer le lien entretien</button>` : `
           <div class="oral-link-box" style="border-color:#c4b5fd;background:#faf5ff;">
             <label style="color:#5b21b6;">Entretien de positionnement — Anglais juridique (par Joss)</label>
             <p style="font-size:12px;color:#6b7280;margin-bottom:10px;line-height:1.5;">
@@ -1058,7 +1080,7 @@
             </button>
             ${intakeSent}
           </div>
-          <div style="text-align:center;font-size:11px;color:#94a3b8;margin:10px 0;text-transform:uppercase;letter-spacing:0.06em">ou — évaluation classique par un évaluateur</div>
+          <div style="text-align:center;font-size:11px;color:#94a3b8;margin:10px 0;text-transform:uppercase;letter-spacing:0.06em">ou — évaluation classique par un évaluateur</div>`) + `
           <div class="oral-link-box">
             <label>Send classic oral assessment link to evaluator</label>
             <select id="evaluatorSelect" style="width:100%;padding:8px 10px;border:1px solid #bfdbfe;border-radius:6px;font-size:13px;margin-bottom:8px;background:white;color:#1e3a8a;">
@@ -1121,7 +1143,7 @@
 
     if (c.oralData) {
       document.getElementById('stage2').classList.add('done');
-      document.getElementById('stage2status').textContent = 'Oral assessment submitted ✓';
+      document.getElementById('stage2status').textContent = oralIsLegacyIntakeOnly(c) ? 'Entretien Joss enregistré — pas d’oral évaluateur (parcours sans test)' : 'Oral assessment submitted ✓'; /* NEEDS_ANALYSIS_20260925 */
       showLevelsEditor(c); /* edit-levels */
       document.getElementById('btnFinal').disabled = false;
       document.getElementById('stage3').classList.add('active');
@@ -1246,12 +1268,45 @@
 
   /* NO_TEST_PATHWAY_NO_RESEND (2026-08-24): mirrors onWrittenTestPathway()
      in routes/api.js - keep the two in step. */
+  /* NEEDS_ANALYSIS_20260925: legal candidates may sit the written test; only
+     the legacy interview-only shape is off the pathway (convertible). */
+  function oralIsLegacyIntakeOnly(c) {
+    var od = (c || {}).oralData || null;
+    if (!od || od.intakeType !== 'legal_intake') return false;
+    if ((od.listeningLevel && String(od.listeningLevel).trim()) || (od.speakingLevel && String(od.speakingLevel).trim())) return false;
+    if (od.criteria && Object.keys(od.criteria).length) return false;
+    return true;
+  }
   function onWrittenTestPathway(c) {
     if (!c) return false;
     if (c.isRenewal) return false;
-    if (c.courseType === 'legal') return false;
-    if ((c.oralData || {}).intakeType === 'legal_intake') return false;
+    if (oralIsLegacyIntakeOnly(c)) return false;
     return true;
+  }
+
+  /* NEEDS_ANALYSIS_20260925: read-only panel of Joss's interview */
+  function renderNeedsAnalysis(c) {
+    var panel = document.getElementById('needsAnalysisPanel');
+    if (!panel) return;
+    var na = (c.needsAnalysis && Object.keys(c.needsAnalysis).length) ? c.needsAnalysis
+           : ((c.oralData && c.oralData.intakeType === 'legal_intake') ? c.oralData : null);
+    if (!na) { panel.style.display = 'none'; return; }
+    function e(x){ return (x === undefined || x === null || x === '') ? '<span style="color:#a1a1aa">—</span>' : String(x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/\n/g,'<br>'); }
+    var pathway = na.nextStep === 'written_test' ? 'Test écrit + oral évaluateur' : (na.nextStep === 'report_only' || (c.oralData && c.oralData.intakeType === 'legal_intake') ? 'Rapport d’entretien seul' : '—');
+    var rows = [
+      ['Date', na.interviewDate], ['Profil', na.lawyerType], ['Pratique / semaine', na.usagePct], ['Autres langues', na.otherLangs],
+      ['Domaines juridiques', na.legalDomains], ['Compétences dominantes', na.dominantSkills], ['Blocages', na.blockers],
+      ['Niveau estimé (entretien)', na.approxLevel], ['Gaps prioritaires', na.priorityGaps], ['Notes', na.notes],
+      ['Recommandation', [na.recommendedProgramme, na.targetLevel ? 'cible ' + na.targetLevel : '', na.totalHours ? na.totalHours + ' h' : '', na.dateStart ? 'début ' + na.dateStart : '', na.financing].filter(Boolean).join(' · ')],
+      ['Suite du parcours', pathway]
+    ];
+    panel.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="var b=document.getElementById(\'naBody\');b.style.display=b.style.display===\'none\'?\'block\':\'none\';">'
+      + '<div style="font-size:11px;font-weight:600;text-transform:uppercase;color:#5b21b6;letter-spacing:0.04em">Analyse des besoins · entretien Joss' + (na.interviewDate ? ' · ' + na.interviewDate : '') + '</div>'
+      + '<div style="font-size:11px;color:#7c3aed">' + (na.approxLevel ? 'estimé ' + na.approxLevel + ' · ' : '') + pathway + ' · afficher/masquer</div></div>'
+      + '<div id="naBody" style="display:none;margin-top:8px"><table style="width:100%;border-collapse:collapse;font-size:12px">'
+      + rows.map(function(r){ return '<tr><td style="padding:4px 8px 4px 0;color:#6b7280;white-space:nowrap;vertical-align:top;width:170px">' + r[0] + '</td><td style="padding:4px 0;color:#1f2937;vertical-align:top">' + e(r[1]) + '</td></tr>'; }).join('')
+      + '</table></div>';
+    panel.style.display = 'block';
   }
 
   function applyResendGate(c) {
@@ -1271,6 +1326,17 @@
       btn.title = '';
       note.textContent = '';
       note.style.display = 'none';
+      return;
+    }
+    /* NEEDS_ANALYSIS_20260925: legacy interview-only shape stays convertible */
+    if (oralIsLegacyIntakeOnly(c) && !hasWrittenTestEvidence(c)) {
+      btn.disabled = false;
+      btn.style.opacity = '';
+      btn.style.cursor = '';
+      btn.textContent = '\ud83d\udce7 Envoyer le test \u00e9crit';
+      btn.title = 'Basculer vers le parcours test \u00e9crit + oral \u00e9valuateur (analyse des besoins conserv\u00e9e)';
+      note.style.display = 'block';
+      note.textContent = 'Parcours entretien seul. Cliquer envoie le test et bascule la fiche \u2014 votre analyse des besoins est conserv\u00e9e.';
       return;
     }
     btn.disabled = true;
@@ -1467,21 +1533,26 @@
 
   function resendInvite() {
     /* NO_TEST_PATHWAY_NO_RESEND (2026-08-24) */
-    if (typeof candidate !== 'undefined' && !onWrittenTestPathway(candidate)) {
-      alert("Ce candidat ne passe pas le test \u00e9crit English 360 (parcours juridique ou renouvellement).\n\n"
-        + "Son niveau se recueille en entretien de positionnement.");
+    /* NEEDS_ANALYSIS_20260925 */
+    var useNew = typeof candidate !== 'undefined' && (candidate.courseType === 'legal' || candidate.needsAnalysis || oralIsLegacyIntakeOnly(candidate));
+    if (typeof candidate !== 'undefined' && candidate.isRenewal) {
+      alert("Renouvellement : pas de test \u00e9crit.");
       return;
+    }
+    if (typeof candidate !== 'undefined' && oralIsLegacyIntakeOnly(candidate)) {
+      if (!confirm("Cette fiche est au format \u00ab entretien seul \u00bb.\n\nEnvoyer le test \u00e9crit va :\n\u2022 conserver int\u00e9gralement votre analyse des besoins (panneau violet),\n\u2022 repasser la fiche en attente du test (Step 1), l\u2019oral \u00e9valuateur suivra via Calendly,\n\u2022 envoyer le test au candidat maintenant.\n\nConfirmer ?")) return;
     }
     var btn = document.getElementById('btnResendInvite');
     var status = document.getElementById('resendStatus');
     btn.disabled = true;
     btn.textContent = '⏳ Envoi…';
-    fetch('/api/resend-invite/' + id, { method: 'POST' })
+    fetch(useNew ? '/api/send-written-test/' + id : '/api/resend-invite/' + id, { method: 'POST' })
       .then(r => r.json())
       .then(d => {
         if (d.ok) {
-          btn.textContent = '✅ Renvoyé';
+          btn.textContent = '✅ Envoyé';
           status.textContent = 'Email envoyé à ' + new Date().toLocaleTimeString('fr-FR');
+          if (d.detached) setTimeout(function(){ location.reload(); }, 900); /* NEEDS_ANALYSIS_20260925 */
         } else {
           btn.textContent = '❌ Erreur';
           status.textContent = d.error || 'Erreur';
