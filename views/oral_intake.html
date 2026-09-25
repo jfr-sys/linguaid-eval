@@ -273,10 +273,42 @@
       <div class="pill-group">
         <div class="pill-option"><input type="radio" name="nextStep" id="ns_report" value="report_only" checked onchange="updateNextStepUI()"><label for="ns_report">Rapport d’entretien seul</label></div>
         <div class="pill-option"><input type="radio" name="nextStep" id="ns_test" value="written_test" onchange="updateNextStepUI()"><label for="ns_test">Test écrit + oral évaluateur</label></div>
+        <div class="pill-option"><input type="radio" name="nextStep" id="ns_ext" value="external_test" onchange="updateNextStepUI()"><label for="ns_ext">Test externe déjà passé</label></div>
       </div>
       <p id="nextStepHelp" style="font-size:12px;color:#6b7280;margin-top:10px;line-height:1.5">
         Le rapport final sera généré à partir de cet entretien uniquement (analyse des besoins, niveau estimé).
       </p>
+
+      <!-- EXTERNAL_TEST_20260925: sub-form -->
+      <div id="extForm" style="display:none;margin-top:14px;padding-top:12px;border-top:1px dashed #e2e8f0">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div><label>Organisme / test</label>
+            <select id="ext_provider" onchange="document.getElementById('ext_providerOther').style.display=this.value==='Autre'?'':'none'">
+              <option>ELAO</option><option>TOEIC</option><option>Linguaskill</option><option>Bright</option><option>Pipplet</option><option>IELTS</option><option>Cambridge</option><option>Autre</option>
+            </select>
+            <input type="text" id="ext_providerOther" placeholder="Préciser…" style="display:none;margin-top:6px"></div>
+          <div><label>Référence du rapport</label><input type="text" id="ext_ref" placeholder="ex: 26-HKCFW9"></div>
+          <div><label>Date du test</label><input type="date" id="ext_date"></div>
+          <div><label>Contexte</label><input type="text" id="ext_context" placeholder="ex: Recrutement Safran"></div>
+        </div>
+        <label>Niveau global</label>
+        <select id="ext_overall"><option value="">—</option><option>A1</option><option>A1+</option><option>A2</option><option>A2+</option><option>B1</option><option>B1+</option><option>B2</option><option>B2+</option><option>C1</option><option>C1+</option><option>C2</option></select>
+        <label>Niveaux par compétence (tels qu’imprimés — laisser vide si absent)</label>
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px" id="ext_skills">
+          <div><div style="font-size:11px;color:#6b7280;margin-bottom:3px">Grammaire</div><select id="ext_grammar" class="ext-lvl"></select></div>
+          <div><div style="font-size:11px;color:#6b7280;margin-bottom:3px">Écrit</div><select id="ext_writing" class="ext-lvl"></select></div>
+          <div><div style="font-size:11px;color:#6b7280;margin-bottom:3px">Lecture</div><select id="ext_reading" class="ext-lvl"></select></div>
+          <div><div style="font-size:11px;color:#6b7280;margin-bottom:3px">Compr. orale</div><select id="ext_listening" class="ext-lvl"></select></div>
+          <div><div style="font-size:11px;color:#6b7280;margin-bottom:3px">Expr. orale</div><select id="ext_speaking" class="ext-lvl"></select></div>
+        </div>
+        <label>Points signalés par le rapport (facultatif)</label>
+        <textarea id="ext_notes" rows="2" placeholder="ex: Interrogatifs, passé continu, voix passive, comparatifs…"></textarea>
+        <label>Rapport PDF</label>
+        <input type="file" id="ext_pdf" accept="application/pdf">
+        <div style="margin-top:10px;font-size:13px;display:flex;align-items:center;gap:8px">
+          <input type="checkbox" id="ext_useEvaluatorOral" style="width:auto"><label for="ext_useEvaluatorOral" style="margin:0;text-transform:none;letter-spacing:0;font-weight:500;color:#1f2937;font-size:13px">Oral évaluateur (Hannah / Anna) quand même — sinon les niveaux oraux du test externe sont utilisés</label>
+        </div>
+      </div>
     </div>
 
     <div class="error-msg" id="errorMsg"></div>
@@ -385,6 +417,22 @@
       nextStep: (document.querySelector('input[name=nextStep]:checked') || {}).value || 'report_only'
     };
 
+    /* EXTERNAL_TEST_20260925 */
+    let extPayload = null;
+    if (payload.nextStep === 'external_test') {
+      extPayload = {
+        provider: document.getElementById('ext_provider').value,
+        providerOther: document.getElementById('ext_providerOther').value,
+        ref: document.getElementById('ext_ref').value, date: document.getElementById('ext_date').value,
+        context: document.getElementById('ext_context').value, overall: document.getElementById('ext_overall').value,
+        skills: { grammar: document.getElementById('ext_grammar').value, writing: document.getElementById('ext_writing').value, reading: document.getElementById('ext_reading').value,
+                  listening: document.getElementById('ext_listening').value, speaking: document.getElementById('ext_speaking').value },
+        notes: document.getElementById('ext_notes').value,
+        useEvaluatorOral: document.getElementById('ext_useEvaluatorOral').checked
+      };
+      if (!extPayload.overall && !extPayload.skills.grammar && !extPayload.skills.writing && !extPayload.skills.reading) { showErr('Test externe : indiquez au moins le niveau global ou les niveaux écrits.'); return; }
+      if (!extPayload.useEvaluatorOral && !extPayload.skills.listening && !extPayload.skills.speaking) { showErr('Test externe sans oral évaluateur : indiquez au moins un niveau oral du test, ou cochez « Oral évaluateur quand même ».'); return; }
+    }
     if (payload.nextStep === 'written_test') {
       const who = document.getElementById('f_name').value || 'ce candidat';
       if (!confirm('Le test écrit sera envoyé maintenant à ' + who + ' (email de la fiche).\n\nL’entretien est conservé comme analyse des besoins ; le niveau sera mesuré par le test puis par l’oral évaluateur.\n\nConfirmer ?')) return;
@@ -399,10 +447,25 @@
       body: JSON.stringify(payload)
     })
     .then(r => r.json())
-    .then(data => {
+    .then(async data => {
+      if (data.success && extPayload && data.candidateId) {
+        /* EXTERNAL_TEST_20260925: apply the test (+ written report) then upload the PDF */
+        btn.textContent = 'Import du test externe et génération du rapport écrit…';
+        try {
+          const r1 = await fetch('/api/external-test/' + data.candidateId, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(extPayload) });
+          const d1 = await r1.json();
+          if (!d1.ok) { showErr('Entretien enregistré, mais test externe refusé : ' + (d1.error || 'erreur') + ' — saisissez-le depuis la fiche candidat.'); btn.disabled = false; btn.textContent = 'Enregistrer →'; return; }
+          data.extWritten = d1.writtenGenerated; data.extWrittenError = d1.writtenError;
+          const f = document.getElementById('ext_pdf').files[0];
+          if (f) { const fd = new FormData(); fd.append('file', f); const r2 = await fetch('/api/external-test-pdf/' + data.candidateId, { method: 'POST', body: fd }); const d2 = await r2.json(); data.extPdf = !!d2.ok; }
+        } catch (e) { data.extError = e.message; }
+      }
       if (data.success) {
         /* NEEDS_ANALYSIS_20260925 */
         var sub = document.getElementById('successSub');
+        if (data.nextStep === 'external_test') {
+          sub.textContent = 'Analyse des besoins enregistrée. Test externe importé' + (data.extWritten ? ', rapport écrit généré' : (data.extWrittenError ? ', rapport écrit NON généré (' + data.extWrittenError + ')' : '')) + (data.extPdf ? ', PDF joint' : '') + '. ' + (extPayload && extPayload.useEvaluatorOral ? 'Oral évaluateur à organiser via Calendly.' : 'Niveaux oraux repris du test — rapport final possible.');
+        }
         if (data.nextStep === 'written_test') {
           sub.textContent = data.testSent
             ? 'Analyse des besoins enregistrée. Le test écrit a été envoyé au candidat ; l’oral évaluateur suivra via Calendly.'
@@ -426,11 +489,17 @@
   /* NEEDS_ANALYSIS_20260925 */
   function updateNextStepUI() {
     var test = document.getElementById('ns_test').checked;
-    document.getElementById('nextStepHelp').textContent = test
+    var ext = document.getElementById('ns_ext').checked; /* EXTERNAL_TEST_20260925 */
+    document.getElementById('extForm').style.display = ext ? 'block' : 'none';
+    document.getElementById('nextStepHelp').textContent = ext
+      ? 'Le candidat a déjà passé un test de niveau ailleurs (ELAO, TOEIC…). Saisissez les niveaux du rapport — ils deviennent la mesure officielle (le test écrit Linguaid n’est pas envoyé). Cochez « oral évaluateur » si vous voulez malgré tout un oral Hannah / Anna.'
+      : test
       ? 'L’entretien est enregistré comme analyse des besoins. Le test écrit (questionnaire Linguaid) est envoyé au candidat dès l’enregistrement ; l’oral est ensuite réalisé par un évaluateur (Hannah / Anna) via Calendly. Le rapport final combine les trois.'
       : 'Le rapport final sera généré à partir de cet entretien uniquement (analyse des besoins, niveau estimé).';
-    document.getElementById('btnSubmit').textContent = test ? 'Enregistrer et envoyer le test écrit →' : 'Enregistrer et générer le rapport final →';
+    document.getElementById('btnSubmit').textContent = ext ? 'Enregistrer et importer le test externe →' : test ? 'Enregistrer et envoyer le test écrit →' : 'Enregistrer et générer le rapport final →';
   }
+  (function(){ var opts = '<option value="">—</option>' + ['A1','A1+','A2','A2+','B1','B1+','B2','B2+','C1','C1+','C2'].map(function(l){ return '<option>' + l + '</option>'; }).join('');
+    document.querySelectorAll('.ext-lvl').forEach(function(sel){ sel.innerHTML = opts; }); })();
 
   function showErr(msg) {
     const el = document.getElementById('errorMsg');

@@ -207,7 +207,7 @@ router.post('/submit-intake/:token', express.json(), async (req, res) => {
   const needsLib = require('../lib/needsAnalysis');
   const writtenTest = require('../lib/writtenTest');
   const body = Object.assign({}, req.body || {});
-  const nextStep = (body.nextStep === 'written_test') ? 'written_test' : 'report_only';
+  const nextStep = (body.nextStep === 'written_test') ? 'written_test' : (body.nextStep === 'external_test' ? 'external_test' : 'report_only'); /* EXTERNAL_TEST_20260925 */
   delete body.nextStep; delete body.intakeType;
   const nowIso = new Date().toISOString();
   const naMerged = needsLib.mergeNeeds(candidates[idx].needsAnalysis, body);
@@ -216,7 +216,11 @@ router.post('/submit-intake/:token', express.json(), async (req, res) => {
   candidates[idx].needsAnalysis = naMerged;
 
   let testSent = false, testErr = null;
-  if (nextStep === 'report_only') {
+  if (nextStep === 'external_test') {
+    /* EXTERNAL_TEST_20260925: the form posts the test itself to /api/external-test/:id right after this call */
+    if (needsLib.oralIsLegacyIntakeOnly(candidates[idx])) needsLib.detachIntakeFromOral(candidates[idx]);
+    if (!candidates[idx].status || candidates[idx].status === 'invited') candidates[idx].status = 'csv_uploaded';
+  } else if (nextStep === 'report_only') {
     /* ORAL_SUBMIT_MERGE (2026-08-24): merge, never replace */
     candidates[idx].oralData = mergeOralSubmission(candidates[idx].oralData, Object.assign({}, body, { intakeType: 'legal_intake' }));
     candidates[idx].status = 'oral_done';
@@ -237,7 +241,9 @@ router.post('/submit-intake/:token', express.json(), async (req, res) => {
 
   const candidate = candidates[idx];
   const candidateUrl = 'https://eval.linguaid.net/candidates/' + candidate.id;
-  const nextLine = (nextStep === 'written_test')
+  const nextLine = (nextStep === 'external_test')
+    ? 'Test externe d\u00e9clar\u00e9 (niveaux import\u00e9s depuis le rapport fourni).'
+    : (nextStep === 'written_test')
     ? (testSent ? 'Le test \u00e9crit a \u00e9t\u00e9 envoy\u00e9 \u00e0 ' + candidate.email + '. Ensuite : oral \u00e9valuateur via Calendly, puis rapport final combin\u00e9.'
                 : 'Parcours avec test \u00e9crit choisi' + (testErr ? ' \u2014 ENVOI DU TEST EN \u00c9CHEC (' + testErr + '), renvoyez-le depuis la fiche.' : '.'))
     : 'Le rapport final est pr\u00eat \u00e0 \u00eatre g\u00e9n\u00e9r\u00e9.';
@@ -273,7 +279,7 @@ router.post('/submit-intake/:token', express.json(), async (req, res) => {
     console.error('Intake email error:', err.message);
   }
 
-  res.json({ success: true, nextStep: nextStep, testSent: testSent, testError: testErr });
+  res.json({ success: true, nextStep: nextStep, testSent: testSent, testError: testErr, candidateId: candidates[idx].id });
 });
 
 

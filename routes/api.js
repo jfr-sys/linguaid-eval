@@ -289,6 +289,7 @@ function pushOralEvent(c, kind, extra) {
 }
 
 function hasWrittenTestEvidence(c) {
+  if (require('../lib/externalTest').hasExternalTest(c)) return true; /* EXTERNAL_TEST_20260925 */
   if (!c) return false;
   var sc = c.scores || {};
   var fw = c.freewriting || {};
@@ -298,9 +299,12 @@ function hasWrittenTestEvidence(c) {
   });
 }
 
-router.post('/generate-written/:id', async (req, res) => {
+/* EXTERNAL_TEST_20260925: handler body extracted so the external-test route can
+   generate the written report in the same request. `res` is any object with
+   .status(n).json(o) and .json(o). */
+async function generateWrittenCore(candidateId, res) {
   const candidates = getCandidates();
-  const idx = candidates.findIndex(c => c.id === req.params.id);
+  const idx = candidates.findIndex(c => c.id === candidateId);
   if (idx === -1) return res.status(404).json({ error: 'Not found' });
   const c = candidates[idx];
 
@@ -315,7 +319,11 @@ router.post('/generate-written/:id', async (req, res) => {
 
   /* NEEDS_ANALYSIS_20260925 */
   const naBlockW = require('../lib/needsAnalysis').promptBlock(c);
-  const prompt = `You are an expert English language evaluator for Linguaid France. Generate a detailed Initial English Language Evaluation Report based on the following written placement test data.
+  /* EXTERNAL_TEST_20260925: no MCQ / free writing -> the external report is the evidence */
+  const extLib = require('../lib/externalTest');
+  const isExternalW = extLib.hasExternalTest(c) && !((c.scores || {}).total > 0);
+  const extBlockW = isExternalW ? extLib.promptBlock(c) : '';
+  const prompt = `You are an expert English language evaluator for Linguaid France. Generate a detailed Initial English Language Evaluation Report based on the following ${isExternalW ? 'EXTERNAL level test report supplied by the candidate (no Linguaid written test was sat)' : 'written placement test data'}.
 ${naBlockW ? '\nThe candidate is a legal professional. ' + naBlockW + '\nUse this ONLY to angle your analysis of the writing samples and your recommendations towards legal-English needs. It is reported information: never present the interviewer estimate as a result, never invent legal-vocabulary errors that do not appear in the samples.\n' : ''}
 CANDIDATE:
 Name: ${c.name}
@@ -324,19 +332,30 @@ Department: ${c.dept}
 Job Title: ${c.jobtitle}
 Test Date: ${c.testdate}
 
-TEST SCORES:
-Total MCQ Score: ${c.scores.total}/${c.scores.max} (${Math.round(100 * c.scores.total / c.scores.max)}%)
+${extBlockW ? extBlockW + '\n' : `TEST SCORES:
+Total MCQ Score: ${(c.scores || {}).total || 0}/${(c.scores || {}).max || 0} (${Math.round(100 * ((c.scores || {}).total || 0) / ((c.scores || {}).max || 1))}%)
 
 FREE WRITING RESPONSES:
-Q39 (Current life/work): ${c.freewriting.q39}
-Q40 (Hometown): ${c.freewriting.q40}
-Q41 (Future plans): ${c.freewriting.q41}
+Q39 (Current life/work): ${(c.freewriting || {}).q39 || ''}
+Q40 (Hometown): ${(c.freewriting || {}).q40 || ''}
+Q41 (Future plans): ${(c.freewriting || {}).q41 || ''}
+`}
+SELF-REPORTED GOALS: ${(c.goals || []).join('; ')}
+OTHER NEEDS: ${c.otherNeeds || ''}
+AVAILABILITY: ${Object.entries(c.avail || {}).map(([d,v]) => v ? d+': '+v : '').filter(Boolean).join(', ')}
 
-SELF-REPORTED GOALS: ${c.goals.join('; ')}
-OTHER NEEDS: ${c.otherNeeds}
-AVAILABILITY: ${Object.entries(c.avail).map(([d,v]) => v ? d+': '+v : '').filter(Boolean).join(', ')}
+${isExternalW ? `Write a concise report in English (title it "Initial Evaluation - based on external test report") covering:
+1. Source of evidence: name the provider, reference, date and context of the external test; state that no Linguaid written test was sat and that the levels below are those measured by that test.
+2. Skill Assessment Overview (Grammar, Writing, Reading, Listening, Speaking, Overall) - exactly the levels supplied, never re-graded.
+3. What the report tells us - only the categories it prints (e.g. grammar points to improve, vocabulary bands); no invented examples, no quotations.
+4. Strengths and Areas for Improvement, derived from the module levels (e.g. passive vocabulary above active, listening above speaking).
+5. Recommendations including target level, hours, and 3 Bloom's taxonomy learning objectives${naBlockW ? ' angled at the legal-English needs described above' : ''}.
+Format with markdown: ## for section headers, ### for subsections, **bold** for key terms, - for bullet points.
+Always write CEFR levels as plain tokens (B1, B1+, B2). In the JSON block below, grammarLevel / writingLevel / readingLevel / overallLevel MUST be exactly: ${c.externalTest.skills.grammar} / ${c.externalTest.skills.writing} / ${c.externalTest.skills.reading} / ${c.externalTest.overall}. keyGaps: the improvement categories printed on the report, as written.
 
-Write a comprehensive report in English covering:
+---SUMMARY_JSON---
+{ "grammarLevel": "${c.externalTest.skills.grammar}", "writingLevel": "${c.externalTest.skills.writing}", "readingLevel": "${c.externalTest.skills.reading}", "overallLevel": "${c.externalTest.overall}", "keyGaps": ["..."] }
+---END_SUMMARY_JSON---` : `Write a comprehensive report in English covering:
 1. Overall CEFR level (based on MCQ score: 97%+=C1, 93%+=B2+, 87%+=B2, 73%+=B1+, 60%+=B1, 47%+=A2+, 33%+=A2, below=A1). The MCQ band sets the GRAMMAR level. Writing and Reading are judged on the free-writing evidence and may sit ABOVE the MCQ band (up to C1+ or C2) where the free writing clearly demonstrates it, or below it where it clearly does not. Never cap Writing or Reading at the MCQ band by default.
 2. Skill Assessment Overview (Grammar MCQ, Writing, Reading/Vocabulary, Overall)
 3. Detailed Grammar analysis — what they got right, specific gaps with examples from their answers
@@ -365,7 +384,7 @@ Also add a clearly delimited JSON block:
     "Advanced phrasal verbs (get on, get away with, look up)"
   ]
 }
----END_SUMMARY_JSON---`;
+---END_SUMMARY_JSON---`}`;
 
   try {
     const message = await client.messages.create({
@@ -375,7 +394,7 @@ Also add a clearly delimited JSON block:
     });
     /* TRUNCATION_GUARD_20260901 */
     if (message.stop_reason === 'max_tokens') {
-      console.error('Written report truncated for candidate ' + req.params.id);
+      console.error('Written report truncated for candidate ' + candidateId);
       return res.status(500).json({ error: 'Le rapport ecrit a ete tronque a la '
         + 'generation. Rien n a ete enregistre. Relancez la generation.' });
     }
@@ -418,14 +437,14 @@ Also add a clearly delimited JSON block:
        knocked them back down the pipeline. Advance only, never regress. */
     var STATUS_ORDER = ['invited', 'csv_uploaded', 'written_report_done',
                         'oral_done', 'final_report_done', 'programme_done'];
-    var savedW = applyToCandidate(req.params.id, function (fc) {
+    var savedW = applyToCandidate(candidateId, function (fc) {
       fc.writtenReport = cleanReport;
       fc.reportSummary = finalRS;
       var now = STATUS_ORDER.indexOf(fc.status);
       var target = STATUS_ORDER.indexOf('written_report_done');
       if (now < target) { fc.status = 'written_report_done'; }
     });
-    invalidateWrittenReportPdfs(req.params.id); /* WRITTEN_PDF_CACHE_20260901 */
+    invalidateWrittenReportPdfs(candidateId); /* WRITTEN_PDF_CACHE_20260901 */
     if (!savedW) return res.status(404).json({ error: 'Candidate no longer exists' });
 
     res.json({ success: true, report: cleanReport, summary: savedW.reportSummary, levelsPreserved: !!(finalRS && finalRS.levelsPreservedFromManualEdit) });
@@ -433,7 +452,8 @@ Also add a clearly delimited JSON block:
     console.error(err);
     res.status(500).json({ error: err.message });
   }
-});
+}
+router.post('/generate-written/:id', function(req, res) { return generateWrittenCore(req.params.id, res); });
 
 
 /* LEGAL_REPORT_NO_TEST_CAVEAT (2026-08-24)
@@ -595,6 +615,7 @@ router.post('/generate-final/:id', async (req, res) => {
   /* NEEDS_ANALYSIS_20260925: Joss's interview, when present, becomes a
      "Professional Context & Needs" section. Reported, never measured. */
   const naBlockF = require('../lib/needsAnalysis').promptBlock(c);
+  const extBlockF = require('../lib/externalTest').promptBlock(c); /* EXTERNAL_TEST_20260925 */
   const validatedGoals = (oral.validatedGoals || []).map(g => `${g.goal} [${g.status}]`).join('\n');
   const validatedAvail = (Array.isArray(oral.validatedAvail) ? oral.validatedAvail : Object.values(oral.validatedAvail || {})).map(a => `${a.day} ${a.time} [${a.status}]`).join(', ');
 
@@ -609,7 +630,7 @@ Written Test Date: ${c.testdate}
 Oral Session Date: ${oral.sessionDate || ''}
 Evaluator: ${oral.evaluator || ''}
 
-${hasWritten ? `WRITTEN TEST SUMMARY:
+${extBlockF ? extBlockF + '\n\n' : ''}${hasWritten ? `WRITTEN TEST SUMMARY:
 Grammar Level: ${cefrLabel(summary.grammarLevel) || ''}
 Writing Level: ${cefrLabel(summary.writingLevel) || ''}
 Reading Level: ${cefrLabel(summary.readingLevel) || ''}
@@ -1668,6 +1689,63 @@ function onWrittenTestPathway(c) {
   if (require('../lib/needsAnalysis').oralIsLegacyIntakeOnly(c)) return false;
   return true;
 }
+
+/* EXTERNAL_TEST_20260925
+   POST /api/external-test/:id      JSON {provider, ref, date, context, overall, skills{}, modules[], notes, useEvaluatorOral}
+                                    -> applies the test, saves, then generates the written report in the same call
+   POST /api/external-test-pdf/:id  multipart 'file' -> data/externalTests/<id>.pdf
+   GET  /api/external-test-pdf/:id  -> the stored PDF
+   DELETE /api/external-test/:id    -> removes the external test (levels stay unless ?levels=1) */
+router.post('/external-test/:id', async function(req, res) {
+  var extLib = require('../lib/externalTest');
+  var candidates = getCandidates();
+  var idx = candidates.findIndex(function(x) { return x.id === req.params.id; });
+  if (idx === -1) return res.status(404).json({ error: 'Not found' });
+  var c = candidates[idx];
+  var needsLib = require('../lib/needsAnalysis');
+  var detached = { changed: false };
+  try {
+    if (needsLib.oralIsLegacyIntakeOnly(c)) { detached = needsLib.detachIntakeFromOral(c); if (detached.error) throw new Error('Conversion refusee : ' + detached.error); }
+    extLib.apply(c, req.body || {}, { by: 'joss' });
+  } catch (e) { return res.status(400).json({ error: e.message }); }
+  if (c.needsAnalysis) c.needsAnalysis.nextStep = 'external_test';
+  saveCandidates(candidates);
+  var wantReport = req.body && req.body.generateWritten !== false;
+  if (!wantReport) return res.json({ ok: true, externalTest: c.externalTest, status: c.status });
+  var collected = null, code = 200;
+  var fakeRes = { status: function (n) { code = n; return fakeRes; }, json: function (o) { collected = o; return fakeRes; } };
+  try { await generateWrittenCore(c.id, fakeRes); } catch (e) { code = 500; collected = { error: e.message }; }
+  var fresh = getCandidates().find(function(x) { return x.id === req.params.id; }) || c;
+  res.json({ ok: true, externalTest: fresh.externalTest, status: fresh.status, writtenGenerated: code === 200 && !!(collected && collected.success), writtenError: code === 200 ? null : (collected && collected.error) });
+});
+var extPdfUpload = require('multer')({ dest: '/tmp/', limits: { fileSize: 15 * 1024 * 1024 } });
+router.post('/external-test-pdf/:id', extPdfUpload.single('file'), function(req, res) {
+  if (!req.file) return res.status(400).json({ error: 'Aucun fichier' });
+  var dir = path.join(dataDir, 'externalTests'); if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  var ext = (req.file.originalname || '').toLowerCase().endsWith('.pdf') || req.file.mimetype === 'application/pdf' ? '.pdf' : path.extname(req.file.originalname || '') || '.bin';
+  var dest = path.join(dir, req.params.id + ext);
+  try { fs.copyFileSync(req.file.path, dest); fs.unlinkSync(req.file.path); } catch (e) { return res.status(500).json({ error: e.message }); }
+  var saved = applyToCandidate(req.params.id, function (fc) { fc.externalTest = fc.externalTest || {}; fc.externalTest.pdfPath = dest; fc.externalTest.pdfName = req.file.originalname || ''; fc.externalTest.pdfUploadedAt = new Date().toISOString(); });
+  if (!saved) return res.status(404).json({ error: 'Not found' });
+  res.json({ ok: true, pdfPath: dest });
+});
+router.get('/external-test-pdf/:id', function(req, res) {
+  var c = getCandidates().find(function(x) { return x.id === req.params.id; });
+  var p = c && c.externalTest && c.externalTest.pdfPath;
+  if (!p || !fs.existsSync(p)) return res.status(404).send('Aucun rapport externe');
+  res.setHeader('Content-Disposition', 'inline; filename="test-externe-' + (c.name || c.id).replace(/[^a-z0-9]+/gi, '_') + path.extname(p) + '"');
+  res.sendFile(path.resolve(p));
+});
+router.delete('/external-test/:id', function(req, res) {
+  var saved = applyToCandidate(req.params.id, function (fc) {
+    var e = fc.externalTest || {};
+    fc.externalTestRemoved = Object.assign({}, e, { removedAt: new Date().toISOString() });
+    delete fc.externalTest;
+    if (req.query.levels === '1') { if (fc.reportSummary && fc.reportSummary.source === 'external_test') fc.reportSummary = null; if (fc.oralData && fc.oralData.source === 'external_test') fc.oralData = null; if (fc.status === 'oral_done' || fc.status === 'written_report_done') fc.status = 'csv_uploaded'; }
+  });
+  if (!saved) return res.status(404).json({ error: 'Not found' });
+  res.json({ ok: true });
+});
 
 /* NEEDS_ANALYSIS_20260925
    POST /api/send-written-test/:id - send (or resend) the in-house written test
@@ -3531,6 +3609,8 @@ router.post('/push-to-drive/:id', async function(req, res) {
     if (!trainerKey) return res.status(400).json({ error: 'No trainer assigned for this candidate yet (send convocation first)' });
 
     var files = [];
+    /* EXTERNAL_TEST_20260925: the source test report, when the learner supplied one */
+    if (c.externalTest && c.externalTest.pdfPath && fs.existsSync(c.externalTest.pdfPath)) files.push({ path: c.externalTest.pdfPath, name: '0 - Test de niveau externe (' + (c.externalTest.provider || 'externe') + ').pdf' });
     // Convention deliberately NOT pushed to Drive (removed 2026-07-05):
     // the signed convention must not land in the learner Drive folder.
     var reportPath = path.join(__dirname, '../data/finalReports/' + c.id + '_en.pdf');

@@ -1010,6 +1010,15 @@
     })();
 
     const p = Math.round(100 * c.scores.total / (c.scores.max || 30));
+    if (c.externalTest && !(c.scores.total > 0)) { /* EXTERNAL_TEST_20260925 */
+      var et = c.externalTest, sk = et.skills || {};
+      document.getElementById('testDataBlock').innerHTML = '<div style="font-size:13px;color:#444"><div style="font-weight:600;margin-bottom:6px">Test externe · ' + (et.provider === 'Autre' && et.providerOther ? et.providerOther : et.provider) + (et.ref ? ' n° ' + et.ref : '') + (et.date ? ' · ' + et.date : '') + '</div>'
+        + (et.context ? '<div style="color:#666;margin-bottom:6px">' + et.context + '</div>' : '')
+        + '<div>Global <strong>' + (et.overall || '—') + '</strong> · Grammaire ' + (sk.grammar || '—') + ' · Écrit ' + (sk.writing || '—') + ' · Lecture ' + (sk.reading || '—') + ' · CO ' + (sk.listening || '—') + ' · EO ' + (sk.speaking || '—') + '</div>'
+        + (et.notes ? '<div style="margin-top:6px;font-style:italic;color:#555">' + et.notes + '</div>' : '')
+        + (et.pdfPath ? '<div style="margin-top:6px"><a href="/api/external-test-pdf/' + c.id + '" target="_blank">📄 Rapport PDF</a></div>' : '')
+        + '</div>';
+    } else
     document.getElementById('testDataBlock').innerHTML = `
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:1rem">
         <span style="font-size:13px;color:#666;min-width:80px">MCQ Score</span>
@@ -1086,6 +1095,7 @@
     } else if (c.writtenReport) {
       document.getElementById('stage2').classList.add('active');
     }
+    renderExternalTestStep1(c); /* EXTERNAL_TEST_20260925 (after the written-report status line) */
 
     if (c.finalReport) {
       document.getElementById('finalReportToggleBar').style.display = 'flex';
@@ -1143,6 +1153,7 @@
      in routes/api.js - keep the two in step. */
   function hasWrittenTestEvidence(c) {
     if (!c) return false;
+    if (c.externalTest && (c.externalTest.overall || (c.externalTest.skills || {}).grammar)) return true; /* EXTERNAL_TEST_20260925 */
     var sc = c.scores || {};
     var fw = c.freewriting || {};
     if (Number(sc.total) > 0) return true;
@@ -1210,6 +1221,7 @@
     var od = c.oralData || null;
     var legacyIntake = oralIsLegacyIntakeOnly(c);
     var oralDone = !!(od && !legacyIntake);
+    var extOral = !!(oralDone && od.source === 'external_test'); /* EXTERNAL_TEST_20260925 */
     var na = (c.needsAnalysis && Object.keys(c.needsAnalysis).length) ? c.needsAnalysis : (legacyIntake ? od : null);
     var naDone = !!(na && (na.approxLevel || na.notes || na.blockers));
     var evaluator = c.oralEvaluator || c.oralEmailSentTo || '';
@@ -1221,7 +1233,8 @@
 
     /* status pill */
     var pill, pillBg, pillFg;
-    if (oralDone) { pill = 'Oral effectué' + (od.sessionDate ? ' le ' + fmtDT(od.sessionDate, false) : '') + (od.evaluator ? ' · ' + esc(od.evaluator) : ''); pillBg = '#dcfce7'; pillFg = '#166534'; }
+    if (oralDone && od.source === 'external_test') { pill = 'Niveaux oraux du test externe · CO ' + esc(od.listeningLevel || '–') + ' / EO ' + esc(od.speakingLevel || '–'); pillBg = '#e0f2fe'; pillFg = '#075985'; } /* EXTERNAL_TEST_20260925 */
+    else if (oralDone) { pill = 'Oral effectué' + (od.sessionDate ? ' le ' + fmtDT(od.sessionDate, false) : '') + (od.evaluator ? ' · ' + esc(od.evaluator) : ''); pillBg = '#dcfce7'; pillFg = '#166534'; }
     else if (c.oralBookedAt) { pill = 'Oral prévu ' + (c.oralSlotAt ? 'le ' + fmtDT(c.oralSlotAt, c.oralSlotAt.length > 10) : '(date non précisée)') + (c.oralBookedWith ? ' · ' + esc(c.oralBookedWith) : ''); pillBg = '#fef3c7'; pillFg = '#92400e'; }
     else if (c.oralLinkSentAt) { pill = 'En attente de réservation'; pillBg = '#dbeafe'; pillFg = '#1e40af'; }
     else if (legacyIntake) { pill = 'Parcours entretien seul — pas d’oral évaluateur'; pillBg = '#ede9fe'; pillFg = '#5b21b6'; }
@@ -1232,7 +1245,7 @@
     if (naDone) rows.push([true, fmtDT(na.submittedAt || na.interviewDate, !!na.submittedAt), 'Analyse des besoins (Joss)' + (na.approxLevel ? ' — est. ' + esc(na.approxLevel) : '')]);
     if (c.oralEvaluatorLinkSentAt || c.oralEmailSentTo) rows.push([true, c.oralEvaluatorLinkSentAt ? fmtDT(c.oralEvaluatorLinkSentAt) : 'date n/c', 'Lien d’évaluation envoyé à l’évaluateur' + (c.oralEmailSentTo ? ' · ' + esc(c.oralEmailSentTo) : '')]);
     if (c.oralLinkSentAt) rows.push([true, fmtDT(c.oralLinkSentAt), 'Lien Calendly envoyé à ' + (c.oralLinkSentTo ? esc(c.oralLinkSentTo) : 'l’apprenant') + (evaluator ? ' · ' + esc(evaluator) + ' en copie' : '')]);
-    else if (!legacyIntake) rows.push([false, '', 'Lien Calendly non envoyé']);
+    else if (!legacyIntake && !extOral) rows.push([false, '', 'Lien Calendly non envoyé']);
     if (c.oralLinkSentAt && !c.oralBookedAt && !oralDone) {
       var last = c.oralLastReminderAt || c.oralLinkSentAt;
       var next = new Date(new Date(last).getTime() + 3 * 86400000);
@@ -1241,8 +1254,9 @@
         : 'Relance auto tous les 3 j (soumise à votre validation) · prochaine le ' + fmtDT(next, false)]);
     } else if (reminderCount > 0) rows.push([true, fmtDT(c.oralLastReminderAt), reminderCount + ' relance' + (reminderCount > 1 ? 's' : '')]);
     if (c.oralBookedAt) rows.push([true, c.oralSlotAt ? fmtDT(c.oralSlotAt, c.oralSlotAt.length > 10) : fmtDT(c.oralBookedAt), 'Oral prévu' + (c.oralBookedWith ? ' avec ' + esc(c.oralBookedWith) : '') + (c.oralBookedBy === 'evaluator' ? ' — confirmé par ' + esc(c.oralBookedWith || 'l’évaluateur') + (c.oralBookedConfirmedAt ? ' le ' + fmtDT(c.oralBookedConfirmedAt, false) : '') : c.oralBookedBy === 'manual' ? ' (saisi par Joss)' : c.oralBookedBy === 'calendly' ? ' (mail Calendly)' : '')]);
-    else if (!legacyIntake) rows.push([false, '', 'Oral prévu — en attente de confirmation par l’évaluateur' + (c.oralNoReplyReportedAt ? ' · ' + esc(c.oralEvaluator || 'évaluateur') + ' signale « pas de réponse » le ' + fmtDT(c.oralNoReplyReportedAt, false) : '')]);
-    if (oralDone) rows.push([true, fmtDT(od.submittedAt || od.sessionDate, !!od.submittedAt), 'Oral effectué' + (od.evaluator ? ' · ' + esc(od.evaluator) : '') + (od.listeningLevel || od.speakingLevel ? ' — CO ' + esc(od.listeningLevel || '–') + ' / EO ' + esc(od.speakingLevel || '–') : '')]);
+    else if (!legacyIntake && !extOral) rows.push([false, '', 'Oral prévu — en attente de confirmation par l’évaluateur' + (c.oralNoReplyReportedAt ? ' · ' + esc(c.oralEvaluator || 'évaluateur') + ' signale « pas de réponse » le ' + fmtDT(c.oralNoReplyReportedAt, false) : '')]);
+    if (oralDone && od.source === 'external_test') rows.push([true, fmtDT(od.sessionDate, false), 'Niveaux oraux repris du test externe ' + esc((c.externalTest || {}).provider || '') + ' — pas d’oral Linguaid (option « oral évaluateur » non retenue)']);
+    else if (oralDone) rows.push([true, fmtDT(od.submittedAt || od.sessionDate, !!od.submittedAt), 'Oral effectué' + (od.evaluator ? ' · ' + esc(od.evaluator) : '') + (od.listeningLevel || od.speakingLevel ? ' — CO ' + esc(od.listeningLevel || '–') + ' / EO ' + esc(od.speakingLevel || '–') : '')]);
     else if (!legacyIntake) rows.push([false, '', 'Oral effectué']);
 
     var tl = rows.map(function (r) {
@@ -1276,6 +1290,73 @@
       +   '<button class="btn" onclick="var m=document.getElementById(\'oralMore\');m.style.display=m.style.display===\'none\'?\'flex\':\'none\'" title="Plus d’actions" style="font-size:11px;padding:3px 8px;background:#f1f5f9;color:#475569;border:1px solid #e2e8f0">⋯</button></div>'
       + '<div id="oralMore" style="display:none;flex-direction:column;gap:4px;margin-top:6px;padding-top:6px;border-top:1px dashed #e2e8f0">' + more + '</div>'
       + '<div id="calendlyStatus_' + c.id + '" style="font-size:11px;color:#166534;margin-top:4px;display:none"></div>';
+  }
+
+  /* EXTERNAL_TEST_20260925 ---------------------------------------------- */
+  function renderExternalTestStep1(c) {
+    var st = document.getElementById('stage1status'); if (!st) return;
+    var area = document.getElementById('resendInviteArea');
+    var hasMcq = (c.scores || {}).total > 0;
+    var et = c.externalTest;
+    if (et && (et.overall || (et.skills || {}).grammar)) {
+      var label = (et.provider === 'Autre' && et.providerOther ? et.providerOther : et.provider) + (et.ref ? ' n° ' + et.ref : '');
+      st.innerHTML = '<span style="color:#075985;font-weight:600">Test externe ' + label.replace(/</g,'&lt;') + ' · ' + (et.overall || '') + (et.date ? ' · ' + et.date : '') + '</span>'
+        + (et.pdfPath ? ' · <a href="/api/external-test-pdf/' + c.id + '" target="_blank" style="color:#075985">PDF</a>' : ' · <span style="color:#b45309">PDF manquant</span>')
+        + (c.writtenReport ? '<br>Written report generated ✓' : '');
+      var b = document.getElementById('btnResendInvite'); if (b) b.style.display = 'none';
+      var n = document.getElementById('noResendNote'); if (n) n.style.display = 'none';
+    }
+    if (hasMcq) return;
+    if (!document.getElementById('btnExtTest') && area) {
+      var bt = document.createElement('button'); bt.className = 'btn'; bt.id = 'btnExtTest';
+      bt.style.cssText = 'font-size:11px;padding:3px 8px;background:#e0f2fe;color:#075985;border:1px solid #7dd3fc;margin-top:4px';
+      bt.textContent = et ? '📎 Modifier le test externe' : '📎 Test externe déjà passé';
+      bt.onclick = function(){ openExternalTestModal(c); };
+      area.appendChild(bt);
+    }
+  }
+  function openExternalTestModal(c) {
+    var et = c.externalTest || {}, sk = et.skills || {};
+    var lv = function(id, val){ return '<select id="' + id + '" style="width:100%;padding:6px;border:1px solid #cbd5e1;border-radius:6px"><option value="">—</option>' + ['A1','A1+','A2','A2+','B1','B1+','B2','B2+','C1','C1+','C2'].map(function(l){ return '<option' + (val === l ? ' selected' : '') + '>' + l + '</option>'; }).join('') + '</select>'; };
+    var prov = ['ELAO','TOEIC','Linguaskill','Bright','Pipplet','IELTS','Cambridge','Autre'].map(function(p){ return '<option' + ((et.provider || 'ELAO') === p ? ' selected' : '') + '>' + p + '</option>'; }).join('');
+    var esc2 = function(x){ return String(x == null ? '' : x).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); };
+    var m = document.createElement('div'); m.id = 'extModal';
+    m.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.45);display:flex;align-items:center;justify-content:center;z-index:9999';
+    m.innerHTML = '<div style="background:white;border-radius:12px;padding:20px 22px;width:560px;max-width:95vw;max-height:92vh;overflow:auto;font-size:13px">'
+      + '<div style="font-weight:700;font-size:15px;margin-bottom:10px">📎 Test de niveau externe — ' + esc2(c.name) + '</div>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
+      + '<div>Organisme<br><select id="xm_provider" style="width:100%;padding:6px;border:1px solid #cbd5e1;border-radius:6px" onchange="document.getElementById(\'xm_providerOther\').style.display=this.value===\'Autre\'?\'\':\'none\'">' + prov + '</select><input id="xm_providerOther" placeholder="Préciser…" value="' + esc2(et.providerOther) + '" style="display:' + (et.provider === 'Autre' ? '' : 'none') + ';width:100%;margin-top:4px;padding:6px;border:1px solid #cbd5e1;border-radius:6px"></div>'
+      + '<div>Référence<br><input id="xm_ref" value="' + esc2(et.ref) + '" style="width:100%;padding:6px;border:1px solid #cbd5e1;border-radius:6px"></div>'
+      + '<div>Date du test<br><input type="date" id="xm_date" value="' + esc2(et.date) + '" style="width:100%;padding:6px;border:1px solid #cbd5e1;border-radius:6px"></div>'
+      + '<div>Contexte<br><input id="xm_context" value="' + esc2(et.context) + '" placeholder="ex: Recrutement Safran" style="width:100%;padding:6px;border:1px solid #cbd5e1;border-radius:6px"></div>'
+      + '</div>'
+      + '<div style="margin-top:8px">Niveau global<br>' + lv('xm_overall', et.overall) + '</div>'
+      + '<div style="margin-top:8px;display:grid;grid-template-columns:repeat(5,1fr);gap:6px">'
+      + '<div>Grammaire' + lv('xm_grammar', sk.grammar) + '</div><div>Écrit' + lv('xm_writing', sk.writing) + '</div><div>Lecture' + lv('xm_reading', sk.reading) + '</div><div>Compr. orale' + lv('xm_listening', sk.listening) + '</div><div>Expr. orale' + lv('xm_speaking', sk.speaking) + '</div></div>'
+      + '<div style="margin-top:8px">Points signalés par le rapport<br><textarea id="xm_notes" rows="2" style="width:100%;padding:6px;border:1px solid #cbd5e1;border-radius:6px">' + esc2(et.notes) + '</textarea></div>'
+      + '<div style="margin-top:8px">Rapport PDF ' + (et.pdfPath ? '<span style="color:#166534">(déjà joint — choisir un fichier remplace)</span>' : '') + '<br><input type="file" id="xm_pdf" accept="application/pdf"></div>'
+      + '<label style="display:flex;gap:8px;align-items:center;margin-top:10px;font-weight:500"><input type="checkbox" id="xm_useEval"' + (et.useEvaluatorOral ? ' checked' : '') + '> Oral évaluateur (Hannah / Anna) quand même — sinon les niveaux oraux du test sont utilisés</label>'
+      + '<div id="xm_err" style="color:#b91c1c;margin-top:8px;display:none"></div>'
+      + '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px"><button class="btn" onclick="document.getElementById(\'extModal\').remove()" style="background:#f1f5f9;color:#475569;border:1px solid #e2e8f0">Annuler</button><button class="btn btn-primary" id="xm_save">Enregistrer et générer le rapport écrit</button></div>'
+      + '</div>';
+    document.body.appendChild(m);
+    document.getElementById('xm_save').onclick = async function(){
+      var g = function(id){ return document.getElementById(id).value; };
+      var payload = { provider: g('xm_provider'), providerOther: g('xm_providerOther'), ref: g('xm_ref'), date: g('xm_date'), context: g('xm_context'), overall: g('xm_overall'),
+        skills: { grammar: g('xm_grammar'), writing: g('xm_writing'), reading: g('xm_reading'), listening: g('xm_listening'), speaking: g('xm_speaking') },
+        notes: g('xm_notes'), useEvaluatorOral: document.getElementById('xm_useEval').checked };
+      var err = document.getElementById('xm_err'); err.style.display = 'none';
+      this.disabled = true; this.textContent = 'Enregistrement + rapport écrit…';
+      try {
+        var r = await fetch('/api/external-test/' + c.id, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        var d = await r.json();
+        if (!d.ok) { err.textContent = d.error || 'Erreur'; err.style.display = 'block'; this.disabled = false; this.textContent = 'Enregistrer et générer le rapport écrit'; return; }
+        var f = document.getElementById('xm_pdf').files[0];
+        if (f) { var fd = new FormData(); fd.append('file', f); await fetch('/api/external-test-pdf/' + c.id, { method: 'POST', body: fd }); }
+        if (d.writtenError) alert('Test externe enregistré. Rapport écrit non généré : ' + d.writtenError + ' — cliquez Generate (Step 1).');
+        location.reload();
+      } catch (e) { err.textContent = e.message; err.style.display = 'block'; this.disabled = false; this.textContent = 'Enregistrer et générer le rapport écrit'; }
+    };
   }
 
   /* NEEDS_ANALYSIS_20260925: read-only panel of Joss's interview */
