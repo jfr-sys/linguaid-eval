@@ -270,6 +270,16 @@ function buildDocx(candidateName, reportText, language) {
    which is exactly how a legal intake candidate ends up with fabricated
    A2+ grammar/writing/reading levels. Single source of truth, mirrored by
    hasWrittenTestEvidence() in views/candidate.html. */
+/* EMAIL_ALIASES_20260925: a learner may identify with another address than the
+   one on file (Marianah FLORENTINE sat the test as marianah.koumi@). Every
+   email lookup goes through this - primary email OR any of c.emailAliases. */
+function candidateHasEmail(c, email) {
+  var key = String(email || '').trim().toLowerCase();
+  if (!c || !key) return false;
+  if (String(c.email || '').trim().toLowerCase() === key) return true;
+  return (c.emailAliases || []).some(function (a) { return String(a || '').trim().toLowerCase() === key; });
+}
+
 function hasWrittenTestEvidence(c) {
   if (!c) return false;
   var sc = c.scores || {};
@@ -1456,7 +1466,7 @@ router.post('/typeform-webhook', function(req, res) {
      form), then records with no evidence yet, then the most recent. */
   var emailKey = String(email || '').trim().toLowerCase();
   var emailMatches = emailKey ? candidates.filter(function (x) {
-    return String(x.email || '').trim().toLowerCase() === emailKey;
+    return candidateHasEmail(x, emailKey); /* EMAIL_ALIASES_20260925 */
   }) : [];
   var pathwayMatches = emailMatches.filter(function (x) { return onWrittenTestPathway(x); });
   var pickPool = (pathwayMatches.length ? pathwayMatches : emailMatches).slice();
@@ -1565,7 +1575,7 @@ router.post('/invite-candidate', function(req, res) {
      Florentine duplicates were born). Point at the existing record instead. */
   var emailKeyInv = email.toLowerCase();
   var twin = candidates.find(function (x) {
-    return String(x.email || '').trim().toLowerCase() === emailKeyInv && !hasWrittenTestEvidence(x)
+    return candidateHasEmail(x, emailKeyInv) && !hasWrittenTestEvidence(x) /* EMAIL_ALIASES_20260925 */
       && ['final_report_done', 'programme_done'].indexOf(x.status) === -1;
   });
   if (twin) {
@@ -2261,7 +2271,7 @@ router.post('/hec-webhook', function(req, res) {
   var candidates = JSON.parse(fs.readFileSync(path.join(dataDir, 'candidates.json'), 'utf8'));
 
   // Deduplicate by email
-  var existing = candidates.find(function(x) { return !x.isRenewal && x.email && x.email.toLowerCase() === email.toLowerCase(); }); // RENEWAL_EMAIL_LOOKUP_GUARD
+  var existing = candidates.find(function(x) { return !x.isRenewal && candidateHasEmail(x, email); }); // RENEWAL_EMAIL_LOOKUP_GUARD + EMAIL_ALIASES_20260925
   /* HEC_MERGE_FIX_20260901: same silent-drop guard as the general webhook. Every HEC
      learner is invited before testing, so this path is the more exposed of
      the two. Merge unless the record already holds real test evidence. */
@@ -3315,7 +3325,7 @@ router.post('/calendly-webhook', express.json(), function(req, res) {
     var dataPath = require('path').join(dataDir, 'candidates.json');
     var candidates = JSON.parse(require('fs').readFileSync(dataPath, 'utf8'));
     var idx = candidates.findIndex(function(c) {
-      return !c.isRenewal && (c.email || '').toLowerCase() === email; // RENEWAL_EMAIL_LOOKUP_GUARD
+      return !c.isRenewal && candidateHasEmail(c, email); // RENEWAL_EMAIL_LOOKUP_GUARD + EMAIL_ALIASES_20260925
     });
     if (idx === -1) {
       console.log('calendly-webhook: no candidate found for email', email);
