@@ -1328,7 +1328,14 @@ router.post('/send-oral-link/:id', function(req, res) {
   var nodemailer = require('nodemailer');
   var transporter = require('../lib/mailer').createTransport();
   var body = ['Bonjour ' + evaluator + ',', '', 'Please find the oral assessment link for ' + c.name + ':', '', oralUrl, '', 'Best regards,', 'Linguaid Eval'].join('\n');
-  transporter.sendMail({ from: 'eval@linguaid.net', replyTo: require('../lib/mailer').replyTo(), /* MAILER_REPLYTO */ to: toEmail, subject: 'Oral assessment - ' + c.name, text: body }, function(err) {
+  /* EVAL_CONFIRM_20260925: html version + slot confirmation block */
+  var evLib = require('../lib/evaluators');
+  var htmlEv = '<div style="font-family:Arial,sans-serif;font-size:14px;color:#222;line-height:1.6">'
+    + '<p>Bonjour ' + evaluator + ',</p><p>Please find the oral assessment link for <strong>' + c.name + '</strong>' + (c.jobtitle ? ' (' + c.jobtitle + (c.company ? ', ' + c.company : '') + ')' : '') + ':</p>'
+    + '<p><a href="' + oralUrl + '">' + oralUrl + '</a></p>'
+    + evLib.confirmBlockHtml(c, evaluator)
+    + '<p style="margin-top:16px">Best regards,<br>Linguaid Eval</p></div>';
+  transporter.sendMail({ from: 'eval@linguaid.net', replyTo: require('../lib/mailer').replyTo(), /* MAILER_REPLYTO */ to: toEmail, subject: 'Oral assessment - ' + c.name, text: body + '\n\nConfirm the slot once booked: ' + evLib.confirmUrl(c, evaluator), html: htmlEv }, function(err) {
     if (err) { console.error('sendMail error:', err); return res.status(500).json({ error: err.message }); }
     /* STALE_WRITE_FIX (2026-08-24) */
     applyToCandidate(req.params.id, function (fc) { fc.oralEmailSentTo = evaluator; fc.oralEvaluatorLinkSentAt = new Date().toISOString(); if (!fc.oralEvaluator) fc.oralEvaluator = evaluator; pushOralEvent(fc, 'evaluator_link', { evaluator: evaluator }); }); /* ORAL_TIMELINE_20260925 */
@@ -2039,6 +2046,18 @@ router.post('/send-calendly-link/:id', function(req, res) {
     html: htmlBody
   }, function(err) {
     if (err) { console.error('calendly mail error:', err); return res.status(500).json({ error: err.message }); }
+    /* EVAL_CONFIRM_20260925: the evaluator gets her own short mail with the
+       confirmation link (a CC copy of the candidate's mail cannot carry it). */
+    if (evaluatorEmail) {
+      var evLib2 = require('../lib/evaluators');
+      transporter.sendMail({ from: 'eval@linguaid.net', replyTo: require('../lib/mailer').replyTo(), to: evaluatorEmail,
+        subject: 'Oral \u00e0 venir - ' + candidate.name + ' (Calendly envoy\u00e9)',
+        html: '<div style="font-family:Arial,sans-serif;font-size:14px;color:#222;line-height:1.6"><p>Bonjour ' + evaluator + ',</p>'
+          + '<p>The Calendly link (' + calendlyUrl + ') has just been sent to <strong>' + candidate.name + '</strong>' + (candidate.jobtitle ? ' (' + candidate.jobtitle + (candidate.company ? ', ' + candidate.company : '') + ')' : '') + '.</p>'
+          + evLib2.confirmBlockHtml(candidate, evaluator)
+          + '<p style="margin-top:16px">Assessment form on the day: <a href="https://eval.linguaid.net/oral/' + candidate.oralToken + '">https://eval.linguaid.net/oral/' + candidate.oralToken + '</a></p>'
+          + '<p>Joss</p></div>' }, function(err2) { if (err2) console.error('evaluator confirm mail error:', err2); });
+    }
     // Record when link was sent and which evaluator was assigned
     var cidx2 = candidates.findIndex(function(x){ return x.id === req.params.id; });
     if (cidx2 !== -1) {
@@ -2742,8 +2761,12 @@ router.post('/mark-oral-booked/:id', (req, res) => {
   candidates[idx].status = 'oral_booked';
   candidates[idx].oralBookedAt = new Date().toISOString();
   candidates[idx].oralBookedBy = 'manual'; /* ORAL_TIMELINE_20260925 */
+  /* EVAL_CONFIRM_20260925: optional {slot: ISO or YYYY-MM-DD, evaluator} from the page */
+  var mb = req.body || {};
+  if (mb.evaluator) { candidates[idx].oralEvaluator = mb.evaluator; candidates[idx].oralBookedWith = mb.evaluator; }
+  if (mb.slot) candidates[idx].oralSlotAt = String(mb.slot);
   candidates[idx].oralBookedWith = candidates[idx].oralBookedWith || candidates[idx].oralEvaluator || '';
-  pushOralEvent(candidates[idx], 'booked', { with: candidates[idx].oralBookedWith, by: 'manual' });
+  pushOralEvent(candidates[idx], 'booked', { with: candidates[idx].oralBookedWith, by: 'manual', slot: candidates[idx].oralSlotAt || '' });
   fs.writeFileSync(dataPath, JSON.stringify(candidates, null, 2));
   res.json({ ok: true });
 });

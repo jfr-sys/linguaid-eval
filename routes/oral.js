@@ -277,4 +277,94 @@ router.post('/submit-intake/:token', express.json(), async (req, res) => {
 });
 
 
+/* == EVAL_CONFIRM_20260925 ==================================================
+   Evaluators confirm (or cancel) the oral slot themselves - one click, a date
+   and a time. Public (under /oral/, keyed by oralToken like the assessment
+   form). Nothing is read from anyone's calendar. */
+function pushOralEventLocal(c, kind, extra) {
+  if (!Array.isArray(c.oralLinkHistory)) c.oralLinkHistory = [];
+  c.oralLinkHistory.push(Object.assign({ at: new Date().toISOString(), kind: kind }, extra || {}));
+  if (c.oralLinkHistory.length > 50) c.oralLinkHistory = c.oralLinkHistory.slice(-50);
+}
+function slotLabelFr(iso) {
+  if (!iso) return '';
+  var d = new Date(iso); if (isNaN(d)) return String(iso);
+  return d.toLocaleDateString('fr-FR', { weekday: 'long', day: '2-digit', month: 'long', timeZone: 'Europe/Paris' })
+    + (iso.length > 10 ? ' à ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris' }) : '');
+}
+router.get('/confirm/:token', (req, res) => {
+  const candidates = getCandidates();
+  const c = candidates.find(x => x.oralToken === req.params.token || (x.oralTokenAliases || []).indexOf(req.params.token) !== -1);
+  if (!c) return res.status(404).send('Lien invalide ou expiré.');
+  res.sendFile(path.join(__dirname, '../views/oral_confirm.html'));
+});
+router.get('/confirm-data/:token', (req, res) => {
+  const candidates = getCandidates();
+  const c = candidates.find(x => x.oralToken === req.params.token || (x.oralTokenAliases || []).indexOf(req.params.token) !== -1);
+  if (!c) return res.status(404).json({ error: 'Not found' });
+  const od = c.oralData || {};
+  const oralDone = !!(od.listeningLevel || od.speakingLevel);
+  const rs = c.reportSummary || {};
+  var slotDate = '', slotTime = '';
+  if (c.oralSlotAt && /^\d{4}-\d{2}-\d{2}/.test(c.oralSlotAt)) {
+    slotDate = c.oralSlotAt.slice(0, 10);
+    if (c.oralSlotAt.length > 10) { var dd = new Date(c.oralSlotAt); if (!isNaN(dd)) slotTime = dd.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris' }); }
+  }
+  res.json({ name: c.name, jobtitle: c.jobtitle || '', company: c.company || '', writtenLevel: rs.overallLevel || '',
+    evaluator: c.oralEvaluator || c.oralEmailSentTo || '', bookedAt: c.oralBookedAt || null, bookedWith: c.oralBookedWith || '',
+    slotLabel: c.oralSlotAt ? slotLabelFr(c.oralSlotAt) : '', slotDate: slotDate, slotTime: slotTime,
+    oralDone: oralDone, oralDoneDate: od.sessionDate || '' });
+});
+router.post('/confirm/:token', express.json(), (req, res) => {
+  const candidates = getCandidates();
+  const idx = candidates.findIndex(x => x.oralToken === req.params.token || (x.oralTokenAliases || []).indexOf(req.params.token) !== -1);
+  if (idx === -1) return res.status(404).json({ error: 'Not found' });
+  const c = candidates[idx];
+  const action = String(req.body.action || 'confirm');
+  const evaluator = String(req.body.evaluator || '').trim();
+  const date = String(req.body.date || '').trim();
+  const time = String(req.body.time || '').trim();
+  const now = new Date().toISOString();
+  if (action === 'confirm') {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return res.status(400).json({ error: 'Date invalide' });
+    if (!evaluator) return res.status(400).json({ error: 'Évaluateur manquant' });
+    /* store the slot as a Paris-local ISO string; time optional */
+    var slotIso = date;
+    if (/^\d{2}:\d{2}$/.test(time)) {
+      /* Europe/Paris offset for that date */
+      var probe = new Date(date + 'T12:00:00Z');
+      var parisH = parseInt(probe.toLocaleTimeString('en-GB', { hour: '2-digit', hour12: false, timeZone: 'Europe/Paris' }), 10);
+      var offset = parisH - 12; /* 1 or 2 */
+      var hh = parseInt(time.slice(0, 2), 10) - offset;
+      var d2 = new Date(Date.UTC(+date.slice(0, 4), +date.slice(5, 7) - 1, +date.slice(8, 10), hh, +time.slice(3, 5)));
+      slotIso = d2.toISOString();
+    }
+    c.oralBookedAt = c.oralBookedAt || now;
+    c.oralBookedConfirmedAt = now;
+    c.oralSlotAt = slotIso;
+    c.oralBookedWith = evaluator;
+    c.oralBookedBy = 'evaluator';
+    c.oralEvaluator = evaluator;
+    if (c.status === 'csv_uploaded' || c.status === 'written_report_done' || c.status === 'invited') { /* status unchanged: booking is a gate field, not a status */ }
+    pushOralEventLocal(c, 'booked', { by: 'evaluator', with: evaluator, slot: slotIso });
+    saveCandidates(candidates);
+    return res.json({ ok: true, slotLabel: slotLabelFr(slotIso), evaluator: evaluator });
+  }
+  if (action === 'cancel') {
+    var prev = { bookedAt: c.oralBookedAt, slot: c.oralSlotAt, with: c.oralBookedWith };
+    c.oralBookedAt = null; c.oralSlotAt = null; c.oralBookedWith = ''; c.oralBookedBy = ''; c.oralBookedConfirmedAt = null;
+    c.oralBookingCancelledAt = now;
+    if (c.status === 'oral_booked') c.status = c.writtenReport ? 'written_report_done' : 'csv_uploaded';
+    pushOralEventLocal(c, 'booking_cancelled', { by: 'evaluator', evaluator: evaluator, previous: prev });
+    saveCandidates(candidates);
+    return res.json({ ok: true });
+  }
+  /* not_booked */
+  c.oralNoReplyReportedAt = now;
+  if (evaluator) c.oralEvaluator = c.oralEvaluator || evaluator;
+  pushOralEventLocal(c, 'evaluator_noreply', { by: 'evaluator', evaluator: evaluator });
+  saveCandidates(candidates);
+  res.json({ ok: true });
+});
+
 module.exports = router;

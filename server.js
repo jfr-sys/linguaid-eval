@@ -231,6 +231,59 @@ cron.schedule('0 9 * * *', function() {
 });
 console.log('Oral reminder cron scheduled (daily 09:00)');
 
+/* == EVAL_CONFIRM_20260925: weekly digest to each evaluator ====================
+   Monday 08:45 - every candidate whose Calendly/assessment link went out but
+   who has no confirmed slot and no oral yet. Each line carries the evaluator's
+   one-click confirmation link. Internal staff mail: sent directly, jfr@ in CC
+   (the learner-facing reminders keep going through the approval queue). */
+function buildEvaluatorDigests(candidates, nowMs) {
+  var evLib = require('./lib/evaluators');
+  var byEval = {};
+  candidates.forEach(function (c) {
+    if (c.obsoleteAt) return;
+    if (!c.oralLinkSentAt && !c.oralEvaluatorLinkSentAt && !c.oralEmailSentTo) return;
+    if (c.oralBookedAt) return;
+    var od = c.oralData || {};
+    if (od.listeningLevel || od.speakingLevel) return;
+    if (['oral_done', 'final_report_done', 'programme_done'].indexOf(c.status) !== -1) return;
+    var ev = c.oralEvaluator || c.oralEmailSentTo || 'Hannah';
+    if (!evLib.emailOf(ev)) return;
+    var since = Math.floor((nowMs - new Date(c.oralLinkSentAt || c.oralEvaluatorLinkSentAt).getTime()) / 86400000);
+    (byEval[ev] = byEval[ev] || []).push({ c: c, since: isNaN(since) ? 0 : since });
+  });
+  return Object.keys(byEval).map(function (ev) {
+    var items = byEval[ev].sort(function (a, b) { return b.since - a.since; });
+    var rows = items.map(function (it) {
+      var c = it.c;
+      return '<tr><td style="padding:6px 10px;border-bottom:1px solid #e2e8f0"><strong>' + digestEsc(c.name) + '</strong>' + (c.jobtitle ? '<br><span style="color:#64748b;font-size:12px">' + digestEsc(c.jobtitle) + (c.company ? ' · ' + digestEsc(c.company) : '') + '</span>' : '') + '</td>'
+        + '<td style="padding:6px 10px;border-bottom:1px solid #e2e8f0;color:#64748b;font-size:12px;white-space:nowrap">link sent ' + it.since + ' d ago' + (c.oralNoReplyReportedAt ? '<br>no reply reported' : '') + '</td>'
+        + '<td style="padding:6px 10px;border-bottom:1px solid #e2e8f0;white-space:nowrap"><a href="' + evLib.confirmUrl(c, ev) + '" style="background:#7c3aed;color:white;padding:6px 10px;border-radius:6px;text-decoration:none;font-size:12px;font-weight:600">Confirmer le créneau</a></td></tr>';
+    }).join('');
+    var html = '<div style="font-family:Arial,sans-serif;font-size:14px;color:#222;line-height:1.5">'
+      + '<p>Bonjour ' + ev + ',</p>'
+      + '<p>' + items.length + ' oral' + (items.length > 1 ? 's' : '') + ' still without a confirmed slot on the platform. If a booking exists (Calendly, phone, WhatsApp…), one click tells Joss when:</p>'
+      + '<table style="border-collapse:collapse;width:100%;max-width:640px">' + rows + '</table>'
+      + '<p style="font-size:12px;color:#64748b;margin-top:14px">Not booked yet? The same page has a “pas encore réservé” button so we know to chase the learner. Nothing is read from your calendar.</p>'
+      + '<p>Joss</p></div>';
+    return { evaluator: ev, to: evLib.emailOf(ev), count: items.length, html: html };
+  });
+}
+cron.schedule('45 8 * * 1', function () {
+  try {
+    const dataPath = path.join(__dirname, 'data/candidates.json');
+    const candidates = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
+    const digests = buildEvaluatorDigests(candidates, Date.now());
+    if (!digests.length) return;
+    const t = require('./lib/mailer').createTransport();
+    digests.forEach(function (d) {
+      t.sendMail({ from: 'eval@linguaid.net', replyTo: require('./lib/mailer').replyTo(), to: d.to, cc: 'jfr@linguaid.net',
+        subject: 'Orals to confirm - ' + d.count + ' candidate' + (d.count > 1 ? 's' : '') + ' (' + d.evaluator + ')', html: d.html },
+        function (err) { if (err) console.error('evaluator digest mail error', d.to, err); else console.log('Evaluator digest sent to', d.evaluator, d.count); });
+    });
+  } catch (e) { console.error('Evaluator digest cron error:', e); }
+});
+console.log('Evaluator confirmation digest scheduled (Monday 08:45)');
+
 // == DIGEST_AND_NUDGE_CRONS ===================================================
 // Pure builders (no I/O) so behaviour is testable.
 function daysSince(iso) {

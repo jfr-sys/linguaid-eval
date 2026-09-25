@@ -1222,7 +1222,7 @@
     /* status pill */
     var pill, pillBg, pillFg;
     if (oralDone) { pill = 'Oral effectué' + (od.sessionDate ? ' le ' + fmtDT(od.sessionDate, false) : '') + (od.evaluator ? ' · ' + esc(od.evaluator) : ''); pillBg = '#dcfce7'; pillFg = '#166534'; }
-    else if (c.oralBookedAt) { pill = 'Créneau réservé le ' + fmtDT(c.oralBookedAt) + (c.oralBookedWith ? ' · ' + esc(c.oralBookedWith) : ''); pillBg = '#fef3c7'; pillFg = '#92400e'; }
+    else if (c.oralBookedAt) { pill = 'Oral prévu ' + (c.oralSlotAt ? 'le ' + fmtDT(c.oralSlotAt, c.oralSlotAt.length > 10) : '(date non précisée)') + (c.oralBookedWith ? ' · ' + esc(c.oralBookedWith) : ''); pillBg = '#fef3c7'; pillFg = '#92400e'; }
     else if (c.oralLinkSentAt) { pill = 'En attente de réservation'; pillBg = '#dbeafe'; pillFg = '#1e40af'; }
     else if (legacyIntake) { pill = 'Parcours entretien seul — pas d’oral évaluateur'; pillBg = '#ede9fe'; pillFg = '#5b21b6'; }
     else { pill = 'Aucun lien envoyé'; pillBg = '#f1f5f9'; pillFg = '#475569'; }
@@ -1240,8 +1240,8 @@
         ? reminderCount + ' relance' + (reminderCount > 1 ? 's' : '') + ' (dernière ' + fmtDT(c.oralLastReminderAt, false) + ') · prochaine proposée le ' + fmtDT(next, false)
         : 'Relance auto tous les 3 j (soumise à votre validation) · prochaine le ' + fmtDT(next, false)]);
     } else if (reminderCount > 0) rows.push([true, fmtDT(c.oralLastReminderAt), reminderCount + ' relance' + (reminderCount > 1 ? 's' : '')]);
-    if (c.oralBookedAt) rows.push([true, fmtDT(c.oralBookedAt), 'Créneau réservé' + (c.oralBookedWith ? ' avec ' + esc(c.oralBookedWith) : '') + (c.oralBookedBy === 'manual' ? ' (marqué manuellement)' : c.oralBookedBy === 'calendly' ? ' (Calendly)' : '')]);
-    else if (!legacyIntake) rows.push([false, '', 'Créneau réservé']);
+    if (c.oralBookedAt) rows.push([true, c.oralSlotAt ? fmtDT(c.oralSlotAt, c.oralSlotAt.length > 10) : fmtDT(c.oralBookedAt), 'Oral prévu' + (c.oralBookedWith ? ' avec ' + esc(c.oralBookedWith) : '') + (c.oralBookedBy === 'evaluator' ? ' — confirmé par ' + esc(c.oralBookedWith || 'l’évaluateur') + (c.oralBookedConfirmedAt ? ' le ' + fmtDT(c.oralBookedConfirmedAt, false) : '') : c.oralBookedBy === 'manual' ? ' (saisi par Joss)' : c.oralBookedBy === 'calendly' ? ' (mail Calendly)' : '')]);
+    else if (!legacyIntake) rows.push([false, '', 'Oral prévu — en attente de confirmation par l’évaluateur' + (c.oralNoReplyReportedAt ? ' · ' + esc(c.oralEvaluator || 'évaluateur') + ' signale « pas de réponse » le ' + fmtDT(c.oralNoReplyReportedAt, false) : '')]);
     if (oralDone) rows.push([true, fmtDT(od.submittedAt || od.sessionDate, !!od.submittedAt), 'Oral effectué' + (od.evaluator ? ' · ' + esc(od.evaluator) : '') + (od.listeningLevel || od.speakingLevel ? ' — CO ' + esc(od.listeningLevel || '–') + ' / EO ' + esc(od.speakingLevel || '–') : '')]);
     else if (!legacyIntake) rows.push([false, '', 'Oral effectué']);
 
@@ -1265,6 +1265,7 @@
     var more = ''
       + (naDone || c.intakeToken ? '<button class="btn" onclick="sendIntakeLink(\'' + c.id + '\')" style="font-size:11px;padding:3px 8px;background:#ede9fe;color:#5b21b6;border:1px solid #c4b5fd">📋 ' + (naDone ? 'Renvoyer le lien entretien (Joss)' : 'Envoyer le lien entretien (Joss)') + '</button>' : '')
       + (!oralDone ? '<button class="btn btn-primary" onclick="sendOralLink(\'' + c.id + '\')" style="font-size:11px;padding:3px 8px">✉ Envoyer le lien d’évaluation à l’évaluateur</button>' : '')
+      + '<div style="font-size:11px;color:#64748b">Lien de confirmation évaluateur : <a href="' + window.location.origin + '/oral/confirm/' + c.oralToken + (evaluator ? '?e=' + encodeURIComponent(evaluator) : '') + '" target="_blank" style="color:#7c3aed">/oral/confirm/…</a></div>'
       + '<div style="display:flex;gap:4px;align-items:center"><input type="text" id="oralLinkInput" value="' + oralUrl + '" readonly style="flex:1;font-size:11px;padding:3px 6px;border:1px solid #bfdbfe;border-radius:4px;background:white;color:#1e3a8a"><button class="btn btn-secondary copy-btn" onclick="copyLink()" style="font-size:11px;padding:3px 8px">Copier</button></div>';
 
     area.innerHTML = ''
@@ -2739,7 +2740,16 @@ function onRecipientModeChange() {
 
 <script>
 function markBooked(id){
-  fetch('/api/mark-oral-booked/'+id,{method:'POST'})
+  /* EVAL_CONFIRM_20260925: capture the slot and the evaluator, not just "now" */
+  var evSel = document.getElementById('evaluatorSelect');
+  var ev = evSel ? evSel.value : '';
+  var d = prompt('Date de l\u2019oral (AAAA-MM-JJ) :', new Date().toISOString().slice(0,10));
+  if (d === null) return;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(d.trim())) { alert('Format attendu : AAAA-MM-JJ'); return; }
+  var t = prompt('Heure (HH:MM, laisser vide si inconnue) :', '');
+  if (t === null) return;
+  var slot = d.trim() + (/^\d{2}:\d{2}$/.test((t||'').trim()) ? 'T' + t.trim() + ':00' : '');
+  fetch('/api/mark-oral-booked/'+id,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({slot:slot,evaluator:ev})})
     .then(function(r){return r.json();})
     .then(function(d){if(d.ok){window.location.reload();}else{alert(d.error||'Error');}});
 }
